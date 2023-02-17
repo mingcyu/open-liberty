@@ -2834,7 +2834,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>42.2.5</version>
+      <version>42.5.4</version>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
