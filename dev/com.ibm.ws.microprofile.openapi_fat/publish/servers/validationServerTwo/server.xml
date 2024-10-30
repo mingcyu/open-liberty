@@ -21,6 +21,8 @@
     <feature>mpConfig-1.2</feature>
   </featureManager>
 
+  <mpOpenAPI openAPIVersion="3.0"/>
+
   <include location="../fatTestPorts.xml" />
 
 </server>

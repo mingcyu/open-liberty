@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import io.openliberty.microprofile.openapi40.fat.validation.ValidationTestCrossVersion;
 import io.openliberty.microprofile.openapi40.fat.validation.ValidationTestFive;
 import io.openliberty.microprofile.openapi40.fat.validation.ValidationTestFour;
 import io.openliberty.microprofile.openapi40.fat.validation.ValidationTestMissing;
@@ -26,7 +27,8 @@ import io.openliberty.microprofile.openapi40.fat.validation.ValidationTestTwo;
                 ValidationTestMissing.class,
                 ValidationTestFour.class,
                 ValidationTestFive.class,
-                ValidationTestNoErrors.class
+                ValidationTestNoErrors.class,
+                ValidationTestCrossVersion.class
 })
 @RunWith(Suite.class)
 public class FATSuite {}

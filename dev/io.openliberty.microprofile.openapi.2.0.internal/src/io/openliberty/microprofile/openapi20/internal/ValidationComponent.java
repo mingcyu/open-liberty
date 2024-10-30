@@ -26,6 +26,8 @@ import io.openliberty.microprofile.openapi20.internal.services.OASValidationResu
 import io.openliberty.microprofile.openapi20.internal.services.OASValidationResult.ValidationEvent;
 import io.openliberty.microprofile.openapi20.internal.services.OASValidationResult.ValidationEvent.Severity;
 import io.openliberty.microprofile.openapi20.internal.services.OASValidator;
+import io.openliberty.microprofile.openapi20.internal.services.OpenAPIModelOperations;
+import io.openliberty.microprofile.openapi20.internal.services.OpenAPIVersionConfig;
 import io.openliberty.microprofile.openapi20.internal.utils.MessageConstants;
 import io.openliberty.microprofile.openapi20.internal.utils.ValidationMessageConstants;
 import io.openliberty.microprofile.openapi20.internal.validation.ValidatorUtils;
@@ -46,6 +48,12 @@ public class ValidationComponent {
 
     @Reference(name = VALIDATOR_REF)
     protected volatile List<ServiceReference<OASValidator>> validators;
+
+    @Reference
+    protected OpenAPIModelOperations modelOperations;
+
+    @Reference
+    protected OpenAPIVersionConfig versionConfig;
 
     @Activate
     private void activate(ComponentContext ctx) {
@@ -69,6 +77,9 @@ public class ValidationComponent {
      * @return the validation result
      */
     public OASValidationResult validateModel(OpenAPI model) {
+        model = modelOperations.shallowCopy(model);
+        versionConfig.applyConfig(model);
+
         String modelVersion = model.getOpenapi();
 
         if (modelVersion == null) {
