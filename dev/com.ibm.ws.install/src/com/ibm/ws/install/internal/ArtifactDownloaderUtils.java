@@ -20,8 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -112,20 +115,10 @@ public class ArtifactDownloaderUtils {
     public static int exists(String URLName, Map<String, Object> envMap, MavenRepository repository) throws IOException {
         try {
             URL url = new URL(URLName);
-            String proxyEncodedAuth = "";
-            if (url.getProtocol().equals("https") && envMap.get("https.proxyHost") != null) {
-                proxyEncodedAuth = ArtifactDownloaderUtils.getBasicAuthentication((String) envMap.get("https.proxyUser"), (String) envMap.get("https.proxyPassword"));
-            } else if (envMap.get("http.proxyHost") != null) {
-                proxyEncodedAuth = ArtifactDownloaderUtils.getBasicAuthentication((String) envMap.get("http.proxyUser"), (String) envMap.get("http.proxyPassword"));
-            }
-
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             String repoEncodedAuth = ArtifactDownloaderUtils.getBasicAuthentication(repository.getUserId(), repository.getPassword());
             if (!repoEncodedAuth.isEmpty()) {
                 conn.setRequestProperty("Authorization", repoEncodedAuth);
-            }
-            if (!proxyEncodedAuth.isEmpty()) {
-                conn.setRequestProperty("Proxy-Authorization", proxyEncodedAuth);
             }
             conn.setRequestMethod("HEAD");
             conn.setConnectTimeout(10000);
@@ -311,6 +304,33 @@ public class ArtifactDownloaderUtils {
             return Base64.getEncoder().encodeToString(userInfo.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException encodingException) {
             throw new RuntimeException("Failed to get bytes for user info using UTF-8.", encodingException);
+        }
+    }
+
+    private static class SystemPropertiesProxyAuthenticator extends Authenticator {
+        PasswordAuthentication auth;
+
+        private SystemPropertiesProxyAuthenticator(String user, String password) {
+            auth = new PasswordAuthentication(user, PasswordUtil.passwordDecode(password).toCharArray());
+        }
+
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return auth;
+        }
+    }
+
+    /**
+     * 'Proxy-Authorization' http header for proxy Basic authentication doesn't work with https urls.
+     *
+     * @param repository
+     * @throws MalformedURLException
+     */
+    public static void setProxyAuthenticator(Map<String, Object> envMap) throws MalformedURLException {
+        if (envMap.get("https.proxyUser") != null) {
+            Authenticator.setDefault(new SystemPropertiesProxyAuthenticator((String) envMap.get("https.proxyUser"), (String) envMap.get("https.proxyPassword")));
+        } else if (envMap.get("http.proxyUser") != null) {
+            Authenticator.setDefault(new SystemPropertiesProxyAuthenticator((String) envMap.get("http.proxyUser"), (String) envMap.get("http.proxyPassword")));
         }
     }
 
