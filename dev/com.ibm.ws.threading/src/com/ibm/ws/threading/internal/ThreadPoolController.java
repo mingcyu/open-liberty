@@ -717,6 +717,15 @@ public final class ThreadPoolController {
     private int startupCycleSkipCount = startupHangControllerCyclesSkip;
 
     /**
+     * We need to normalize the startup hang cpu-util threshold based on the number of CPUs available.
+     * When Liberty runs in a many-CPU environment, even if the startup threads are working at a
+     * reasonable rate, the percentage of total CPU they use will be low because the number of
+     * startup threads is small.
+     */
+
+    private int normalizedStartupHangCpuUtilThreshold = startupHangCpuUtilThreshold;
+
+    /**
      * Constructor
      *
      * @param executorServce the configured OSGi component that's associated with
@@ -749,6 +758,14 @@ public final class ThreadPoolController {
         targetPoolSize = coreThreads;
         resetStatistics(true);
         numberCpus = CpuInfo.getAvailableProcessors().get();
+
+        // adjust the cpu-util threshold for startup hang detection when running in a large CPU set
+        if (numberCpus > startupPoolSize) {
+            normalizedStartupHangCpuUtilThreshold = Math.max(1, (int) Math.round((double) (startupPoolSize * startupHangCpuUtilThreshold) / numberCpus));
+            if (tc.isEventEnabled()) {
+                Tr.event(tc, "number of cpus: " + numberCpus + ", startup hang cpu-util threshold adjusted to " + normalizedStartupHangCpuUtilThreshold + "%");
+            }
+        }
 
         // initialize CPU utilization info
         processCpuUtil = CpuInfo.getJavaCpuUsage();
@@ -1489,9 +1506,9 @@ public final class ThreadPoolController {
                     cpuUtilString = String.format(" cpuUtil = %.2f", Double.valueOf(processCpuUtil));
                 }
                 if (deltaCompleted <= 0) {
-                    if (processCpuUtil < startupHangCpuUtilThreshold) {
+                    if (processCpuUtil < normalizedStartupHangCpuUtilThreshold && !cpuHigh) {
                         if (tc.isEventEnabled()) {
-                            Tr.event(tc, "     hang detected during startup, process " + cpuUtilString + "%  - switching to normal controller operation");
+                            Tr.event(tc, "     hang detected during startup, process " + cpuUtilString + "%, cpuHigh: " + cpuHigh + " - switching to normal controller operation");
                         }
 
                         // startup has hung - switch to post-startup mode to allow hang resolution to work
@@ -2140,8 +2157,11 @@ public final class ThreadPoolController {
 
         sb.append("\n coreThreads: ").append(String.format("%6d", Integer.valueOf(coreThreads)));
         sb.append(" maxThreads: ").append(String.format("%6d", Integer.valueOf(maxThreads)));
-        sb.append(" startupPoolSize: ").append(String.format("%6d", Integer.valueOf(startupPoolSize)));
+        sb.append(" numberCpus: ").append(String.format("%6d", Integer.valueOf(numberCpus)));
+
+        sb.append("\n startupPoolSize: ").append(String.format("%6d", Integer.valueOf(startupPoolSize)));
         sb.append(" startupHangCpuUtilThreshold: ").append(String.format("%6d", Integer.valueOf(startupHangCpuUtilThreshold)));
+        sb.append(" normalizedStartupHangCpuUtilThreshold: ").append(String.format("%6d", Integer.valueOf(normalizedStartupHangCpuUtilThreshold)));
 
         sb.append("\n interval: ").append(String.format("%6d", Long.valueOf(interval)));
         sb.append(" hangInterval: ").append(String.format("%6d", Long.valueOf(hangInterval)));

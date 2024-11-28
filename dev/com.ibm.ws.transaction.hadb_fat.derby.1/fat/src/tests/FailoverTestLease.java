@@ -21,21 +21,16 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.ibm.tx.jta.ut.util.HADBTestConstants.HADBTestType;
 import com.ibm.tx.jta.ut.util.HADBTestControl;
 import com.ibm.ws.transaction.fat.util.FATUtils;
-import com.ibm.ws.transaction.fat.util.SetupRunner;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
 import componenttest.annotation.SkipIfSysProp;
 import componenttest.custom.junit.runner.FATRunner;
-import componenttest.topology.database.container.DatabaseContainerType;
-import componenttest.topology.database.container.DatabaseContainerUtil;
 import componenttest.topology.impl.LibertyServer;
-import componenttest.topology.utils.FATServletClient;
 import suite.FATSuite;
 
 /**
@@ -119,10 +114,7 @@ import suite.FATSuite;
 @AllowedFFDC(value = { "javax.resource.spi.ResourceAllocationException", "com.ibm.ws.rsadapter.exceptions.DataStoreAdapterException", })
 //Skip on IBM i test class depends on datasource inferrence
 @SkipIfSysProp(SkipIfSysProp.OS_IBMI)
-public class FailoverTestLease extends FATServletClient {
-    private static final int LOG_SEARCH_TIMEOUT = 300000;
-    public static final String APP_NAME = "transaction";
-    public static final String SERVLET_NAME = APP_NAME + "/FailoverServlet";
+public class FailoverTestLease extends FailoverTest {
 
     @Server("com.ibm.ws.transaction_retriablecloud")
     public static LibertyServer retriableCloudServer;
@@ -157,26 +149,9 @@ public class FailoverTestLease extends FATServletClient {
         FATSuite.afterSuite("WAS_LEASES_LOG", "WAS_PARTNER_LOGCLOUDSTALE", "WAS_TRAN_LOGCLOUDSTALE");
     }
 
-    public static void setUp(LibertyServer server) throws Exception {
-        JdbcDatabaseContainer<?> testContainer = FATSuite.testContainer;
-        //Get driver name
-        server.addEnvVar("DB_DRIVER", DatabaseContainerType.valueOf(testContainer).getDriverName());
-
-        //Setup server DataSource properties
-        DatabaseContainerUtil.setupDataSourceProperties(server, testContainer);
-
-        server.setServerStartTimeout(LOG_SEARCH_TIMEOUT);
-    }
-
-    private SetupRunner runner = new SetupRunner() {
-        @Override
-        public void run(LibertyServer s) throws Exception {
-            setUp(s);
-        }
-    };
-
     private LibertyServer[] serversToStop;
 
+    @Override
     @After
     public void cleanup() throws Exception {
         FATUtils.stopServers(serversToStop);

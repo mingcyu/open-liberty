@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.Before;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.ibm.tx.jta.ut.util.HADBTestControl;
@@ -27,6 +28,7 @@ import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.ws.transaction.fat.util.FATUtils;
 import com.ibm.ws.transaction.fat.util.SetupRunner;
 import com.ibm.ws.transaction.fat.util.TxFATServletClient;
+import com.ibm.ws.transaction.fat.util.TxTestContainerSuite;
 
 import componenttest.annotation.SkipIfSysProp;
 import componenttest.topology.database.container.DatabaseContainerType;
@@ -63,6 +65,11 @@ public class FailoverTest extends TxFATServletClient {
         }
 
         FailoverTest.commonCleanup(this.getClass().getName());
+    }
+
+    @Before
+    public void assertHealthy() {
+        TxTestContainerSuite.assertHealthy();
     }
 
     public void runInServletAndCheck(LibertyServer server, String path, String method) throws Exception {

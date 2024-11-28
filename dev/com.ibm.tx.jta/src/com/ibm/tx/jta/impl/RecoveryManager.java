@@ -86,8 +86,8 @@ public class RecoveryManager implements Runnable {
 
     private final RecoveryAgent _agent;
     protected RecoveryLog _tranLog; // 169107
-    protected RecoveryLog _xaLog; // 169107
-    protected final RecoveryLog _recoverXaLog; //@MD18134A
+    private RecoveryLog _xaLog; // 169107
+    private final RecoveryLog _recoverXaLog; //@MD18134A
 
     private SharedServerLeaseLog _leaseLog;
     private String _recoveryGroup;
@@ -126,16 +126,10 @@ public class RecoveryManager implements Runnable {
     // The following relate to the service data recoverable unit in the transaction log
     // This is reserved and holds the servername, applid and epoch.
     //
-    protected RecoverableUnit _tranlogServiceData;
-    protected RecoverableUnitSection _tranlogServerSection;
-    protected RecoverableUnitSection _tranlogApplIdSection;
-    protected RecoverableUnitSection _tranlogEpochSection;
-
-    protected String _classPath; // current classpath for recovery
-    // These are static as they are only initialized from the "server's" own log
-    // We use our own classpaths and not from other servers in case we recover
-    // for a filesystem that does not match our own.
-    protected static String _loggedClassPath; // classpath read from the log at startup
+    private RecoverableUnit _tranlogServiceData;
+    private RecoverableUnitSection _tranlogServerSection;
+    private RecoverableUnitSection _tranlogApplIdSection;
+    private RecoverableUnitSection _tranlogEpochSection;
 
     // Server States logged for serviceability
     private static final int STARTING = 1;
@@ -154,7 +148,7 @@ public class RecoveryManager implements Runnable {
      */
     private final Set<TransactionImpl> _recoveringTransactions;
 
-    protected final Object _recoveryMonitor = new Object();
+    private final Object _recoveryMonitor = new Object();
 
     private boolean _cleanRemoteShutdown;
 
