@@ -18,19 +18,19 @@ steps:
   workType: PRChangesDetection
   timeoutInMinutes: 30
   properties:
-    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}
+    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}"
 - stepName: Copyright Header Check
   workType: Jenkins
   projectName: copyrightHeaderCheck
   timeoutInMinutes: 120
   properties:
-    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}  
+    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}"  
 - stepName: Prohibited Terms Check
   workType: Jenkins
   projectName: prohibitedTermsCheck
   timeoutInMinutes: 120
   properties:
-    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}
+    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}"
 - stepName: Code Checklist Creation
   workType: Jenkins
   projectName: codeCheckListBuilder
@@ -39,7 +39,7 @@ steps:
   - stepName: PR Changes
     awaitOutputProperties: true
   properties:
-    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}
+    githubPRApi: "https://api.github.com/repos/OpenLiberty/open-liberty/pulls/${githubPRNumber}"
     isBvtCodeChanged: ${PR Changes:is.bvt.code.changed}
     isFatCodeChanged: ${PR Changes:is.fat.code.changed}
     isInfraCodeChanged: ${PR Changes:is.infra.code.changed}
