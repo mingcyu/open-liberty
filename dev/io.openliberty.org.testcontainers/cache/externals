@@ -1,6 +1,5 @@
 # NOTICE: This file was automatically updated to reflect changes made to test projects.
 # Please check these changes into GitHub
-alpine:3.17
 confluentinc/cp-kafka:7.1.1
 elastic/logstash:7.16.3
 fbicodex/spnego-kdc-server:1.0
@@ -33,6 +32,7 @@ mcr.microsoft.com/mssql/server:2019-CU28-ubuntu-20.04
 openzipkin/zipkin-slim:2.23
 otel/opentelemetry-collector-contrib:0.103.0
 otel/opentelemetry-collector:0.74.0
+public.ecr.aws/docker/library/alpine:3.17
 public.ecr.aws/docker/library/mongo:6.0.6
 public.ecr.aws/docker/library/postgres:17.0-alpine
 ryanesch/acme-boulder:1.2

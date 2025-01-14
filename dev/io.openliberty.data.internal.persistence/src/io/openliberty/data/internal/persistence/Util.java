@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -70,6 +71,25 @@ public class Util {
      */
     static final Set<Class<?>> SORT_PARAM_TYPES = //
                     Set.of(Order.class, Sort.class, Sort[].class);
+
+    /**
+     * These types are never supported for entity attributes.
+     *
+     * ZonedDateTime is not one of the supported Temporal types of Jakarta Data
+     * or Jakarta Persistence, and it does not behave correctly in EclipseLink,
+     * where we have observed it reading back a different value from the database
+     * than was persisted. If proper support is added for it in the future,
+     * then this restriction against using it can be made version dependent.
+     */
+    static final Set<Class<?>> UNSUPPORTED_ATTR_TYPES = //
+                    Set.of(Byte[].class, // deprecated in JPA 3.2
+                           Character[].class, // deprecated in JPA 3.2
+                           java.sql.Date.class, // deprecated in JPA 3.2
+                           java.sql.Time.class, // deprecated in JPA 3.2
+                           java.sql.Timestamp.class, // deprecated in JPA 3.2
+                           java.util.Calendar.class, // deprecated in JPA 3.2
+                           java.util.Date.class, // deprecated in JPA 3.2
+                           ZonedDateTime.class); // would be useful if it worked
 
     /**
      * Valid types for when a repository method computes an update count

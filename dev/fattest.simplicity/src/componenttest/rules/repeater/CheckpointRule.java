@@ -248,9 +248,7 @@ public class CheckpointRule implements TestRule {
      * @return
      */
     public CheckpointRule addUnsupportedRepeatIDs(String... unsupportedRepeatIDs) {
-        if (unsupportedRepeatIDs != null) {
-            this.unsupportedRepeatIDs.addAll(Arrays.asList(unsupportedRepeatIDs));
-        }
+        this.unsupportedRepeatIDs.addAll(Arrays.asList(unsupportedRepeatIDs));
         return this;
     }
 
@@ -387,9 +385,6 @@ public class CheckpointRule implements TestRule {
 
         private boolean isCheckpointSupported() {
             if (JavaInfo.forCurrentVM().isCriuSupported()) {
-                if (unsupportedRepeatIDs == null) {
-                    return true;
-                }
                 return !RepeatTestFilter.isAnyRepeatActionActive(unsupportedRepeatIDs.toArray(new String[0]));
             }
             return false;

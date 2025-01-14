@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -815,7 +815,7 @@ public class RepositoryImpl<R> implements InvocationHandler {
                                                 List<Member> accessors = entityInfo.attributeAccessors.get(entityInfo.attributeNames.get(ID));
                                                 if (accessors == null || accessors.isEmpty())
                                                     throw exc(MappingException.class,
-                                                              "CWWKD1025.missing.id.prop",
+                                                              "CWWKD1025.missing.id.attr",
                                                               entityInfo.getType().getName(),
                                                               method.getName(),
                                                               repositoryInterface);

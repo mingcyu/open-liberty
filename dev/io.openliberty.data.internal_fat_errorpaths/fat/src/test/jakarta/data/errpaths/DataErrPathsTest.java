@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -49,6 +49,7 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1009E.*changeBoth", // Update method with multiple entity parameters
                                    "CWWKD1009E.*storeNothing", // Save method without parameters
                                    "CWWKD1009E.*storeInDatabase", // Save method with multiple parameters
+                                   "CWWKD1010E.*nameAndZipCode", // Record return type with invalid attribute name
                                    "CWWKD1017E.*livesAt", // multiple Limit parameters
                                    "CWWKD1017E.*residesAt", // multiple PageRequest parameters
                                    "CWWKD1018E.*inhabiting", // intermixed Limit and PageRequest
@@ -83,7 +84,8 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1098E.*withNameShorterThan", // Sort ahead of query params
                                    "CWWKD1099E.*findFirst2", // Limit incompatible with First
                                    "CWWKD1099E.*findFirst3", // PageRequest incompatible with First
-                                   "CWWKD1100E.*selectByLastName" // CursoredPage with ORDER BY clause
+                                   "CWWKD1100E.*selectByLastName", // CursoredPage with ORDER BY clause
+                                   "CWWKD1101E.*nameAndZipCode" // Record return type with invalid attribute name
                     };
 
     @Server("io.openliberty.data.internal.fat.errpaths")
