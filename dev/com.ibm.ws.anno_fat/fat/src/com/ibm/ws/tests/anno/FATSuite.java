@@ -19,11 +19,13 @@ import org.junit.runners.Suite.SuiteClasses;
 
 import com.ibm.ws.fat.util.FatLogHandler;
 import com.ibm.ws.tests.anno.caching.AppReplaceTest;
+import com.ibm.ws.tests.anno.caching.AnnotationScanInJarTest;
 import com.ibm.ws.tests.anno.caching.CacheEnablementTest;
 import com.ibm.ws.tests.anno.caching.FragmentOrderTest;
 import com.ibm.ws.tests.anno.caching.LooseConfigTest;
 import com.ibm.ws.tests.anno.caching.MetadataCompleteTest;
 import com.ibm.ws.tests.anno.caching.MetadataIncompleteTest;
+import com.ibm.ws.tests.anno.caching.unused.BigAppTest;
 import com.ibm.ws.tests.anno.jandex.JandexAppDefaultAppMgrDefaultTest;
 import com.ibm.ws.tests.anno.jandex.JandexAppDefaultAppMgrTrueTest;
 import com.ibm.ws.tests.anno.jandex.JandexAppFalseAppMgrFalseTest;
@@ -67,7 +69,7 @@ import com.ibm.ws.tests.anno.jandex.JandexAppTrueAppMgrTrueTest;
     MetadataIncompleteTest.class,
     FragmentOrderTest.class,
     LooseConfigTest.class,
-    AppReplaceTest.class
+
     // BigAppTest.class
 })
 
