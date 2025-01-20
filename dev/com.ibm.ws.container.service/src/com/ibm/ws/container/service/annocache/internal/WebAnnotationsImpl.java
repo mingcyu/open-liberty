@@ -12,21 +12,37 @@
  *******************************************************************************/
 package com.ibm.ws.container.service.annocache.internal;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.ibm.ejs.ras.TraceComponent;
+import com.ibm.websphere.ras.Tr;
+import com.ibm.ws.container.service.annocache.FragmentAnnotations;
+import com.ibm.ws.container.service.annocache.WebAnnotations;
+import com.ibm.ws.container.service.app.deploy.ApplicationInfo;
+import com.ibm.ws.container.service.app.deploy.EARApplicationInfo;
+import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
+import com.ibm.ws.container.service.config.WebFragmentInfo;
+import com.ibm.ws.container.service.config.WebFragmentsInfo;
+
 import com.ibm.wsspi.artifact.ArtifactContainer;
 import com.ibm.wsspi.artifact.overlay.OverlayContainer;
 
 import com.ibm.wsspi.adaptable.module.Container;
+import com.ibm.wsspi.adaptable.module.Entry;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Factory;
 import com.ibm.wsspi.annocache.targets.AnnotationTargets_Targets;
+import com.ibm.wsspi.artifact.ArtifactContainer;
+import com.ibm.wsspi.artifact.overlay.OverlayContainer;
 
 import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
@@ -81,6 +97,19 @@ import com.ibm.ws.container.service.annocache.WebAnnotations;
  * completion of a scan.
  */
 public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnnotations {
+
+    //TODO discuss this, sysprop / server.xml, name, etc
+    private final static String SCAN_EAR_LIBS = "com.ibm.ws.anno.ScanEarLibs";
+
+    @SuppressWarnings("unused")
+    private static final boolean scanEarLibs = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            String propString = System.getProperty(SCAN_EAR_LIBS);
+            Boolean scanEarLibs = Boolean.valueOf(propString);
+            return scanEarLibs;
+        }
+    });
 
     public WebAnnotationsImpl(
         AnnotationsAdapterImpl annotationsAdapter,
@@ -180,6 +209,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         if ( classSourceFactory == null ) {
             return;
         }
+        
+        List<Container> earLibs = scanEarLibs ? getEarLibs() : new ArrayList<Container>();
 
         // The classes folder is processed as if it were a fragment item.
 
@@ -198,6 +229,9 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         for ( WebFragmentInfo nextFragment : getOrderedItems() ) {
             String nextUri = nextFragment.getLibraryURI();
             Container nextContainer = nextFragment.getFragmentContainer();
+            
+            //Defensive programming to avoid duplicates
+            earLibs.remove(nextContainer);
 
             boolean nextIsMetadataComplete;
             ScanPolicy nextPolicy;
@@ -243,6 +277,21 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 return; // FFDC in 'addContainerClassSource'
             }
         }
+        
+        //TODO property name, should it be a server.xml property instead, etc. Talk with Tom
+        if (scanEarLibs) {
+            try {
+                for (Container c : earLibs) {
+                    WebFragmentInfo nextFragmentInfo = c.adapt(WebFragmentInfo.class);
+                    String nextPath = putUniquePath(nextFragmentInfo, getContainerPath(c));
+                    if (!addContainerClassSource(nextPath, c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
+                        return; // FFDC in 'addContainerClassSource'
+                    }
+                }
+            } catch (UnableToAdaptException e) {
+                //TODO, ask Tom what he wants to happen here
+            }
+        }
 
         for ( WebFragmentInfo nextFragment : getExcludedItems() ) {
         	String nextUri = nextFragment.getLibraryURI();
@@ -271,6 +320,33 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             }
         }
     }
+    
+    private List<Container> getEarLibs() {
+        List<Container> earLibs = new ArrayList<Container>();
+
+        ApplicationInfo appInfo = this.moduleInfo.getApplicationInfo();
+        EARApplicationInfo earAppInfo = null;
+
+        if (appInfo instanceof EARApplicationInfo) {
+            earAppInfo = (EARApplicationInfo) appInfo;
+            Container libContainer = earAppInfo.getLibraryDirectoryContainer();
+
+            for (Entry entry : libContainer) {
+                if (entry.getName().endsWith(".jar")) {
+                    try {
+                        Container lib = entry.adapt(Container.class);
+                        earLibs.add(lib);
+                    } catch (UnableToAdaptException ex) {
+                        // Not really a jar archive, just a poorly named file
+                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                            Tr.debug(tc, "processLibraryJarPersistenceXml: ignoring " + entry.getName(), ex);
+                    }
+                }
+            }
+        }
+
+        return earLibs;
+    }
 
     //
 
@@ -283,3 +359,4 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         return new FragmentAnnotationsImpl( useTargets, getFragmentPath(fragment) );
     }
 }
+

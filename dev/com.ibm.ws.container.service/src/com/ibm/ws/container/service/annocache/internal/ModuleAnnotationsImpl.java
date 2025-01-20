@@ -207,7 +207,7 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
 
     //
 
-    private final ModuleInfo moduleInfo;
+    protected final ModuleInfo moduleInfo;
 
     @Override
     public ModuleInfo getModuleInfo() {
