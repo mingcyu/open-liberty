@@ -136,6 +136,9 @@ public class DataJPATestServlet extends FATServlet {
     Drivers drivers;
 
     @Inject
+    ECRepo ecRepo;
+
+    @Inject
     Employees employees;
 
     @Inject
@@ -742,6 +745,146 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Demonstrates inconsistency and wrong behavior in how EclipseLink returns an
+     * entity attribute that is an ElementCollection vs an entity attribute of the
+     * same type that is not an ElementCollection. Note that the former is not
+     * supported by Jakarta Persistence, and it would be fine if EclipseLink would
+     * reject it, but EclipseLink should not be running the query and producing
+     * wrong data.
+     */
+    @Test
+    public void testElementCollection() throws Exception {
+        ECEntity e1 = new ECEntity();
+        e1.setId("EC1");
+        e1.setIntArray(new int[] { 14, 12, 1 });
+        e1.setLongList(new ArrayList<>(List.of(14L, 12L, 1L)));
+        e1.setLongListEC(new ArrayList<>(List.of(14L, 12L, 1L)));
+        e1.setStringSet(Set.of("fourteen", "twelve", "one"));
+        e1.setStringSetEC(Set.of("fourteen", "twelve", "one"));
+        ecRepo.insert(e1);
+
+        ECEntity e2 = new ECEntity();
+        e2.setId("EC2");
+        e2.setIntArray(new int[] { 14, 12, 2 });
+        e2.setLongList(new ArrayList<>(List.of(14L, 12L, 2L)));
+        e2.setLongListEC(new ArrayList<>(List.of(14L, 12L, 2L)));
+        e2.setStringSet(Set.of("fourteen", "twelve", "two"));
+        e2.setStringSetEC(Set.of("fourteen", "twelve", "two"));
+        ecRepo.insert(e2);
+
+        try (EntityManager em = ecRepo.getEntityManager()) {
+            String jpql;
+            jakarta.persistence.Query q;
+            List<?> results;
+
+            jpql = "SELECT intArray FROM ECEntity WHERE id=?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC1");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            // Vector of int[] needs special handling to print:
+            StringBuilder s = new StringBuilder();
+            boolean first = true;
+            for (Object element : results) {
+                if (first)
+                    first = false;
+                else
+                    s.append(", ");
+                if (element instanceof int[])
+                    s.append(Arrays.toString((int[]) element));
+                else
+                    s.append(element);
+            }
+            System.out.println("            contents are [" + s.toString() + "]");
+
+            jpql = "SELECT longList FROM ECEntity WHERE id=?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC1");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT longListEC FROM ECEntity WHERE id=?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC1");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT stringSet FROM ECEntity WHERE id=?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC1");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT stringSetEC FROM ECEntity WHERE id=?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC1");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            // with multiple results (that ElementCollection wrongly combines into one!),
+
+            jpql = "SELECT longList FROM ECEntity WHERE id LIKE ?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC%");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT longListEC FROM ECEntity WHERE id LIKE ?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC%");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT stringSet FROM ECEntity WHERE id LIKE ?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC%");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+
+            jpql = "SELECT stringSetEC FROM ECEntity WHERE id LIKE ?1";
+            q = em.createQuery(jpql);
+            q.setParameter(1, "EC%");
+            results = q.getResultList();
+            System.out.println();
+            System.out.println(jpql);
+            System.out.println("getResultList returned a " + results.getClass().getTypeName());
+            System.out.println("    elements are of type " + results.iterator().next().getClass().getTypeName());
+            System.out.println("            contents are " + results);
+        }
+    }
+
+    /**
      * Verify that an EntityManager can be obtained for a repository and used to perform database operations.
      */
     @Test
@@ -1197,21 +1340,34 @@ public class DataJPATestServlet extends FATServlet {
                                              .sorted()
                                              .collect(Collectors.toList()));
 
-        List<Set<AccountId>> list = taxpayers.findBankAccountsByFilingStatus(TaxPayer.FilingStatus.HeadOfHousehold);
-        // TODO EclipseLink bug where
-        // SELECT o.bankAccounts FROM TaxPayer o WHERE (o.filingStatus=?1) ORDER BY o.numDependents, o.ssn
-        // combines the two Set<AccountId> values that ought to be the result into a single combined list of AccountId.
-        //assertEquals(list.toString(), 2, list.size());
-        //assertEquals(Set.of("AccountId:43014400:410224"),
-        //             list.get(0)
-        //                             .stream()
-        //                             .map(AccountId::toString)
-        //                             .collect(Collectors.toSet()));
-        //assertEquals(Set.of("AccountId:10105600:560237", "AccountId:15561600:391588"),
-        //             list.get(1)
-        //                             .stream()
-        //                             .map(AccountId::toString)
-        //                             .collect(Collectors.toSet()));
+        List<Set<AccountId>> list;
+        try {
+            list = taxpayers.findBankAccountsByFilingStatus(TaxPayer.FilingStatus.HeadOfHousehold);
+            assertEquals(list.toString(), 2, list.size());
+            assertEquals(Set.of("AccountId:43014400:410224"),
+                         list.get(0)
+                                         .stream()
+                                         .map(AccountId::toString)
+                                         .collect(Collectors.toSet()));
+            assertEquals(Set.of("AccountId:10105600:560237",
+                                "AccountId:15561600:391588"),
+                         list.get(1)
+                                         .stream()
+                                         .map(AccountId::toString)
+                                         .collect(Collectors.toSet()));
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1103E:"))
+                // Works around bad behavior from EclipseLink (see #30575)
+                // for ElementCollection:
+                // SELECT o.bankAccounts FROM TaxPayer o WHERE (o.filingStatus=?1)
+                //  ORDER BY o.numDependents, o.ssn
+                // combines the two Set<AccountId> values that ought to be the result
+                // into a single combined list of AccountId.
+                ;
+            else
+                throw x;
+        }
 
         // TODO report EclipseLink bug that occurs on the following
         if (false)

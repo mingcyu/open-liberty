@@ -19,9 +19,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
@@ -87,9 +85,6 @@ public class PassivationTest extends FATServletClient {
             Assert.assertTrue("Unexpected line: " + line, p.matcher(line).find());
         }
     }
-
-    @Rule
-    public final TestName testName = new TestName();
 
     @Test
     public void testPassivationCapable() throws Exception {

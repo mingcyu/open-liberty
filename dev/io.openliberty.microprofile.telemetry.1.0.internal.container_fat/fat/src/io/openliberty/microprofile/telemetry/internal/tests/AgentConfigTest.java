@@ -132,6 +132,10 @@ public class AgentConfigTest {
         server.addEnvVar(TestConstants.ENV_OTEL_EXPORTER_OTLP_PROTOCOL, "grpc");
         server.addEnvVar("OTEL_METRICS_EXPORTER", "none");
         server.addEnvVar("OTEL_LOGS_EXPORTER", "none");
+
+        //Required for Java Agent 2.0.0+ to create Jax-Rs spans
+        server.addEnvVar("OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED", "true"); //otel.instrumentation.common.experimental.controller-telemetry.enabled=true)
+
         server.addEnvVar(TestConstants.ENV_OTEL_BSP_SCHEDULE_DELAY, "100"); // Wait no more than 100ms to send traces to the server
         server.addEnvVar(TestConstants.ENV_OTEL_SDK_DISABLED, "false"); //Enable tracing
     }

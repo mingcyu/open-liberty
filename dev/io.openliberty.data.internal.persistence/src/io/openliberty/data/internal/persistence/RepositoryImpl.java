@@ -700,9 +700,10 @@ public class RepositoryImpl<R> implements InvocationHandler {
                             if (pageReq == null ||
                                 pageReq.mode() == PageRequest.Mode.OFFSET) {
                                 // offset pagination can be a starting point for cursor pagination
-                                queryInfo = queryInfo.withJPQL(q.append(order).toString(), sortList);
+                                String jpql = q.append(order).toString();
+                                queryInfo = new QueryInfo(queryInfo, jpql, sortList);
                             } else { // CURSOR_NEXT or CURSOR_PREVIOUS
-                                queryInfo = queryInfo.withJPQL(null, sortList);
+                                queryInfo = new QueryInfo(queryInfo, null, sortList);
                                 queryInfo.generateCursorQueries(q, forward ? order : null, forward ? null : order);
                             }
                         }
@@ -731,7 +732,7 @@ public class RepositoryImpl<R> implements InvocationHandler {
                             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
                                 Tr.debug(this, tc, "createQuery", queryInfo.jpql, entityInfo.entityClass.getName());
 
-                            TypedQuery<?> query = em.createQuery(queryInfo.jpql, queryInfo.entityInfo.entityClass);
+                            jakarta.persistence.Query query = em.createQuery(queryInfo.jpql);
                             queryInfo.setParameters(query, args);
 
                             if (queryInfo.type == QueryInfo.Type.FIND_AND_DELETE)
@@ -847,12 +848,16 @@ public class RepositoryImpl<R> implements InvocationHandler {
                                     returnValue = null;
                                 } else if (multiType == null && entityInfo.entityClass.equals(singleType)) {
                                     returnValue = oneResult(queryInfo, results);
-                                } else if (multiType != null && multiType.isInstance(results) && (results.isEmpty() || !(results.get(0) instanceof Object[]))) {
+                                } else if (multiType != null &&
+                                           multiType.isInstance(results) &&
+                                           (results.isEmpty() || singleType.isInstance(results.get(0)) &&
+                                                                 !(results.get(0) instanceof Object[]))) {
                                     returnValue = results;
                                 } else if (multiType != null && Iterable.class.isAssignableFrom(multiType)) {
                                     returnValue = queryInfo.convertToIterable(results,
+                                                                              multiType,
                                                                               singleType,
-                                                                              multiType);
+                                                                              query);
                                 } else if (Iterator.class.equals(multiType)) {
                                     returnValue = results.iterator();
                                 } else if (queryInfo.returnArrayType != null) {
@@ -933,7 +938,14 @@ public class RepositoryImpl<R> implements InvocationHandler {
                                 } else if (results.isEmpty()) {
                                     throw excEmptyResult(method);
                                 } else { // single result of other type
-                                    returnValue = oneResult(queryInfo, results);
+                                    if (Iterable.class.isAssignableFrom(singleType) &&
+                                        !(results.get(0) instanceof Iterable))
+                                        // workaround for EclipseLink wrongly returning
+                                        // ElementCollection as separate individual elements
+                                        // as shown in #30575
+                                        returnValue = results;
+                                    else
+                                        returnValue = oneResult(queryInfo, results);
                                     if (returnValue != null &&
                                         !singleType.isAssignableFrom(returnValue.getClass()))
                                         returnValue = queryInfo.convert(returnValue,
