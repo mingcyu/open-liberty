@@ -246,6 +246,10 @@ public interface Primes {
     @OrderBy("name")
     Page<Prime> findByRomanNumeralStartsWithAndNumberIdLessThan(String prefix, long max, PageRequest pagination);
 
+    @OrderBy(ID)
+    Stream<Prime> findByRomanNumeralSymbolsContainsAndNumberIdLessThan(String symbol,
+                                                                       long max);
+
     @Find
     Prime findFirst(Sort<Prime> sort, Limit limitOf1);
 

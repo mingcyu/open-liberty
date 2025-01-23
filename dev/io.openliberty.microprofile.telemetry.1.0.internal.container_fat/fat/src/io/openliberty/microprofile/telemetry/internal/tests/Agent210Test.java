@@ -53,7 +53,6 @@ import componenttest.annotation.MaximumJavaLevel;
 import componenttest.annotation.Server;
 import componenttest.containers.SimpleLogConsumer;
 import componenttest.custom.junit.runner.FATRunner;
-import componenttest.custom.junit.runner.RepeatTestFilter;
 import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.HttpRequest;
@@ -171,8 +170,8 @@ public class Agent210Test {
 
         Span span = findOneFrom(spans, hasNoParent());
 
-        if (RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL20_ID)) {
-            assertThat(span, JaegerSpanMatcher.isSpan().withTraceId(traceId)
+        if (TelemetryActions.mpTelemetry20EE7orEE8IsActive()) {
+                        assertThat(span, JaegerSpanMatcher.isSpan().withTraceId(traceId)
                                               .withAttribute(SemanticAttributes.HTTP_ROUTE, "/agentTest")
                                               .withAttribute(SemanticAttributes.HTTP_REQUEST_METHOD, "GET"));
         } else {
@@ -268,8 +267,7 @@ public class Agent210Test {
         String traceId = request.run(String.class);
         traceIdsUsed.add(traceId);
 
-        if (RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL20_ID)) {
-
+        if (TelemetryActions.mpTelemetry20EE7orEE8IsActive()) {
             /*
              * JavaAgent 1.29 with MP7 and MP8 does not create the extra span for withSpan annotations (BUG)
              */
@@ -309,8 +307,7 @@ public class Agent210Test {
         String traceId = request.run(String.class);
         traceIdsUsed.add(traceId);
 
-        if (RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL20_ID)) {
-
+        if (TelemetryActions.mpTelemetry20EE7orEE8IsActive()) {
             /*
              * JavaAgent 1.29 with MP7 and MP8 does not create the extra span for withSpan annotations (BUG)
              */

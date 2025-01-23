@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -25,7 +25,7 @@ task assembleTestContainerData(type: JavaExec) {
         !isAutomatedBuild
     }
     
-    // Setup environment to mock external state
+    // Use ArtifactoryMirrorSubstitutor to generate images file
     environment "TESTCONTAINERS_IMAGE_SUBSTITUTOR", "componenttest.containers.ArtifactoryMirrorSubstitutor"
     
     classpath = configurations.runtime.plus(sourceSets.main.runtimeClasspath)
@@ -34,12 +34,11 @@ task assembleTestContainerData(type: JavaExec) {
 }
 
 task generateCustomImages(type: JavaExec) {
-    onlyIf { // Prototype - should never be run
-        false
-    }
-    
-    // Ensure cache has been generated
-    dependsOn assembleTestContainerData
+    // TODO If artifactory is available then use it for substitution
+//    if ( gradle.userProps.containsKey("artifactory.docker.server") ) {
+//        environment "TESTCONTAINERS_IMAGE_SUBSTITUTOR", "componenttest.containers.ArtifactoryMirrorSubstitutor"
+//        environment "IMAGE_NAME_PREFIX", gradle.userProps.getProperty("artifactory.docker.server")
+//    }
     
     classpath = configurations.runtime.plus(sourceSets.main.runtimeClasspath)
     main = "io.openliberty.org.testcontainers.generate.CustomImages"

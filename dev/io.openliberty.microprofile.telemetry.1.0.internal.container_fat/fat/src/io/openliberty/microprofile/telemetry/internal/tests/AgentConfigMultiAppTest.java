@@ -130,9 +130,8 @@ public class AgentConfigMultiAppTest {
     }
 
     @Test
-    // Skipping for MP 5.0 and 6.1 as JavaAgent 1.29 is sometimes successful and sometimes fails (possible classLoader issue in JavaAgent (BUG))
-    @SkipForRepeat({ TelemetryActions.MP50_MPTEL11_ID, MicroProfileActions.MP61_ID, TelemetryActions.MP50_MPTEL20_ID, MicroProfileActions.MP70_EE10_ID,
-                     MicroProfileActions.MP70_EE11_ID })
+    // Skipping for MP 5.0, 6.1 and 7.0 as JavaAgent 1.29 is sometimes successful and sometimes fails (possible classLoader issue in JavaAgent (BUG))
+    @SkipForRepeat({ TelemetryActions.MP50_MPTEL11_ID, MicroProfileActions.MP61_ID, TelemetryActions.MP50_MPTEL20_ID, MicroProfileActions.MP70_EE10_ID, MicroProfileActions.MP70_EE11_ID })
     public void testAgentMultiApp() throws Exception {
         PropertiesAsset app1Config = new PropertiesAsset().addProperty("otel.service.name", "multi-app-1");
         WebArchive app1 = ShrinkWrap.create(WebArchive.class, "multiApp1.war")
@@ -170,8 +169,7 @@ public class AgentConfigMultiAppTest {
         if (RepeatTestFilter.isRepeatActionActive(MicroProfileActions.MP60_ID)) {
             // MP6.0 uses JavaAgent 1.19 therefore the internal span is not created
             assertThat(serverSpan, hasName("/multiApp1/"));
-        } else if (RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL11_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL11_ID)
-                   || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL20_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID)) {
+        } else if (TelemetryActions.EE7orEE8Mp20IsActive()) {
             assertThat(serverSpan, hasName("GET /multiApp1"));
             assertThat(serverSpan, JaegerSpanMatcher.isSpan().withTraceId(traceId)
                                                     .withAttribute(SemanticAttributes.HTTP_ROUTE, "/multiApp1")
@@ -210,8 +208,7 @@ public class AgentConfigMultiAppTest {
                                                      .withAttribute(SemanticAttributes.HTTP_ROUTE, "/multiApp2/")
                                                      .withAttribute(SemanticAttributes.HTTP_TARGET, "/multiApp2")
                                                      .withAttribute(SemanticAttributes.HTTP_METHOD, "GET"));
-        } else if (RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL11_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL11_ID)
-                   || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP41_MPTEL20_ID) || RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID)) {
+        } else if (TelemetryActions.EE7orEE8Mp20IsActive()) {
             assertThat(serverSpan2, hasName("GET /multiApp2"));
             assertThat(serverSpan2, JaegerSpanMatcher.isSpan().withTraceId(traceId2)
                                                      .withAttribute(SemanticAttributes.HTTP_ROUTE, "/multiApp2")

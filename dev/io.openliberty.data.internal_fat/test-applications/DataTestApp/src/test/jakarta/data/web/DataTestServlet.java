@@ -1224,6 +1224,19 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Query-by-Method-Name query with a Contains restriction applied to an
+     * ElementCollection.
+     */
+    @Test
+    public void testElementCollectionContains() {
+        assertEquals(List.of(5L, 7L, 17L, 37L, 47L),
+                     primes.findByRomanNumeralSymbolsContainsAndNumberIdLessThan("V",
+                                                                                 50)
+                                     .map(prime -> prime.numberId)
+                                     .collect(Collectors.toList()));
+    }
+
+    /**
      * Unannotated entity with an attribute that is an embeddable type.
      */
     @SkipIfSysProp(DB_Postgres) //Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28380
