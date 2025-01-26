@@ -25,25 +25,29 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import com.ibm.tx.jta.ut.util.LastingXAResourceImpl;
 import com.ibm.websphere.simplicity.ShrinkHelper;
+import com.ibm.websphere.simplicity.config.ConfigElementList;
+import com.ibm.websphere.simplicity.config.DataSource;
+import com.ibm.websphere.simplicity.config.ServerConfiguration;
+import com.ibm.websphere.simplicity.config.Transaction;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.transaction.fat.util.FATUtils;
 import com.ibm.ws.transaction.fat.util.SetupRunner;
 import com.ibm.ws.transaction.fat.util.TxFATServletClient;
 import com.ibm.ws.transaction.fat.util.TxTestContainerSuite;
 
-import componenttest.annotation.AllowedFFDC;
+import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.Server;
-import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.database.container.DatabaseContainerType;
 import componenttest.topology.database.container.DatabaseContainerUtil;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
-import web.AuthServlet;
 
 @RunWith(FATRunner.class)
 public class ContainerAuthTest extends FATServletClient {
     private static final Class<?> c = ContainerAuthTest.class;
+
+    private static String CONFIGURED_MARKER = "ContainerAuthData is configured";
 
     // Move to TxFATServletClient
     protected LibertyServer[] serversToCleanup;
@@ -84,20 +88,16 @@ public class ContainerAuthTest extends FATServletClient {
     public static final String SERVLET_NAME = APP_NAME + "/AuthServlet";
 
     @Server("containerAuth")
-    @TestServlet(servlet = AuthServlet.class, contextRoot = APP_NAME)
-    public static LibertyServer serverConAuth;
+    public static LibertyServer conAuth;
 
     @Server("containerAuthBadUser")
-    @TestServlet(servlet = AuthServlet.class, contextRoot = APP_NAME)
-    public static LibertyServer serverConAuthBadUser;
+    public static LibertyServer conAuthBadUser;
 
     @Server("containerAuthEmbed")
-    @TestServlet(servlet = AuthServlet.class, contextRoot = APP_NAME)
-    public static LibertyServer serverEmbed;
+    public static LibertyServer conAuthEmbed;
 
     @Server("containerAuthEmbedBadUser")
-    @TestServlet(servlet = AuthServlet.class, contextRoot = APP_NAME)
-    public static LibertyServer serverEmbedBadUser;
+    public static LibertyServer conAuthEmbedBadUser;
 
     private static ShrinkHelper.DeployOptions[] NO_DEPLOY_OPTIONS = new ShrinkHelper.DeployOptions[] {};
 
@@ -113,10 +113,10 @@ public class ContainerAuthTest extends FATServletClient {
         Log.info(c, "init", "BeforeClass");
 
         final WebArchive app = ShrinkHelper.buildDefaultApp(APP_NAME, "web.*");
-        ShrinkHelper.exportAppToServer(serverConAuth, app, NO_DEPLOY_OPTIONS);
-        ShrinkHelper.exportAppToServer(serverConAuthBadUser, app, NO_DEPLOY_OPTIONS);
-        ShrinkHelper.exportAppToServer(serverEmbed, app, NO_DEPLOY_OPTIONS);
-        ShrinkHelper.exportAppToServer(serverEmbedBadUser, app, NO_DEPLOY_OPTIONS);
+        ShrinkHelper.exportAppToServer(conAuth, app, NO_DEPLOY_OPTIONS);
+        ShrinkHelper.exportAppToServer(conAuthBadUser, app, NO_DEPLOY_OPTIONS);
+        ShrinkHelper.exportAppToServer(conAuthEmbed, app, NO_DEPLOY_OPTIONS);
+        ShrinkHelper.exportAppToServer(conAuthEmbedBadUser, app, NO_DEPLOY_OPTIONS);
     }
 
     public static void setUp(LibertyServer server) throws Exception {
@@ -143,82 +143,118 @@ public class ContainerAuthTest extends FATServletClient {
     }
 
     @Test
-    @AllowedFFDC(value = { "javax.resource.spi.SecurityException", "com.ibm.ws.recoverylog.spi.InternalLogException",
-                           "javax.resource.spi.ResourceAllocationException" })
-    public void testContainerAuth() throws Exception {
+    public void testDynamicContainerAuth() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { serverConAuth };
+        serversToCleanup = new LibertyServer[] { conAuth };
 
-        // Start serverConAuth
-        FATUtils.startServers(runner, serverConAuth);
+        FATUtils.startServers(runner, conAuth);
 
-        // Check for key string to see whether it succeeded
-        String configStrRestart = serverConAuth.waitForStringInTrace("ContainerAuthData is configured");
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", configStrRestart);
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
+
         // Do a little tx work
-        runTest(serverConAuth, SERVLET_NAME, "testUserTranLookup");
+        runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
+
+        // Update server.xml to use a different authData
+        conAuth.setMarkToEndOfLog();
+        ServerConfiguration serverConfig = conAuth.getServerConfiguration();
+        DataSource tranlogDataSource = serverConfig.getDataSources().getById("tranlogDataSource");
+        tranlogDataSource.setContainerAuthDataRef("auth3");
+        conAuth.updateServerConfiguration(serverConfig);
+        conAuth.waitForStringInLog("CWWKZ0003I: The application " + APP_NAME + " updated in");
+
+        // Do a little more tx work
+        runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
     }
 
     @Test
-    @AllowedFFDC(value = { "javax.resource.spi.SecurityException", "com.ibm.ws.recoverylog.spi.InternalLogException",
-                           "javax.resource.spi.ResourceAllocationException" })
+    public void testDynamicContainerAuthEmbed() throws Exception {
+
+        serversToCleanup = new LibertyServer[] { conAuthEmbed };
+
+        FATUtils.startServers(runner, conAuthEmbed);
+
+        // There should be a match so fail if there is not.
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
+
+        // Do a little tx work
+        runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
+
+        // Update server.xml to use a different authData
+        conAuthEmbed.setMarkToEndOfLog();
+        ServerConfiguration serverConfig = conAuthEmbed.getServerConfiguration();
+        Transaction transaction = serverConfig.getTransaction();
+        ConfigElementList<DataSource> tranlogDataSources = transaction.getDataSources();
+        tranlogDataSources.get(0).setContainerAuthDataRef("auth3");
+        conAuthEmbed.updateServerConfiguration(serverConfig);
+        conAuthEmbed.waitForStringInLog("CWWKZ0003I: The application " + APP_NAME + " updated in");
+
+        // Do a little more tx work
+        runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
+    }
+
+    @Test
+    public void testContainerAuth() throws Exception {
+
+        serversToCleanup = new LibertyServer[] { conAuth };
+
+        FATUtils.startServers(runner, conAuth);
+
+        // There should be a match so fail if there is not.
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
+
+        // Do a little tx work
+        runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
+    }
+
+    @Test
+    @ExpectedFFDC(value = { "javax.resource.spi.SecurityException", "javax.resource.spi.ResourceAllocationException" })
     public void testContainerAuthBadUser() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { serverConAuthBadUser };
+        serversToCleanup = new LibertyServer[] { conAuthBadUser };
 
-        // Start serverConAuthBadUser
-        FATUtils.startServers(runner, serverConAuthBadUser);
+        FATUtils.startServers(runner, conAuthBadUser);
 
-        // Server appears to have started ok. Check for key string to see whether recovery has succeeded
-        String configStrRestart = serverConAuthBadUser.waitForStringInTrace("ContainerAuthData is configured");
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", configStrRestart);
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuthBadUser.waitForStringInTrace(CONFIGURED_MARKER));
+
         // Do a little tx work
-        runTest(serverConAuthBadUser, SERVLET_NAME, "testUserTranLookup");
+        runTest(conAuthBadUser, SERVLET_NAME, "testUserTranLookup");
 
         // Container authentication is configured but to an invalid user name. The recovery log should fail.
-        String logFailStr = serverConAuthBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
+        String logFailStr = conAuthBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
         assertNotNull("Recovery log did not fail", logFailStr);
     }
 
     @Test
-    @AllowedFFDC(value = { "javax.resource.spi.SecurityException", "com.ibm.ws.recoverylog.spi.InternalLogException",
-                           "javax.resource.spi.ResourceAllocationException" })
     public void testContainerAuthEmbed() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { serverEmbed };
+        serversToCleanup = new LibertyServer[] { conAuthEmbed };
 
-        // Start serverEmbed
-        FATUtils.startServers(runner, serverEmbed);
-        // Check for key string to see whether it succeeded
-        String configStrRestart = serverEmbed.waitForStringInTrace("ContainerAuthData is configured");
+        FATUtils.startServers(runner, conAuthEmbed);
+
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", configStrRestart);
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
-        runTest(serverEmbed, SERVLET_NAME, "testUserTranLookup");
+        runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
     }
 
     @Test
-    @AllowedFFDC(value = { "javax.resource.spi.SecurityException", "com.ibm.ws.recoverylog.spi.InternalLogException",
-                           "javax.resource.spi.ResourceAllocationException" })
+    @ExpectedFFDC(value = { "javax.resource.spi.SecurityException", "javax.resource.spi.ResourceAllocationException" })
     public void testContainerAuthEmbedBadUser() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { serverEmbedBadUser };
+        serversToCleanup = new LibertyServer[] { conAuthEmbedBadUser };
 
-        // Start serverEmbedBadUser
-        FATUtils.startServers(runner, serverEmbedBadUser);
-        // Check for key string to see whether it succeeded
-        String configStrRestart = serverEmbedBadUser.waitForStringInTrace("ContainerAuthData is configured");
-        // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", configStrRestart);
+        FATUtils.startServers(runner, conAuthEmbedBadUser);
+
+        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbedBadUser.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
-        runTest(serverEmbedBadUser, SERVLET_NAME, "testUserTranLookup");
+        runTest(conAuthEmbedBadUser, SERVLET_NAME, "testUserTranLookup");
 
         // Container authentication is configured but to an invalid user name. The recovery log should fail.
-        String logFailStr = serverEmbedBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
+        String logFailStr = conAuthEmbedBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
         assertNotNull("Recovery log did not fail", logFailStr);
     }
 }
