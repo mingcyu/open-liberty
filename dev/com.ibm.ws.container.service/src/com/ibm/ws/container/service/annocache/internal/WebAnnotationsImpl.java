@@ -30,6 +30,7 @@ import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.wsspi.adaptable.module.Container;
+import com.ibm.wsspi.adaptable.module.Entry;
 import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
@@ -265,8 +266,13 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         //TODO property name, should it be a server.xml property instead, etc. Talk with Tom
         if (scanEarLibs) {
             for (Container c : earLibs) {
-                if (!addContainerClassSource(c.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
-                    return; // FFDC in 'addContainerClassSource'
+                try {
+                    Entry entry = c.adapt(Entry.class);
+                    if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
+                        return; // FFDC in 'addContainerClassSource'
+                    }
+                } catch (UnableToAdaptException e) {
+                    return; //TODO check this with Tom
                 }
             }
         }

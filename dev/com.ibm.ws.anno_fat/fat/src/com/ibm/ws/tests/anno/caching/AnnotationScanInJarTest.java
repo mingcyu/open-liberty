@@ -95,6 +95,9 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		
 		assertTrue("Did not find \"onStartup method in war file\" in " + allOutput, allOutput.contains("onStartup method in war file"));
 		assertTrue("Did not find \"onStartup method found via jar file\" in " + allOutput, allOutput.contains("onStartup method found via jar file"));
+		
+		//Since it checks both logs and traces it will find each twice.
+		assertTrue("Found too many entries in the logs. Expected 4 Found " + matching.size() + " output: " + allOutput, matching.size() == 4);
 	}
 
 
