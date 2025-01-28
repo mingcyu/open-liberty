@@ -31,15 +31,6 @@ task copyCommonFiles (dependsOn: [':com.ibm.ws.transaction.containerAuth_fat.der
   }
 }
 
-task opyCommonFiles {
-  doLast {
-    copy {
-      from project(':com.ibm.ws.transaction.containerAuth_fat.derby').file('publish')
-      into new File('publish')
-    }
-  }
-}
-
 clean.doLast {
   if (file('build').exists()){
     file('build').deleteDir()
