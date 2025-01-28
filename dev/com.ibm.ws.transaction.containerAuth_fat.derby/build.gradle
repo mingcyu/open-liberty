@@ -15,14 +15,6 @@ dependencies {
                project(':io.openliberty.org.apache.commons.logging')
 }
 
-File sharedDir = new File(autoFvtDir, 'publish/shared/resources')
-
 addRequiredLibraries.dependsOn copyJdbcDrivers
 addRequiredLibraries.dependsOn addJakartaTransformer
 addRequiredLibraries.dependsOn copyTestContainers
-
-clean.doLast {
-  if (file('build').exists()){
-    file('build').deleteDir()
-  }
-}
