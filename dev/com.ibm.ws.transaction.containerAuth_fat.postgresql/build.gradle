@@ -11,12 +11,12 @@
 
 apply from: '../com.ibm.ws.transaction.containerAuth_fat.derby/common.gradle'
 
-dependencies {
+dependencies  {
   requiredLibs project(":com.ibm.ws.transaction.fat.util"),
                project(":com.ibm.ws.tx.embeddable"),
+               project(":com.ibm.ws.transaction.containerAuth_fat.derby"),
                project(':io.openliberty.org.apache.commons.logging')
 }
 
-addRequiredLibraries.dependsOn copyJdbcDrivers
-addRequiredLibraries.dependsOn addJakartaTransformer
-addRequiredLibraries.dependsOn copyTestContainers
+autoFVT.dependsOn copyCommonFiles
+autoFVT.dependsOn copyTestApps

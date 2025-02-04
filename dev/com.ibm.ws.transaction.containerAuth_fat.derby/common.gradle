@@ -37,4 +37,6 @@ clean.doLast {
   }
 }
 
+addRequiredLibraries.dependsOn copyJdbcDrivers
 addRequiredLibraries.dependsOn addJakartaTransformer
+addRequiredLibraries.dependsOn copyTestContainers
