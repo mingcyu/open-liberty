@@ -8,8 +8,8 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-
 apply from: '../com.ibm.ws.transaction.containerAuth_fat.derby/common.gradle'
+apply from: '../com.ibm.ws.transaction.containerAuth_fat.derby/copy.gradle'
 
 dependencies  {
   requiredLibs project(":com.ibm.ws.transaction.fat.util"),
@@ -17,6 +17,3 @@ dependencies  {
                project(":com.ibm.ws.transaction.containerAuth_fat.derby"),
                project(':io.openliberty.org.apache.commons.logging')
 }
-
-autoFVT.dependsOn copyCommonFiles
-autoFVT.dependsOn copyTestApps
