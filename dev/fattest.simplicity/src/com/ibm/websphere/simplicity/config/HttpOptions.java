@@ -16,15 +16,15 @@ import javax.xml.bind.annotation.XmlAttribute;
  */
 public class HttpOptions extends ConfigElement {
 
-    private Boolean persistOnError;
+    private Boolean ignoreWriteAfterCommit;
 
-    public Boolean isPersistOnError() {
-        return this.persistOnError;
+    public Boolean isIgnoreWriteAfterCommit() {
+        return this.ignoreWriteAfterCommit;
     }
 
     @XmlAttribute
-    public void setPersistOnError(Boolean persistOnError) {
-        this.persistOnError = persistOnError;
+    public void setIgnoreWriteAfterCommit(Boolean ignoreWriteAfterCommit) {
+        this.ignoreWriteAfterCommit = ignoreWriteAfterCommit;
     }
 
     @Override
@@ -32,8 +32,8 @@ public class HttpOptions extends ConfigElement {
         StringBuffer buf = new StringBuffer("httpOptions{");
         if (getId() != null)
             buf.append("id=\"" + this.getId() + "\" ");
-        if (persistOnError != null)
-            buf.append("persistOnError=\"" + persistOnError + "\" ");
+        if (ignoreWriteAfterCommit != null)
+            buf.append("ignoreWriteAfterCommit=\"" + ignoreWriteAfterCommit + "\" ");
         buf.append("}");
         return buf.toString();
     }
