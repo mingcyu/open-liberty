@@ -11,24 +11,26 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 
-autoFVT.doLast {
-  copy {
-    from project(':com.ibm.ws.transaction.containerAuth_fat.derby').autoFvtDir
-    into autoFvtDir
-    include 'test-applications/**'
-  }
-}
-
 task copyCommonFiles {
   doLast {
     copy {
-      from project(':com.ibm.ws.transaction.containerAuth_fat.derby').file('publish')
+      from project(':io.openliberty.transaction.containerAuth_fat.derby').file('publish')
       into new File('publish')
+    }
+    copy {
+      from project(':io.openliberty.transaction.containerAuth_fat.derby').file('test-applications')
+      into new File('test-applications')
     }
   }
 }
 
-jar.dependsOn copyCommonFiles
-autoFVT.dependsOn copyCommonFiles
+clean.doLast {
+  if (file('publish').exists()){
+    file('publish').deleteDir()
+  }
+  if (file('test-applications').exists()){
+    file('test-applications').deleteDir()
+  }
+}
+
 addRequiredLibraries.dependsOn copyCommonFiles
-autoFVT.dependsOn project(':com.ibm.ws.transaction.containerAuth_fat.derby').autoFVT
