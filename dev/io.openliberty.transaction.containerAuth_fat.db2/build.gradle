@@ -8,12 +8,12 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-apply from: '../com.ibm.ws.transaction.containerAuth_fat.derby/common.gradle'
-apply from: '../com.ibm.ws.transaction.containerAuth_fat.derby/copy.gradle'
+apply from: '../io.openliberty.transaction.containerAuth_fat.derby/common.gradle'
+apply from: '../io.openliberty.transaction.containerAuth_fat.derby/copy.gradle'
 
 dependencies  {
   requiredLibs project(":com.ibm.ws.transaction.fat.util"),
                project(":com.ibm.ws.tx.embeddable"),
-               project(":com.ibm.ws.transaction.containerAuth_fat.derby"),
+               project(":io.openliberty.transaction.containerAuth_fat.derby"),
                project(':io.openliberty.org.apache.commons.logging')
 }
