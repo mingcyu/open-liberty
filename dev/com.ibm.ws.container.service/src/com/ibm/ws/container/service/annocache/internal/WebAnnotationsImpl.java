@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.ibm.websphere.ras.Tr;
@@ -316,7 +317,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
 
         ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
-        List<Container> earLibs = appClassesInfo.getLibraryClassesContainerInfo().stream().map(ContainerInfo::getContainer).collect(Collectors.toList());
+        List<Container> earLibs = appClassesInfo.getLibraryClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).collect(Collectors.toList());
 
         return earLibs;
     }
