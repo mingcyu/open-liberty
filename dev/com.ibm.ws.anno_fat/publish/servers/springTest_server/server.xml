@@ -9,4 +9,16 @@
     </featureManager>
     
     <javaPermission className="java.security.AllPermission"  name="*" actions="*" />
+    
+    <library id="sharedlib">
+        <fileset dir="${server.config.dir}" includes="sharedLib.jar" />
+    </library>
+
+    <application location="springTest.ear">
+        <classloader commonLibraryRef="sharedlib" />
+    </application>
+
+    <logging traceSpecification="com.ibm.ws.library.internal.SharedLibraryImpl=all"/>
+
+    
 </server>

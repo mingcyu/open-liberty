@@ -58,10 +58,11 @@ public class AnnotationScanInJarTest extends FATServletClient {
 
 		String userDir = System.getProperty("user.dir"); //ends with: com.ibm.ws.anno_fat/build/libs/autoFVT
 		String springDir = userDir + "/publish/shared/resources/spring/";
-
-
 		
 		JavaArchive jar = ShrinkWrap.create(JavaArchive.class, APP_NAME + ".jar")
+				.addPackages(true, JarInit.class.getPackage());
+		
+		JavaArchive sharedLib = ShrinkWrap.create(JavaArchive.class, "sharedLib.jar")
 				.addPackages(true, JarInit.class.getPackage());
 
 		EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class, APP_NAME + ".ear")
@@ -75,8 +76,9 @@ public class AnnotationScanInJarTest extends FATServletClient {
 				}
 			}
 		}
-
-		ShrinkHelper.exportDropinAppToServer(server, ear, DeployOptions.SERVER_ONLY);
+		
+		ShrinkHelper.exportToServer(server, "sharedLib.jar", sharedLib);
+		ShrinkHelper.exportAppToServer(server, ear, DeployOptions.SERVER_ONLY);
 
 		server.startServer();
 	}

@@ -27,7 +27,8 @@ src: \
     test-applications/LooseConfig/LooseServlet2.jar/src, \
     test-applications/LooseConfig/LooseServlet3.jar/src, \
     test-applications/SpringAnnoTest/SpringAnnoTest.war/src, \
-    test-applications/SpringAnnoTest/SpringAnnoTest.jar/src
+    test-applications/SpringAnnoTest/SpringAnnoTest.jar/src, \
+    test-applications/SpringAnnoTest/SpringAnnoTestSharedLib.jar/src
 
 fat.project: true
 
