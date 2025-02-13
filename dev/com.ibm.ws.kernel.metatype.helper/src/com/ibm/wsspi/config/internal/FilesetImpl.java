@@ -368,6 +368,35 @@ public class FilesetImpl implements Fileset, FileMonitor, ServicePropertySupplie
             }
         }
 
+       public boolean hasFilters() {
+            return !includes.isEmpty() && excludes.isEmpty();
+        }
+
+        public String getHumanReadableSummary() {
+            StringBuilder sb = new StringBuilder();
+
+            if (!includes.isEmpty()) {
+                sb.append("With include filters: ");
+                for (Pattern p : includes) {
+                    sb.append(System.lineSeparator());
+                    sb.append(p.toString());
+                }
+                sb.append(System.lineSeparator());
+            }
+
+            if (!excludes.isEmpty()) {
+                sb.append("With exclude filters: ");
+                for (Pattern p : excludes) {
+                    sb.append(System.lineSeparator());
+                    sb.append(p.toString());
+                }
+                sb.append(System.lineSeparator());
+            }
+
+            return sb.toString();
+        }
+
+
         private boolean accept(String fullname) {
             boolean accept = false;
 
