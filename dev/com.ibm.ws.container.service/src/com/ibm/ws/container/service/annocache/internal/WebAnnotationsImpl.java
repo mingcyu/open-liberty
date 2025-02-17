@@ -16,10 +16,12 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ibm.websphere.ras.Tr;
@@ -27,6 +29,7 @@ import com.ibm.ws.container.service.annocache.FragmentAnnotations;
 import com.ibm.ws.container.service.annocache.WebAnnotations;
 import com.ibm.ws.container.service.app.deploy.ApplicationClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ContainerInfo;
+import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
@@ -196,7 +199,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             return;
         }
 
-        List<Container> earLibs = scanEarLibs ? getEarLibs() : new ArrayList<Container>();
+        List<Container> earLibs = scanEarLibs ? getEarLibs() : new ArrayList<Container>(); //TODO replace scanEarLibs on next line
+        Set<Container> manifestClassPathLibs = scanEarLibs ? getManifestClassPathContainerInfo() : new HashSet<Container>();
 
         // The classes folder is processed as if it were a fragment item.
 
@@ -218,6 +222,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
 
             //Defensive programming to avoid duplicates
             earLibs.remove(nextContainer);
+            manifestClassPathLibs.remove(nextContainer);
 
             boolean nextIsMetadataComplete;
             ScanPolicy nextPolicy;
@@ -265,8 +270,20 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
 
         //TODO property name, should it be a server.xml property instead, etc. Talk with Tom
+        //TODO, two properties for the two for loops
         if (scanEarLibs) {
             for (Container c : earLibs) {
+                try {
+                    Entry entry = c.adapt(Entry.class);
+                    if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
+                        return; // FFDC in 'addContainerClassSource'
+                    }
+                } catch (UnableToAdaptException e) {
+                    return; //TODO check this with Tom
+                }
+            }
+
+            for (Container c : manifestClassPathLibs) {
                 try {
                     Entry entry = c.adapt(Entry.class);
                     if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
@@ -304,6 +321,30 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 return; // FFDC in 'addContainerClassSource'
             }
         }
+    }
+
+    private Set<Container> getManifestClassPathContainerInfo() {
+        Set<Container> foundContainers = new HashSet<Container>();
+
+        NonPersistentCache cache;
+        try {
+            cache = getAppContainer().adapt(NonPersistentCache.class);
+            // 'adapt' throws UnableToAdaptException
+        } catch (UnableToAdaptException e) {
+            return null; // FFDC
+        }
+        ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
+
+        for (ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo()) {
+            for (ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo()) {
+                if (containerInfo.getType() == ContainerInfo.Type.MANIFEST_CLASSPATH
+                    && containerInfo.getContainer() != null) {
+                    foundContainers.add(containerInfo.getContainer());
+                }
+            }
+        }
+
+        return foundContainers;
     }
 
     private List<Container> getEarLibs() {
