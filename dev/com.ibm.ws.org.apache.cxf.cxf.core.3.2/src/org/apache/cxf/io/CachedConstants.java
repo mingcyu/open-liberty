@@ -71,6 +71,16 @@ public final class CachedConstants {
     public static final String CIPHER_TRANSFORMATION_BUS_PROP =
         "bus.io.CachedOutputStream.CipherTransformation";
 
+    // Liberty change begin
+    /**
+     * The delay (in ms) for cleaning up unclosed {@code CachedOutputStream} instances. 30 minutes
+     * is specified by default, the minimum value is 2 seconds. If the value of the delay is set to
+     * 0 (or is negative), the cleaner will be deactivated.
+     */
+    public static final String CLEANER_DELAY_BUS_PROP =
+        "bus.io.CachedOutputStreamCleaner.Delay";
+    // Liberty change end
+    
     private CachedConstants() {
         // complete
     }
