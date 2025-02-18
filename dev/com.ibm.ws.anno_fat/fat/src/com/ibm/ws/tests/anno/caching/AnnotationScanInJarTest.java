@@ -1,15 +1,11 @@
 package com.ibm.ws.tests.anno.caching;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -33,6 +29,7 @@ import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
 import spring.test.init.jar.JarInit;
+import spring.test.init.manifest.ManifestInit;
 import spring.test.init.war.WebInit;
 
 @RunWith(FATRunner.class)
@@ -53,7 +50,9 @@ public class AnnotationScanInJarTest extends FATServletClient {
 	public static void setUp() throws Exception {
 
 		WebArchive war = ShrinkWrap.create(WebArchive.class, APP_NAME + ".war")
-				.addPackages(true, WebInit.class.getPackage())		
+				.addPackages(true, WebInit.class.getPackage())
+                .addAsManifestResource(new StringAsset("Manifest-Version: 1.0" + System.lineSeparator() +
+                		"Class-Path: manifestLib.jar" + System.lineSeparator()), "MANIFEST.MF") //The Class-Path will not be included without that trailing newline. See https://docs.oracle.com/javase/tutorial/deployment/jar/modman.html
 				.addAsWebInfResource(new StringAsset("logging.level.org.springframework.context.annotation=DEBUG"), "application.properties");
 
 		String userDir = System.getProperty("user.dir"); //ends with: com.ibm.ws.anno_fat/build/libs/autoFVT
@@ -64,9 +63,13 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		
 		JavaArchive sharedLib = ShrinkWrap.create(JavaArchive.class, "sharedLib.jar")
 				.addPackages(true, JarInit.class.getPackage());
+		
+       JavaArchive maifestJar = ShrinkWrap.create(JavaArchive.class, "manifestLib.jar")
+                   .addPackage(ManifestInit.class.getPackage());
 
 		EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class, APP_NAME + ".ear")
 				.addAsModule(war)
+				.addAsModule(maifestJar)
 				.addAsLibraries(jar);
 		
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(springDir), "*.jar")) {
@@ -97,9 +100,10 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		
 		assertTrue("Did not find \"onStartup method in war file\" in " + allOutput, allOutput.contains("onStartup method in war file"));
 		assertTrue("Did not find \"onStartup method found via jar file\" in " + allOutput, allOutput.contains("onStartup method found via jar file"));
+		assertTrue("Did not find \"onStartup method found via manifest lib file\" in " + allOutput, allOutput.contains("onStartup method found via manifest lib file"));
 		
 		//Since it checks both logs and traces it will find each twice.
-		assertTrue("Found too many entries in the logs. Expected 4 Found " + matching.size() + " output: " + allOutput, matching.size() == 4);
+		assertTrue("Found too many entries in the logs. Expected 6 Found " + matching.size() + " output: " + allOutput, matching.size() == 6);
 	}
 
 
