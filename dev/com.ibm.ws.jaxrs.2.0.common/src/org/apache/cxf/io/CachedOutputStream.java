@@ -17,11 +17,13 @@
  * under the License.
  */
 // https://github.com/apache/cxf/blob/3.1.x-fixes/core/src/main/java/org/apache/cxf/io/CachedOutputStream.java
+// Backport https://github.com/apache/cxf/pull/2048
 package org.apache.cxf.io;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -93,6 +95,7 @@ public class CachedOutputStream extends OutputStream {
     private List<CachedOutputStreamCallback> callbacks;
     
     private List<Object> streamList = new ArrayList<Object>();
+    private CachedOutputStreamCleaner cachedOutputStreamCleaner; // Liberty Change
 
     public CachedOutputStream() {
         this(defaultThreshold);
@@ -120,6 +123,8 @@ public class CachedOutputStream extends OutputStream {
             if (v != null) {
                 cipherTransformation = v;
             }
+            
+            cachedOutputStreamCleaner = b.getExtension(CachedOutputStreamCleaner.class); // Liberty Change
         }
     }
 
@@ -269,6 +274,13 @@ public class CachedOutputStream extends OutputStream {
                     }
                 } finally {
                     streamList.remove(currentStream);
+                    // Liberty Change Start
+                    // we are not backed by file anymore, unregister from the cleaner
+                    if (cachedOutputStreamCleaner != null) {
+                        cachedOutputStreamCleaner.unregister(currentStream);
+                        cachedOutputStreamCleaner.unregister(this);
+                    }
+                    // Liberty Change End
                     deleteTempFile();
                     inmem = true;
                 }
@@ -473,6 +485,11 @@ public class CachedOutputStream extends OutputStream {
             bout.writeTo(currentStream);
             inmem = false;
             streamList.add(currentStream);
+            // Liberty Change Start
+            if (cachedOutputStreamCleaner != null) {
+                cachedOutputStreamCleaner.register(this);
+            }
+            // Liberty Change End
         } catch (Exception ex) {
             //Could be IOException or SecurityException or other issues.
             //Don't care what, just keep it in memory.
@@ -504,6 +521,11 @@ public class CachedOutputStream extends OutputStream {
             try {
                 InputStream fileInputStream = new TransferableFileInputStream(tempFile);
                 streamList.add(fileInputStream);
+                // Liberty Change Start
+                if (cachedOutputStreamCleaner != null) {
+                    cachedOutputStreamCleaner.register(fileInputStream);
+                }
+                // Liberty Change End
                 if (cipherTransformation != null) {
                     fileInputStream = new CipherInputStream(fileInputStream, ciphers.getDecryptor()) {
                         boolean closed;
@@ -530,7 +552,7 @@ public class CachedOutputStream extends OutputStream {
             FileUtils.delete(file);
         }
     }
-    private boolean maybeDeleteTempFile(Object stream) {
+    private boolean maybeDeleteTempFile(Closeable stream) { // Liberty Change
         boolean postClosedInvoked = false;
         streamList.remove(stream);
         if (!inmem && tempFile != null && streamList.isEmpty() && allowDeleteOfFile) {
@@ -542,6 +564,11 @@ public class CachedOutputStream extends OutputStream {
                     //ignore
                 }
                 postClosedInvoked = true;
+                // Liberty Change Start
+                if (cachedOutputStreamCleaner != null) {
+                    cachedOutputStreamCleaner.unregister(this);
+                }
+                // Liberty Change End
             }
             deleteTempFile();
             currentStream = new LoadingByteArrayOutputStream(1024);
@@ -657,6 +684,11 @@ public class CachedOutputStream extends OutputStream {
             if (!closed) {
                 super.close();
                 maybeDeleteTempFile(this);
+                // Liberty Change Start
+                if (cachedOutputStreamCleaner != null) {
+                    cachedOutputStreamCleaner.unregister(this);
+                }
+                // Liberty Change End
             }
             closed = true;
         }
