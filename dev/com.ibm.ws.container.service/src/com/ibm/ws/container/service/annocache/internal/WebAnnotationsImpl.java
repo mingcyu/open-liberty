@@ -33,7 +33,6 @@ import com.ibm.ws.container.service.app.deploy.extended.LibraryContainerInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.wsspi.adaptable.module.Container;
-import com.ibm.wsspi.adaptable.module.Entry;
 import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
@@ -270,13 +269,10 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
 
         for (Container c : extraLibs) {
-            try {
-                Entry entry = c.adapt(Entry.class);
-                if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
-                    return; // FFDC in 'addContainerClassSource'
-                }
-            } catch (UnableToAdaptException e) {
-                return; //TODO check this with Tom
+            String physicalPath = c.getPhysicalPath();
+            physicalPath = physicalPath.substring(physicalPath.lastIndexOf("/") + 1);
+            if (!addContainerClassSource(physicalPath, c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
+                return; // FFDC in 'addContainerClassSource'
             }
         }
 
