@@ -30,6 +30,7 @@ import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
 import spring.test.init.jar.JarInit;
 import spring.test.init.manifest.ManifestInit;
+import spring.test.init.sharedlib.SharedLibInit;
 import spring.test.init.war.WebInit;
 
 @RunWith(FATRunner.class)
@@ -62,7 +63,7 @@ public class AnnotationScanInJarTest extends FATServletClient {
 				.addPackages(true, JarInit.class.getPackage());
 		
 		JavaArchive sharedLib = ShrinkWrap.create(JavaArchive.class, "sharedLib.jar")
-				.addPackages(true, JarInit.class.getPackage());
+				.addPackages(true, SharedLibInit.class.getPackage());
 		
        JavaArchive maifestJar = ShrinkWrap.create(JavaArchive.class, "manifestLib.jar")
                    .addPackage(ManifestInit.class.getPackage());
@@ -80,7 +81,7 @@ public class AnnotationScanInJarTest extends FATServletClient {
 			}
 		}
 		
-		ShrinkHelper.exportToServer(server, "sharedLib.jar", sharedLib);
+		ShrinkHelper.exportToServer(server, "libs", sharedLib);
 		ShrinkHelper.exportAppToServer(server, ear, DeployOptions.SERVER_ONLY);
 
 		server.startServer();
@@ -101,9 +102,10 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		assertTrue("Did not find \"onStartup method in war file\" in " + allOutput, allOutput.contains("onStartup method in war file"));
 		assertTrue("Did not find \"onStartup method found via jar file\" in " + allOutput, allOutput.contains("onStartup method found via jar file"));
 		assertTrue("Did not find \"onStartup method found via manifest lib file\" in " + allOutput, allOutput.contains("onStartup method found via manifest lib file"));
+		assertTrue("Did not find \"onStartup method found via shared library file\" in " + allOutput, allOutput.contains("onStartup method found via shared library file"));
 		
 		//Since it checks both logs and traces it will find each twice.
-		assertTrue("Found too many entries in the logs. Expected 6 Found " + matching.size() + " output: " + allOutput, matching.size() == 6);
+		assertTrue("Found too many entries in the logs. Expected 8 Found " + matching.size() + " output: " + allOutput, matching.size() == 8);
 	}
 
 
