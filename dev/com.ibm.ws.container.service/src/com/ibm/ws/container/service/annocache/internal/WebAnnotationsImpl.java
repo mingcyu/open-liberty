@@ -1,5 +1,5 @@
 /*******************************************************************************
-  * Copyright (c) 2012, 2019 IBM Corporation and others.
+ * Copyright (c) 2012, 2019 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -14,15 +14,12 @@ package com.ibm.ws.container.service.annocache.internal;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.ws.container.service.annocache.FragmentAnnotations;
@@ -31,6 +28,8 @@ import com.ibm.ws.container.service.app.deploy.ApplicationClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
+import com.ibm.ws.container.service.app.deploy.extended.LibraryClassesContainerInfo;
+import com.ibm.ws.container.service.app.deploy.extended.LibraryContainerInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.wsspi.adaptable.module.Container;
@@ -102,6 +101,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             return scanEarLibs;
         }
     });
+    private static final boolean scanManifestLibs = true;
+    private static final boolean scanSharedLibs = true;
 
     public WebAnnotationsImpl(
                               AnnotationsAdapterImpl annotationsAdapter,
@@ -199,8 +200,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             return;
         }
 
-        List<Container> earLibs = scanEarLibs ? getEarLibs() : new ArrayList<Container>(); //TODO replace scanEarLibs on next line
-        Set<Container> manifestClassPathLibs = scanEarLibs ? getManifestClassPathContainerInfo() : new HashSet<Container>();
+        //May be empty or missing entries if the relevant scan isn't enabled
+        List<Container> extraLibs = getLibsFromAppContainer();
 
         // The classes folder is processed as if it were a fragment item.
 
@@ -221,8 +222,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             Container nextContainer = nextFragment.getFragmentContainer();
 
             //Defensive programming to avoid duplicates
-            earLibs.remove(nextContainer);
-            manifestClassPathLibs.remove(nextContainer);
+            extraLibs.remove(nextContainer);
 
             boolean nextIsMetadataComplete;
             ScanPolicy nextPolicy;
@@ -269,29 +269,14 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             }
         }
 
-        //TODO property name, should it be a server.xml property instead, etc. Talk with Tom
-        //TODO, two properties for the two for loops
-        if (scanEarLibs) {
-            for (Container c : earLibs) {
-                try {
-                    Entry entry = c.adapt(Entry.class);
-                    if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
-                        return; // FFDC in 'addContainerClassSource'
-                    }
-                } catch (UnableToAdaptException e) {
-                    return; //TODO check this with Tom
+        for (Container c : extraLibs) {
+            try {
+                Entry entry = c.adapt(Entry.class);
+                if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
+                    return; // FFDC in 'addContainerClassSource'
                 }
-            }
-
-            for (Container c : manifestClassPathLibs) {
-                try {
-                    Entry entry = c.adapt(Entry.class);
-                    if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
-                        return; // FFDC in 'addContainerClassSource'
-                    }
-                } catch (UnableToAdaptException e) {
-                    return; //TODO check this with Tom
-                }
+            } catch (UnableToAdaptException e) {
+                return; //TODO check this with Tom
             }
         }
 
@@ -323,8 +308,15 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
     }
 
-    private Set<Container> getManifestClassPathContainerInfo() {
-        Set<Container> foundContainers = new HashSet<Container>();
+    private class LibaryRecord {
+        ;
+    }
+
+    private List<Container> getLibsFromAppContainer() {
+
+        List<Container> sharedLibraries = new LinkedList<Container>();
+        List<Container> manifestClasspathLibraries = new LinkedList<Container>();;
+        List<Container> earLibraries = new LinkedList<Container>();
 
         NonPersistentCache cache;
         try {
@@ -335,32 +327,37 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
         ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
 
-        for (ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo()) {
-            for (ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo()) {
-                if (containerInfo.getType() == ContainerInfo.Type.MANIFEST_CLASSPATH
-                    && containerInfo.getContainer() != null) {
-                    foundContainers.add(containerInfo.getContainer());
+        if (scanManifestLibs) {
+            for (ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo()) {
+                for (ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo()) {
+                    if (containerInfo.getType() == ContainerInfo.Type.MANIFEST_CLASSPATH
+                        && containerInfo.getContainer() != null) {
+                        manifestClasspathLibraries.add(containerInfo.getContainer());
+                    }
                 }
             }
         }
 
-        return foundContainers;
-    }
+        if (scanEarLibs || scanSharedLibs) {
+            for (ContainerInfo containerInfo : appClassesInfo.getLibraryClassesContainerInfo()) {
+                if (scanEarLibs && containerInfo.getType() == ContainerInfo.Type.EAR_LIB
+                    && containerInfo.getContainer() != null) {
+                    earLibraries.add(containerInfo.getContainer());
 
-    private List<Container> getEarLibs() {
-
-        NonPersistentCache cache;
-        try {
-            cache = getAppContainer().adapt(NonPersistentCache.class);
-            // 'adapt' throws UnableToAdaptException
-        } catch (UnableToAdaptException e) {
-            return null; // FFDC
+                } else if (scanSharedLibs && containerInfo instanceof LibraryClassesContainerInfo) {
+                    LibraryClassesContainerInfo libContainerInfo = (LibraryClassesContainerInfo) containerInfo;
+                    if (libContainerInfo.getLibraryType() == LibraryContainerInfo.LibraryType.COMMON_LIB) { //TODO, do we need this check?
+                        libContainerInfo.getClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).forEach(sharedLibraries::add);
+                    }
+                }
+            }
         }
 
-        ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
-        List<Container> earLibs = appClassesInfo.getLibraryClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).collect(Collectors.toList());
-
-        return earLibs;
+        List<Container> toReturn = new LinkedList<Container>(); //TODO, reread slack and ensure these are added in the right order
+        toReturn.addAll(manifestClasspathLibraries);
+        toReturn.addAll(sharedLibraries);
+        toReturn.addAll(earLibraries);
+        return toReturn;
     }
 
     //
