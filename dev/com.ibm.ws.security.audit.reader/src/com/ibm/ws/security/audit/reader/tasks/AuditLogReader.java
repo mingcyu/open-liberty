@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -240,7 +241,7 @@ public class AuditLogReader {
                     throw new Exception(ase);
                 }
 
-                byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes("UTF8"));
+                byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
 
                 byte[] sk = encryptedSignerSharedKey.getBytes();
                 String x = new String(sk);
@@ -282,7 +283,7 @@ public class AuditLogReader {
                     throw new Exception(aee);
                 }
 
-                byte[] yy = Base64Coder.base64Decode(encSharedKey.getBytes("UTF8"));
+                byte[] yy = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
                 byte[] sk = encSharedKey.getBytes();
                 String x = new String(sk);
                 byte[] decryptedSharedKey = ae.decryptSharedKey(yy, publicKey);
@@ -330,7 +331,7 @@ public class AuditLogReader {
                     throw new Exception(ase);
                 }
 
-                byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes("UTF8"));
+                byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
 
                 byte[] sk = encryptedSignerSharedKey.getBytes();
                 byte[] decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
@@ -361,7 +362,7 @@ public class AuditLogReader {
                 }
                 // Now that I have my key, decrypt the encrypted shared key
 
-                yy = Base64Coder.base64Decode(encSharedKey.getBytes("UTF8"));
+                yy = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
 
                 if (debugEnabled)
                     theLogger.fine("Was able to base64Decode the encrypted shared key");
@@ -495,14 +496,14 @@ public class AuditLogReader {
                         num_captured_records++;
                         auditRecord = "";
 
-                        byte[] bites = capturedRecord.getBytes("UTF8");
+                        byte[] bites = capturedRecord.getBytes(StandardCharsets.UTF_8);
 
                         if (bites.length % 4 != 0) {
                             if (debugEnabled)
                                 theLogger.fine("capturedRecord length: " + bites.length + " capturedRecord: " + capturedRecord);
                         }
 
-                        byte[] decodedRecord = Base64Coder.base64Decode(capturedRecord.getBytes("UTF8"));
+                        byte[] decodedRecord = Base64Coder.base64Decode(capturedRecord.getBytes(StandardCharsets.UTF_8));
 
                         if (signedLog && !encryptedLog) {
 
@@ -512,13 +513,13 @@ public class AuditLogReader {
 
                             byte[] verifiedRecord = verifyRecord(as, record, signature, decryptedSigningSharedKey);
 
-                            rec = new String(verifiedRecord);
+                            rec = new String(verifiedRecord, StandardCharsets.UTF_8);
 
                         } else if (!signedLog && encryptedLog) {
 
                             byte[] decryptedRecord = decryptRecord(ae, decodedRecord, decryptedSharedKey);
 
-                            rec = new String(decryptedRecord);
+                            rec = new String(decryptedRecord, StandardCharsets.UTF_8);
 
                         } else if (signedLog && encryptedLog) {
 
@@ -530,7 +531,7 @@ public class AuditLogReader {
 
                             byte[] verifiedDecryptedRecord = decryptRecord(ae, verifiedEncryptedRecord, decryptedSharedKey);
 
-                            rec = new String(verifiedDecryptedRecord);
+                            rec = new String(verifiedDecryptedRecord, StandardCharsets.UTF_8);
 
                         }
 
