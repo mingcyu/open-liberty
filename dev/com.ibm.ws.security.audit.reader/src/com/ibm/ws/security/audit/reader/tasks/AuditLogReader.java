@@ -59,6 +59,8 @@ public class AuditLogReader {
     private static String encSharedKey = new String();
     private static boolean debugEnabled = false;
 
+    private static int num_captured_records = 0;
+
     public static String getReport(String fileName, String outputLocation,
                                    String encrypted, String encKeyStoreLoc, String encKeyStorePassword, String encKeyStoreType,
                                    String signed, String signingKeyStoreLoc, String signingKeyStorePassword, String signingKeyStoreType,
@@ -242,8 +244,8 @@ public class AuditLogReader {
 
                 byte[] sk = encryptedSignerSharedKey.getBytes();
                 String x = new String(sk);
-                byte[] decryptedSharedKey = as.decryptSharedKey(yy, publicKey);
-                String z = new String(decryptedSharedKey);
+                byte[] decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
+                String z = new String(decryptedSigningSharedKey);
 
                 // Read our signed audit records
                 try {
@@ -252,7 +254,7 @@ public class AuditLogReader {
                     throw fnf;
                 }
 
-                processRecord(file_reader, signedLog, encryptedLog, null, null);
+                processRecord(file_reader, signedLog, encryptedLog, null, decryptedSigningSharedKey, null, as);
 
             } // if (signedLog && !encryptedLog)
 
@@ -293,7 +295,7 @@ public class AuditLogReader {
                     throw fnf;
                 }
 
-                processRecord(file_reader, signedLog, encryptedLog, decryptedSharedKey, ae);
+                processRecord(file_reader, signedLog, encryptedLog, decryptedSharedKey, null, ae, null);
 
             }
 
@@ -331,7 +333,7 @@ public class AuditLogReader {
                 byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes("UTF8"));
 
                 byte[] sk = encryptedSignerSharedKey.getBytes();
-                byte[] decryptedSignedSharedKey = as.decryptSharedKey(yy, publicKey);
+                byte[] decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
 
                 // Let's get our public key for our encrypted records
                 try {
@@ -383,7 +385,7 @@ public class AuditLogReader {
                     throw fnf;
                 }
 
-                processRecord(file_reader, signedLog, encryptedLog, decryptedSharedKey, ae);
+                processRecord(file_reader, signedLog, encryptedLog, decryptedSharedKey, decryptedSigningSharedKey, ae, as);
             }
 
             if (!encryptedLog && !signedLog) {
@@ -436,13 +438,13 @@ public class AuditLogReader {
     }
 
     public static void processRecord(FileReader file_reader, boolean signedLog, boolean encryptedLog,
-                                     byte[] decryptedSharedKey, AuditEncryptionImpl ae) throws Exception {
+                                     byte[] decryptedSharedKey, byte[] decryptedSigningSharedKey, AuditEncryptionImpl ae, AuditSigningImpl as) throws Exception {
 
         int inByte;
         String auditRecord = new String();
         String capturedRecord = new String();
         boolean startOfRecord = false;
-        int num_captured_records = 0;
+        num_captured_records = 0;
         String rec = null;
         if (debugEnabled) {
             theLogger.fine("processRecord: decryptedSharedKey: " + decryptedSharedKey);
@@ -504,53 +506,32 @@ public class AuditLogReader {
 
                         if (signedLog && !encryptedLog) {
 
-                            // If the record is just signed and not encrypted, throw away the signature and process
-                            // the record itself
-                            rec = new String(decodedRecord);
-                            int index3 = rec.indexOf(signatureOpenTag);
-                            rec = rec.substring(0, index3);
+                            byte[][] recordAndSignature = splitRecordAndSignatureFromDecodedRecord(decodedRecord);
+                            byte[] record = recordAndSignature[0];
+                            byte[] signature = recordAndSignature[1];
+
+                            byte[] verifiedRecord = verifyRecord(as, record, signature, decryptedSigningSharedKey);
+
+                            rec = new String(verifiedRecord);
 
                         } else if (!signedLog && encryptedLog) {
 
-                            // Recreate the shared key
-                            String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
+                            byte[] decryptedRecord = decryptRecord(ae, decodedRecord, decryptedSharedKey);
 
-                            if (debugEnabled) {
-                                theLogger.fine("processRecord: recreate shared key with algoritm: " + algorithm);
-                            }
-                            javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(decryptedSharedKey, algorithm);
+                            rec = new String(decryptedRecord);
 
-                            byte[] decryptedRecord = ae.decrypt(decodedRecord, recreatedSharedKey);
-                            if (decryptedRecord != null) {
-                                rec = new String(decryptedRecord);
-                            }
                         } else if (signedLog && encryptedLog) {
 
-                            String parsedSigRecord = new String();
-                            byte[] strippedRecord = null;
-                            for (int i = 0; i < decodedRecord.length; i++) {
-                                parsedSigRecord = parsedSigRecord.concat(Character.toString((char) decodedRecord[i]));
-                                if (parsedSigRecord.contains(signatureOpenTag)) {
-                                    strippedRecord = new byte[parsedSigRecord.length() - signatureOpenTag.length()];
-                                    System.arraycopy(decodedRecord, 0, strippedRecord, 0, parsedSigRecord.length() - signatureOpenTag.length());
-                                    break;
-                                }
-                            }
-                            String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
+                            byte[][] recordAndSignature = splitRecordAndSignatureFromDecodedRecord(decodedRecord);
+                            byte[] encryptedRecord = recordAndSignature[0];
+                            byte[] signature = recordAndSignature[1];
 
-                            if (debugEnabled)
-                                theLogger.fine("processRecord: recreate shared key with algorithm: " + algorithm);
+                            byte[] verifiedEncryptedRecord = verifyRecord(as, encryptedRecord, signature, decryptedSigningSharedKey);
 
-                            // Recreate the shared key
-                            javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(decryptedSharedKey, algorithm);
+                            byte[] verifiedDecryptedRecord = decryptRecord(ae, verifiedEncryptedRecord, decryptedSharedKey);
 
-                            // Decrypt the record
-                            if (tc.isDebugEnabled()) {
-                                byte[] rkey = ((java.security.Key) recreatedSharedKey).getEncoded();
-                            }
+                            rec = new String(verifiedDecryptedRecord);
 
-                            byte[] decryptedRecord = ae.decrypt(strippedRecord, recreatedSharedKey);
-                            rec = new String(decryptedRecord);
                         }
 
                         parseRecord(rec);
@@ -564,6 +545,59 @@ public class AuditLogReader {
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    private static byte[][] splitRecordAndSignatureFromDecodedRecord(byte[] decodedRecord) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < decodedRecord.length; i++) { // need to do it this way to ensure length does not change when converting to string
+            sb = sb.append(Character.toString((char) decodedRecord[i]));
+        }
+        String recordWithSignature = sb.toString();
+        int signatureOpenIdx = recordWithSignature.indexOf(signatureOpenTag);
+        int signatureCloseIdx = recordWithSignature.indexOf(signatureCloseTag);
+        if (signatureOpenIdx == -1 || signatureCloseIdx == -1 || signatureOpenIdx > signatureCloseIdx) {
+            throw new Exception("Unable to validate signature of auditRecord at index [" + (num_captured_records - 1) + "]");
+        }
+
+        byte[] record = new byte[signatureOpenIdx];
+        System.arraycopy(decodedRecord, 0, record, 0, record.length);
+
+        byte[] signature = new byte[signatureCloseIdx - (signatureOpenIdx + signatureOpenTag.length())];
+        System.arraycopy(decodedRecord, (signatureOpenIdx + signatureOpenTag.length()), signature, 0, signature.length);
+
+        return new byte[][] { record, signature };
+    }
+
+    private static byte[] verifyRecord(AuditSigningImpl as, byte[] record, byte[] signature, byte[] signingSharedKey) throws Exception {
+        String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
+        if (debugEnabled) {
+            theLogger.fine("processRecord: recreate signing shared key with algorithm: " + algorithm);
+        }
+        javax.crypto.spec.SecretKeySpec recreatedSignedSharedKey = new javax.crypto.spec.SecretKeySpec(signingSharedKey, algorithm);
+        boolean verified = as.verify(record, signature, recreatedSignedSharedKey);
+        if (!verified) {
+            throw new Exception("Unable to validate signature of auditRecord at index [" + (num_captured_records - 1) + "]");
+        }
+        if (debugEnabled) {
+            theLogger.fine("processRecord: successfully verified the auditRecord signature");
+        }
+        return record;
+    }
+
+    private static byte[] decryptRecord(AuditEncryptionImpl ae, byte[] encryptedRecord, byte[] encryptionSharedKey) throws Exception {
+        String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
+        if (debugEnabled) {
+            theLogger.fine("processRecord: recreate encryption shared key with algorithm: " + algorithm);
+        }
+        javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(encryptionSharedKey, algorithm);
+        byte[] decryptedRecord = ae.decrypt(encryptedRecord, recreatedSharedKey);
+        if (decryptedRecord == null) {
+            throw new Exception("Unable to decrypt auditRecord at index [" + (num_captured_records - 1) + "]");
+        }
+        if (debugEnabled) {
+            theLogger.fine("processRecord: successfully decrypted the auditRecord");
+        }
+        return decryptedRecord;
     }
 
     public static Key getPublicKey(String keyStoreType, String keyStoreLocation,

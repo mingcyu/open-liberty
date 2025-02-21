@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -45,10 +45,11 @@ public interface AuditSigning {
      * </p>
      *
      * @param a signed byte array of data
+     * @param the signature
      * @param the key used to sign the byte array of data
      * @returns a boolean value based the successful verification of the data
      * @throws AuditSignException
      **/
-    public boolean verify(byte[] data, Key key) throws AuditSigningException;
+    public boolean verify(byte[] data, byte[] signature, Key key) throws AuditSigningException;
 
 }
