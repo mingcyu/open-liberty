@@ -11,7 +11,7 @@
     <javaPermission className="java.security.AllPermission"  name="*" actions="*" />
     
     <library id="sharedlib">
-        <fileset dir="${server.config.dir}/libs" includes="sharedLib.jar" />
+        <fileset dir="${server.config.dir}/libs" includes="*.jar" />
     </library>
 
     <application location="springTest.ear">

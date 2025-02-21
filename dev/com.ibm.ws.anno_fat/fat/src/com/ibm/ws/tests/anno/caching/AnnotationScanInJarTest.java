@@ -73,10 +73,11 @@ public class AnnotationScanInJarTest extends FATServletClient {
 				.addAsModule(maifestJar)
 				.addAsLibraries(jar);
 		
+		//Copy spring libs into the server
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(springDir), "*.jar")) {
 			for (Path path : stream) {
 				if (!Files.isDirectory(path)) {
-					ear.addAsLibraries(path.toFile());
+					server.copyFileToLibertyServerRoot(path.getParent().toString(), "libs/", path.getFileName().toString());
 				}
 			}
 		}
