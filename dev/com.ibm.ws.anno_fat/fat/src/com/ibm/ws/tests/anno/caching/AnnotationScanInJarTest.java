@@ -77,7 +77,13 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(springDir), "*.jar")) {
 			for (Path path : stream) {
 				if (!Files.isDirectory(path)) {
-					server.copyFileToLibertyServerRoot(path.getParent().toString(), "libs/", path.getFileName().toString());
+					//Putting the spring libs in the ear file works. Putting them as a shared library reference means
+					//none of the initalizers will fire.
+
+					//However I think this worked fine if I had shared libs enabled. Possibly because I was also scanning
+					//Shared libs as web fragments. Leaving this note here so I can start investigating from where I left of
+					//if we ever enable scanning for shared libs
+					ear.addAsLibraries(path.toFile());
 				}
 			}
 		}
@@ -103,10 +109,12 @@ public class AnnotationScanInJarTest extends FATServletClient {
 		assertTrue("Did not find \"onStartup method in war file\" in " + allOutput, allOutput.contains("onStartup method in war file"));
 		assertTrue("Did not find \"onStartup method found via jar file\" in " + allOutput, allOutput.contains("onStartup method found via jar file"));
 		assertTrue("Did not find \"onStartup method found via manifest lib file\" in " + allOutput, allOutput.contains("onStartup method found via manifest lib file"));
-		assertTrue("Did not find \"onStartup method found via shared library file\" in " + allOutput, allOutput.contains("onStartup method found via shared library file"));
+		
+		//Scanning annotations in shared libs for web fragmnet related annotations is not currently supported
+		//assertTrue("Did not find \"onStartup method found via shared library file\" in " + allOutput, allOutput.contains("onStartup method found via shared library file"));
 		
 		//Since it checks both logs and traces it will find each twice.
-		assertTrue("Found too many entries in the logs. Expected 8 Found " + matching.size() + " output: " + allOutput, matching.size() == 8);
+		assertTrue("Found too many entries in the logs. Expected 6 Found " + matching.size() + " output: " + allOutput, matching.size() == 6);
 	}
 
 

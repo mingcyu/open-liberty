@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2023 IBM Corporation and others.
+ * Copyright (c) 2015, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -27,8 +27,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Modified;
 
-import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.websphere.logging.hpel.LogRecordContext;
+import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.app.manager.internal.AppManagerConstants;
 
 @Component(service = ApplicationManager.class,
@@ -43,6 +43,7 @@ public class ApplicationManager {
     private long startTimeout;
     private long stopTimeout;
     private String expandLocation;
+    private String annotationScanLibaray;
 
     private File extractedLog;
     private final ConcurrentMap<String, ExtractedLogData> extractsDataLog = new ConcurrentHashMap<>();
@@ -136,6 +137,9 @@ public class ApplicationManager {
         Boolean useJandexValue = getProperty(properties, "useJandex", false);
         setUseJandex(useJandexValue == null ? false : useJandexValue);
         //System.setProperty("com.ibm.ws.jandex.enable", useJandexValue.toString()); // Temporary -- REMOVE THIS LATER ////
+
+        String annotationScanLibarayValue = getProperty(properties, "annotationScanLibaray", "");
+        setAnnotationScanLibaray(annotationScanLibarayValue);
 
         long startTimeoutValue = getProperty(properties, "startTimeout", 30L);
         setStartTimeout(startTimeoutValue);
@@ -258,6 +262,33 @@ public class ApplicationManager {
      */
     public String getExpandLocation() {
         return this.expandLocation;
+    }
+
+//    private void setAnnotationScanLibaray(String annotationScanLibarayValue) {
+//
+//        annotationScanLibaray.clear();
+//        String[] split = annotationScanLibarayValue.split(",");
+//
+//        for (String s : split) {
+//            if (s.trim().equals("ALL")) {
+//                annotationScanLibaray.clear();
+//                annotationScanLibaray.add(AnnotationScanLibarayValues.ALL);
+//                break;
+//            } else if (s.trim().equals("earLib")) {
+//                annotationScanLibaray.add(AnnotationScanLibarayValues.earLib);
+//            } else if (s.trim().equals("earLib")) {
+//                annotationScanLibaray.add(AnnotationScanLibarayValues.ManifestLib);
+//            }
+//        }
+//    }
+
+    private void setAnnotationScanLibaray(String annotationScanLibarayValue) {
+
+        annotationScanLibaray = annotationScanLibarayValue;
+    }
+
+    public String getAnnotationScanLibaray() {
+        return annotationScanLibaray;
     }
 
     private static class ExtractedLogData {

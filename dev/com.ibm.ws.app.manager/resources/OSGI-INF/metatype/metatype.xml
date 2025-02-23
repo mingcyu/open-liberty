@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2011-2020 IBM Corporation and others.
+    Copyright (c) 2011-2025 IBM Corporation and others.
     All rights reserved. This program and the accompanying materials
     are made available under the terms of the Eclipse Public License 2.0
     which accompanies this distribution, and is available at
@@ -52,6 +52,7 @@
         <AD id="context-root" name="%appmgr.contextRoot.name" description="%appmgr.contextRoot.desc" type="String" required="false"/>
         <AD id="autoStart" name="%appmgr.autoStart.name" description="%appmgr.autoStart.desc" type="Boolean" required="false" default="true"/>
         <AD id="useJandex" name="%appmgr.useJandex.name" description="%appmgr.useJandex.desc" type="Boolean" required="false"/>
+        <AD id="annotationScanLibaray" name="%appmgr.annotationScanLibaray.name" description="%appmgr.annotationScanLibaray.desc" type="String" required="false"/>
         <AD id="startAfter" name="%appmgmt.startAfter" description="%appmgmt.startAfter.desc" required="false" type="String" ibm:type="pid" ibm:reference="com.ibm.ws.app.manager" cardinality="2147483647"/>
 		<AD id="classloader" name="%classloader.name" description="%classloader.desc" required="false" type="String" ibm:type="pid" ibm:reference="com.ibm.ws.classloading.classloader" cardinality="0"/>
    </OCD>

@@ -12,14 +12,13 @@
  *******************************************************************************/
 package com.ibm.ws.container.service.annocache.internal;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.ws.container.service.annocache.FragmentAnnotations;
@@ -28,11 +27,11 @@ import com.ibm.ws.container.service.app.deploy.ApplicationClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
-import com.ibm.ws.container.service.app.deploy.extended.LibraryClassesContainerInfo;
-import com.ibm.ws.container.service.app.deploy.extended.LibraryContainerInfo;
+import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.wsspi.adaptable.module.Container;
+import com.ibm.wsspi.adaptable.module.Entry;
 import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
@@ -89,19 +88,9 @@ import com.ibm.wsspi.artifact.overlay.OverlayContainer;
  */
 public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnnotations {
 
-    //TODO discuss this, sysprop / server.xml, name, etc
-    private final static String SCAN_EAR_LIBS = "com.ibm.ws.anno.ScanEarLibs";
-
-    private static final boolean scanEarLibs = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-        @Override
-        public Boolean run() {
-            String propString = System.getProperty(SCAN_EAR_LIBS);
-            Boolean scanEarLibs = Boolean.valueOf(propString);
-            return scanEarLibs;
-        }
-    });
-    private static final boolean scanManifestLibs = true;
-    private static final boolean scanSharedLibs = true;
+    public static enum AnnotationScanLibarayValues {
+        earLib, ManifestLib
+    }
 
     public WebAnnotationsImpl(
                               AnnotationsAdapterImpl annotationsAdapter,
@@ -269,10 +258,14 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
 
         for (Container c : extraLibs) {
-            String physicalPath = c.getPhysicalPath();
-            physicalPath = physicalPath.substring(physicalPath.lastIndexOf("/") + 1);
-            if (!addContainerClassSource(physicalPath, c, ClassSource_Aggregate.ScanPolicy.SEED)) { //TODO should this be SEED?
-                return; // FFDC in 'addContainerClassSource'
+            try {
+                //If we ever expand extraLibs to include shared libaries this section will need rewriting.
+                Entry entry = c.adapt(Entry.class);
+                if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) {
+                    return; // FFDC in 'addContainerClassSource'
+                }
+            } catch (UnableToAdaptException e) {
+                return;
             }
         }
 
@@ -304,13 +297,10 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         }
     }
 
-    private class LibaryRecord {
-        ;
-    }
-
     private List<Container> getLibsFromAppContainer() {
 
-        List<Container> sharedLibraries = new LinkedList<Container>();
+        //Shared libs are not supported
+        //List<Container> sharedLibraries = new LinkedList<Container>();
         List<Container> manifestClasspathLibraries = new LinkedList<Container>();;
         List<Container> earLibraries = new LinkedList<Container>();
 
@@ -321,9 +311,12 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         } catch (UnableToAdaptException e) {
             return null; // FFDC
         }
+
+        Set<AnnotationScanLibarayValues> scanOptions = getAnnotationScanLibarayValues(cache);
+
         ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
 
-        if (scanManifestLibs) {
+        if (scanOptions.contains(AnnotationScanLibarayValues.ManifestLib)) {
             for (ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo()) {
                 for (ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo()) {
                     if (containerInfo.getType() == ContainerInfo.Type.MANIFEST_CLASSPATH
@@ -334,29 +327,55 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             }
         }
 
-        if (scanEarLibs || scanSharedLibs) {
+        if (scanOptions.contains(AnnotationScanLibarayValues.earLib)) { // || scanSharedLibs) { //Shared libs are not supported
             for (ContainerInfo containerInfo : appClassesInfo.getLibraryClassesContainerInfo()) {
-                if (scanEarLibs && containerInfo.getType() == ContainerInfo.Type.EAR_LIB
+                if (scanOptions.contains(AnnotationScanLibarayValues.earLib) && containerInfo.getType() == ContainerInfo.Type.EAR_LIB
                     && containerInfo.getContainer() != null) {
                     earLibraries.add(containerInfo.getContainer());
 
-                } else if (scanSharedLibs && containerInfo instanceof LibraryClassesContainerInfo) {
-                    LibraryClassesContainerInfo libContainerInfo = (LibraryClassesContainerInfo) containerInfo;
-                    if (libContainerInfo.getLibraryType() == LibraryContainerInfo.LibraryType.COMMON_LIB) { //TODO, do we need this check?
-                        libContainerInfo.getClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).forEach(sharedLibraries::add);
-                    }
+                    //Shared libs are not supported
+                    /*
+                     * } else if (scanSharedLibs && containerInfo instanceof LibraryClassesContainerInfo) {
+                     * LibraryClassesContainerInfo libContainerInfo = (LibraryClassesContainerInfo) containerInfo;
+                     * if (libContainerInfo.getLibraryType() == LibraryContainerInfo.LibraryType.COMMON_LIB) { //TODO, do we need this check?
+                     * libContainerInfo.getClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).forEach(sharedLibraries::add);
+                     * }
+                     * }
+                     */
                 }
             }
         }
 
         List<Container> toReturn = new LinkedList<Container>(); //TODO, reread slack and ensure these are added in the right order
         toReturn.addAll(manifestClasspathLibraries);
-        toReturn.addAll(sharedLibraries);
+        //toReturn.addAll(sharedLibraries);
         toReturn.addAll(earLibraries);
         return toReturn;
     }
 
     //
+
+    private Set<AnnotationScanLibarayValues> getAnnotationScanLibarayValues(NonPersistentCache cache) {
+
+        Set<AnnotationScanLibarayValues> foundValues = new HashSet<AnnotationScanLibarayValues>();
+
+        ApplicationInfoForContainer applicationInformation = (ApplicationInfoForContainer) cache.getFromCache(ApplicationInfoForContainer.class);
+        String rawValues = applicationInformation.getAnnotationScanLibaray();
+
+        for (String s : rawValues.split(",")) {
+            if (s.trim().toLowerCase().equals("all")) {
+                foundValues.add(AnnotationScanLibarayValues.earLib);
+                foundValues.add(AnnotationScanLibarayValues.ManifestLib);
+                break;
+            } else if (s.trim().toLowerCase().equals("applicationLibrary")) {
+                foundValues.add(AnnotationScanLibarayValues.earLib);
+            } else if (s.trim().toLowerCase().equals("manifestClassPath")) {
+                foundValues.add(AnnotationScanLibarayValues.ManifestLib);
+            }
+        }
+
+        return foundValues;
+    }
 
     @Override
     public FragmentAnnotations getFragmentAnnotations(WebFragmentInfo fragment) {
