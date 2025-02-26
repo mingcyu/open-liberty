@@ -372,10 +372,10 @@ public class GenericEndpointImpl {
 		else {
 			isForcedDefaultEndpointIdDeactivate = true;
 			if (c_logger.isTraceDebugEnabled()){
-				c_logger.traceDebug("defaultSipEndpoint endpoint wasn't activated since was configured other sipendpoint");
+				c_logger.traceDebug("EYECATCHER: defaultSipEndpoint endpoint wasn't activated - we have other sipendpoint configured!!!");
 			}
 			
-			removeDefaultSipEndpointIdFromConfiguration();
+			//removeDefaultSipEndpointIdFromConfiguration();
 		}
 	}
 
