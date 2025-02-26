@@ -557,7 +557,9 @@ public class AuditLogReader {
         int signatureOpenIdx = recordWithSignature.indexOf(signatureOpenTag);
         int signatureCloseIdx = recordWithSignature.indexOf(signatureCloseTag);
         if (signatureOpenIdx == -1 || signatureCloseIdx == -1 || signatureOpenIdx > signatureCloseIdx) {
-            throw new Exception("Unable to validate signature of auditRecord at index [" + (num_captured_records - 1) + "]");
+            int auditRecordIdx = num_captured_records - 1;
+            String msg = CommandUtils.getMessage("security.audit.FailedToValidateSignature", auditRecordIdx);
+            throw new Exception(msg);
         }
 
         byte[] record = new byte[signatureOpenIdx];
@@ -577,7 +579,9 @@ public class AuditLogReader {
         javax.crypto.spec.SecretKeySpec recreatedSignedSharedKey = new javax.crypto.spec.SecretKeySpec(signingSharedKey, algorithm);
         boolean verified = as.verify(record, signature, recreatedSignedSharedKey);
         if (!verified) {
-            throw new Exception("Unable to validate signature of auditRecord at index [" + (num_captured_records - 1) + "]");
+            int auditRecordIdx = num_captured_records - 1;
+            String msg = CommandUtils.getMessage("security.audit.FailedToValidateSignature", auditRecordIdx);
+            throw new Exception(msg);
         }
         if (debugEnabled) {
             theLogger.fine("processRecord: successfully verified the auditRecord signature");
@@ -593,7 +597,9 @@ public class AuditLogReader {
         javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(encryptionSharedKey, algorithm);
         byte[] decryptedRecord = ae.decrypt(encryptedRecord, recreatedSharedKey);
         if (decryptedRecord == null) {
-            throw new Exception("Unable to decrypt auditRecord at index [" + (num_captured_records - 1) + "]");
+            int auditRecordIdx = num_captured_records - 1;
+            String msg = CommandUtils.getMessage("security.audit.FailedToDecryptAuditRecord", auditRecordIdx);
+            throw new Exception(msg);
         }
         if (debugEnabled) {
             theLogger.fine("processRecord: successfully decrypted the auditRecord");
