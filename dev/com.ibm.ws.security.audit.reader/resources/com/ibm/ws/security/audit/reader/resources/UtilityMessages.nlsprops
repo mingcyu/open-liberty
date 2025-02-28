@@ -65,5 +65,5 @@ security.audit.MismatchingSigningKeystores=The input value, {0}, for the keystor
 security.audit.CannotFindCertificate=The {0} certificate alias does not exist in the {1} keystore.
 
 # Do not translate "auditRecord"
-security.audit.FailedToValidateSignature=Failed to validate the signature of the auditRecord at index [{0}].
-security.audit.FailedToDecryptAuditRecord=Failed to decrypt the auditRecord at index [{0}].
+security.audit.FailedToValidateSignature=The validation of the auditRecord signature failed at index [{0}].
+security.audit.FailedToDecryptAuditRecord=The decryption of the auditRecord failed at index [{0}].
