@@ -191,6 +191,7 @@ public class JSPChannelTest {
             Assert.assertFalse("The redirect failed!", containsMessage);
         } catch (SocketException e) {
             // If the connection was reset that means the server closed it. 
+            LOG.info("SocketException occured! -> " + e.getMessage());
             Assert.assertTrue("Expected `Connection reset` message not found!", e.getMessage().contains("Connection reset"));
         } finally {
             if (socket != null) {
@@ -209,6 +210,7 @@ public class JSPChannelTest {
         server.setMarkToEndOfLog();
         server.updateServerConfiguration(c);
         server.waitForConfigUpdateInLogUsingMark(Collections.emptySet());
+        server.resetLogMarks();
     }
 
 }
