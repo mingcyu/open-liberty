@@ -14,9 +14,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 import org.junit.Assert;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,21 +36,22 @@ import componenttest.custom.junit.runner.Mode;
 import componenttest.custom.junit.runner.Mode.TestMode;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.rules.repeater.JakartaEEAction;
+
 /**
- * Testing the ignoreWriteAfterCommit config created for TS018163099.  This is a behavior difference between Liberty and tWAS.
+ * Testing the ignoreWriteAfterCommit config created for OLGH30757. This is a behavior difference between Liberty and tWAS.
  * On tWAS, a connections remained active during closure when an error occurred. On Liberty, this behavior was changed.
  * There isn't enough documentation or version history to explain the difference.
  * 
  * This test attempts to verify the config by seeing if a connection reset error occurs (meaning the socket was closed).
- * The index.jsp is requested, but redirects you to another JSP. However, the index.jsp still writes out more data via the footer.jsp. 
- * This causes a MessageSentException.  A single socket is used to minic the reused connection.
+ * The index.jsp is requested, but redirects you to another JSP. However, the index.jsp still writes out more data via the footer.jsp.
+ * This causes a MessageSentException. A single socket is used to mimic the reused connection.
  * 
- * Additional Note - This can be replicated via a curl command via --retry. 
- *  
+ * Additional Note - This can be replicated via a curl command via --retry.
+ * 
  */
 // No need to run against cdi-2.0 since these tests don't use CDI at all.
 @Mode(TestMode.FULL)
-@SkipForRepeat({"CDI-2.0"}) 
+@SkipForRepeat({ "CDI-2.0" })
 @RunWith(FATRunner.class)
 public class JSPChannelTest {
 
@@ -63,22 +66,29 @@ public class JSPChannelTest {
     @BeforeClass
     public static void setup() throws Exception {
         ShrinkHelper.defaultDropinApp(server, APP_NAME + ".war");
+        server.startServer(JSPChannelTest.class.getSimpleName() + ".log");
+    }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
+        if (server != null && server.isStarted()) {
+            server.stopServer();
+        }
     }
 
     /**
-     *  ignoreWriteAfterCommit True Scenario.  
-     *  We expect the socket connection to stay active, 
-     *  so we'll see the "Successfully redirected!" message in responses.
+     * ignoreWriteAfterCommit True Scenario.
+     * We expect the socket connection to stay active,
+     * so we'll see the "Successfully redirected!" message in responses.
      *
      * @throws Exception if something goes horribly wrong
      */
     @ExpectedFFDC("com.ibm.wsspi.genericbnf.exception.MessageSentException")
     @Test
     public void testIgnoreWriteAfterCommitTrue() throws Exception {
+        Socket socket = null;
         try {
-            updateHTTPOptions(true); 
-
-            server.startServer(JSPChannelTest.class.getSimpleName() + ".log");
+            updateHTTPOptions(true);
 
             String address = server.getHostname() + ":" + server.getHttpDefaultPort();
 
@@ -95,7 +105,7 @@ public class JSPChannelTest {
                                       "Connection: close\r\n" +
                                       "\r\n";
 
-            Socket socket = new Socket(server.getHostname(), server.getHttpDefaultPort());
+            socket = new Socket(server.getHostname(), server.getHttpDefaultPort());
             socket.setKeepAlive(true);
 
             BufferedReader bReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -119,29 +129,29 @@ public class JSPChannelTest {
             }
             Assert.assertTrue("The redirect failed!", containsMessage);
         } finally {
-            if (server != null && server.isStarted()) {
-                server.stopServer();
+            if (socket != null) {
+                socket.close();
             }
         }
 
     }
 
     /**
-     *  ignoreWriteAfterCommit False Scenario.  
-     *  We expect the socket connection to be destroyed
-     *  so we'll see a "Connection reset" exception.
+     * ignoreWriteAfterCommit False Scenario.
+     * We expect the socket connection to be destroyed
+     * so we'll see a "Connection reset" exception.
      *
      * @throws Exception if something goes horribly wrong
      */
     @ExpectedFFDC("com.ibm.wsspi.genericbnf.exception.MessageSentException")
     @Test
     public void testIgnoreWriteAfterCommitFalse() throws Exception {
+        Socket socket = null;
         try {
             updateHTTPOptions(false);
-            server.startServer(JSPChannelTest.class.getSimpleName() + ".log");
 
             String address = server.getHostname() + ":" + server.getHttpDefaultPort();
-            
+
             // sendRedirect changed in EE11
             String page = JakartaEEAction.isEE11OrLaterActive() ? "indexEE11.jsp" : "index.jsp";
 
@@ -155,8 +165,8 @@ public class JSPChannelTest {
                                       "Connection: close\r\n" +
                                       "\r\n";
 
-            Socket socket = new Socket(server.getHostname(), server.getHttpDefaultPort());
-            socket.setKeepAlive(true); 
+            socket = new Socket(server.getHostname(), server.getHttpDefaultPort());
+            socket.setKeepAlive(true);
 
             BufferedReader bReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             OutputStream os = socket.getOutputStream();
@@ -179,12 +189,12 @@ public class JSPChannelTest {
             }
             // If Successfully redirected! is not read, then connection was closed.
             Assert.assertFalse("The redirect failed!", containsMessage);
-        } catch(SocketException e) { 
+        } catch (SocketException e) {
             // If the connection was reset that means the server closed it. 
-            Assert.assertEquals("Expected `Connection reset` message not found!", "Connection reset", e.getMessage());
+            Assert.assertTrue("Expected `Connection reset` message not found!", e.getMessage().contains("Connection reset"));
         } finally {
-            if (server != null && server.isStarted()) {
-                server.stopServer();
+            if (socket != null) {
+                socket.close();
             }
         }
     }
@@ -196,7 +206,9 @@ public class JSPChannelTest {
             LOG.info("Using httpEndpoint: " + h);
             httpEndpoint.getHttpOptions().setIgnoreWriteAfterCommit(persistValue);
         }
+        server.setMarkToEndOfLog();
         server.updateServerConfiguration(c);
+        server.waitForConfigUpdateInLogUsingMark(Collections.emptySet());
     }
 
 }

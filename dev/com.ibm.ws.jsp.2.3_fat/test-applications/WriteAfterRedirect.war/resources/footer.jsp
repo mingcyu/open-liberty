@@ -10,11 +10,11 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <!-- 16384 -->
 <%
-	String extra = "";
+    StringBuilder sb = new StringBuilder("");
     //32768 bytes is enough for the jsp/webcontainer buffer to commit the response
 	for(int i=0; i<32768; i++){
-		extra = extra + "0";
+		sb.append("0");
 	}
 %>
-<p>Hello <%= extra %>!</p>
+<p>Hello <%= sb.toString() %>!</p>
 <% System.out.println("DEBUG: END OF FOOTER"); %>

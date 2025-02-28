@@ -15,6 +15,6 @@
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
 
     <!-- https://github.com/OpenLiberty/open-liberty/pull/30732 -->
-  <display-name>PersistOnErrorTest</display-name>
+  <display-name>TestIgnoreWriteAfterCommit</display-name>
     
 </web-app>
