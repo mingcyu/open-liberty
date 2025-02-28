@@ -34,6 +34,7 @@ import com.ibm.wsspi.channelfw.VirtualConnection;
 import com.ibm.wsspi.genericbnf.exception.MessageSentException;
 import com.ibm.wsspi.http.channel.exception.WriteBeyondContentLengthException;
 import com.ibm.wsspi.http.channel.inbound.HttpInboundServiceContext;
+import com.ibm.ws.http.channel.internal.HttpChannelConfig;
 
 /**
  * HTTP transport output stream that wraps the bytebuffer usage and the HTTP
@@ -546,13 +547,11 @@ public class HttpOutputStreamImpl extends HttpOutputStreamConnectWeb {
                 this.isc.sendResponseBody(content);
             }
         } catch (MessageSentException mse) {
-            FFDCFilter.processException(mse, getClass().getName(),
-                                        "flushBuffers", new Object[] { this, this.isc });
-            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
-                Tr.event(tc, "Invalid state, message-sent-exception received; " + this.isc);
-            }
-            this.error = new IOException("Invalid state");
-            throw this.error;
+            //FFDC Required irrespective of the value of the property??
+            
+            /* FFDCFilter.processException(mse, getClass().getName(),
+                                        "flushBuffers", new Object[] { this, this.isc }); */ 
+            handleMessageSentException(mse);
         } catch (IOException ioe) {
             // no FFDC required
             this.error = ioe;
@@ -738,6 +737,35 @@ public class HttpOutputStreamImpl extends HttpOutputStreamConnectWeb {
         if (isc instanceof HttpInboundServiceContextImpl) {
             ((HttpInboundServiceContextImpl) isc).setRemoteUser(remoteUser);
         }
+    }
+
+    /**
+    * Handles MessageSentException based on ignoreWriteAfterCommit configuration
+    * @param mse The MessageSentException that was caught
+    * @throws IOException If the exception should be propagated
+    */
+    private void handleMessageSentException(MessageSentException mse) throws IOException {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "Handling: MessageSentException " + this);
+        }
+
+        final HttpChannelConfig config = ((HttpInboundServiceContextImpl)this.isc).getHttpConfig();
+        boolean ignoreWriteAfterCommit = config.ignoreWriteAfterCommit();
+        if(ignoreWriteAfterCommit){
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                Tr.event(tc, "Ignoring write after commit; " + this.isc);
+            }
+        }else{
+            FFDCFilter.processException(mse, getClass().getName(),"flushBuffers", new Object[] { this, this.isc });
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                Tr.event(tc, "Invalid state, message-sent-exception received; " + this.isc);
+            }
+            this.error = new IOException("Invalid state");
+            throw this.error;
+        }
+
+
     }
 
 }
