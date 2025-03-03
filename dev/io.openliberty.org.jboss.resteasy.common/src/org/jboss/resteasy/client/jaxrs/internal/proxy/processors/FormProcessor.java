@@ -4,6 +4,7 @@ package org.jboss.resteasy.client.jaxrs.internal.proxy.processors;
 import org.jboss.resteasy.client.jaxrs.internal.ClientConfiguration;
 import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.resteasy.spi.LoggableFailure;
+import org.jboss.resteasy.spi.util.MethodHashing;
 
 import javax.ws.rs.client.WebTarget;
 import java.io.ByteArrayOutputStream;
@@ -53,32 +54,13 @@ public class FormProcessor implements InvocationProcessor, WebTargetProcessor
    }
 
    public static long methodHash(Method method)
-         throws Exception
-   {
-      Class[] parameterTypes = method.getParameterTypes();
-      StringBuilder methodDesc = new StringBuilder(method.getName()).append("(");
-      for (int j = 0; j < parameterTypes.length; j++)
-      {
-         methodDesc.append(getTypeString(parameterTypes[j]));
-      }
-      methodDesc.append(")").append(getTypeString(method.getReturnType()));
-      return createHash(methodDesc.toString());
+           throws Exception {
+       return MethodHashing.methodHash(method); // Liberty Change
    }
 
    public static long createHash(String methodDesc)
-         throws Exception
-   {
-      long hash = 0;
-      ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream(512);
-      MessageDigest messagedigest = MessageDigest.getInstance("SHA");
-      DataOutputStream dataoutputstream = new DataOutputStream(new DigestOutputStream(bytearrayoutputstream, messagedigest));
-      dataoutputstream.writeUTF(methodDesc);
-      dataoutputstream.flush();
-      byte[] abyte0 = messagedigest.digest();
-      for (int j = 0; j < Math.min(8, abyte0.length); j++)
-         hash += (long) (abyte0[j] & 0xff) << j * 8;
-      return hash;
-
+           throws Exception {
+       return MethodHashing.createHash(methodDesc); // Liberty Change
    }
 
    static String getTypeString(Class cl)
@@ -166,7 +148,7 @@ public class FormProcessor implements InvocationProcessor, WebTargetProcessor
             long hash = 0;
             try
             {
-               hash = methodHash(method);
+               hash = MethodHashing.methodHash(method); // Liberty Change
             }
             catch (Exception e)
             {
