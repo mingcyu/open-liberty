@@ -66,11 +66,12 @@ public final class MethodHashing {
     }
 
     // Liberty Change Start
+    // https://issues.redhat.com/browse/RESTEASY-3585 
     private static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
-        try {
-            return MessageDigest.getInstance("SHA-1");
-        } catch (Throwable ignore) {
-        }
+//        try {
+//            return MessageDigest.getInstance("SHA-1");
+//        } catch (Throwable ignore) {
+//        }
         return MessageDigest.getInstance("SHA-256");
     }
     // Liberty Change End
