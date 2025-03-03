@@ -14,6 +14,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collections;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
@@ -161,7 +162,7 @@ public class ContainerAuthTest extends FATServletClient {
         DataSource tranlogDataSource = serverConfig.getDataSources().getById("tranlogDataSource");
         tranlogDataSource.setContainerAuthDataRef("auth3");
         conAuth.updateServerConfiguration(serverConfig);
-        conAuth.waitForStringInLog("CWWKZ0003I: The application " + APP_NAME + " updated in");
+        conAuth.waitForConfigUpdateInLogUsingMark(Collections.singleton(APP_NAME), true);
 
         // Do a little more tx work
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
@@ -187,7 +188,7 @@ public class ContainerAuthTest extends FATServletClient {
         ConfigElementList<DataSource> tranlogDataSources = transaction.getDataSources();
         tranlogDataSources.get(0).setContainerAuthDataRef("auth3");
         conAuthEmbed.updateServerConfiguration(serverConfig);
-        conAuthEmbed.waitForStringInLog("CWWKZ0003I: The application " + APP_NAME + " updated in");
+        conAuthEmbed.waitForConfigUpdateInLogUsingMark(Collections.singleton(APP_NAME));
 
         // Do a little more tx work
         runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
