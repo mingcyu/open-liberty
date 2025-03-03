@@ -490,9 +490,14 @@ public class DBStoreEMBuilder extends EntityManagerBuilder implements DDLGenerat
                 if (propertyDescriptors != null)
                     for (PropertyDescriptor p : propertyDescriptors) {
                         Method setter = p.getWriteMethod();
-                        if (setter != null)
-                            attributes.putIfAbsent(p.getName(),
-                                                   p.getPropertyType());
+                        if (setter != null) {
+                            String n = setter.getName();
+                            String name = new StringBuilder(n.length() - 3) //
+                                            .append(Character.toLowerCase(n.charAt(3))) //
+                                            .append(n.substring(4)) //
+                                            .toString(); //
+                            attributes.putIfAbsent(name, p.getPropertyType());
+                        }
                     }
             } catch (IntrospectionException x) {
                 throw new MappingException(x);
