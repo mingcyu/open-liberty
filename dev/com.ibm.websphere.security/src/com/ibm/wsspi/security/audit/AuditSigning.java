@@ -45,6 +45,18 @@ public interface AuditSigning {
      * </p>
      *
      * @param a signed byte array of data
+     * @param the key used to sign the byte array of data
+     * @returns a boolean value based the successful verification of the data
+     * @throws AuditSignException
+     **/
+    public boolean verify(byte[] data, Key key) throws AuditSigningException;
+    
+    /**
+     * <p>
+     * The <code>verify</code> method verifies the data is signed with a key
+     * </p>
+     *
+     * @param a signed byte array of data
      * @param the signature
      * @param the key used to sign the byte array of data
      * @returns a boolean value based the successful verification of the data

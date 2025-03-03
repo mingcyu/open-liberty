@@ -466,6 +466,34 @@ public class AuditSigningImpl implements AuditSigning {
      * </p>
      *
      * @param a signed byte array of data
+     * @param the key used to sign the byte array of data
+     * @returns a boolean value based the successful verification of the data
+     * @throws AuditSigningException
+     **/
+    @Override
+    public boolean verify(byte[] data, Key key) throws AuditSigningException {
+        if (signature != null) {
+            try {
+                signature.initVerify((PublicKey) key);
+                signature.update(data);
+                if (tc.isEntryEnabled())
+                    Tr.exit(tc, "verify");
+                return signature.verify(sigBytes);
+            } catch (Exception ex) {
+                throw new AuditSigningException(ex);
+            }
+        } else {
+            String msg = "Signature is null.  Cannot verify data.";
+            throw new AuditSigningException(msg);
+        }
+    }
+
+    /**
+     * <p>
+     * The <code>verify</code> method verifies the data is signed with a key
+     * </p>
+     *
+     * @param a signed byte array of data
      * @param the signature
      * @param the key used to sign the byte array of data
      * @returns a boolean value based the successful verification of the data
