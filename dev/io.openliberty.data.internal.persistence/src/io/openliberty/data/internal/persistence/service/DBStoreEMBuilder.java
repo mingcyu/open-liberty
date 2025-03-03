@@ -365,6 +365,7 @@ public class DBStoreEMBuilder extends EntityManagerBuilder implements DDLGenerat
                 // entity class that is used internally in place of a record.
                 String tableName = c.getSimpleName();
 
+                Class<?> ec = c;
                 if (c.isRecord()) {
                     // an entity class is generated for the record
                     String entityClassName = c.getName() + EntityInfo.RECORD_ENTITY_SUFFIX;
@@ -375,17 +376,15 @@ public class DBStoreEMBuilder extends EntityManagerBuilder implements DDLGenerat
                                                               repositoryInterfaces);
                     String name = entityClassName.replace('.', '/') + ".class";
                     generatedEntities.add(new InMemoryMappingFile(generatedEntityBytes, name));
-                    Class<?> generatedEntity = classDefiner //
-                                    .findLoadedOrDefineClass(getRepositoryClassLoader(),
-                                                             entityClassName,
-                                                             generatedEntityBytes);
-                    generatedToRecordClass.put(generatedEntity, c);
-                    c = generatedEntity;
+                    ec = classDefiner.findLoadedOrDefineClass(getRepositoryClassLoader(),
+                                                              entityClassName,
+                                                              generatedEntityBytes);
+                    generatedToRecordClass.put(ec, c);
                 }
 
                 StringBuilder xml = new StringBuilder(500);
 
-                xml.append(" <entity class=\"").append(c.getName()) //
+                xml.append(" <entity class=\"").append(ec.getName()) //
                                 .append("\">").append(EOLN);
 
                 xml.append("  <table name=\"") //
