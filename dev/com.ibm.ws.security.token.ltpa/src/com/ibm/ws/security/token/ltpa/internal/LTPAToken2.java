@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2024 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -92,7 +92,7 @@ public class LTPAToken2 implements Token, Serializable {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.expirationInMilliseconds = 0;
-        this.cipher = fipsEnabled ? CryptoUtils.AES_GCM_CIPHER : CryptoUtils.AES_CBC_CIPHER;
+        this.cipher = CryptoUtils.AES_CBC_CIPHER;
         this.expirationDifferenceAllowed = expDiffAllowed;
         decrypt();
     }
@@ -115,7 +115,7 @@ public class LTPAToken2 implements Token, Serializable {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.expirationInMilliseconds = 0;
-        this.cipher = fipsEnabled ? CryptoUtils.AES_GCM_CIPHER : CryptoUtils.AES_CBC_CIPHER;
+        this.cipher = CryptoUtils.AES_CBC_CIPHER;
         this.expirationDifferenceAllowed = expDiffAllowed;
         decrypt();
         isValid();
@@ -144,7 +144,7 @@ public class LTPAToken2 implements Token, Serializable {
         this.publicKey = publicKey;
         this.userData = new UserData(accessID);
         setExpiration(expirationInMinutes);
-        this.cipher = fipsEnabled ? CryptoUtils.AES_GCM_CIPHER : CryptoUtils.AES_CBC_CIPHER;
+        this.cipher = CryptoUtils.AES_CBC_CIPHER;
     }
 
     /**
@@ -164,7 +164,7 @@ public class LTPAToken2 implements Token, Serializable {
         this.publicKey = publicKey;
         this.userData = userdata;
         setExpiration(expirationInMinutes);
-        this.cipher = fipsEnabled ? CryptoUtils.AES_GCM_CIPHER : CryptoUtils.AES_CBC_CIPHER;
+        this.cipher = CryptoUtils.AES_CBC_CIPHER;
     }
 
     /**

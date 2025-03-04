@@ -12,7 +12,10 @@
  *******************************************************************************/
 package com.ibm.ws.java11_fat;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.util.Properties;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
@@ -61,6 +64,23 @@ public class MultiReleaseJarTestWithJarURLs extends FATServletClient {
         ServerConfiguration config = server.getServerConfiguration();
         config.getClassLoadingElement().setUseJarUrls(true);
         server.updateServerConfiguration(config);
+        Properties bootStrapProperties = server.getBootstrapProperties();
+
+        // Exempting security and removing all security bootstrap properties.
+        // The jar protocol does not protect users of the URL from file permission checks
+        // on read; therefore exempting this test from security runs.
+        bootStrapProperties.put("websphere.java.security.exempt", "true");
+        bootStrapProperties.remove("websphere.java.security");
+        bootStrapProperties.remove("websphere.java.security.norethrow");
+        bootStrapProperties.remove("websphere.java.security.unique");
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(server.getServerBootstrapPropertiesFile().getAbsolutePath()))) {
+            for (String key : bootStrapProperties.stringPropertyNames()) {
+                String value = bootStrapProperties.getProperty(key);
+                writer.write(key + "=" + value);
+                writer.newLine();
+            }
+        }
 
         // This app includes multiRelease.jar as a shared library via server.xml
         ShrinkHelper.defaultApp(server, SHARED_LIB_APP, "java11.multirelease.web");

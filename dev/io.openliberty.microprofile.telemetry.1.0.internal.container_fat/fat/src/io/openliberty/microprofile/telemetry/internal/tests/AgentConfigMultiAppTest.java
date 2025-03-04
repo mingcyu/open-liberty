@@ -101,7 +101,7 @@ public class AgentConfigMultiAppTest {
             server.copyFileToLibertyServerRoot("agent-129/opentelemetry-javaagent.jar");
         }
         else {
-            server.copyFileToLibertyServerRoot("agent-210/opentelemetry-javaagent.jar");
+            server.copyFileToLibertyServerRoot("agent-250/opentelemetry-javaagent.jar");
         }
     }
 
@@ -109,7 +109,7 @@ public class AgentConfigMultiAppTest {
     public void resetServer() throws Exception {
         server.addEnvVar(TestConstants.ENV_OTEL_TRACES_EXPORTER, "otlp");
         server.addEnvVar(TestConstants.ENV_OTEL_EXPORTER_OTLP_ENDPOINT, jaegerContainer.getOtlpGrpcUrl());
-        //The default OTLP protocol has been changed from grpc to http/protobuf in the Java Agent v2.1.0
+        //The default OTLP protocol has been changed from grpc to http/protobuf in the Java Agent v2.5.0
         server.addEnvVar(TestConstants.ENV_OTEL_EXPORTER_OTLP_PROTOCOL, "grpc");
         server.addEnvVar("OTEL_METRICS_EXPORTER", "none");
         server.addEnvVar("OTEL_LOGS_EXPORTER", "none");

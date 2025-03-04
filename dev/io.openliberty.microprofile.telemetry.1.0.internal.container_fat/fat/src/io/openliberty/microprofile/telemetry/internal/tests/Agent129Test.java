@@ -262,6 +262,7 @@ public class Agent129Test {
         if (TelemetryActions.mpTelemetry11EE7orEE8IsActive()) {
             /*
              * JavaAgent 1.29 with MP7 and MP8 does not create the extra span for withSpan annotations (BUG)
+             * fixed in version 2.1.0 https://github.com/open-telemetry/opentelemetry-java-instrumentation/pull/10385
              */
 
             List<Span> spans = client.waitForSpansForTraceId(traceId, hasSize(2));

@@ -74,13 +74,16 @@ class UninstallDirector extends AbstractDirector {
         uninstall(checkDependency, productIds, toBeDeleted);
     }
 
-    void retrieveUninstallFileList(UninstallAsset uninstallAsset, boolean checkDependency) throws InstallException {
-        if (uninstallAsset.getType().equals(UninstallAssetType.feature) &&
-            uninstallAsset.getFeatureFileList().isEmpty()) {
-            uninstallAsset.setFeaturePath(ESAAdaptor.getFeaturePath(uninstallAsset.getProvisioningFeatureDefinition(),
-                                                                    engine.getBaseDir(uninstallAsset.getProvisioningFeatureDefinition())));
-            uninstallAsset.setFeatureFileList(ESAAdaptor.determineFilesToBeDeleted(uninstallAsset.getProvisioningFeatureDefinition(), product.getFeatureDefinitions(),
-                                                                                   engine.getBaseDir(uninstallAsset.getProvisioningFeatureDefinition()),
+    void retrieveUninstallFileList(UninstallAsset uninstallAsset, boolean checkDependency, Map<String, ProvisioningFeatureDefinition> features) throws InstallException {
+
+        if (uninstallAsset.getType().equals(UninstallAssetType.feature) && uninstallAsset.getFeatureFileList().isEmpty()) {
+
+            ProvisioningFeatureDefinition featureDef = uninstallAsset.getProvisioningFeatureDefinition();
+            File baseDir = engine.getBaseDir(featureDef);
+            uninstallAsset.setFeaturePath(ESAAdaptor.getFeaturePath(featureDef, baseDir));
+            uninstallAsset.setFeatureFileList(ESAAdaptor.determineFilesToBeDeleted(featureDef,
+                                                                                   features,
+                                                                                   baseDir,
                                                                                    uninstallAsset.getFeaturePath(), checkDependency,
                                                                                    uninstallAsset.getFixUpdatesFeature()));
         }
@@ -98,12 +101,15 @@ class UninstallDirector extends AbstractDirector {
         if (uninstallAssets.isEmpty())
             return;
 
+        //get all installed features
+        Map<String, ProvisioningFeatureDefinition> features = product.getFeatureDefinitions();
+
         // Run file checking only on Windows
         if (InstallUtils.isWindows) {
             // check any file is locked
             fireProgressEvent(InstallProgressEvent.CHECK, 10, Messages.INSTALL_KERNEL_MESSAGES.getLogMessage("STATE_CHECKING"));
             for (UninstallAsset uninstallAsset : uninstallAssets) {
-                retrieveUninstallFileList(uninstallAsset, checkDependency);
+                retrieveUninstallFileList(uninstallAsset, checkDependency, features);
                 engine.preCheck(uninstallAsset);
             }
             if (toBeDeleted != null) {
@@ -123,7 +129,9 @@ class UninstallDirector extends AbstractDirector {
             fireProgressEvent(InstallProgressEvent.UNINSTALL, progress, Messages.INSTALL_KERNEL_MESSAGES.getLogMessage("STATE_UNINSTALLING", uninstallAsset.getName()));
             progress += interval;
             try {
-                retrieveUninstallFileList(uninstallAsset, checkDependency);
+                if (!InstallUtils.isWindows) {
+                    retrieveUninstallFileList(uninstallAsset, checkDependency, features);
+                }
                 engine.uninstall(uninstallAsset, checkDependency, filesRestored);
                 log(Level.FINE, uninstallAsset.uninstalledLogMsg());
             } catch (IOException e) {
