@@ -63,6 +63,7 @@ public class OidcClientRequest extends OidcCommonClientRequest {
 
     protected String tokenType = TYPE_ID_TOKEN;
     protected String tokenTypeNoSpace = Constants.TOKEN_TYPE_ID_TOKEN;
+    public static ThreadLocal<String> threadClientID = new ThreadLocal<String>();
 
     OidcClientRequest() {
         // for FAT, make its scope package only
@@ -78,10 +79,12 @@ public class OidcClientRequest extends OidcCommonClientRequest {
         this.request = request;
         this.response = response;
         OidcClientUtil.setReferrerURLCookieHandler(referrerURLCookieHandler);
-
+                 
         clientConfigId = convergedClientConfig.getId();
         authnSessionDisabled = convergedClientConfig.isAuthnSessionDisabled_propagation();
         inboundValue = convergedClientConfig.getInboundPropagation();
+        
+        setThreadClientId(this.oidcClientConfig.getClientId());
 
         request.setAttribute(AUTHN_SESSION_DISABLED, Boolean.valueOf(authnSessionDisabled));
         request.setAttribute(INBOUND_PROPAGATION_VALUE, inboundValue);
@@ -379,6 +382,14 @@ public class OidcClientRequest extends OidcCommonClientRequest {
     @Override
     public boolean disableIssChecking() {
         return oidcClientConfig.disableIssChecking();
+    }
+
+    private void setThreadClientId(String clientID) {
+        threadClientID.set(clientID);
+    }
+
+    public static String getThreadClientId() {
+        return threadClientID.get();
     }
 
 }
