@@ -67,6 +67,7 @@ public class JSPChannelTest {
     public static void setup() throws Exception {
         ShrinkHelper.defaultDropinApp(server, APP_NAME + ".war");
         server.startServer(JSPChannelTest.class.getSimpleName() + ".log");
+        server.waitForStringInLog("CWWKT0016I:.*WriteAfterRedirect.*"); // ensure app has started. 
     }
 
     @AfterClass
@@ -203,13 +204,17 @@ public class JSPChannelTest {
     private void updateHTTPOptions(Boolean persistValue) throws Exception {
         ServerConfiguration c = server.getServerConfiguration();
         ConfigElementList<HttpEndpoint> h = c.getHttpEndpoints();
+        boolean serverXMLChanged = false; 
         for (HttpEndpoint httpEndpoint : h) {
             LOG.info("Using httpEndpoint: " + h);
-            httpEndpoint.getHttpOptions().setIgnoreWriteAfterCommit(persistValue);
+            if(httpEndpoint.getHttpOptions().isIgnoreWriteAfterCommit() != persistValue){
+                serverXMLChanged = true;
+                httpEndpoint.getHttpOptions().setIgnoreWriteAfterCommit(persistValue);
+            }
         }
         server.setMarkToEndOfLog();
         server.updateServerConfiguration(c);
-        server.waitForConfigUpdateInLogUsingMark(Collections.emptySet());
+        server.waitForConfigUpdateInLogUsingMark(Collections.emptySet(), serverXMLChanged ? "CWWKT0016I:.*WriteAfterRedirect.*" : "");
         server.resetLogMarks();
     }
 

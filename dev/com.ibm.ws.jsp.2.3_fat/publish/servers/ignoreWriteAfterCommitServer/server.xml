@@ -7,7 +7,7 @@
     
     SPDX-License-Identifier: EPL-2.0
  -->
-<server description="Server for testing persistOnError">
+<server description="Server for testing ignoreWriteAfterCommit">
 
     <include location="../fatTestPorts.xml"/>
 
@@ -15,7 +15,7 @@
         <feature>jsp-2.3</feature>
     </featureManager>
 
-        <!-- FAT framework expects to start with the usual port  -->
+        <!-- httpEndpoint needed to that we an have the httpOptions included for the test  -->
     <httpEndpoint id="defaultHttpEndpoint"
                   host="*"
                   httpPort="${bvt.prop.HTTP_secondary}"
