@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2021 IBM Corporation and others.
+ * Copyright (c) 2012, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -97,7 +97,7 @@ public class TransformerTest {
         AppClassLoader loader = createAppClassloaderTransformer(transformer, systemTransformer);
 
         byte[] originalBytes = "Hello!".getBytes();
-        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, null, null, false, () -> originalBytes);
+        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, false, () -> originalBytes);
         byte[] transformedBytes = loader.transformClassBytes("hello", toTransform);
 
         assertTrue(transformerInvoked.get());
@@ -143,7 +143,7 @@ public class TransformerTest {
         AppClassLoader loader = createAppClassloaderTransformer(transformer, systemTransformer);
 
         byte[] originalBytes = "Goodbye!".getBytes();
-        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, null, null, false, () -> originalBytes);
+        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, false, () -> originalBytes);
         byte[] transformedBytes = loader.transformClassBytes("goodbye", toTransform);
 
         assertTrue(transformerInvoked.get());
@@ -181,7 +181,7 @@ public class TransformerTest {
         AppClassLoader loader = createAppClassloaderTransformer(transformer, systemTransformer);
 
         byte[] originalBytes = "Greetings".getBytes();
-        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, null, null, false, () -> originalBytes);
+        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, false, () -> originalBytes);
         byte[] transformedBytes = loader.transformClassBytes("greetings", toTransform);
 
         assertTrue(transformerInvoked.get());
@@ -216,7 +216,7 @@ public class TransformerTest {
 
         byte[] originalBytes = "Greetings".getBytes();
         final boolean fromCached = true;
-        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, null, null, fromCached, () -> originalBytes);
+        ByteResourceInformation toTransform = new ByteResourceInformation(originalBytes, null, fromCached, () -> originalBytes);
         byte[] transformedBytes = loader.transformClassBytes("greetings", toTransform);
 
         if (systemTransformer) {

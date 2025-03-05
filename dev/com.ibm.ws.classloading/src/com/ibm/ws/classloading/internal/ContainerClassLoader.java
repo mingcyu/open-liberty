@@ -18,7 +18,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
+import java.net.JarURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.AccessController;
@@ -60,6 +62,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
+import com.ibm.ws.artifact.url.WSJarURLConnection;
 import com.ibm.ws.classloading.configuration.GlobalClassloadingConfiguration;
 import com.ibm.ws.classloading.internal.util.ClassRedefiner;
 import com.ibm.ws.classloading.internal.util.Keyed;
@@ -194,6 +197,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
              * it to the file system as necessary.
              */
             public String getNativeLibraryPath();
+
+            public String getResourceName();
         }
 
         /**
@@ -226,78 +231,24 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
          * Defines a package using the provided <code>LibertyLoader</code>
          */
         void definePackage(String packageName, LibertyLoader loader, URL sealBase);
+
+        /**
+         * Returns the container URL where the content of the resource is located for this container
+         * @return the container URL
+         */
+        URL getContainerURL(UniversalResource resource);
+
+        /**
+         * @return
+         */
+        URL getSharedClassCacheURL(UniversalResource resource);
     }
 
-    /**
-     * Computes the shared class cache URL from the resource URL.
-     * 
-     * If the URL is a jar protocol URL, then use it as is.
-     * If it is a wsjar protocol URL, then change it to a jar protocol URL.
-     * If it is a file protocol URL, confirm that the URL ends with the
-     * class file name, and return the directory before the package
-     * qualified class file name.
-     * 
-     * @param resourceURL The URL of the location of the class file.
-     * @param resourceName The resource path of the class file. i.e. package/sub/MyClass.class
-     * @return the URL to pass to the shared class cache, or null if protocol is wrong,
-     *         or path doesn't include resourceName.
-     */
-    static URL getSharedClassCacheURL(URL resourceURL, String resourceName) {
-        URL sharedClassCacheURL;
-        if (resourceURL == null) {
-            sharedClassCacheURL = null;
-        } else {
-            String protocol = resourceURL.getProtocol();
-            // Doing the conversion that the shared class cache logic does for jar
-            // URLs in order to do less work while holding a shared class cache monitor.
-            if ("jar".equals(protocol) || "wsjar".equals(protocol)) {
-                String path = resourceURL.getPath();
-                // Can only do this for jar files.  Shared class cache logic
-                // cannot handle a file reference that is a war for instance.
-                // Need to use the full path for war files.
-                if (path.endsWith(resourceName)) {
-                    path = path.substring(0, path.length() - resourceName.length());
-                    if (path.endsWith(".jar!/") || path.endsWith(".zip!/")) {
-                        path = path.substring(0, path.length() - 2);
-                    } else {
-                        // If the archive file name does not end with jar or zip file extension and the URL ends with !/, 
-                        // the !/ will get stripped off by the shared classes cache logic and will not be recognized 
-                        // correctly as a jar file when it is a RAR for instance so add an extra character to the end of the URL.
-                        // Without this extra character, RAR files were not being recognized as being updated leading to 
-                        // stale classes being returned after the RAR file was updated.
-                        if (path.endsWith("!/")) {
-                            path += "l";
-                        }
-                    }
-                }
-                try {
-                    sharedClassCacheURL = new URL(path);
-                } catch (MalformedURLException e) {
-                    sharedClassCacheURL = null;
-                }
-            } else if (!"file".equals(protocol)) {
-                sharedClassCacheURL = null;
-            } else {
-                String externalForm = resourceURL.toExternalForm();
-                if (externalForm.endsWith(resourceName)) {
-                    try {
-                        sharedClassCacheURL = new URL(externalForm.substring(0, externalForm.length() - resourceName.length()));
-                    } catch (MalformedURLException e) {
-                        sharedClassCacheURL = null;
-                    }
-                } else {
-                    sharedClassCacheURL = null;
-                }
-            }
-        }
-        return sharedClassCacheURL;
-    }
-
-    static byte[] getClassBytesFromHook(UniversalContainer.UniversalResource resource, String className, String resourceName, ClassLoaderHook hook) {
+    static ByteResourceInformation getClassBytesFromHook(UniversalContainer container, UniversalContainer.UniversalResource resource, String className, ClassLoaderHook hook, Supplier<byte[]> actualBytes) {
         byte[] bytes = null;
+        URL sharedClassCacheURL = null;
         if (hook != null) {
-            final URL resourceURL = resource.getResourceURL("jar");
-            URL sharedClassCacheURL = getSharedClassCacheURL(resourceURL, resourceName);
+            sharedClassCacheURL = container.getSharedClassCacheURL(resource);
             if (sharedClassCacheURL != null) {
                 bytes = hook.loadClass(sharedClassCacheURL, className);
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -313,7 +264,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 }
             }
         }
-        return bytes;
+        boolean foundInClassCache = bytes != null;
+        if (!foundInClassCache) {
+            bytes = actualBytes.get();
+        }
+        return new ByteResourceInformation(bytes, container, container.getContainerURL(resource), sharedClassCacheURL, foundInClassCache, actualBytes);
     }
 
     @SuppressWarnings("unchecked")
@@ -364,13 +319,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         public ByteResourceInformation getByteResourceInformation(String className, ClassLoaderHook hook) throws IOException {
-            byte[] bytes = ContainerClassLoader.getClassBytesFromHook(this, className, resourceName, hook);
-
-            boolean foundInClassCache = bytes != null;
-            if (!foundInClassCache) {
-                bytes = getActualBytes();
-            }
-            return new ByteResourceInformation(bytes, this.entry.getResource(), this.container, resourceName, foundInClassCache, this::getActualBytes);
+            return ContainerClassLoader.getClassBytesFromHook(container, this, className, hook, this::getActualBytes);
         }
 
         private byte[] getActualBytes() {
@@ -397,6 +346,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 // Ignore (FFDC only).
             }
             return null;
+        }
+
+        @Override
+        public String getResourceName() {
+            return resourceName;
         }
     }
 
@@ -435,6 +389,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         public String getNativeLibraryPath() {
             return null;
         }
+
+        @Override
+        public String getResourceName() {
+            return null;
+        }
     }
 
     private static abstract class AbstractUniversalContainer<E> implements UniversalContainer {
@@ -460,6 +419,182 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         private volatile Map<Name, String> manifestMainAttributes = null;
         private volatile Map<String, Map<Name, String>> manifestEntryAttributes = null;
+
+        private final URL resourceContainerURL;
+        private final URL resourceSharedClassCacheURL;
+        public AbstractUniversalContainer(Collection<URL> containerURLs) {
+            URL originalRoot = null;
+            URL convertedRoot = null;
+            boolean multiple = false;
+            for (URL url : containerURLs) {
+                URL converted = createContainerURL(url);
+                if (converted != null) {
+                    String path = converted.getPath();
+                    if (!path.endsWith(".overlay/")) {
+                        if (convertedRoot == null) {
+                            convertedRoot = converted;
+                            originalRoot = url;
+                        } else {
+                            multiple = true;
+                        }
+                    }
+                }
+            }
+            if (multiple) {
+                resourceContainerURL = null;
+                resourceSharedClassCacheURL = null;
+            } else {
+                resourceContainerURL = convertedRoot;
+                resourceSharedClassCacheURL = createSharedClassCacheURL(convertedRoot, originalRoot);
+            }
+        }
+
+        URL createContainerURL(URL base) {
+            try {
+                if ("file".equals(base.getProtocol())) {
+                    // use file URLs as-is
+                    return base;
+                }
+
+                URLConnection conn = base.openConnection();
+                if (conn instanceof JarURLConnection) {
+                    return ((JarURLConnection) conn).getJarFileURL();
+                } else if (conn instanceof WSJarURLConnection) {
+                    return ((WSJarURLConnection) conn).getFile().toURI().toURL();
+                }
+                throw new UnsupportedOperationException(base.getProtocol());
+            } catch (IOException err) {
+                throw new RuntimeException(err);
+            }
+        }
+
+        URL createSharedClassCacheURL(URL containerURL, URL base) {
+            if (containerURL == null) {
+                return null;
+            }
+            String containerPath = containerURL.getPath();
+            if (containerPath.endsWith(".jar") || containerPath.endsWith(".zip")) {
+                // use containerURL as-is if it is a jar or zip extension
+                return containerURL;
+            }
+
+            try {
+                if (new File(containerURL.toURI()).isDirectory()) {
+                    // if the container URL is a directory the use as-is
+                    return containerURL;
+                }
+                String basePath = base.getPath();
+                int bangSlash = basePath.lastIndexOf("!/");
+                if (bangSlash >= 0) {
+                    // append the original !/ path (likely !/WEB-INF/classes)
+                    return new URL(containerURL.toExternalForm() + basePath.substring(bangSlash));
+                }
+                // If the URL is not to a directory and does not end ith jar or zip file extension then
+                // we assume it is still some type of archive (e.g. rar).
+                // The Semeru shared classes cache logic will not recognize the URL as a valid archive
+                // if it does not end with jar or zip file extension.
+                // The URL will get recognized as a valid archive if it does contain '!/' with any path after.
+                // Here we append '!/l' to the URL so that the Semeru shared classes cache logic will treat it
+                // as a valid archive.  For example: file://path/to/myResourceAdaptor.rar!/l
+                return new URL(containerURL + "!/l");
+            } catch (MalformedURLException e) {
+                return null;
+            } catch (URISyntaxException e) {
+                return null;
+            }
+
+        }
+
+        @Override
+        public URL getContainerURL(UniversalResource resource) {
+            if (resourceContainerURL != null) {
+                return resourceContainerURL;
+            }
+            URL resourceUrl = resource.getResourceURL("jar");
+            if (resourceUrl != null) {
+                String protocol = resourceUrl.getProtocol();
+                try {
+                    if ("jar".equals(protocol)) {
+                        URLConnection conn = resourceUrl.openConnection();
+                        if (conn instanceof JarURLConnection) {
+                            return((JarURLConnection) conn).getJarFileURL();
+                        }
+                        // unexpected; throw exception for FFDC indicating the connection class
+                        throw new IOException(conn.getClass().getName());
+                    } else if ("file".equals(protocol)) {
+                        // A file URL - i.e. the contents of the classes are expanded on the disk.
+                        // so a path like:  .../myServer/dropins/myWar.war/WEB-INF/classes/com/myPkg/MyClass.class
+                        // should convert to: .../myServer/dropins/myWar.war/WEB-INF/classes/
+                        return new URL(resourceUrl.toString().replace(resource.getResourceName(), ""));
+                    }
+                    // unexpected; throw exception for FFDC indicating the unexpected protocol
+                    throw new IOException(protocol);
+                } catch (IOException e) {
+                    // auto-FFDC
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public URL getSharedClassCacheURL(UniversalResource resource) {
+            if (resourceSharedClassCacheURL != null) {
+                return resourceSharedClassCacheURL;
+            }
+            return getSharedClassCacheURLFromResource(resource);
+        }
+
+        private URL getSharedClassCacheURLFromResource(UniversalResource resource) {
+            URL resourceURL = resource.getResourceURL("jar");
+            String resourceName = resource.getResourceName();
+            URL sharedClassCacheURL;
+            if (resourceURL == null) {
+                return null;
+            }
+            String protocol = resourceURL.getProtocol();
+            // Doing the conversion that the shared class cache logic does for jar
+            // URLs in order to do less work while holding a shared class cache monitor.
+            if ("jar".equals(protocol) || "wsjar".equals(protocol)) {
+                String path = resourceURL.getPath();
+                // Can only do this for jar files.  Shared class cache logic
+                // cannot handle a file reference that is a war for instance.
+                // Need to use the full path for war files.
+                if (path.endsWith(resourceName)) {
+                    path = path.substring(0, path.length() - resourceName.length());
+                    if (path.endsWith(".jar!/") || path.endsWith(".zip!/")) {
+                        path = path.substring(0, path.length() - 2);
+                    } else {
+                        // If the archive file name does not end with jar or zip file extension and the URL ends with !/, 
+                        // the !/ will get stripped off by the shared classes cache logic and will not be recognized 
+                        // correctly as a jar file when it is a RAR for instance so add an extra character to the end of the URL.
+                        // Without this extra character, RAR files were not being recognized as being updated leading to 
+                        // stale classes being returned after the RAR file was updated.
+                        if (path.endsWith("!/")) {
+                            path += "l";
+                        }
+                    }
+                }
+                try {
+                    sharedClassCacheURL = new URL(path);
+                } catch (MalformedURLException e) {
+                    sharedClassCacheURL = null;
+                }
+            } else if (!"file".equals(protocol)) {
+                sharedClassCacheURL = null;
+            } else {
+                String externalForm = resourceURL.toExternalForm();
+                if (externalForm.endsWith(resourceName)) {
+                    try {
+                        sharedClassCacheURL = new URL(externalForm.substring(0, externalForm.length() - resourceName.length()));
+                    } catch (MalformedURLException e) {
+                        sharedClassCacheURL = null;
+                    }
+                } else {
+                    sharedClassCacheURL = null;
+                }
+            }
+            return sharedClassCacheURL;
+        }
 
         @Override
         @FFDCIgnore(value = { IllegalArgumentException.class })
@@ -617,7 +752,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         abstract URL getResourceURL(E entry);
     }
-    
+
     /**
      * Implementation of a UniversalContainer, backed by an adaptable Container.
      */
@@ -627,6 +762,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         private String debugString;
 
         public ContainerUniversalContainer(Container container) {
+            super(container.getURLs());
             this.container = container;
             this.isRoot = container.isRoot();
             // If we are doing checkpoint, process the manifest file when the container is created.
@@ -786,13 +922,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         public ByteResourceInformation getByteResourceInformation(String className, ClassLoaderHook hook) throws IOException {
-            byte[] bytes = ContainerClassLoader.getClassBytesFromHook(this, className, resourceName, hook);
-
-            boolean foundInClassCache = bytes != null;
-            if (!foundInClassCache) {
-                bytes = getActualBytes();
-            }
-            return new ByteResourceInformation(bytes, this.entry.getResource(), this.container, resourceName, foundInClassCache, this::getActualBytes);
+            return ContainerClassLoader.getClassBytesFromHook(container, this, className, hook, this::getActualBytes);
         }
 
         byte[] getActualBytes() {
@@ -815,6 +945,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             }
             return null;
         }
+
+        @Override
+        public String getResourceName() {
+            return resourceName;
+        }
     }
 
     /**
@@ -825,6 +960,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         final boolean isRoot;
 
         public ArtifactContainerUniversalContainer(ArtifactContainer container) {
+            super(container.getURLs());
             this.container = container;
             this.isRoot = container.isRoot();
             // If we are doing checkpoint, process the manifest file when the container is created.
@@ -950,6 +1086,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         public String getNativeLibraryPath() {
+            return null;
+        }
+
+        @Override
+        public String getResourceName() {
             return null;
         }
     }
@@ -1474,9 +1615,9 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
      */
     static final class ByteResourceInformation {
         private final byte[] bytes;
-        private final URL resourceEntry;
         private final UniversalContainer resourceContainer;
-        private final String resourcePath;
+        private final URL containerURL;
+        private final URL sharedClassCacheURL;
         private final boolean fromClassCache;
         private final Supplier<byte[]> actualBytes;
 
@@ -1484,11 +1625,11 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
          * @param bytes
          * @param resourceUrl
          */
-        ByteResourceInformation(byte[] bytes, URL resourceUrl, UniversalContainer root, String resourcePath, boolean fromClassCache, Supplier<byte[]> actualBytes) {
+        ByteResourceInformation(byte[] bytes, UniversalContainer root, URL containerURL, URL sharedClassCacheURL, boolean fromClassCache, Supplier<byte[]> actualBytes) {
             this.bytes = bytes;
-            this.resourceEntry = resourceUrl;
             this.resourceContainer = root;
-            this.resourcePath = resourcePath;
+            this.containerURL = containerURL;
+            this.sharedClassCacheURL = sharedClassCacheURL;
             this.fromClassCache = fromClassCache;
             this.actualBytes = actualBytes;
         }
@@ -1503,25 +1644,23 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         void definePackage(String packageName, LibertyLoader loader) {
-            resourceContainer.definePackage(packageName, loader, resourceEntry);
+            resourceContainer.definePackage(packageName, loader, getContainerURL());
         }
 
         /**
-         * Returns the resource URL for this resource
+         * Returns the container URL for this resource
          *
          * @return
          */
-        public URL getResourceUrl() {
-            return this.resourceEntry;
+        public URL getContainerURL() {
+            return containerURL;
         }
 
         /**
-         * Returns the resource style path to this resource, this will be in the form "a/b/c" rather than a . notation.
-         *
-         * @return The resource path
+         * @return
          */
-        public String getResourcePath() {
-            return this.resourcePath;
+        public URL getSharedClassCacheURL() {
+            return sharedClassCacheURL;
         }
 
         public boolean foundInClassCache() {

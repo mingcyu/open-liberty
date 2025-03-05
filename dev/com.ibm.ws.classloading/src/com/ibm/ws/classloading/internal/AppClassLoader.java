@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -410,8 +410,8 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
             definePackage(byteResourceInformation, packageName);
         }
 
-        URL resourceURL = byteResourceInformation.getResourceUrl();
-        ProtectionDomain pd = getClassSpecificProtectionDomain(resourceName, resourceURL);
+        URL containerURL = byteResourceInformation.getContainerURL();
+        ProtectionDomain pd = getClassSpecificProtectionDomain(containerURL);
 
         final ProtectionDomain fpd = pd;
         java.security.PermissionCollection pc = null;
@@ -437,18 +437,13 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         } finally {
             final TraceComponent cltc;
             if (TraceComponent.isAnyTracingEnabled() && (cltc = getClassLoadingTraceComponent(packageName)).isDebugEnabled()) {
-                String loc = "" + byteResourceInformation.getResourceUrl();
-                String path = byteResourceInformation.getResourcePath();
-                if (loc.endsWith(path))
-                    loc = loc.substring(0, loc.length() - path.length());
-                if (loc.endsWith("!/"))
-                    loc = loc.substring(0, loc.length() - 2);
+                String loc = byteResourceInformation.getContainerURL().toString();
                 String message = clazz == null ? "CLASS FAIL" : "CLASS LOAD";
                 Tr.debug(cltc, String.format("%s: [%s] [%s] [%s]", message, getKey(), loc, name));
             }
         }
         if (!byteResourceInformation.foundInClassCache() && hook != null) {
-            URL sharedClassCacheURL = getSharedClassCacheURL(resourceURL, byteResourceInformation.getResourcePath());
+            URL sharedClassCacheURL = byteResourceInformation.getSharedClassCacheURL();
             if (sharedClassCacheURL != null && Arrays.equals(bytes, byteResourceInformation.getBytes())) {
                 hook.storeClass(sharedClassCacheURL, clazz);
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -469,13 +464,13 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
     }
 
     @Trivial // injected trace calls ProtectedDomain.toString() which requires privileged access
-    private ProtectionDomain getClassSpecificProtectionDomain(final String resourceName, final URL resourceUrl) {
+    private ProtectionDomain getClassSpecificProtectionDomain(final URL containerUrl) {
         ProtectionDomain pd = config.getProtectionDomain();
         try {
             pd = AccessController.doPrivileged(new PrivilegedExceptionAction<ProtectionDomain>() {
                 @Override
                 public ProtectionDomain run() {
-                    return getClassSpecificProtectionDomainPrivileged(resourceName, resourceUrl);
+                    return getClassSpecificProtectionDomainPrivileged(containerUrl);
                 }
             });
         } catch (PrivilegedActionException paex) {
@@ -486,39 +481,12 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
 
     }
 
-    ProtectionDomain getClassSpecificProtectionDomainPrivileged(String resourceName, URL resourceUrl) {
-        ProtectionDomain pd;
-
-        try {
-            URLConnection conn = resourceUrl.openConnection();
-            URL containerUrl;
-            if (conn instanceof JarURLConnection) {
-                containerUrl = ((JarURLConnection) conn).getJarFileURL();
-            } else if (conn instanceof WSJarURLConnection) {
-                containerUrl = ((WSJarURLConnection) conn).getFile().toURI().toURL();
-            } else {
-                // this is most likely a file URL - i.e. the contents of the classes are expanded on the disk.
-                // so a path like:  .../myServer/dropins/myWar.war/WEB-INF/classes/com/myPkg/MyClass.class
-                // should convert to: .../myServer/dropins/myWar.war/WEB-INF/classes/
-                containerUrl = new URL(resourceUrl.toString().replace(resourceName, ""));
-            }
-            String containerUrlString = containerUrl.toString();
-            pd = protectionDomains.get(containerUrlString);
-            
-            if (pd == null) {
-                ProtectionDomain pdFromConfig = config.getProtectionDomain();
-                CodeSource cs = new CodeSource(containerUrl, pdFromConfig.getCodeSource().getCertificates());
-                pd = new ProtectionDomain(cs, pdFromConfig.getPermissions());
-                ProtectionDomain oldPD = protectionDomains.putIfAbsent(containerUrlString, pd);                
-                if (oldPD != null) {
-                    pd = oldPD;
-                }
-            } 
-        } catch (IOException ex) {
-            // Auto-FFDC - and then use the protection domain from the classloader configuration
-            pd = config.getProtectionDomain();
-        }
-        return pd;
+    ProtectionDomain getClassSpecificProtectionDomainPrivileged(URL containerUrl) {
+        return protectionDomains.computeIfAbsent(containerUrl.toString(), (c) -> {
+            ProtectionDomain pdFromConfig = config.getProtectionDomain();
+            CodeSource cs = new CodeSource(containerUrl, pdFromConfig.getCodeSource().getCertificates());
+            return new ProtectionDomain(cs, pdFromConfig.getPermissions());
+        });
     }
 
     /**
