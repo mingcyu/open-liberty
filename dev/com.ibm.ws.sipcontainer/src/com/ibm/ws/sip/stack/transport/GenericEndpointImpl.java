@@ -370,11 +370,12 @@ public class GenericEndpointImpl {
 			} 
 		}
 		else {
-			isForcedDefaultEndpointIdDeactivate = true;
-			if (c_logger.isTraceDebugEnabled()){
-				c_logger.traceDebug("EYECATCHER: defaultSipEndpoint endpoint wasn't activated - we have other sipendpoint configured!!!");
-			}
 			
+			if (c_logger.isTraceDebugEnabled()){
+				c_logger.traceDebug("INFO: defaultSipEndpoint endpoint won't be activated as other sipendpoint is configured on the server!!!");
+			}
+
+			//isForcedDefaultEndpointIdDeactivate = true;
 			//removeDefaultSipEndpointIdFromConfiguration();
 		}
 	}
