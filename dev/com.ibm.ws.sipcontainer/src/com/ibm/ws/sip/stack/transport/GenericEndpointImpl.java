@@ -374,6 +374,13 @@ public class GenericEndpointImpl {
 			if (c_logger.isTraceDebugEnabled()){
 				c_logger.traceDebug("INFO: defaultSipEndpoint endpoint won't be activated as other sipendpoint is configured on the server!!!");
 			}
+			
+			//Do not remove defaultSipEndpont ID from configuration
+			//when other sipEndpoints are configured.
+			//By removing the defaultSipEndpointId from configuretions we
+			//also remove the ssl configuration, which results in
+			//TLS endpoints not coming online
+			//see open-liberty issue #30874
 
 			//isForcedDefaultEndpointIdDeactivate = true;
 			//removeDefaultSipEndpointIdFromConfiguration();
