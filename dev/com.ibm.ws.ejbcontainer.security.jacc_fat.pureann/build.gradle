@@ -20,8 +20,10 @@ configurations {
 dependencies {
   requiredLibs 'org.apache.httpcomponents:httpclient:4.1.2',
                'org.apache.httpcomponents:httpcore:4.1.2',
-               project(':io.openliberty.org.apache.commons.codec'),
                project(':com.ibm.ws.ejbcontainer.security.jacc_fat.common'),
+               project(':io.openliberty.org.apache.commons.codec'),
+               project(':com.ibm.json4j'),
+               project(':com.ibm.ws.security.audit_fat.common.tooling'),
                project(':com.ibm.ws.webcontainer.security_test.servlets')
 }
 
@@ -407,6 +409,7 @@ assemble {
  ******************************************************************
  ******************************************************************/
 autoFVT.dependsOn ':com.ibm.ws.security.authorization.jacc.testprovider:assemble'
+autoFVT.dependsOn ':io.openliberty.security.authorization.jacc.testprovider:assemble'
 autoFVT.dependsOn ':com.ibm.ws.ejbcontainer.security_test.servlets:assemble'
 
 autoFVT.doLast {
@@ -712,5 +715,5 @@ autoFVT.doLast {
       from new File(project(':com.ibm.ws.ejbcontainer.security_test.servlets').buildDir, 'test-application/ejbjarinstandaloneM08.war')
       into new File(autoFvtDir, 'publish/servers/' + server + '/apps')
     }
-  }
+  }  
 }
