@@ -3075,8 +3075,14 @@ public class QueryInfo {
 
                     String[] names = new String[recordComponents.length];
                     for (int i = 0; i < recordComponents.length; i++) {
-                        // 1.1 TODO first check for Select annotation on record component
-                        names[i] = recordComponents[i].getName();
+                        String[] select = entityInfo.builder.provider.compat //
+                                        .getSelections(recordComponents[i]);
+                        if (select == null || select.length == 0)
+                            names[i] = recordComponents[i].getName();
+                        else if (select.length == 1)
+                            names[i] = select[0];
+                        else
+                            throw new UnsupportedOperationException("@Select " + Arrays.toString(select)); // 1.1 TODO
                     }
 
                     try {
@@ -4648,9 +4654,13 @@ public class QueryInfo {
      *
      * @param writer writes to the introspection file.
      * @param indent indentation for lines.
+     * @param future future for this QueryInfo.
      */
+    @FFDCIgnore(Throwable.class)
     @Trivial
-    public void introspect(PrintWriter writer, String indent) {
+    public void introspect(PrintWriter writer,
+                           String indent,
+                           CompletableFuture<QueryInfo> future) {
         writer.println(indent + "QueryInfo@" + Integer.toHexString(hashCode()));
         indent = indent + "  ";
         writer.println(indent + "entity: " + entityInfo);
@@ -4722,6 +4732,22 @@ public class QueryInfo {
 
         writer.println(indent + "validate method parameters? " + validateParams);
         writer.println(indent + "validate method result? " + validateResult);
+
+        if (future != null) {
+            writer.print(indent + "state: ");
+            if (future.isCancelled())
+                writer.println("cancelled");
+            else if (future.isDone())
+                try {
+                    future.join();
+                    writer.println("completed");
+                } catch (Throwable x) {
+                    writer.println("failed");
+                    Util.printStackTrace(x, writer, indent + "  ", null);
+                }
+            else
+                writer.println("not completed");
+        }
     }
 
     /**

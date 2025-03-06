@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,8 +13,11 @@
 package io.openliberty.data.internal.version;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Set;
+
+import jakarta.data.repository.Find;
 
 /**
  * Interface for version-dependent capability, available as an OSGi service.
@@ -66,6 +69,14 @@ public interface DataVersionCompatibility {
     Annotation getCountAnnotation(Method method);
 
     /**
+     * Obtains the entity class from the Find annotation value, if present.
+     *
+     * @param find Find annotation.
+     * @return entity class if the Find annotation value is present. Otherwise void.class.
+     */
+    Class<?> getEntityClass(Find find);
+
+    /**
      * Obtains the Exists annotation if present on the method. Otherwise null.
      *
      * @param method repository method. Must not be null.
@@ -74,14 +85,14 @@ public interface DataVersionCompatibility {
     Annotation getExistsAnnotation(Method method);
 
     /**
-     * Obtains the value of the Select annotation if present on the method.
-     * Otherwise null.
+     * Obtains the value of the Select annotation if present on the method
+     * or record component. Otherwise null.
      *
-     * @param method repository method. Must not be null.
+     * @param element repository method or record component. Must not be null.
      * @return values of the Select annotation indicating the columns to select,
      *         otherwise null.
      */
-    String[] getSelections(Method method);
+    String[] getSelections(AnnotatedElement element);
 
     /**
      * Return a 2-element array where the first element is the entity attribute name
