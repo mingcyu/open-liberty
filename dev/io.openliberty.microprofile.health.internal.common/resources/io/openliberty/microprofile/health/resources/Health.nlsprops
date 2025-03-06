@@ -71,7 +71,7 @@ file.healthcheck.health.directory.write.fail.CWMMH0101W.explanation=The runtime 
 file.healthcheck.health.directory.write.fail.CWMMH0101W.useraction=The user must identify the root cause of the permission issue.
 
 
-file.healthcheck.file.name.conflict.CWMMH0105W=CWMMH0106W: The runtime has detected the presence of the following directory [{0}]. A file with the same name is required for the file-based health check function at this path.  The file-based health check function will be disabled.
+file.healthcheck.file.name.conflict.CWMMH0105W=CWMMH0106W: The runtime has detected the presence of the following directory [{0}]. A file with the same name is required for the file-based health check function at this path. The file-based health check function will be disabled.
 file.healthcheck.file.name.conflict.CWMMH0105W.explanation=The file-based health checks require the creation and use of the files "live", "ready" and "started" in the /health directory. An existing directory with one of those names is already present in the /health directory which prevents the required files from being created.
 file.healthcheck.file.name.conflict.CWMMH0105W.useraction=The directory is not created by this runtime and may contain contents that are important to the user. Please either remove or relocate the directory.
 
@@ -79,6 +79,6 @@ file.healthcheck.file.delete.fail.CWMMH0106W=CWMMH0106W: Unable to delete existi
 file.healthcheck.file.delete.fail.CWMMH0106W.explanation=The file-based health checks require the creation and use of the files "live", "ready" and "started" in the /health directory. For the file-based health checks to function correctly, these files must not exist when the runtime starts. The runtime has attempted to delete the existing file was unable to.
 file.healthcheck.file.delete.fail.CWMMH0106W.useraction=The user must identify the root cause preventing the runtime from deleting the files.
 
-file.update.interval.config.invalid.CWMMH01010W=CWMMH01010W: An invalid value was provided for the file update interval. The value provided must consist of a number followed by an optional time unit of "ms" for milliseconds or "s" for seconds. If no time unit is specified, the value is in seconds by default. The runtime will default to 10 seconds.
+file.update.interval.config.invalid.CWMMH01010W=CWMMH01010W: An invalid value [{0}] was provided for the file update interval. The value provided must consist of a number followed by an optional time unit of "ms" for milliseconds or "s" for seconds. If no time unit is specified, the value is in seconds by default. The runtime will default to 10 seconds.
 file.update.interval.config.invalid.CWMMH01010W.explanation=The file update interval configuration only accepts a number followed by an optional time unit of "ms" for milliseconds or "s" for seconds. If no time unit is specified, the value is in seconds by default.
 file.update.interval.config.invalid.CWMMH01010W.useraction=Input a correct value for the file update interval configuration.

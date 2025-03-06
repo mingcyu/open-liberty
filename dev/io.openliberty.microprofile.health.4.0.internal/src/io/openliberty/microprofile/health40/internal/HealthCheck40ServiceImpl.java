@@ -222,7 +222,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                     fileUpdateIntevalMilliseconds = Integer.parseInt(configValue) * 1000;
                 }
             } else {
-                Tr.warning(tc, "file.update.interval.config.invalid.CWMMH01010W", null);
+                Tr.warning(tc, "file.update.interval.config.invalid.CWMMH01010W", configValue);
                 //Default of 10 seconds.
                 fileUpdateIntevalMilliseconds = 10000;
             }

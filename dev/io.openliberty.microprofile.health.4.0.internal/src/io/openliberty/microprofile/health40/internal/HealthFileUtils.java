@@ -108,7 +108,7 @@ public class HealthFileUtils {
 
             //Testing write.
             if (!HealthFileUtils.canWriteToDirectory(healthDirFile)) {
-                Tr.warning(tc, "file.healthcheck.health.directory.create.fail.CWMMH0100W", healthDirFile.getAbsolutePath());
+                Tr.warning(tc, "file.healthcheck.health.directory.write.fail.CWMMH0101W", healthDirFile.getAbsolutePath());
             }
 
         } else { // /health dir exists
