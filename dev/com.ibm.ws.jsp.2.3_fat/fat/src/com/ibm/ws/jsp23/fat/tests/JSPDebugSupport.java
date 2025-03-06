@@ -36,9 +36,12 @@ import componenttest.custom.junit.runner.Mode.TestMode;
 
 
 /**
+ *  There is debug support for JSP via the "-Dwas.debug.mode=true" JVM Option. Relates to a "source map" (SMAP).
  * 
+ *  This verifies that JSPs compile with the option enabled. 
  */
 // No need to run against cdi-2.0 since these tests don't use CDI at all.
+@Mode(TestMode.FULL)
 @SkipForRepeat("CDI-2.0")
 @RunWith(FATRunner.class)
 public class JSPDebugSupport {
@@ -65,7 +68,7 @@ public class JSPDebugSupport {
     }
 
     /**
-     * 
+     *  Hits index.jsp and verifies the page rendered without any exceptions. 
      *
      * @throws Exception if something goes horribly wrong
      */

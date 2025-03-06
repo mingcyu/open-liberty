@@ -16,6 +16,8 @@
  <title>Test Debug Support</title>
  </head>
  <body>
+
+    Hello world!
  
      <p> Testing JSTL </p>
  
@@ -36,7 +38,7 @@
      out.print(testString);
      %>
  
-     <p> Testing a Lambdas </p>
+     <p> Testing Lambdas </p>
      <%
      char[] numbersChars = {'t','e', 's', 't'};
      String testStringLambda = Stream.of(numbersChars).map(arr ->  new String(arr)).collect(Collectors.joining());
@@ -46,4 +48,3 @@
      
  </body>
  </html>
- 
