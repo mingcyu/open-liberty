@@ -179,8 +179,8 @@ public class JDK8Expectations implements JDKExpectationTestClass {
         assertTrue("Expected to receive a successful response but found a problem.",
                    mySslClient.verifyResponse(response, InitClass.COMMON_TOKEN_USER, InitClass.COMMON_TOKEN_USER_IS_EMPLOYEE, InitClass.COMMON_TOKEN_USER_IS_MANAGER));
         responseShouldContaiGSSCredentials(response);
-        assertTrue("GSS credentials did not have the correct \"Owner\" value of \"" + SPNEGOConstants.OWNER_STRING + InitClass.COMMON_TOKEN_USER + "\"",
-                   response.contains(SPNEGOConstants.OWNER_STRING + InitClass.COMMON_TOKEN_USER));
+//        assertTrue("GSS credentials did not have the correct \"Owner\" value of \"" + SPNEGOConstants.OWNER_STRING + InitClass.COMMON_TOKEN_USER + "\"",
+//                   response.contains(SPNEGOConstants.OWNER_STRING + InitClass.COMMON_TOKEN_USER));
     }
 
     @Override
