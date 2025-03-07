@@ -673,7 +673,7 @@ public class BasicAuthTest extends ContainerKDCCommonTest {
     @Test
     @AllowedFFDC({ "java.net.MalformedURLException" })
     public void testNtlmTokenReceivedErrorPageWithMalformedUrl() throws Exception {
-        setSpnegoServerConfig(configFile, keytabFile, this.SPN, "false", null, MALFORMED_URL_ERROR_PAGE, null, false);
+        setSpnegoServerConfig(configFile, keytabFile, this.SPN, "false", null, null, MALFORMED_URL_ERROR_PAGE, false);
         Map<String, String> headers = testHelper.setTestHeaders("Negotiate " + NTLM_TOKEN, SPNEGOConstants.FIREFOX, TARGET_SERVER, null);
         String response = unsuccessfulSpnegoServletCall(headers, SPNEGOConstants.DONT_IGNORE_ERROR_CONTENT);
 
