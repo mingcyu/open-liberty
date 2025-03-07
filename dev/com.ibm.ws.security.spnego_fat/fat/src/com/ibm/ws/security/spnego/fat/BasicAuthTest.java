@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2024 IBM Corporation and others.
+ * Copyright (c) 2014, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -87,7 +87,7 @@ public class BasicAuthTest extends ContainerKDCCommonTest {
                                            SPNEGOConstants.USE_COMMON_KEYTAB,
                                            SPNEGOConstants.START_SERVER);
 
-        testHelper.addShutdownMessages("CWWKS9127W", "CWWKS4317E", "CWWKS4308E", "CWWKS4309E", "CWWKS4318E", "CWWKG0083W", "CWWKS4313E", "CWWKS4312E", "CWWKG0027W", "CWWKG0011W");
+        testHelper.addShutdownMessages("CWWKS9127W", "CWWKS4317E", "CWWKS4308E", "CWWKS4309E", "CWWKS4318E", "CWWKG0083W", "CWWKS4313E", "CWWKS4312E", "CWWKG0027W", "CWWKG0011W", "CWWKS4310W");
     }
 
     @Before
