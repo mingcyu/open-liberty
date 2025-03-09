@@ -84,7 +84,7 @@ public class JSPChannelTest {
      *
      * @throws Exception if something goes horribly wrong
      */
-    @ExpectedFFDC("com.ibm.wsspi.genericbnf.exception.MessageSentException")
+    
     @Test
     public void testIgnoreWriteAfterCommitTrue() throws Exception {
         Socket socket = null;
