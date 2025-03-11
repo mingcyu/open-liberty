@@ -208,7 +208,7 @@ boolean initialize = false
 Set<String> projectNames = new LinkedHashSet<>()
 for (Iterator<String> iter = startParameter.taskNames.iterator(); iter.hasNext();) {
   String taskName = iter.next()
-  if (taskName == 'cnf:initialize') {
+  if ((taskName == 'cnf:initialize') || (taskName == 'ee.jakarta.ee4j8.cts.liberty_common:generateProjects')) {
     initialize = true
   }
 }
