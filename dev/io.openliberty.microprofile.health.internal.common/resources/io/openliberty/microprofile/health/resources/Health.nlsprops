@@ -26,7 +26,7 @@
 # Messages used by Health Impl -  range is 0000-0999
 # The range 0000-0049 has been reserved for messages issued above the HealthCheckExecutor within the call stack
 # The range 0050-0099 has been reserved for messages issued at or below the HealthCheckExecutor within the call stack
-# The range 0100-0149 has been reserved for messages issued by the file-based health check mechanism
+# The 0100-0149 range is reserved for messages that are issued by the file-based health check mechanism
 #-----------------------------------------------------------------------------------------------------------------------------
 
 
