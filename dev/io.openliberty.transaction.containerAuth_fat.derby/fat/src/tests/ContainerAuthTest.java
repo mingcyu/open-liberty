@@ -151,18 +151,18 @@ public class ContainerAuthTest extends FATServletClient {
         FATUtils.startServers(runner, conAuth);
 
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
 
         // Update server.xml to use a different authData
         conAuth.setMarkToEndOfLog();
-        ServerConfiguration serverConfig = conAuth.getServerConfiguration();
-        DataSource tranlogDataSource = serverConfig.getDataSources().getById("tranlogDataSource");
+        final ServerConfiguration serverConfig = conAuth.getServerConfiguration();
+        final DataSource tranlogDataSource = serverConfig.getDataSources().getById("tranlogDataSource");
         tranlogDataSource.setContainerAuthDataRef("auth3");
         conAuth.updateServerConfiguration(serverConfig);
-        conAuth.waitForConfigUpdateInLogUsingMark(Collections.singleton(APP_NAME), true);
+        assertNotNull("Application " + APP_NAME + " should have been updated", conAuth.waitForStringInLogUsingMark("CWWKZ0003I: The application " + APP_NAME + " updated in "));
 
         // Do a little more tx work
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
@@ -176,16 +176,16 @@ public class ContainerAuthTest extends FATServletClient {
         FATUtils.startServers(runner, conAuthEmbed);
 
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
 
         // Update server.xml to use a different authData
         conAuthEmbed.setMarkToEndOfLog();
-        ServerConfiguration serverConfig = conAuthEmbed.getServerConfiguration();
-        Transaction transaction = serverConfig.getTransaction();
-        ConfigElementList<DataSource> tranlogDataSources = transaction.getDataSources();
+        final ServerConfiguration serverConfig = conAuthEmbed.getServerConfiguration();
+        final Transaction transaction = serverConfig.getTransaction();
+        final ConfigElementList<DataSource> tranlogDataSources = transaction.getDataSources();
         tranlogDataSources.get(0).setContainerAuthDataRef("auth3");
         conAuthEmbed.updateServerConfiguration(serverConfig);
         conAuthEmbed.waitForConfigUpdateInLogUsingMark(Collections.singleton(APP_NAME));
@@ -202,7 +202,7 @@ public class ContainerAuthTest extends FATServletClient {
         FATUtils.startServers(runner, conAuth);
 
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
@@ -217,14 +217,13 @@ public class ContainerAuthTest extends FATServletClient {
         FATUtils.startServers(runner, conAuthBadUser);
 
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuthBadUser.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuthBadUser.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuthBadUser, SERVLET_NAME, "testUserTranLookup");
 
         // Container authentication is configured but to an invalid user name. The recovery log should fail.
-        String logFailStr = conAuthBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
-        assertNotNull("Recovery log did not fail", logFailStr);
+        assertNotNull("Recovery log should have failed", conAuthBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED"));
     }
 
     @Test
@@ -235,7 +234,7 @@ public class ContainerAuthTest extends FATServletClient {
         FATUtils.startServers(runner, conAuthEmbed);
 
         // There should be a match so fail if there is not.
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
@@ -249,13 +248,12 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuthEmbedBadUser);
 
-        assertNotNull("Container authentication has unexpectedly not been configured", conAuthEmbedBadUser.waitForStringInTrace(CONFIGURED_MARKER));
+        assertNotNull("Container authentication should have been configured", conAuthEmbedBadUser.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
         runTest(conAuthEmbedBadUser, SERVLET_NAME, "testUserTranLookup");
 
         // Container authentication is configured but to an invalid user name. The recovery log should fail.
-        String logFailStr = conAuthEmbedBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED");
-        assertNotNull("Recovery log did not fail", logFailStr);
+        assertNotNull("Recovery log should have failed", conAuthEmbedBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED"));
     }
 }

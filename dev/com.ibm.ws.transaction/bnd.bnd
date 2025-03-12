@@ -27,8 +27,8 @@ Service-Component: com.ibm.ws.transaction; \
       authData=com.ibm.websphere.security.auth.data.AuthData; \
       transactionSettingsProvider=com.ibm.tx.jta.embeddable.TransactionSettingsProvider ;\
       runningCondition='org.osgi.service.condition.Condition';\
-      optional:='dataSourceFactory,transactionSettingsProvider,runningCondition,authData';\
-      dynamic:='dataSourceFactory,transactionSettingsProvider,runningCondition,authData';\
+      optional:='dataSourceFactory,transactionSettingsProvider,runningCondition,authData,resourceConfigFactory';\
+      dynamic:='dataSourceFactory,transactionSettingsProvider,runningCondition,authData,resourceConfigFactory';\
 	  multiple:='authData';\
       configuration-policy:=require;\
       properties:='\
