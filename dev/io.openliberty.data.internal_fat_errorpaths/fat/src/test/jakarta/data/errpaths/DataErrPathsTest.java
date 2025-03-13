@@ -51,6 +51,7 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1003E.*existsByAddress", // exists method returning int
                                    "CWWKD1003E.*existsByBirthday", // exists method returning Page<Boolean>
                                    "CWWKD1003E.*existsByName", // exists method returning CompletableFuture<Long>
+                                   "CWWKD1006E.*deleteReturn.*ByAddress", // invalid result type for delete
                                    "CWWKD1006E.*removeBySSN", // delete method attempts to return record
                                    "CWWKD1009E.*addNothing", // Insert method without parameters
                                    "CWWKD1009E.*addSome", // Insert method with multiple parameters

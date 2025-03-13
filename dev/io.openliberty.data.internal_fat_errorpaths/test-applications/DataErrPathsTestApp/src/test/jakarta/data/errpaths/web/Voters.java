@@ -124,6 +124,27 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     void changeNothing();
 
     /**
+     * Invalid return type Boolean is not the entity or Id.
+     */
+    Page<Boolean> deleteReturnBooleanByAddress(String address,
+                                               Limit limit,
+                                               Sort<Voter> sort);
+
+    /**
+     * Invalid return type char is not the entity or id.
+     */
+    char[] deleteReturnCharByAddress(String address,
+                                     Limit limit,
+                                     Sort<Voter> sort);
+
+    /**
+     * Invalid return type String is not the entity or Id.
+     */
+    List<String> deleteReturnStringByAddress(String address,
+                                             Limit limit,
+                                             Sort<Voter> sort);
+
+    /**
      * This invalid method defines a limit on results of a delete operation
      * but has a return type that disallows returning results.
      */

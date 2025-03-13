@@ -748,6 +748,94 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Find-and-delete repository operations that return invalid types that are neither the entity class,
+     * record class, or id class.
+     */
+    @Test
+    public void testFindAndDeleteReturnsInvalidTypes() {
+
+        // test data includes an entity with this address:
+        final String address = "4051 E River Rd NE, Rochester, MN 55906";
+
+        Sort<Voter> sort = Sort.asc("ssn");
+
+        try {
+            char[] deleted = voters.deleteReturnCharByAddress(address,
+                                                              Limit.of(3),
+                                                              sort);
+            fail("Deleted with return type of char[]: " + Arrays.toString(deleted) +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+
+        try {
+            List<String> deleted = voters.deleteReturnStringByAddress(address,
+                                                                      Limit.of(4),
+                                                                      sort);
+            fail("Deleted with return type of List of String: " + deleted +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+
+        try {
+            Page<Boolean> deleted = voters.deleteReturnBooleanByAddress(address,
+                                                                        Limit.of(5),
+                                                                        sort);
+            fail("Deleted with return type of Page of Boolean: " + deleted +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+    }
+
+    /**
+     * Find-and-delete repository operations that return invalid types that are neither the entity class,
+     * record class, or id class.
+     * In this case the table is empty and no results will have been deleted,
+     * we should still throw a mapping exception.
+     */
+    @Test
+    public void testFindAndDeleteReturnsInvalidTypesEmpty() {
+
+        // test data does not include any entities with this address:
+        final String address = "2800 37th St NW, Rochester, MN 55901";
+
+        Sort<Voter> sort = Sort.asc("ssn");
+
+        try {
+            char[] deleted = voters.deleteReturnCharByAddress(address,
+                                                              Limit.of(3),
+                                                              sort);
+            fail("Deleted with return type of char[]: " + Arrays.toString(deleted) +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+
+        try {
+            List<String> deleted = voters.deleteReturnStringByAddress(address,
+                                                                      Limit.of(4),
+                                                                      sort);
+            fail("Deleted with return type of List of String: " + deleted +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+
+        try {
+            Page<Boolean> deleted = voters.deleteReturnBooleanByAddress(address,
+                                                                        Limit.of(5),
+                                                                        sort);
+            fail("Deleted with return type of Page of Boolean: " + deleted +
+                 " even though the id type is int.");
+        } catch (MappingException x) {
+            // expected
+        }
+    }
+
+    /**
      * Verify an error is raised for a repository insert method with a parameter
      * that can insert multiple entities and a return type that can only return
      * one inserted entity.
