@@ -11,6 +11,7 @@
 package tests;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -150,7 +151,6 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuth);
 
-        // There should be a match so fail if there is not.
         assertNotNull("Container authentication should have been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
@@ -162,7 +162,13 @@ public class ContainerAuthTest extends FATServletClient {
         final DataSource tranlogDataSource = serverConfig.getDataSources().getById("tranlogDataSource");
         tranlogDataSource.setContainerAuthDataRef("auth3");
         conAuth.updateServerConfiguration(serverConfig);
-        assertNotNull("Application " + APP_NAME + " should have been updated", conAuth.waitForStringInLogUsingMark("CWWKZ0003I: The application " + APP_NAME + " updated in "));
+
+        // This is intermittently failing atm hence the dump
+        final String appRestartedMsg = conAuth.waitForStringInLogUsingMark("CWWKZ0003I: The application " + APP_NAME + " updated in ");
+        if (null == appRestartedMsg) {
+            conAuth.serverDump();
+            fail("Application " + APP_NAME + " should have been updated");
+        }
 
         // Do a little more tx work
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
@@ -175,7 +181,6 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuthEmbed);
 
-        // There should be a match so fail if there is not.
         assertNotNull("Container authentication should have been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
@@ -201,7 +206,6 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuth);
 
-        // There should be a match so fail if there is not.
         assertNotNull("Container authentication should have been configured", conAuth.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
@@ -216,7 +220,6 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuthBadUser);
 
-        // There should be a match so fail if there is not.
         assertNotNull("Container authentication should have been configured", conAuthBadUser.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
@@ -233,7 +236,6 @@ public class ContainerAuthTest extends FATServletClient {
 
         FATUtils.startServers(runner, conAuthEmbed);
 
-        // There should be a match so fail if there is not.
         assertNotNull("Container authentication should have been configured", conAuthEmbed.waitForStringInTrace(CONFIGURED_MARKER));
 
         // Do a little tx work
