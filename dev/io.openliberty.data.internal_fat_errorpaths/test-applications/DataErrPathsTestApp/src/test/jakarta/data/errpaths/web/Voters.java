@@ -169,6 +169,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     CompletableFuture<Long> existsByName(String name);
 
     /**
+     * This invalid method omits the entity attribute name from OrderBy in
+     * the method name.
+     */
+    List<Voter> findByAddressContainsOrderByAsc(String addressSubstring);
+
+    /**
      * This invalid method has a conflict between its OrderBy annotation and
      * method name keyword.
      */
@@ -187,6 +193,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
      */
     CursoredPage<Integer> findByBirthdayOrderBySSN(LocalDate birthday,
                                                    PageRequest pageReq);
+
+    /**
+     * This invalid method omits the entity attribute name from findBy in the
+     * method name.
+     */
+    List<Voter> findByIgnoreCaseContains(String address);
 
     /**
      * This invalid method has both a First keyword and a Limit parameter.

@@ -61,6 +61,7 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1010E.*nameAndZipCode", // Record return type with invalid attribute name
                                    "CWWKD1010E.*sortedByEndOfAddress", // OrderBy with invalid function
                                    "CWWKD1010E.*sortedByZipCode", // OrderBy with invalid attribute name
+                                   "CWWKD1011E.*findByIgnoreCaseContains", // missing entity attribute name
                                    "CWWKD1015E.*addPollingLocation", // insert null entity
                                    "CWWKD1015E.*addOrUpdatePollingLocation", // save null entity
                                    "CWWKD1017E.*livesAt", // multiple Limit parameters
@@ -70,6 +71,7 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1019E.*livingAt", // mix of named/positional parameters
                                    "CWWKD1019E.*residingAt", // unused parameters
                                    "CWWKD1022E.*discardPage", // Delete operation with a PageRequest
+                                   "CWWKD1024E.*findByAddressContainsOrderByAsc", // missing entity attribute name
                                    "CWWKD1024E.*inPrecinct", // @By with empty string value
                                    "CWWKD1024E.*inTownship", // @OrderBy with empty string value
                                    "CWWKD1033E.*selectByFirstName", // CursoredPage with ORDER BY in Query

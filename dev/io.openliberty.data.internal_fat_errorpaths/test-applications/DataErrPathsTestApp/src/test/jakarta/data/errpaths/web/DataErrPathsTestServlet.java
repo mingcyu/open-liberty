@@ -515,6 +515,23 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify MappingException is raised if the entity attribute name is omitted
+     * from a findBy comparison of a repository method name.
+     */
+    @Test
+    public void testEmptyFindComparison() {
+        try {
+            List<Voter> found = voters.findByIgnoreCaseContains("Civic Center Dr");
+            fail("Ordered by an empty string attribute name and returned " + found);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1011E:") ||
+                !x.getMessage().contains("findByIgnoreCaseContains"))
+                throw x;
+        }
+    }
+
+    /**
      * Verify IllegalArgumentException is raised if you attempt to delete an
      * empty array of entities.
      */
@@ -536,7 +553,7 @@ public class DataErrPathsTestServlet extends FATServlet {
      * value instead of a valid entity attribute name to the OrderBy annotation.
      */
     @Test
-    public void testEmptyOrderBy() {
+    public void testEmptyOrderByAnno() {
         try {
             List<Voter> found = voters.inTownship("Haverhill");
             fail("Ordered by an empty string attribute name and returned " + found);
@@ -544,6 +561,23 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1024E:") ||
                 !x.getMessage().contains("inTownship"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify MappingException is raised if the entity attribute name is omitted
+     * from the OrderBy of a repository method name.
+     */
+    @Test
+    public void testEmptyOrderByInMethodName() {
+        try {
+            List<Voter> found = voters.findByAddressContainsOrderByAsc("Broadway Ave");
+            fail("Ordered by an empty string attribute name and returned " + found);
+        } catch (MappingException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1024E:") ||
+                !x.getMessage().contains("findByAddressContainsOrderByAsc"))
                 throw x;
         }
     }
