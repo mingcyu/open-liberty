@@ -38,11 +38,11 @@ public class TestContainerSuite {
     private static final Path configSource = Paths.get(System.getProperty("user.home"), ".testcontainers.properties");
     private static final Path configBackup = Paths.get(System.getProperty("java.io.tmpdir"), ".testcontainers.backup.properties");
 
-    /*
+    /**
      * THIS METHOD CALL IS REQUIRED TO USE TESTCONTAINERS PLEASE READ:
      *
      * Testcontainers caches data in a properties file located at $HOME/.testcontainers.properties
-     * The setupTestcontainers() method will clear and reset the values in this property file.
+     * The {@link #generateConfig()} method will backup the existing config and generate new values in this property file.
      *
      * By default, testcontainers will attempt to run against a local docker instance and pull from DockerHub.
      * If you want testcontainers to run against a remote docker host to mirror the behavior of an RTC build
@@ -113,7 +113,12 @@ public class TestContainerSuite {
     }
 
     /**
-     * Moves existing testcontainers.properties file
+     * Moves existing ~/.testcontainers.properties file (if present) to a backup location.
+     * Then generates a new ~/.testcontainers.properties file in it's place.
+	 * 
+     * The new properties file will be configured with only the image name substitutor or
+     * the properties necessary to connect and use a remote docker host if one is required
+     * by the {@link #useRemoteDocker()} method.
      */
     private static void generateConfig() {
         final String m = "generateConfig";
@@ -169,12 +174,23 @@ public class TestContainerSuite {
         }
     }
 
+    /**
+     * Moves the .testcontainers.properties file from the backup location (if present)
+     * into it's original location at ~/.testcontainers.properties.
+     */
     private static void restoreConfig() {
         if (!swapConfigFiles(configBackup, configSource)) {
             throw new RuntimeException("Could not restore original Testcontainers config.");
         }
     }
 
+    /**
+     * Swaps the source and destination files
+     *
+     * @param  source      the source file
+     * @param  destination to destination file
+     * @return             true iff the swap was successful or unnecessary, false otherwise.
+     */
     private static final boolean swapConfigFiles(Path source, Path destination) {
         final String m = "swapConfigFiles";
 
