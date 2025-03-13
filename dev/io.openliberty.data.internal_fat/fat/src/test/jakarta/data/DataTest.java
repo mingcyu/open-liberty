@@ -49,8 +49,6 @@ public class DataTest extends FATServletClient {
      */
     static final String[] EXPECTED_ERROR_MESSAGES = //
                     new String[] {
-                                   "CWWKD1028E.*findFirst2147483648",
-                                   "CWWKD1041E.*findByNumberIdBetween",
                                    "CWWKD1046E.*minMaxSumCountAverageFloat",
                                    "CWWKD1046E.*singleHexDigit",
                                    "CWWKD1047E.*numberAsByte",

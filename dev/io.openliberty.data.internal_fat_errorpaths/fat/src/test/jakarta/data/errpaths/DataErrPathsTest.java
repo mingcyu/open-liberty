@@ -75,9 +75,11 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1024E.*findByAddressContainsOrderByAsc", // missing entity attribute name
                                    "CWWKD1024E.*inPrecinct", // @By with empty string value
                                    "CWWKD1024E.*inTownship", // @OrderBy with empty string value
+                                   "CWWKD1028E.*findFirst2147483648", // exceeds Integer.MAX_VALUE
                                    "CWWKD1033E.*selectByFirstName", // CursoredPage with ORDER BY in Query
                                    "CWWKD1037E.*findByBirthdayOrderBySSN", // CursoredPage of non-entity
                                    "CWWKD1037E.*registrations", // CursoredPage of non-entity
+                                   "CWWKD1041E.*findBySsnBetweenAnd.*NotNull", // CursoredPage without PageRequest
                                    "CWWKD1049E.*countByBirthday", // exists method returning Page<Long>
                                    "CWWKD1077E.*test.jakarta.data.errpaths.web.RepoWithoutDataStore",
                                    "CWWKD1078E.*test.jakarta.data.errpaths.web.InvalidNonJNDIRepo",

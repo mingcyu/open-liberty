@@ -963,6 +963,49 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * A repository might attempt to define a method that returns a CursoredPage
+     * without specifying a PageRequest and attempt to use a Limit parameter
+     * instead. This is not supported by the spec.
+     * Expect UnsupportedOperationException.
+     */
+    @Test
+    public void testLacksPageRequestUseLimitInstead() {
+        CursoredPage<Voter> page;
+        try {
+            page = voters.findBySsnBetweenAndAddressNotNull(150000000,
+                                                            450000000,
+                                                            Limit.of(5));
+            fail("Able to obtain CursoredPage without a PageRequest: " + page);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1041E") ||
+                !x.getMessage().contains("findBySsnBetweenAndAddressNotNull"))
+                throw x;
+        }
+    }
+
+    /**
+     * A repository might attempt to define a method that returns a CursoredPage
+     * without specifying a PageRequest and attempt to use a Sort parameter instead.
+     * This is not supported by the spec. Expect UnsupportedOperationException.
+     */
+    @Test
+    public void testLacksPageRequestUseSortInstead() {
+        CursoredPage<Voter> page;
+        try {
+            page = voters.findBySsnBetweenAndBirthdayNotNull(300000000, //
+                                                             400000000, //
+                                                             Sort.asc(ID));
+            fail("Able to obtain CursoredPage without a PageRequest: " + page);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1041E") ||
+                !x.getMessage().contains("findBySsnBetweenAndBirthdayNotNull"))
+                throw x;
+        }
+    }
+
+    /**
      * Use a repository method with multiple entity parameters, which is not
      * allowed for life cycle methods such as Insert.
      */
@@ -1386,6 +1429,75 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() != null &&
                 x.getMessage().startsWith("CWWKD1010E") &&
                 x.getMessage().contains("sortedByZipCode"))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Exceed the maximum offset allowed by JPA.
+     */
+    @Test
+    public void testOverflow() {
+        Limit range = Limit.range(Integer.MAX_VALUE + 5L, Integer.MAX_VALUE + 10L);
+        try {
+            List<Voter> found = voters.findBySsnLessThanEqualOrderBySsnDesc(999999999,
+                                                                            range);
+            fail("Expected an error because starting position of range exceeds" +
+                 " Integer.MAX_VALUE. Found: " + found);
+        } catch (IllegalArgumentException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1073E") &&
+                x.getMessage().contains("Limit[maxResults=6, startAt=2147483652]"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            Stream<Voter> found = voters.findFirst2147483648BySsnGreaterThan(1);
+            fail("Expected an error because limit exceeds Integer.MAX_VALUE. Found: " +
+                 found);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1028E") &&
+                x.getMessage().contains("2147483648"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            PageRequest pageReqWithInvalidOffset = PageRequest
+                            .ofPage(33)
+                            .size(Integer.MAX_VALUE / 30);
+            CursoredPage<Voter> found = voters.selectByBirthday(LocalDate.of(2000, 3, 13),
+                                                                pageReqWithInvalidOffset,
+                                                                Order.by(Sort.asc("ssn")));
+            fail("Expected an error because offset for pagination exceeds" +
+                 " Integer.MAX_VALUE. Found: " + found);
+        } catch (IllegalArgumentException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1043E") &&
+                x.getMessage().contains("page=33"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            PageRequest pageReqWithInvalidOffset = PageRequest
+                            .ofPage(22)
+                            .size(Integer.MAX_VALUE / 20);
+            Page<Voter> found = voters.selectAll(pageReqWithInvalidOffset,
+                                                 Sort.desc("ssn"));
+            fail("Expected an error because offset for pagination exceeds" +
+                 " Integer.MAX_VALUE. Found: " + found);
+        } catch (IllegalArgumentException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1043E") &&
+                x.getMessage().contains("page=22"))
                 ; // expected
             else
                 throw x;

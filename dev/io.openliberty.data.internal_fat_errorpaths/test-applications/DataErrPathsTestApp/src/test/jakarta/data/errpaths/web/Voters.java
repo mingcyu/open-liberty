@@ -222,10 +222,34 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     List<Voter> findByIgnoreCaseContains(String address);
 
     /**
+     * Unsupported pattern: lacks PageRequest parameter.
+     */
+    @OrderBy("ssn")
+    CursoredPage<Voter> findBySsnBetweenAndAddressNotNull(int min,
+                                                          int max,
+                                                          Limit limit);
+
+    /**
+     * Unsupported pattern: lacks PageRequest parameter.
+     */
+    @OrderBy("ssn")
+    CursoredPage<Voter> findBySsnBetweenAndBirthdayNotNull(int min,
+                                                           int max,
+                                                           Sort<?>... orderBy);
+
+    List<Voter> findBySsnLessThanEqualOrderBySsnDesc(int max, Limit limit);
+
+    /**
      * This invalid method has both a First keyword and a Limit parameter.
      */
     @OrderBy("ssn")
     Voter[] findFirst2(Limit limit);
+
+    /**
+     * This invalid method attempts to retrieve a number of results that
+     * exceeds Integer.MAX_VALUE by 1
+     */
+    Stream<Voter> findFirst2147483648BySsnGreaterThan(int min);
 
     /**
      * This invalid method has both a First keyword and a PageRequest parameter.
