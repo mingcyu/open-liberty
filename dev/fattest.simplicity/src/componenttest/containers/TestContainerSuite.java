@@ -12,11 +12,11 @@
  *******************************************************************************/
 package componenttest.containers;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.junit.ClassRule;
@@ -35,7 +35,8 @@ public class TestContainerSuite {
 
     private static final Class<?> c = TestContainerSuite.class;
 
-    private static boolean setupComplete = false;
+    private static final Path configSource = Paths.get(System.getProperty("user.home"), ".testcontainers.properties");
+    private static final Path configBackup = Paths.get(System.getProperty("java.io.tmpdir"), ".testcontainers.backup.properties");
 
     /*
      * THIS METHOD CALL IS REQUIRED TO USE TESTCONTAINERS PLEASE READ:
@@ -56,41 +57,26 @@ public class TestContainerSuite {
      *
      * 2. image.substitutor:
      * Default: [none]
-     * Custom : componenttest.containers.ArtifactoryImageNameSubstitutor
+     * Custom : componenttest.containers.substituiton.LibertyImageNameSubstitutor
      * Purpose: This defines a strategy for substituting image names.
      * This is so that we can use a private docker repository to cache docker images
      * to avoid the docker pull limits.
-     * Example: foo/bar:1.0 it will get changed to [ARTIFACTORY_REGISTRY]/wasliberty-docker-remote/foo/bar:1.0
      */
     static {
         Log.info(TestContainerSuite.class, "<init>", "Setting up testcontainers");
-        setupTestcontainers();
+        configureLogging();
+        generateConfig();
     }
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void after() {
-            Log.info(TestContainerSuite.class, "after", "Assert all container images have been declared");
+            Log.info(TestContainerSuite.class, "after", "Tearing down testcontainers");
+            restoreConfig();
             ImageVerifier.assertImages();
         }
     };
-
-    /**
-     * <pre>
-     * By default, Testcontainers will cache the DockerClient strategy in <code>~/.testcontainers.properties</code>.
-     *
-     * Calling this method in the FATSuite class is REQUIRED for any fat project that uses Testcontainers.
-     * This is a safety measure to ensure that we run with the correct docker.client.stategy property
-     * for each FATSuite run.
-     */
-    private static void setupTestcontainers() {
-        if (setupComplete)
-            return;
-        configureLogging();
-        generateTestcontainersConfig();
-        setupComplete = true;
-    }
 
     /**
      * Configures system properties for the SLF4J simpleLogger.
@@ -100,6 +86,7 @@ public class TestContainerSuite {
      */
     private static void configureLogging() {
         final String m = "configureLogging";
+
         if (System.getProperty("org.slf4j.simpleLogger.logFile") == null) {
             String logFile = Props.getInstance().getFileProperty(Props.DIR_LOG).getAbsoluteFile() + "/testcontainer.log";
 
@@ -125,26 +112,23 @@ public class TestContainerSuite {
 
     }
 
-    private static void generateTestcontainersConfig() {
-        final String m = "generateTestcontainersConfig";
-        final File testcontainersConfigFile = new File(System.getProperty("user.home"), ".testcontainers.properties");
+    /**
+     * Moves existing testcontainers.properties file
+     */
+    private static void generateConfig() {
+        final String m = "generateConfig";
 
         Properties tcProps = new Properties();
 
         //Create new config file or load existing config properties
-        if (testcontainersConfigFile.exists()) {
-            Log.info(c, m, "Testcontainers config already exists at: " + testcontainersConfigFile.getAbsolutePath());
-            try {
-                try (FileInputStream in = new FileInputStream(testcontainersConfigFile)) {
-                    tcProps.load(in);
-                }
-                Files.delete(testcontainersConfigFile.toPath());
-            } catch (IOException e) {
-                Log.error(c, "generateTestcontainersConfig", e);
-                throw new RuntimeException(e);
+        if (configSource.toFile().exists()) {
+            Log.info(c, m, "Testcontainers config already exists at: " + configSource.toAbsolutePath());
+
+            if (!swapConfigFiles(configSource, configBackup)) {
+                throw new RuntimeException("Could not backup existing Testcontainers config.");
             }
         } else {
-            Log.info(c, m, "Testcontainers config being created at: " + testcontainersConfigFile.getAbsolutePath());
+            Log.info(c, m, "Testcontainers config being created at: " + configSource.toAbsolutePath());
         }
 
         //If using remote docker then setup strategy
@@ -152,7 +136,7 @@ public class TestContainerSuite {
             try {
                 ExternalTestService.getService("docker-engine", ExternalDockerClientFilter.instance());
             } catch (Exception e) {
-                Log.error(c, "generateTestcontainersConfig", e);
+                Log.error(c, m, e);
                 throw new RuntimeException(e);
             }
 
@@ -171,25 +155,67 @@ public class TestContainerSuite {
             } else {
                 Log.warning(c, "Unable to find valid External Docker Client");
             }
-        } else {
-            tcProps.remove("docker.client.strategy");
-            tcProps.remove("docker.host");
-            tcProps.remove("docker.tls.verify");
-            tcProps.remove("docker.cert.path");
-            tcProps.remove("client.ping.timeout");
-            tcProps.remove("tinyimage.container.image");
         }
 
         //Always use LibertyImageNameSubstitutor
         tcProps.setProperty("image.substitutor", LibertyImageNameSubstitutor.class.getCanonicalName().toString());
 
         try {
-            tcProps.store(new FileOutputStream(testcontainersConfigFile), "Modified by FAT framework");
+            tcProps.store(new FileOutputStream(configSource.toFile()), "Modified by FAT framework");
             Log.info(c, m, "Testcontainers config properties: " + tcProps.toString());
         } catch (IOException e) {
-            Log.error(c, "generateTestcontainersConfig", e);
+            Log.error(c, m, e);
             throw new RuntimeException(e);
         }
+    }
+
+    private static void restoreConfig() {
+        if (!swapConfigFiles(configBackup, configSource)) {
+            throw new RuntimeException("Could not restore original Testcontainers config.");
+        }
+    }
+
+    private static final boolean swapConfigFiles(Path source, Path destination) {
+        final String m = "swapConfigFiles";
+
+        // If the source file does not exist then cannot swap
+        if (!source.toFile().exists() || !source.toFile().isFile()) {
+            Log.info(c, m, "Source file " + source + " does not exist. Skipping swap.");
+            return true;
+        }
+
+        // If the destination file exists we need to swap
+        if (destination.toFile().exists() && destination.toFile().isFile()) {
+            Path temp = Paths.get(System.getProperty("java.io.tmpdir"), ".testcontainers.temp.properties");
+
+            Log.info(c, m, "Swapping file " + source
+                           + " with file " + destination
+                           + " via temporary file " + temp);
+
+            try {
+                Files.move(destination, temp);
+                Files.move(source, destination);
+                Files.move(temp, source);
+            } catch (Exception e) {
+                Log.error(c, m, e);
+                return false;
+            }
+
+            return true;
+        }
+
+        // Source exists but destination does not, therefore perform a simple rename
+        Log.info(c, m, "Moving file " + source
+                       + " to file " + destination);
+
+        try {
+            Files.move(source, destination);
+        } catch (Exception e) {
+            Log.error(c, m, e);
+            return false;
+        }
+
+        return true;
     }
 
     /**
