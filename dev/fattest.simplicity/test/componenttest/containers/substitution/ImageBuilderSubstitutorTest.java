@@ -58,13 +58,13 @@ public class ImageBuilderSubstitutorTest {
             Map<DockerImageName, DockerImageName> testMap = new HashMap<>();
             // With and without prefix
             testMap.put(DockerImageName.parse("postgres-init:1.0"),
-                        DockerImageName.parse("172.0.0.1/openliberty/testcontainers/postgres-init:1.0"));
+                        DockerImageName.parse("172.0.0.1/wasliberty-internal-docker-local/openliberty/testcontainers/postgres-init:1.0"));
             testMap.put(DockerImageName.parse("openliberty/testcontainers/postgres-ssl:2.0"),
-                        DockerImageName.parse("172.0.0.1/openliberty/testcontainers/postgres-ssl:2.0"));
+                        DockerImageName.parse("172.0.0.1/wasliberty-internal-docker-local/openliberty/testcontainers/postgres-ssl:2.0"));
 
             // With compatible substitute set
             testMap.put(DockerImageName.parse("postgres-krb5:2.5").asCompatibleSubstituteFor("postgres"),
-                        DockerImageName.parse("172.0.0.1/openliberty/testcontainers/postgres-krb5:2.5").asCompatibleSubstituteFor("postgres"));
+                        DockerImageName.parse("172.0.0.1/wasliberty-internal-docker-local/openliberty/testcontainers/postgres-krb5:2.5").asCompatibleSubstituteFor("postgres"));
 
             for (Map.Entry<DockerImageName, DockerImageName> test : testMap.entrySet()) {
                 DockerImageName actual = getConstructor().newInstance().apply(test.getKey());
