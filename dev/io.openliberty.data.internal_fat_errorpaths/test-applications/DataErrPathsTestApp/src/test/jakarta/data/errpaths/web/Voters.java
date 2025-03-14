@@ -124,6 +124,27 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     void changeNothing();
 
     /**
+     * Invalid return type Boolean is not the entity or Id.
+     */
+    Page<Boolean> deleteReturnBooleanByAddress(String address,
+                                               Limit limit,
+                                               Sort<Voter> sort);
+
+    /**
+     * Invalid return type char is not the entity or id.
+     */
+    char[] deleteReturnCharByAddress(String address,
+                                     Limit limit,
+                                     Sort<Voter> sort);
+
+    /**
+     * Invalid return type String is not the entity or Id.
+     */
+    List<String> deleteReturnStringByAddress(String address,
+                                             Limit limit,
+                                             Sort<Voter> sort);
+
+    /**
      * This invalid method defines a limit on results of a delete operation
      * but has a return type that disallows returning results.
      */
@@ -169,6 +190,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     CompletableFuture<Long> existsByName(String name);
 
     /**
+     * This invalid method omits the entity attribute name from OrderBy in
+     * the method name.
+     */
+    List<Voter> findByAddressContainsOrderByAsc(String addressSubstring);
+
+    /**
      * This invalid method has a conflict between its OrderBy annotation and
      * method name keyword.
      */
@@ -189,10 +216,40 @@ public interface Voters extends BasicRepository<Voter, Integer> {
                                                    PageRequest pageReq);
 
     /**
+     * This invalid method omits the entity attribute name from findBy in the
+     * method name.
+     */
+    List<Voter> findByIgnoreCaseContains(String address);
+
+    /**
+     * Unsupported pattern: lacks PageRequest parameter.
+     */
+    @OrderBy("ssn")
+    CursoredPage<Voter> findBySsnBetweenAndAddressNotNull(int min,
+                                                          int max,
+                                                          Limit limit);
+
+    /**
+     * Unsupported pattern: lacks PageRequest parameter.
+     */
+    @OrderBy("ssn")
+    CursoredPage<Voter> findBySsnBetweenAndBirthdayNotNull(int min,
+                                                           int max,
+                                                           Sort<?>... orderBy);
+
+    List<Voter> findBySsnLessThanEqualOrderBySsnDesc(int max, Limit limit);
+
+    /**
      * This invalid method has both a First keyword and a Limit parameter.
      */
     @OrderBy("ssn")
     Voter[] findFirst2(Limit limit);
+
+    /**
+     * This invalid method attempts to retrieve a number of results that
+     * exceeds Integer.MAX_VALUE by 1
+     */
+    Stream<Voter> findFirst2147483648BySsnGreaterThan(int min);
 
     /**
      * This invalid method has both a First keyword and a PageRequest parameter.

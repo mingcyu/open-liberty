@@ -4933,10 +4933,11 @@ public class QueryInfo {
      */
     private int parseFirst(int start, int endBefore) {
         String methodName = method.getName();
+        int i = start;
         int num = start == endBefore ? 1 : 0;
         if (num == 0)
-            while (start < endBefore) {
-                char ch = methodName.charAt(start);
+            while (i < endBefore) {
+                char ch = methodName.charAt(i);
                 if (ch >= '0' && ch <= '9') {
                     if (num <= (Integer.MAX_VALUE - (ch - '0')) / 10)
                         num = num * 10 + (ch - '0');
@@ -4945,9 +4946,9 @@ public class QueryInfo {
                                   "CWWKD1028.first.exceeds.max",
                                   methodName,
                                   repositoryInterface.getName(),
-                                  methodName.substring(0, endBefore),
+                                  methodName.substring(start, endBefore),
                                   "Integer.MAX_VALUE (" + Integer.MAX_VALUE + ")");
-                    start++;
+                    i++;
                 } else {
                     if (num == 0)
                         num = 1;
@@ -4963,7 +4964,7 @@ public class QueryInfo {
         else
             maxResults = num;
 
-        return start;
+        return i;
     }
 
     /**
