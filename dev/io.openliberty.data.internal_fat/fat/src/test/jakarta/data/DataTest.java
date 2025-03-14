@@ -49,10 +49,6 @@ public class DataTest extends FATServletClient {
      */
     static final String[] EXPECTED_ERROR_MESSAGES = //
                     new String[] {
-                                   "CWWKD1054E.*deleteByDescription",
-                                   "CWWKD1054E.*deleteFirst",
-                                   "CWWKD1054E.*findAsLongBetween",
-                                   "CWWKD1054E.*findByNumberIdBetween",
                                    "CWWKD1075E.*Apartment2",
                                    "CWWKD1075E.*Apartment3",
                                    // work around to prevent bad behavior from EclipseLink (see #30575)

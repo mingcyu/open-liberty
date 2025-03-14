@@ -67,7 +67,6 @@ import jakarta.data.Sort;
 import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.EntityExistsException;
 import jakarta.data.exceptions.MappingException;
-import jakarta.data.exceptions.NonUniqueResultException;
 import jakarta.data.exceptions.OptimisticLockingFailureException;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -1046,14 +1045,6 @@ public class DataTestServlet extends FATServlet {
         packages.save(new Package(10003, 12.0f, 11.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10003"));
         packages.save(new Package(10004, 13.0f, 10.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10004"));
 
-        try {
-            Optional<Package> pkg = packages.deleteFirst();
-            fail("Expected packages.deleteFirst() to ignore the 'first' keyword" +
-                 " and fail to return a signular result. Instead returned: " + pkg);
-        } catch (NonUniqueResultException e) {
-            // pass
-        }
-
         Package pkg = packages.deleteFirst5ByWidthLessThan(10.5f);
         assertEquals(10004, pkg.id);
 
@@ -1597,13 +1588,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(14.0f, p1.width, 0.01f);
         assertEquals(4.0f, p1.height, 0.01f);
         assertEquals("testFindAndDelete#40001", p1.description);
-
-        try {
-            Optional<Package> p = packages.deleteByDescription("testFindAndDelete#4001x");
-            fail("Should get NonUniqueResultException when there are multiple results but a singular return type. Instead, result is: " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
 
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
         boolean supportsOrderByForUpdate = !jdbcJarName.startsWith("derby");
@@ -5163,43 +5147,11 @@ public class DataTestServlet extends FATServlet {
         Prime p = primes.findByNumberIdBetween(14L, 18L);
         assertEquals(17L, p.numberId);
 
-        // No result must raise EmptyResultException:
-        try {
-            p = primes.findByNumberIdBetween(24L, 28L);
-            fail("Unexpected prime " + p);
-        } catch (EmptyResultException x) {
-            // expected
-        }
-
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            p = primes.findByNumberIdBetween(34L, 48L);
-            fail("Should find more primes than " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
-
         // With custom return type:
 
         // Single result is fine:
         long n = primes.findAsLongBetween(12L, 16L);
         assertEquals(13L, n);
-
-        // No result must raise EmptyResultException:
-        try {
-            n = primes.findAsLongBetween(32L, 36L);
-            fail("Unexpected prime number " + n);
-        } catch (EmptyResultException x) {
-            // expected
-        }
-
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            n = primes.findAsLongBetween(22L, 42L);
-            fail("Should find more prime numbers than " + n);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
     }
 
     /**

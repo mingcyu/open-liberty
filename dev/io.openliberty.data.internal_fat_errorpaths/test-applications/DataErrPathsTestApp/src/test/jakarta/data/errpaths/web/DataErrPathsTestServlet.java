@@ -31,7 +31,9 @@ import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.exceptions.DataException;
+import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.MappingException;
+import jakarta.data.exceptions.NonUniqueResultException;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
@@ -676,6 +678,37 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Repository methods with return types requiring a single entity must
+     * raise EmptyResultException when no entity matches.
+     */
+    @Test
+    public void testEmptyResultException() {
+        try {
+            Voter v = voters.findBySSNBetweenAndNameNotNull(-28, -24);
+            fail("Unexpected SSN for " + v);
+        } catch (EmptyResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1053E") &&
+                x.getMessage().contains("findBySSNBetweenAndNameNotNull"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            long n = voters.findSSNAsLongBetween(-36, -32);
+            fail("Unexpected SSN " + n);
+        } catch (EmptyResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1053E") &&
+                x.getMessage().contains("findSSNAsLongBetween"))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
      * Verify IllegalArgumentException is raised if you attempt to save an
      * empty list of entities.
      */
@@ -1310,6 +1343,64 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1017E:") ||
                 !x.getMessage().contains("residesAt"))
+                throw x;
+        }
+    }
+
+    /**
+     * Repository methods with return types allowing at most a single entity must
+     * raise NonUniqueResultException when multiple entities match.
+     */
+    @Test
+    public void testNonUniqueResultException() {
+        try {
+            Voter v = voters.findBySSNBetweenAndNameNotNull(700000000, 999999999);
+            fail("Should find more Voter entities than " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("findBySSNBetweenAndNameNotNull"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            long n = voters.findSSNAsLongBetween(700000000, 999999999);
+            fail("Should find more numbers than " + n);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("findSSNAsLongBetween"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            Optional<Voter> v = voters.deleteByNameStartsWith("V");
+            fail("Should get NonUniqueResultException when there are multiple" +
+                 " results but a singular return type. Instead, result is: " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("deleteByNameStartsWith"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            Optional<Voter> v = voters.deleteFirst();
+            fail("Expected voters.deleteFirst() to ignore the 'first' keyword" +
+                 " and attempt to delete and not return a singular result." +
+                 " Instead returned: " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("deleteFirst"))
+                ; // expected
+            else
                 throw x;
         }
     }

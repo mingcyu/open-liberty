@@ -85,6 +85,10 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1047E.*ssnAsByte", // unsafe conversion to byte
                                    "CWWKD1049E.*countAsBooleanBySSNLessThan", // count returning boolean
                                    "CWWKD1049E.*countByBirthday", // count returning Page<Long>
+                                   "CWWKD1054E.*deleteByNameStartsWith", // NonUniqueResultException
+                                   "CWWKD1054E.*deleteFirst", // NonUniqueResultException
+                                   "CWWKD1054E.*findBySSNBetweenAndNameNotNull", // NonUniqueResultException
+                                   "CWWKD1054E.*findSSNAsLongBetween", // NonUniqueResultException
                                    "CWWKD1077E.*test.jakarta.data.errpaths.web.RepoWithoutDataStore",
                                    "CWWKD1078E.*test.jakarta.data.errpaths.web.InvalidNonJNDIRepo",
                                    "CWWKD1079E.*test.jakarta.data.errpaths.web.InvalidJNDIRepo",

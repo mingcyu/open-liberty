@@ -129,6 +129,17 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     boolean countAsBooleanBySSNLessThan(long ssnBelow);
 
     /**
+     * Fails if more than one match.
+     */
+    Optional<Voter> deleteByNameStartsWith(String namePrefix);
+
+    /**
+     * 'first' should be ignored and this should delete all entities
+     * or cause failure if when the result would be non-unique
+     */
+    Optional<Voter> deleteFirst();
+
+    /**
      * Invalid return type Boolean is not the entity or Id.
      */
     Page<Boolean> deleteReturnBooleanByAddress(String address,
@@ -242,6 +253,11 @@ public interface Voters extends BasicRepository<Voter, Integer> {
                                                            int max,
                                                            Sort<?>... orderBy);
 
+    /**
+     * Only valid when the range has exactly 1 result.
+     */
+    Voter findBySSNBetweenAndNameNotNull(long min, long max);
+
     List<Voter> findBySsnLessThanEqualOrderBySsnDesc(int max, Limit limit);
 
     /**
@@ -274,6 +290,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
      */
     @Query("SELECT name WHERE ssn=?1")
     Optional<Character> firstLetterOfName(int ssn);
+
+    /**
+     * Only valid when the range has exactly 1 result.
+     */
+    @Query("SELECT v.ssn FROM Voter v WHERE v.ssn >= ?1 AND v.ssn <= ?2")
+    long findSSNAsLongBetween(long min, long max);
 
     /**
      * This invalid method defines an ordering for results of a delete operation

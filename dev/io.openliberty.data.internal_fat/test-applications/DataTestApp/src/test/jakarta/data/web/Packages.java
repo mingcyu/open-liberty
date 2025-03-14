@@ -63,8 +63,6 @@ public interface Packages extends BasicRepository<Package, Integer> {
 
     Package deleteFirst5ByWidthLessThan(float maxWidth); // 'first5' should be ignored and the number of results should be limited by the condition
 
-    Optional<Package> deleteFirst(); // 'first' should be ignored and this should delete all entities (expect failure since the result will be non-unique)
-
     @Delete
     Object[] destroy(Limit limit, Sort<Package> sort);
 
