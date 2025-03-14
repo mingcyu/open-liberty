@@ -124,6 +124,11 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     void changeNothing();
 
     /**
+     * Boolean return type is not allowed for count methods.
+     */
+    boolean countAsBooleanBySSNLessThan(long ssnBelow);
+
+    /**
      * Invalid return type Boolean is not the entity or Id.
      */
     Page<Boolean> deleteReturnBooleanByAddress(String address,
@@ -265,6 +270,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
                                     String address);
 
     /**
+     * This method is invalid for all names with more than 1 character.
+     */
+    @Query("SELECT name WHERE ssn=?1")
+    Optional<Character> firstLetterOfName(int ssn);
+
+    /**
      * This invalid method defines an ordering for results of a delete operation
      * but has a return type that disallows returning results.
      */
@@ -359,6 +370,16 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     List<Voter> livingOn(@Param("street") String street,
                          @Param("city") String city, // extra, unused Param
                          @Param("state") String stateCode); // extra, unused Param
+
+    /**
+     * This invalid method returns values that cannot all be converted to float.
+     */
+    @Query("""
+                    SELECT MIN(o.ssn), MAX(o.ssn), SUM(o.ssn),
+                           COUNT(o.ssn), CAST(AVG(o.ssn) AS FLOAT)
+                      FROM Voter o WHERE o.ssn < ?1
+                    """)
+    float[] minMaxSumCountAverageFloat(long numBelow);
 
     /**
      * Find method that returns a record instead of an entity,
@@ -480,6 +501,18 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     @OrderBy("birthday")
     @OrderBy("zipcode")
     List<Voter> sortedByZipCode();
+
+    /**
+     * Invalid method for 9 digit SSN.
+     */
+    @Query("SELECT ssn WHERE ssn=?1")
+    byte ssnAsByte(long ssn);
+
+    /**
+     * Invalid method for 9 digit SSN.
+     */
+    @Query("SELECT ssn WHERE ssn=:s")
+    Optional<Byte> ssnAsByteWrapper(@Param("s") long ssn);
 
     /**
      * Invalid method. A method with a life cycle annotation must have exactly

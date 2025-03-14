@@ -169,6 +169,82 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify an error is raised when a value cannot be safely converted to byte.
+     */
+    @Test
+    public void testConvertToByte() {
+        try {
+            byte result = voters.ssnAsByte(123445678);
+            fail("Should not convert int value 123445678 to byte value " + result);
+        } catch (MappingException x) {
+            // expected - out of range
+        }
+
+        try {
+            Optional<Byte> result = voters.ssnAsByteWrapper(987665432);
+            fail("Should not convert int value 987665432 to Byte value " + result);
+        } catch (MappingException x) {
+            // expected - out of range
+        }
+    }
+
+    /**
+     * Verify an error is raised when a String cannot be safely converted to char
+     * because it contains more than 1 character.
+     */
+    @Test
+    public void testConvertToChar() {
+        try {
+            Optional<Character> found = voters.firstLetterOfName(987665432);
+            fail("Should not be able to return a 6 character String as a" +
+                 " single character: " + found);
+        } catch (MappingException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1046E") &&
+                x.getMessage().contains("firstLetterOfName"))
+                ; // pass
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an error is raised when a value cannot be safely converted to float.
+     */
+    @Test
+    public void testConvertToFloat() {
+        try {
+            float[] floats = voters.minMaxSumCountAverageFloat(999999999);
+            fail("Allowed unsafe conversion from integer to float: " +
+                 Arrays.toString(floats));
+        } catch (MappingException x) {
+            if (x.getMessage().startsWith("CWWKD1046E") &&
+                x.getMessage().contains("float[]"))
+                ; // unsafe to convert double to float
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Repository method that returns the count as a boolean value,
+     * which is not an allowed return type. This must raise an error.
+     */
+    @Test
+    public void testCountAsBoolean() {
+        try {
+            boolean count = voters.countAsBooleanBySSNLessThan(420000000);
+            fail("Count queries cannot have a boolean return type: " + count);
+        } catch (MappingException x) {
+            if (x.getMessage().startsWith("CWWKD1049E") &&
+                x.getMessage().contains("boolean"))
+                ; // cannot convert number to boolean
+            else
+                throw x;
+        }
+    }
+
+    /**
      * Verify an error is raised when a count Query by Method Name method
      * tries to return a long value as a Page of Long.
      */

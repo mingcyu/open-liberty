@@ -577,22 +577,8 @@ public class DataTestServlet extends FATServlet {
         assertEquals((byte) 41,
                      primes.numberAsByte(41));
 
-        try {
-            byte result = primes.numberAsByte(4021);
-            fail("Should not convert long value 4021 to byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
-
         assertEquals((byte) 37,
                      primes.numberAsByteWrapper(37).orElseThrow().byteValue());
-
-        try {
-            Optional<Byte> result = primes.numberAsByteWrapper(4019);
-            fail("Should not convert long value 4019 to Byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
 
         assertEquals(4003.0, primes.numberAsDouble(4003), 0.01);
 
@@ -637,19 +623,6 @@ public class DataTestServlet extends FATServlet {
 
         assertEquals(false,
                      primes.singleHexDigit(12).isPresent());
-
-        try {
-            Optional<Character> found = primes.singleHexDigit(29);
-            fail("Should not be able to return hex 1D as a single character: " +
-                 found);
-        } catch (MappingException x) {
-            if (x.getMessage() != null &&
-                x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("singleHexDigit"))
-                ; // pass
-            else
-                throw x;
-        }
     }
 
     /**
@@ -666,20 +639,6 @@ public class DataTestServlet extends FATServlet {
     @Test
     public void testCountAsBigInteger() {
         assertEquals(BigInteger.valueOf(13L), primes.countAsBigIntegerByNumberIdLessThan(43));
-    }
-
-    /**
-     * Repository method that returns the count as a boolean value,
-     * which is not an allowed return type. This must raise an error.
-     */
-    @Test
-    public void testCountAsBoolean() {
-        try {
-            boolean count = primes.countAsBooleanByNumberIdLessThan(42);
-            fail("Count queries cannot have a boolean return type: " + count);
-        } catch (MappingException x) {
-            // expected
-        }
     }
 
     /**
@@ -3677,18 +3636,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(197, ints[2]); // sum
         assertEquals(12, ints[3]); // count
         assertEquals(16, ints[4]); // average
-
-        try {
-            float[] floats = primes.minMaxSumCountAverageFloat(35);
-            fail("Allowed unsafe conversion from double to float: " +
-                 Arrays.toString(floats));
-        } catch (MappingException x) {
-            if (x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("float[]"))
-                ; // unsafe to convert double to float
-            else
-                throw x;
-        }
 
         List<Long> list = primes.minMaxSumCountAverageList(30);
         assertEquals(Long.valueOf(2L), list.get(0)); // minimum

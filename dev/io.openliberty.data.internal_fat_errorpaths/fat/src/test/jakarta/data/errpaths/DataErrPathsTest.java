@@ -80,7 +80,11 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1037E.*findByBirthdayOrderBySSN", // CursoredPage of non-entity
                                    "CWWKD1037E.*registrations", // CursoredPage of non-entity
                                    "CWWKD1041E.*findBySsnBetweenAnd.*NotNull", // CursoredPage without PageRequest
-                                   "CWWKD1049E.*countByBirthday", // exists method returning Page<Long>
+                                   "CWWKD1046E.*firstLetterOfName", // unsafe conversion to Character
+                                   "CWWKD1046E.*minMaxSumCountAverageFloat", // unsafe conversion to float
+                                   "CWWKD1047E.*ssnAsByte", // unsafe conversion to byte
+                                   "CWWKD1049E.*countAsBooleanBySSNLessThan", // count returning boolean
+                                   "CWWKD1049E.*countByBirthday", // count returning Page<Long>
                                    "CWWKD1077E.*test.jakarta.data.errpaths.web.RepoWithoutDataStore",
                                    "CWWKD1078E.*test.jakarta.data.errpaths.web.InvalidNonJNDIRepo",
                                    "CWWKD1079E.*test.jakarta.data.errpaths.web.InvalidJNDIRepo",
