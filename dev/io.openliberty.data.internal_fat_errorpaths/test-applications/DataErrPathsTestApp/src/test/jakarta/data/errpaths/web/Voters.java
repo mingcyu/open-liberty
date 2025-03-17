@@ -238,6 +238,12 @@ public interface Voters extends BasicRepository<Voter, Integer> {
     List<Voter> findByIgnoreCaseContains(String address);
 
     /**
+     * This invalid method name contains an entity attribute name "Description"
+     * that contains a reserved keyword, "Desc".
+     */
+    List<Voter> findByNameNotNullOrderByDescriptionAsc();
+
+    /**
      * Unsupported pattern: lacks PageRequest parameter.
      */
     @OrderBy("ssn")

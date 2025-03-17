@@ -115,7 +115,8 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1099E.*findFirst3", // PageRequest incompatible with First
                                    "CWWKD1100E.*selectByLastName", // CursoredPage with ORDER BY clause
                                    "CWWKD1101E.*nameAndZipCode", // Record return type with invalid attribute name
-                                   "CWWKD1104E.*inWard" // @Param with empty string value
+                                   "CWWKD1104E.*inWard", // @Param with empty string value
+                                   "CWWKD1105E.*findByNameNotNullOrderByDescriptionAsc" // keyword in OrderBy
                     };
 
     @Server("io.openliberty.data.internal.fat.errpaths")

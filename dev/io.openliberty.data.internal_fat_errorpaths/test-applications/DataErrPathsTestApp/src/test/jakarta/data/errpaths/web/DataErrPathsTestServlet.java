@@ -1891,6 +1891,27 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify that an appropriate error is raised when a repository method name for
+     * Query by Method Name includes a reserved keyword in the OrderBy part of the
+     * method name.
+     */
+    @Test
+    public void testReservedKeywordInOrderByOfMethodName() {
+        try {
+            List<Voter> found = voters.findByNameNotNullOrderByDescriptionAsc();
+            fail("Should not be able to OrderBy an entity attribute name that" +
+                 " contains a reserved keyword. Found: " + found);
+        } catch (MappingException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1105E") &&
+                x.getMessage().contains("findByNameNotNullOrderByDescriptionAsc"))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
      * Tests an error path where a repository method attempts to return a subset of
      * an entity as a record where the record component names do not all match the
      * entity attribute names.
