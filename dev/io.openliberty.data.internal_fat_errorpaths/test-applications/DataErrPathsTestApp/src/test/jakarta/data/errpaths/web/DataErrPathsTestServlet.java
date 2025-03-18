@@ -31,7 +31,9 @@ import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.exceptions.DataException;
+import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.MappingException;
+import jakarta.data.exceptions.NonUniqueResultException;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
@@ -164,6 +166,82 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1019E:") ||
                 !x.getMessage().contains("livingAt"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an error is raised when a value cannot be safely converted to byte.
+     */
+    @Test
+    public void testConvertToByte() {
+        try {
+            byte result = voters.ssnAsByte(123445678);
+            fail("Should not convert int value 123445678 to byte value " + result);
+        } catch (MappingException x) {
+            // expected - out of range
+        }
+
+        try {
+            Optional<Byte> result = voters.ssnAsByteWrapper(987665432);
+            fail("Should not convert int value 987665432 to Byte value " + result);
+        } catch (MappingException x) {
+            // expected - out of range
+        }
+    }
+
+    /**
+     * Verify an error is raised when a String cannot be safely converted to char
+     * because it contains more than 1 character.
+     */
+    @Test
+    public void testConvertToChar() {
+        try {
+            Optional<Character> found = voters.firstLetterOfName(987665432);
+            fail("Should not be able to return a 6 character String as a" +
+                 " single character: " + found);
+        } catch (MappingException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1046E") &&
+                x.getMessage().contains("firstLetterOfName"))
+                ; // pass
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an error is raised when a value cannot be safely converted to float.
+     */
+    @Test
+    public void testConvertToFloat() {
+        try {
+            float[] floats = voters.minMaxSumCountAverageFloat(999999999);
+            fail("Allowed unsafe conversion from integer to float: " +
+                 Arrays.toString(floats));
+        } catch (MappingException x) {
+            if (x.getMessage().startsWith("CWWKD1046E") &&
+                x.getMessage().contains("float[]"))
+                ; // unsafe to convert double to float
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Repository method that returns the count as a boolean value,
+     * which is not an allowed return type. This must raise an error.
+     */
+    @Test
+    public void testCountAsBoolean() {
+        try {
+            boolean count = voters.countAsBooleanBySSNLessThan(420000000);
+            fail("Count queries cannot have a boolean return type: " + count);
+        } catch (MappingException x) {
+            if (x.getMessage().startsWith("CWWKD1049E") &&
+                x.getMessage().contains("boolean"))
+                ; // cannot convert number to boolean
+            else
                 throw x;
         }
     }
@@ -595,6 +673,37 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1104E:") ||
                 !x.getMessage().contains("inWard"))
+                throw x;
+        }
+    }
+
+    /**
+     * Repository methods with return types requiring a single entity must
+     * raise EmptyResultException when no entity matches.
+     */
+    @Test
+    public void testEmptyResultException() {
+        try {
+            Voter v = voters.findBySSNBetweenAndNameNotNull(-28, -24);
+            fail("Unexpected SSN for " + v);
+        } catch (EmptyResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1053E") &&
+                x.getMessage().contains("findBySSNBetweenAndNameNotNull"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            long n = voters.findSSNAsLongBetween(-36, -32);
+            fail("Unexpected SSN " + n);
+        } catch (EmptyResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1053E") &&
+                x.getMessage().contains("findSSNAsLongBetween"))
+                ; // expected
+            else
                 throw x;
         }
     }
@@ -1239,6 +1348,64 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Repository methods with return types allowing at most a single entity must
+     * raise NonUniqueResultException when multiple entities match.
+     */
+    @Test
+    public void testNonUniqueResultException() {
+        try {
+            Voter v = voters.findBySSNBetweenAndNameNotNull(700000000, 999999999);
+            fail("Should find more Voter entities than " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("findBySSNBetweenAndNameNotNull"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            long n = voters.findSSNAsLongBetween(700000000, 999999999);
+            fail("Should find more numbers than " + n);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("findSSNAsLongBetween"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            Optional<Voter> v = voters.deleteByNameStartsWith("V");
+            fail("Should get NonUniqueResultException when there are multiple" +
+                 " results but a singular return type. Instead, result is: " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("deleteByNameStartsWith"))
+                ; // expected
+            else
+                throw x;
+        }
+
+        try {
+            Optional<Voter> v = voters.deleteFirst();
+            fail("Expected voters.deleteFirst() to ignore the 'first' keyword" +
+                 " and attempt to delete and not return a singular result." +
+                 " Instead returned: " + v);
+        } catch (NonUniqueResultException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1054E") &&
+                x.getMessage().contains("deleteFirst"))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
      * BasicRepository.findAll(PageRequest, null) must raise NullPointerException.
      */
     @Test
@@ -1719,6 +1886,27 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1077E:") ||
                 !x.getMessage().contains("<dataSource id=\"DefaultDataSource\""))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify that an appropriate error is raised when a repository method name for
+     * Query by Method Name includes a reserved keyword in the OrderBy part of the
+     * method name.
+     */
+    @Test
+    public void testReservedKeywordInOrderByOfMethodName() {
+        try {
+            List<Voter> found = voters.findByNameNotNullOrderByDescriptionAsc();
+            fail("Should not be able to OrderBy an entity attribute name that" +
+                 " contains a reserved keyword. Found: " + found);
+        } catch (MappingException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1105E") &&
+                x.getMessage().contains("findByNameNotNullOrderByDescriptionAsc"))
+                ; // expected
+            else
                 throw x;
         }
     }

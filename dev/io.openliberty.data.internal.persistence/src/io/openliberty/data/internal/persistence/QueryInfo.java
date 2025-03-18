@@ -4991,6 +4991,25 @@ public class QueryInfo {
 
             String attribute = methodName.substring(i, endBefore);
 
+            if (attribute.length() == 0) {
+                // Error handling for missing attribute name due to Asc or Desc
+                // appearing within an attribute name that is used in the OrderBy
+                String lowerOrderBy = methodName.substring(orderBy + 7).toLowerCase();
+                for (String lowerAttrName : entityInfo.attributeNames.keySet()) {
+                    String keyword = lowerAttrName.contains("asc") ? "Asc" //
+                                    : lowerAttrName.contains("desc") ? "Desc" //
+                                                    : null;
+                    if (keyword != null && lowerOrderBy.contains(lowerAttrName))
+                        throw exc(MappingException.class,
+                                  "CWWKD1105.keyword.in.orderby",
+                                  methodName,
+                                  repositoryInterface.getName(),
+                                  entityInfo.attributeNames.get(lowerAttrName),
+                                  entityInfo.getType().getName(),
+                                  keyword);
+                }
+            }
+
             addSort(ignoreCase, attribute, descending);
 
             if (iNext > 0)

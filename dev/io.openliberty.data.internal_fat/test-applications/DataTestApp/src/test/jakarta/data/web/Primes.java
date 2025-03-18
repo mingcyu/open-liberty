@@ -79,9 +79,6 @@ public interface Primes {
 
     BigInteger countAsBigIntegerByNumberIdLessThan(long number);
 
-    // boolean return type is not allowed for count methods
-    boolean countAsBooleanByNumberIdLessThan(long number);
-
     int countAsIntByNumberIdLessThan(long number);
 
     Integer countAsIntegerByNumberIdBetween(long first, long last);
@@ -307,11 +304,6 @@ public interface Primes {
            "       COUNT(o.numberId), AVG(o.numberId) " +
            "  FROM Prime o WHERE o.numberId < ?1")
     Deque<Double> minMaxSumCountAverageDeque(long numBelow);
-
-    @Query("SELECT MIN(o.numberId), MAX(o.numberId), SUM(o.numberId)," +
-           "       COUNT(o.numberId), CAST(AVG(o.numberId) AS FLOAT)" +
-           "  FROM Prime o WHERE o.numberId < ?1")
-    float[] minMaxSumCountAverageFloat(long numBelow);
 
     @Query("SELECT MIN(o.numberId), MAX(o.numberId), SUM(o.numberId)," +
            "       COUNT(o.numberId), CAST(AVG(o.numberId) AS INTEGER)" +
