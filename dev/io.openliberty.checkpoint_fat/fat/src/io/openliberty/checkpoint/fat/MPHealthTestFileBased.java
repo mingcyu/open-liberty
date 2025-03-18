@@ -66,10 +66,10 @@ public class MPHealthTestFileBased extends FATServletClient {
     @Before
     public void setUp() throws Exception {
         testMethod = getTestMethod(TestMethod.class, testName);
-        configureBeforeCheckpoint();
+
         server.setCheckpoint(getCheckpointPhase(), true,
                              server -> {
-                                 configureBeforeRestore();
+                                 testsBeforeRestore();
                              });
         server.setConsoleLogName(getTestMethod(TestMethod.class, testName) + ".log");
         server.startServer(true, false); // Do not validate apps since we have a delayed startup.
@@ -84,20 +84,6 @@ public class MPHealthTestFileBased extends FATServletClient {
         return phase;
     }
 
-    private void configureBeforeCheckpoint() {
-        try {
-            server.saveServerConfiguration();
-            Log.info(getClass(), testName.getMethodName(), "Configuring during checkpoint: " + testMethod);
-            switch (testMethod) {
-                default:
-                    Log.info(getClass(), testName.getMethodName(), "No configuration required: " + testMethod);
-                    break;
-            }
-        } catch (Exception e) {
-            throw new AssertionError("Unexpected error configuring test.", e);
-        }
-    }
-
     @Test
     public void testDefaultFileBasedHealthChecks() throws Exception {
         String name = getTestMethodNameOnly(testName);
@@ -106,26 +92,13 @@ public class MPHealthTestFileBased extends FATServletClient {
         File serverRootDirFile = new File(serverRoot);
 
         /*
-         * Check that the startFileHealthCheckProcesses entry trace exists.
-         * This indicates that the health files haven't been created before the checkpoint.
-         * The files are created for the first time in this method and the timer process kicks off as well.
-         * This is also the method that called as part of the CheckpointPhase.onRestore().
-         * The restore immediately starts the already started application and by the time this test starts
-         * the health files would have been created after resuming the process.
-         *
-         * Checking the trace that the method entry happens after restore is the only way to validate
-         * that the health files were not created before restore.
-         */
-        Log.info(getClass(), "testDefaultFileBasedHealthChecks", "Testing that startFileHealthCheckProcesses entry trace exists in the trace after restore");
-        List<String> myLines = server.findStringsInTrace("startFileHealthCheckProcesses Entry");
-        assertEquals("StartFileHealthCheckProcesses has not been found", 1, myLines.size());
-
-        /*
          * Ensure that the Application has started message exists (CWWKZ0001I) and then check that the files are there.
          */
 
         List<String> lines = server.findStringsInFileInLibertyServerRoot("CWWKZ0001I:", MESSAGE_LOG);
         assertEquals("The CWWKZ0001I Application started message did not appear in messages.log", 1, lines.size());
+
+        Log.info(getClass(), name, "Test that the expected file-based health check files are present");
 
         /*
          * The started and live files should now have been created in the /health directory.
@@ -145,24 +118,33 @@ public class MPHealthTestFileBased extends FATServletClient {
 
     }
 
-    private void configureBeforeRestore() {
-        try {
-            Log.info(getClass(), testName.getMethodName(), "Configuring during restore: " + testMethod);
-            switch (testMethod) {
-                default:
-                    Log.info(getClass(), testName.getMethodName(), "No configuration required: " + testMethod);
-                    break;
-            }
+    private void testsBeforeRestore() {
+        Log.info(getClass(), getTestMethodNameOnly(testName), "Testing that health files do not exist before restore");
 
-        } catch (Exception e) {
-            throw new AssertionError("Unexpected error configuring test.", e);
-        }
+        /*
+         * This is a test before a restore.
+         * We expect only the /health directory to be crated
+         *
+         * Expect:
+         * [X] /health dir
+         * [ ] Started
+         * [ ] Ready
+         * [ ] Live
+         *
+         */
+
+        String serverRoot = server.getServerRoot();
+        File serverRootDirFile = new File(serverRoot);
+
+        assertTrue(HealthFileUtils.HEALTH_DIR_SHOULD_HAVE, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
+        assertFalse(HealthFileUtils.STARTED_SHOULD_NOT_HAVE, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        assertFalse(HealthFileUtils.LIVE_SHOULD_NOT_HAVE, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        assertFalse(HealthFileUtils.READY_SHOULD_NOT_HAVE, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
     }
 
     @After
     public void tearDown() throws Exception {
         server.stopServer("CWMMH0052W");
-        server.restoreServerConfiguration();
     }
 
     static enum TestMethod {
