@@ -175,7 +175,7 @@ public class ProducerGrpcServiceClientImpl extends ProducerGrpcServiceClient {
 
         ProducerRestResponse response = new ProducerRestResponse();
         StreamObserver<AppRequest> requestObserver = _producerAsyncStub
-                        .withDeadlineAfter(deadlineMs, TimeUnit.SECONDS)
+                        .withDeadlineAfter(deadlineMs, TimeUnit.MILLISECONDS)
                         .createApps(new StreamObserver<MultiCreateResponse>() {
 
                             @Override
