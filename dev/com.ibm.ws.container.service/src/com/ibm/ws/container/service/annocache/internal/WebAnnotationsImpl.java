@@ -367,7 +367,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 foundValues.add(AnnotationScanLibarayValues.earLib);
                 foundValues.add(AnnotationScanLibarayValues.ManifestLib);
                 break;
-            } else if (s.trim().toLowerCase().equals("applicationLibrary")) {
+            } else if (s.trim().toLowerCase().equals("earLibrary")) {
                 foundValues.add(AnnotationScanLibarayValues.earLib);
             } else if (s.trim().toLowerCase().equals("manifestClassPath")) {
                 foundValues.add(AnnotationScanLibarayValues.ManifestLib);
