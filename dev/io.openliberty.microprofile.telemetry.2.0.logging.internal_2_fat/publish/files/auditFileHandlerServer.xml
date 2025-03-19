@@ -10,7 +10,7 @@
     Contributors:
         IBM Corporation - initial API and implementation
  -->
-<server description="Telemetry Server to test Message logs">
+<server description="Telemetry Server to test audit file handler event filtering.">
 	<featureManager>
 		<feature>audit-1.0</feature>
 		<feature>mpTelemetry-2.0</feature>
@@ -18,11 +18,13 @@
 		<feature>servlet-6.1</feature>
 		<feature>appSecurity-6.0</feature>
 	</featureManager>
+	
 	<mpTelemetry source="audit"/>
+	
 	<include location="../fatTestPorts.xml"/>
 	<application location="MpTelemetryLogApp.war"/>
 	
 	<auditFileHandler maxFiles="5" maxFileSize="20" compact="true">
-    	<events name="AuditEvent_1" eventName="SECURITY_AUDIT_MGMT" outcome="SUCCESS"/>
+		<events name="AuditEvent_1" eventName="SECURITY_AUDIT_MGMT" outcome="SUCCESS"/>
 	</auditFileHandler>
 </server>
