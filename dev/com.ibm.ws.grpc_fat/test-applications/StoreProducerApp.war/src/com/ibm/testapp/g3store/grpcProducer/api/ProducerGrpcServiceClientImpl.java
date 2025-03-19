@@ -60,7 +60,8 @@ public class ProducerGrpcServiceClientImpl extends ProducerGrpcServiceClient {
 
     private static Logger log = Logger.getLogger(ProducerGrpcServiceClientImpl.class.getName());
 
-    private final int deadlineMs = 60 * 1000;
+    // Two minute timeout for server response
+    private final int deadlineMs = 120 * 1000;
 
     private static boolean CONCURRENT_TEST_ON = false;
 

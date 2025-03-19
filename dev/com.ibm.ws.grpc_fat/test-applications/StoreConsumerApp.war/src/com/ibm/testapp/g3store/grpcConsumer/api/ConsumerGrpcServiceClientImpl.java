@@ -52,7 +52,8 @@ public class ConsumerGrpcServiceClientImpl extends ConsumerGrpcServiceClient {
 
     private static Logger log = Logger.getLogger(ConsumerGrpcServiceClientImpl.class.getName());
 
-    private final int deadlineMs = 60 * 1000;
+    // Two minute timeout for server response
+    private final int deadlineMs = 120 * 1000;
 
     // gRPC client implementation(s)
 
