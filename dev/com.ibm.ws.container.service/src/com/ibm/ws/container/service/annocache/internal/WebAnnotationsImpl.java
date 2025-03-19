@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2019 IBM Corporation and others.
+ * Copyright (c) 2012, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,9 @@
  *******************************************************************************/
 package com.ibm.ws.container.service.annocache.internal;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -28,11 +31,14 @@ import com.ibm.ws.container.service.app.deploy.ContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.WebModuleInfo;
 import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
+import com.ibm.ws.container.service.app.deploy.extended.LibraryClassesContainerInfo;
+import com.ibm.ws.container.service.app.deploy.extended.LibraryContainerInfo;
 import com.ibm.ws.container.service.config.WebFragmentInfo;
 import com.ibm.ws.container.service.config.WebFragmentsInfo;
+import com.ibm.ws.javaee.dd.web.WebApp;
+import com.ibm.ws.javaee.dd.web.common.AbsoluteOrdering;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.adaptable.module.Entry;
-import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
@@ -87,18 +93,16 @@ import com.ibm.wsspi.artifact.overlay.OverlayContainer;
  * completion of a scan.
  */
 public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnnotations {
-
-    public static enum AnnotationScanLibarayValues {
-        earLib, ManifestLib
-    }
-
-    public WebAnnotationsImpl(
-                              AnnotationsAdapterImpl annotationsAdapter,
+    
+    public WebAnnotationsImpl(AnnotationsAdapterImpl annotationsAdapter,
                               Container rootContainer, OverlayContainer rootOverlayContainer,
                               ArtifactContainer rootArtifactContainer, Container rootAdaptableContainer,
                               WebModuleInfo webModuleInfo) throws UnableToAdaptException {
 
-        super(annotationsAdapter, rootContainer, rootOverlayContainer, rootArtifactContainer, rootAdaptableContainer, webModuleInfo);
+        super(annotationsAdapter,
+              rootContainer, rootOverlayContainer,
+              rootArtifactContainer, rootAdaptableContainer,
+              webModuleInfo);
 
         this.webModuleName = webModuleInfo.getName();
         this.webFragments = rootAdaptableContainer.adapt(WebFragmentsInfo.class);
@@ -108,13 +112,29 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         this.pathToFragments = new HashMap<String, WebFragmentInfo>();
     }
 
+    protected WebAnnotationsImpl(WebAnnotationsImpl webAnnotations, String catName) throws UnableToAdaptException {
+        super( webAnnotations.getAnnotationsAdapter(),
+               webAnnotations.getRootContainer(),
+               webAnnotations.getRootOverlayContainer(),
+               webAnnotations.getRootDelegateContainer(),
+               webAnnotations.getContainer(),
+               webAnnotations.getModuleInfo(),
+               catName);
+
+        this.webModuleName = webAnnotations.webModuleName;
+        this.webFragments = webAnnotations.webFragments;
+
+        this.fragmentToPath = webAnnotations.fragmentToPath;
+        this.pathToFragments = webAnnotations.pathToFragments;
+    }
+
     //
 
     @Override
     public WebModuleInfo getModuleInfo() {
         return (WebModuleInfo) super.getModuleInfo();
     }
-
+    
     //
 
     private final String webModuleName;
@@ -145,6 +165,15 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
 
     //
 
+    @Override
+    public FragmentAnnotations getFragmentAnnotations(WebFragmentInfo fragment) {
+        AnnotationTargets_Targets useTargets = getTargets();
+        if (useTargets == null) {
+            return null;
+        }
+        return new FragmentAnnotationsImpl(useTargets, getFragmentPath(fragment));
+    }
+
     private final Map<String, WebFragmentInfo> pathToFragments;
     private final Map<WebFragmentInfo, String> fragmentToPath;
 
@@ -174,11 +203,32 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
     }
 
     //
+    
+    
+    protected final List<String> internalContainers = new ArrayList<>();
+    protected final List<String> extraContainers = new ArrayList<>(0);
 
+    protected void addInternalContainer(String path) {
+        internalContainers.add(path);
+    }
+    
+    public List<String> getInternalContainers() {
+        return internalContainers;
+    }
+
+    protected void addExtraContainer(String path) {
+        extraContainers.add(path);
+    }
+    
+    public List<String> getExtraContainers() {
+        return extraContainers;
+    }
+    
     @Override
     protected void addInternalToClassSource() {
         String methodName = "addInternalToClassSource";
-
+        boolean isDebug = tc.isDebugEnabled();
+        
         if (rootClassSource == null) {
             return;
         }
@@ -187,9 +237,6 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         if (classSourceFactory == null) {
             return;
         }
-
-        //May be empty or missing entries if the relevant scan isn't enabled
-        List<Container> extraLibs = getLibsFromAppContainer();
 
         // The classes folder is processed as if it were a fragment item.
 
@@ -209,9 +256,6 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             String nextUri = nextFragment.getLibraryURI();
             Container nextContainer = nextFragment.getFragmentContainer();
 
-            //Defensive programming to avoid duplicates
-            extraLibs.remove(nextContainer);
-
             boolean nextIsMetadataComplete;
             ScanPolicy nextPolicy;
             if (nextFragment.isSeedFragment()) {
@@ -222,7 +266,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 nextIsMetadataComplete = true;
             }
 
-            if (tc.isDebugEnabled()) {
+            if (isDebug) {
                 Tr.debug(tc, methodName + ": Fragment [ " + nextFragment + " ]");
                 Tr.debug(tc, methodName + ": URI [ " + nextUri + " ]");
                 Tr.debug(tc, methodName + ": Container [ " + nextContainer + " ]");
@@ -247,25 +291,15 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 return; // FFDC in 'getContainerPath'
             }
             nextPath = putUniquePath(nextFragment, nextPath);
-            if (tc.isDebugEnabled()) {
+            if (isDebug) {
                 Tr.debug(tc, methodName + ": Fragment [ " + nextFragment + " ]");
                 Tr.debug(tc, methodName + ": Path [ " + nextPath + " ]");
             }
 
-            if (!addContainerClassSource(nextPath, nextContainer, nextPrefix, nextPolicy)) {
+            if ( !addContainerClassSource(nextPath, nextContainer, nextPrefix, nextPolicy) ) {
                 return; // FFDC in 'addContainerClassSource'
-            }
-        }
-
-        for (Container c : extraLibs) {
-            try {
-                //If we ever expand extraLibs to include shared libaries this section will need rewriting.
-                Entry entry = c.adapt(Entry.class);
-                if (!addContainerClassSource(entry.getPath(), c, ClassSource_Aggregate.ScanPolicy.SEED)) {
-                    return; // FFDC in 'addContainerClassSource'
-                }
-            } catch (UnableToAdaptException e) {
-                return;
+            } else {
+                addInternalContainer(nextPath);
             }
         }
 
@@ -273,7 +307,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             String nextUri = nextFragment.getLibraryURI();
             Container nextContainer = nextFragment.getFragmentContainer();
 
-            if (tc.isDebugEnabled()) {
+            if (isDebug) {
                 Tr.debug(tc, methodName + ": Fragment [ " + nextFragment + " ]");
                 Tr.debug(tc, methodName + ": URI [ " + nextUri + " ]");
                 Tr.debug(tc, methodName + ": Container [ " + nextContainer + " ]");
@@ -286,103 +320,373 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             }
             nextPath = putUniquePath(nextFragment, nextPath);
 
-            if (tc.isDebugEnabled()) {
+            if (isDebug) {
                 Tr.debug(tc, methodName + ": Fragment [ " + nextFragment + " ]");
                 Tr.debug(tc, methodName + ": Path [ " + nextPath + " ]");
             }
 
-            if (!addContainerClassSource(nextPath, nextContainer, ClassSource_Aggregate.ScanPolicy.EXCLUDED)) {
+            if ( !addContainerClassSource(nextPath, nextContainer, ClassSource_Aggregate.ScanPolicy.EXCLUDED) ) {
                 return; // FFDC in 'addContainerClassSource'
+            } else {
+                addInternalContainer(nextPath);
+            }
+        }
+
+        // TODO: The policy assignment is debatable.  There are two key decisions: What to do
+        //       when the web module is metadata complete, and what to do when the web module
+        //       has an absolute ordering which has no 'others' element.
+        //
+        //       This implementation treats extra libraries as if they were fragments which
+        //       have no descriptor.  That means, the extra libraries are completely ignored
+        //       if 'others' exclusion is in effect, and, that means that the extra libraries
+        //       scan policy matches the metadata complete setting.
+
+        // TODO: The path computation doesn't work for shared libraries.  Those will usually
+        //       be root of roots containers.
+        //
+        // Manifest jars and enterprise application library jars are always with an
+        // enterprise application.  Their path must be unique relative to the enclosing
+        // application.  No unique path adjustment is necessary.
+        
+        // TODO: The extra jars are not actually present as fragments.  Will that create problems?
+        //       Scanning that asks for fragment information might have problems.
+
+        if ( !getHasExcludes() ) {
+            ClassSource_Aggregate.ScanPolicy extraPolicy =
+                ( getIsMetadataComplete() ? ClassSource_Aggregate.ScanPolicy.SEED
+                                          : ClassSource_Aggregate.ScanPolicy.PARTIAL );
+
+            for ( Container extraLibContainer : getApplicationExtendedContainers() ) {
+                String nextPath;
+                try {
+                    nextPath = getPath(extraLibContainer);
+                } catch ( UnableToAdaptException e ) {
+                    return; // FFDC
+                }
+
+                if (isDebug) {
+                    Tr.debug(tc, methodName + ": Extra container [ " + nextPath + " ]");
+                }
+                
+                if ( !addContainerClassSource( nextPath, extraLibContainer, extraPolicy ) ) {
+                    return; // FFDC in 'addContainerClassSource'
+                } else {
+                    addExtraContainer(nextPath);
+                }
             }
         }
     }
 
-    private List<Container> getLibsFromAppContainer() {
-
-        //Shared libs are not supported
-        //List<Container> sharedLibraries = new LinkedList<Container>();
-        List<Container> manifestClasspathLibraries = new LinkedList<Container>();;
-        List<Container> earLibraries = new LinkedList<Container>();
-
-        NonPersistentCache cache;
-        try {
-            cache = getAppContainer().adapt(NonPersistentCache.class);
-            // 'adapt' throws UnableToAdaptException
-        } catch (UnableToAdaptException e) {
-            return null; // FFDC
+    /**
+     * Tell if a web module descriptor schema version supports metadata-complete.
+     * 
+     * Metadata-complete is supported at version 2.5 or higher.
+     * 
+     * Perform limited validation of the version as a dotted string.  Answer
+     * false in cases where the value processed.
+     * 
+     * @param schemaVersion A schema version, as a dotted string.
+     * 
+     * @return True or false telling if the schema version supports metadata complete.
+     */
+    private static boolean isMetadataCompleteSupported(String schemaVersion) {
+        int vLen = schemaVersion.length();
+        if ( vLen == 0 ) {
+            return false; // '' broken
         }
 
-        Set<AnnotationScanLibarayValues> scanOptions = getAnnotationScanLibarayValues(cache);
+        char c0 = schemaVersion.charAt(0);        
+        if ( !Character.isDigit(c0) ) {
+            return false; // 'c*' broken
+        } else if ( c0 >= '3' ) {
+            return true;  // '3*'
+        } else if ( c0 == '0') {
+            return false; // '0*' broken
+        }
 
-        ApplicationClassesContainerInfo appClassesInfo = (ApplicationClassesContainerInfo) cache.getFromCache(ApplicationClassesContainerInfo.class);
+        if ( vLen == 1 ) {
+            return false; // '1', or '2'
+        } else if ( schemaVersion.charAt(1) != '.' ) {
+            return true; // '1X*'
+        } else if ( (c0 == '1') || (vLen == 2) ) {
+            return false; // '1.*', or '2.'
+        }
 
-        if (scanOptions.contains(AnnotationScanLibarayValues.ManifestLib)) {
-            for (ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo()) {
-                for (ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo()) {
-                    if (containerInfo.getType() == ContainerInfo.Type.MANIFEST_CLASSPATH
-                        && containerInfo.getContainer() != null) {
-                        manifestClasspathLibraries.add(containerInfo.getContainer());
+        char c2 = schemaVersion.charAt(2);
+        return ( Character.isDigit(c2) && (c2 >= '5')); // '2.5*'
+    }
+
+    protected boolean isSetExcludes;
+    protected boolean isMetadataComplete;
+    protected boolean hasExcludes;
+
+    /**
+     * Determine if the web application descriptor is metadata complete,
+     * and if not, if there any excluded fragments.
+     * 
+     * If there is no descriptor, set metadata complete to false and set that
+     * there are no excludes.
+     * 
+     * If there is a descriptor, set metadata complete if the schema version doesn't
+     * support metadata complete, or if metadata complete is explicitly set on the
+     * descriptor.
+     * 
+     * Set excludes to false if metadata complete is true.  That includes both the
+     * case of the schema version being too low and of metadata complete being
+     * explicitly set to true.
+     * 
+     * If metadata complete is false, set excludes according to whether the descriptor
+     * has an absolute ordering element and that does not have an others element.
+     */
+    protected void setExcludes() {
+        String methodName = "setExcludes";
+        
+        if ( isSetExcludes ) {
+            return;
+        }
+
+        String mcReason;
+        String exReason;
+
+        WebApp webApp = cacheGet(WebApp.class);
+        
+        if ( webApp == null ) {
+            isMetadataComplete = false;
+            hasExcludes = false;
+            mcReason = "No WebApp";
+            exReason = "No WebApp";
+
+        } else {
+            String schemaVersion = webApp.getVersion();
+            if ( isMetadataCompleteSupported(schemaVersion) ) {
+                isMetadataComplete = webApp.isSetMetadataComplete() && webApp.isMetadataComplete();
+                mcReason = "WebApp";
+            } else {
+                isMetadataComplete = true;
+                mcReason = "WebApp Version";
+            }
+
+            if ( !isMetadataComplete ) {
+                AbsoluteOrdering absOrder = webApp.getAbsoluteOrdering();
+                hasExcludes = ( (absOrder != null) && !absOrder.isSetOthers() );
+                exReason = "WebApp";
+            } else {
+                hasExcludes = false;
+                exReason = "isMetadataComplete";
+            }
+        }
+
+        if (tc.isDebugEnabled()) {
+            Tr.debug(tc, methodName + ": isMetadataComplete [ " + isMetadataComplete + " ]: (" + mcReason + ")");
+            Tr.debug(tc, methodName + ": hasExcludes [ " + hasExcludes + " ]: (" + exReason + ")");            
+        }                
+
+        isSetExcludes = true;
+    }
+
+    /**
+     * Tell if the web application is metadata complete.  See the discussion on {@link #setExcludes()}.
+     * 
+     * @return True or false telling if the web application is metadata complete.
+     */
+    protected boolean getIsMetadataComplete() {
+        setExcludes();
+        return isMetadataComplete;
+    }
+
+    /**
+     * Tell if there is a request to excluded fragments.  That is, when there is
+     * a non-metadata complete descriptor that has an absolute ordering element
+     * which  does not have an others element.
+     * 
+     * @return True or false telling there is a request to exclude fragments.
+     */
+    protected boolean getHasExcludes() {
+        setExcludes();
+        return hasExcludes;
+    }
+
+    /**
+     * Tell if any extended scans are enabled.
+     * 
+     * @return True or false telling if any extended scans are enabled.
+     */
+    protected boolean getExtendScans() {
+        Set<EnterpriseApplicationLibraryType> scanOptions = getScanOptions();
+
+        boolean scanManifestJars = scanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+        boolean scanEarLibJars = scanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
+        boolean scanSharedLibs = false; // Shared libs are not supported
+
+        return ( scanManifestJars || scanEarLibJars || scanSharedLibs );
+    }
+
+    /**
+     * Gather all extended containers of the associated web application.
+     * 
+     * These are the containers of manifest class path jars, containers of application
+     * library jars, and containers of shared libraries.
+     * 
+     * Add each category only if enabled.  (See {@link #getScanOptions()}.
+     * 
+     * Add the containers in 
+     * 
+     * @return The collection of extended containers of the web application.
+     */
+    @SuppressWarnings("null")
+    private List<Container> getApplicationExtendedContainers() {
+        Set<EnterpriseApplicationLibraryType> scanOptions = getScanOptions();
+        
+        boolean scanManifestJars = scanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+        boolean scanEarLibJars = scanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
+        boolean scanSharedLibs = false; // Shared libs are not supported
+
+        if ( !scanManifestJars && !scanEarLibJars && !scanSharedLibs ) {
+            return Collections.emptyList();
+        }
+
+        List<Container> manifestContainers = ( scanManifestJars ? new LinkedList<>() : null );
+        List<Container> earLibContainers = ( scanEarLibJars ? new LinkedList<>() : null );
+        List<Container> sharedLibContainers = (scanSharedLibs ? new LinkedList<>() : null );
+
+        ApplicationClassesContainerInfo appClassesInfo = cacheGet(ApplicationClassesContainerInfo.class);
+
+        if ( scanManifestJars ) {
+            for ( ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo() ) {
+                for ( ContainerInfo containerInfo : moduleClassesInfo.getClassesContainerInfo() ) {
+                    if ( containerInfo.getType() != ContainerInfo.Type.MANIFEST_CLASSPATH ) {
+                        continue;
+                    }
+                     
+                    Container container = containerInfo.getContainer();
+                    if ( container != null ) {
+                        manifestContainers.add(container);
                     }
                 }
             }
         }
 
-        if (scanOptions.contains(AnnotationScanLibarayValues.earLib)) { // || scanSharedLibs) { //Shared libs are not supported
+        if (scanEarLibJars || scanSharedLibs) {
             for (ContainerInfo containerInfo : appClassesInfo.getLibraryClassesContainerInfo()) {
-                if (scanOptions.contains(AnnotationScanLibarayValues.earLib) && containerInfo.getType() == ContainerInfo.Type.EAR_LIB
-                    && containerInfo.getContainer() != null) {
-                    earLibraries.add(containerInfo.getContainer());
+                if ( scanEarLibJars && (containerInfo.getType() == ContainerInfo.Type.EAR_LIB) ) {
+                    Container container = containerInfo.getContainer();
+                    if ( container != null ) {
+                        earLibContainers.add(container);
+                    }
+                } 
 
-                    //Shared libs are not supported
-                    /*
-                     * } else if (scanSharedLibs && containerInfo instanceof LibraryClassesContainerInfo) {
-                     * LibraryClassesContainerInfo libContainerInfo = (LibraryClassesContainerInfo) containerInfo;
-                     * if (libContainerInfo.getLibraryType() == LibraryContainerInfo.LibraryType.COMMON_LIB) { //TODO, do we need this check?
-                     * libContainerInfo.getClassesContainerInfo().stream().map(ContainerInfo::getContainer).filter(Objects::nonNull).forEach(sharedLibraries::add);
-                     * }
-                     * }
-                     */
+                // TODO: This step is currently disabled: 'scanSharedLibs' is hard coded to be false.
+                
+                // Note the extra layer of iteration for library classes: Libraries are collections.
+
+                if ( scanSharedLibs && (containerInfo instanceof LibraryClassesContainerInfo) ) {
+                    LibraryClassesContainerInfo libContainerInfo = (LibraryClassesContainerInfo) containerInfo;
+                    if ( libContainerInfo.getLibraryType() == LibraryContainerInfo.LibraryType.COMMON_LIB ) { // TODO, do we need this check?
+                        for ( ContainerInfo classesContainerInfo : libContainerInfo.getClassesContainerInfo() ) {
+                            Container container = classesContainerInfo.getContainer();
+                            if ( container != null ) {
+                                sharedLibContainers.add(container);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        List<Container> toReturn = new LinkedList<Container>(); //TODO, reread slack and ensure these are added in the right order
-        toReturn.addAll(manifestClasspathLibraries);
-        //toReturn.addAll(sharedLibraries);
-        toReturn.addAll(earLibraries);
-        return toReturn;
+        // Put manifest jars ahead of EAR lib jars, ahead of shared library jars.
+        //
+        // TODO: Verify that this matches the ordering used by the application class loader.
+        //       Placing shared libraries last should be correct.  Not sure about the others.
+
+        List<Container> appLibraryContainers = new LinkedList<Container>();
+        if ( scanManifestJars ) {
+            appLibraryContainers.addAll(manifestContainers);
+        }
+        if ( scanEarLibJars ) {
+            appLibraryContainers.addAll(earLibContainers);
+        }
+        if ( scanSharedLibs ) {
+            appLibraryContainers.addAll(sharedLibContainers);
+        }
+        return appLibraryContainers ;
     }
 
-    //
+    // Scan options ...
 
-    private Set<AnnotationScanLibarayValues> getAnnotationScanLibarayValues(NonPersistentCache cache) {
+    // TODO: If shared libraries were enabled, a value must be added here.
+    
+    // These values must match the metatype.
 
-        Set<AnnotationScanLibarayValues> foundValues = new HashSet<AnnotationScanLibarayValues>();
+    public static final String ALL_LIBS_KEYWORD = "all";    
+    public static final String EAR_LIB_KEYWORD = "earLibraries"; 
+    public static final String MANIFEST_KEYWORD = "manifestClassPath";
+    
+    public static enum EnterpriseApplicationLibraryType {
+        EAR_LIB(EAR_LIB_KEYWORD),
+        MANIFEST_LIB(MANIFEST_KEYWORD);
 
-        ApplicationInfoForContainer applicationInformation = (ApplicationInfoForContainer) cache.getFromCache(ApplicationInfoForContainer.class);
-        String rawValues = applicationInformation.getAnnotationScanLibaray();
-
-        for (String s : rawValues.split(",")) {
-            if (s.trim().toLowerCase().equals("all")) {
-                foundValues.add(AnnotationScanLibarayValues.earLib);
-                foundValues.add(AnnotationScanLibarayValues.ManifestLib);
-                break;
-            } else if (s.trim().toLowerCase().equals("earLibrary")) {
-                foundValues.add(AnnotationScanLibarayValues.earLib);
-            } else if (s.trim().toLowerCase().equals("manifestClassPath")) {
-                foundValues.add(AnnotationScanLibarayValues.ManifestLib);
-            }
+        private EnterpriseApplicationLibraryType(String keyWord) {
+            this.keyWord = keyWord;
         }
 
-        return foundValues;
+        private final String keyWord;
+
+        public String getKeyWord() {
+            return keyWord;
+        }
     }
+
+    private Set<EnterpriseApplicationLibraryType> getScanOptions() {
+        Set<EnterpriseApplicationLibraryType> libraryTypes = new HashSet<EnterpriseApplicationLibraryType>();
+
+        ApplicationInfoForContainer appInformation = cacheGet(ApplicationInfoForContainer.class);
+        String rawLibraryTypes = appInformation.getAnnotationScanLibrary();
+        for ( String rawLibraryType : rawLibraryTypes.split(",") ) {
+            rawLibraryType = rawLibraryType.trim().toLowerCase();
+
+            if ( rawLibraryType.equals(ALL_LIBS_KEYWORD) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
+                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+                break;
+
+            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.EAR_LIB.getKeyWord()) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
+            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.MANIFEST_LIB.getKeyWord()) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+            } else {
+                // Should not happen
+            }
+
+            // TODO: If shared libraries were enabled, a step must be added here.
+        }
+
+        return libraryTypes;
+    }
+    
+    //
+    
+    private static class WebEJBAnnotationsLock {
+        protected WebEJBAnnotationsLock() {
+            // EMPTY
+        }
+    }
+
+    private final WebEJBAnnotationsLock webEJBAnnotationsLock =
+        new WebEJBAnnotationsLock();
+
+    private volatile WebAnnotationsImpl webEJBAnnotations;
 
     @Override
-    public FragmentAnnotations getFragmentAnnotations(WebFragmentInfo fragment) {
-        AnnotationTargets_Targets useTargets = getTargets();
-        if (useTargets == null) {
-            return null;
+    public WebAnnotationsImpl asEJBAnnotations() throws UnableToAdaptException {
+        if ( webEJBAnnotations == null ) {
+            synchronized ( webEJBAnnotationsLock ) {
+                if ( getScanOptions().isEmpty() ) {
+                    webEJBAnnotations = this;
+                } else {
+                    webEJBAnnotations = new WebEJBAnnotationsImpl(this);
+                }
+            }
         }
-        return new FragmentAnnotationsImpl(useTargets, getFragmentPath(fragment));
-    }
+        return webEJBAnnotations;
+    }    
 }
