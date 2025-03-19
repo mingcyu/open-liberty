@@ -46,6 +46,7 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
     };
 
     private DelayedCleaner cleaner = NOOP_CLEANER;
+    private boolean cleanupOnShutdown = true;
 
     private interface DelayedCleaner extends CachedOutputStreamCleaner, Closeable {
         @Override
@@ -63,7 +64,12 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
         @Override
         default void clean() {
         }
-        
+
+        @Override
+        default int size() {
+            return 0;
+        }
+
         default void forceClean() {
         }
     }
@@ -111,14 +117,19 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
             timer.cancel();
             queue.clear();
         }
-        
+
+        @Override
+        public int size() {
+            return queue.size();
+        }
+
         private void clean(Collection<DelayedCloseable> closeables) {
             final Iterator<DelayedCloseable> iterator = closeables.iterator();
             while (iterator.hasNext()) {
                 final DelayedCloseable next = iterator.next();
                 try {
                     iterator.remove();
-                    LOG.warning("Unclosed (leaked?) stream detected: " + next.closeable);
+                    LOG.warning("Unclosed (leaked?) stream detected: " + next.closeable.hashCode());
                     next.closeable.close();
                 } catch (final IOException | RuntimeException ex) {
                     LOG.warning("Unable to close (leaked?) stream: " + ex.getMessage());
@@ -174,14 +185,22 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
     public void setBus(Bus bus) {
         Number delayValue = null;
         BusLifeCycleManager busLifeCycleManager = null;
+        Boolean cleanupOnShutdownValue = null;
 
         if (bus != null) {
             delayValue = (Number) bus.getProperty(CachedConstants.CLEANER_DELAY_BUS_PROP);
+            cleanupOnShutdownValue = (Boolean) bus.getProperty(CachedConstants.CLEANER_CLEAN_ON_SHUTDOWN_BUS_PROP);
             busLifeCycleManager = bus.getExtension(BusLifeCycleManager.class);
         }
 
         if (cleaner != null) {
             cleaner.close();
+        }
+
+        if (cleanupOnShutdownValue != null) {
+            cleanupOnShutdown = cleanupOnShutdownValue;
+        } else {
+            cleanupOnShutdown = true;
         }
 
         if (delayValue == null) {
@@ -216,6 +235,11 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
     }
 
     @Override
+    public int size() {
+        return cleaner.size();
+    }
+
+    @Override
     public void clean() {
         cleaner.clean();
     }
@@ -226,11 +250,19 @@ public final class DelayedCachedOutputStreamCleaner implements CachedOutputStrea
     
     @Override
     public void postShutdown() {
+        // If cleanup on shutdown is asked, force cleaning all cached output streams
+        if (cleanupOnShutdown) {
+            forceClean();
+            cleaner.close();
+        }
     }
     
     @Override
     public void preShutdown() {
-        cleaner.close();
+        // If cleanup on shutdown is asked, defer closing till postShutdown hook
+        if (!cleanupOnShutdown) {
+            cleaner.close();
+        }
     }
 
     public void forceClean() {
