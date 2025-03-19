@@ -14,9 +14,9 @@
         <fileset dir="${server.config.dir}/libs" includes="*.jar" />
     </library>
 
-    <application location="springTest.ear" annotationScanLibaray="ALL">
+    <enterpriseApplication location="springTest.ear" annotationScanLibaray="ALL">
         <classloader commonLibraryRef="sharedlib" />
-    </application>
+    </enterpriseApplication>
 
     <logging traceSpecification="com.ibm.ws.library.internal.SharedLibraryImpl=all"/>
 
