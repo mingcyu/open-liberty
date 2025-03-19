@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2017 IBM Corporation and others.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Eclipse Public License 2.0
+    which accompanies this distribution, and is available at
+    http://www.eclipse.org/legal/epl-2.0/
+    
+    SPDX-License-Identifier: EPL-2.0
+   
+    Contributors:
+        IBM Corporation - initial API and implementation
+ -->
+
+<archive>
+	<archive targetInArchive="/sharedClassesWarTest.war">
+		<archive targetInArchive="/WEB-INF/lib/sharedClassesWarLib.jar">
+			<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesWarLib"
+				targetInArchive="/" />
+		</archive>
+		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesWarTest/WEB-INF/classes"
+			targetInArchive="/WEB-INF/classes" />
+	</archive>
+	<archive targetInArchive="/sharedClassesEJB.jar">
+		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesEJB"
+			targetInArchive="/" />
+	</archive>
+	<archive targetInArchive="/lib/sharedClassesEarLib.jar">
+		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesEarLib"
+			targetInArchive="/" />
+	</archive>
+	<archive targetInArchive="/sharedClassesRar.rar">
+		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesRar"
+			targetInArchive="/" />
+		<archive targetInArchive="/sharedClassesResourceAdaptor.jar">
+			<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesResourceAdaptor"
+				targetInArchive="/" />
+		</archive>
+	</archive>
+</archive>

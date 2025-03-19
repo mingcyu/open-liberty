@@ -28,11 +28,14 @@ import junit.framework.AssertionFailedError;
     AlwaysPassesTest.class,
     SharedClassesWarTest.class,
     SharedClassesServerLibTest.class,
-    SharedClassesEarTest.class
+    SharedClassesEarTest.class,
+    SharedClassesServerLibExtractedTest.class,
+    SharedClassesEarLooseTest.class
 })
 public class FATSuite {
     static final String SHARED_CLASSES_WAR_TEST_SERVER = "sharedClassesWarTest";
     static final String SHARED_CLASSES_EAR_TEST_SERVER = "sharedClassesEarTest";
+    static final String SHARED_CLASSES_EAR_LOOSE_TEST_SERVER = "sharedClassesEarLooseTest";
     static final String SHARED_CLASSES_LIB_TEST_SERVER = "sharedClassesLibTest";
 
     static final String SHARED_CLASSES_LOOSE_WAR_TEST_SERVER = "sharedClassesLooseWarTest";
