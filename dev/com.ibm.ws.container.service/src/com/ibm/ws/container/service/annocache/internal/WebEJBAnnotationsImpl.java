@@ -53,14 +53,22 @@ public class WebEJBAnnotationsImpl extends WebAnnotationsImpl {
             return null;
         }
 
+        // Mostly duplicate the web annotations:
+        //
+        // Use the local module category name.  The EJB in WAR results must
+        // be distinguised from the WAR results.
+        //
+        // Later, add the containers of the web annotations class source, except,
+        // do not add extra libraries.
+
         WebAnnotationsImpl useWebAnnotations = getWebAnnotations();
         
-        String useAppName = getAppName();
-        String useModName = getModName();
+        String useAppName = useWebAnnotations.getAppName();
+        String useModName = useWebAnnotations.getModName();
+
         String useModCatName = getModCategoryName();
 
         ClassSource_Aggregate webClassSource = useWebAnnotations.getClassSource();
-
         ClassSource_Options webOptions = webClassSource.getOptions();
 
         if ( tc.isDebugEnabled() ) {
@@ -120,16 +128,17 @@ public class WebEJBAnnotationsImpl extends WebAnnotationsImpl {
             ClassSource_MappedContainer typedSource = (ClassSource_MappedContainer) webLeafSource;
             Container nextContainer = typedSource.getContainer();
             String nextPrefix = typedSource.getEntryPrefix();
+            ClassSource_Aggregate.ScanPolicy nextPolicy = webSource.getScanPolicy(webLeafSource);
 
             if ( isDebug ) {
-                Tr.debug(tc, prefix + " Container source [ " + internalPath + " ] [ " + nextPrefix + " ]");
+                Tr.debug(tc, prefix + " Container source [ " + internalPath + " ] [ " + nextPrefix + " ] [ " + nextPolicy + " ]");
             }
 
             // Don't add the class source; add a new duplicate class source.
 
             // TODO: Can the leaf class sources be shared?
 
-            if ( !addContainerClassSource(internalPath, nextContainer, nextPrefix, webSource.getScanPolicy(webLeafSource)) ) {
+            if ( !addContainerClassSource(internalPath, nextContainer, nextPrefix, nextPolicy) ) { 
                 return; // FFDC in 'addContainerClassSource'
             }
         }

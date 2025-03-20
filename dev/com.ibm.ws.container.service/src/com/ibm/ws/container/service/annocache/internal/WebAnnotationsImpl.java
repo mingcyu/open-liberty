@@ -13,7 +13,6 @@
 package com.ibm.ws.container.service.annocache.internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +37,6 @@ import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.ws.javaee.dd.web.WebApp;
 import com.ibm.ws.javaee.dd.web.common.AbsoluteOrdering;
 import com.ibm.wsspi.adaptable.module.Container;
-import com.ibm.wsspi.adaptable.module.Entry;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
@@ -204,7 +202,6 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
 
     //
     
-    
     protected final List<String> internalContainers = new ArrayList<>();
     protected final List<String> extraContainers = new ArrayList<>(0);
 
@@ -351,10 +348,10 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         // TODO: The extra jars are not actually present as fragments.  Will that create problems?
         //       Scanning that asks for fragment information might have problems.
 
-        if ( !getHasExcludes() ) {
+        if ( getExtendScans() && !getHasExcludes() ) {
             ClassSource_Aggregate.ScanPolicy extraPolicy =
-                ( getIsMetadataComplete() ? ClassSource_Aggregate.ScanPolicy.SEED
-                                          : ClassSource_Aggregate.ScanPolicy.PARTIAL );
+                ( getIsMetadataComplete() ? ClassSource_Aggregate.ScanPolicy.PARTIAL
+                                          : ClassSource_Aggregate.ScanPolicy.SEED );
 
             for ( Container extraLibContainer : getApplicationExtendedContainers() ) {
                 String nextPath;
@@ -448,8 +445,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         String mcReason;
         String exReason;
 
-        WebApp webApp = cacheGet(WebApp.class);
-        
+        WebApp webApp = adapt( getContainer(), WebApp.class );
+
         if ( webApp == null ) {
             isMetadataComplete = false;
             hasExcludes = false;
@@ -549,7 +546,10 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         List<Container> earLibContainers = ( scanEarLibJars ? new LinkedList<>() : null );
         List<Container> sharedLibContainers = (scanSharedLibs ? new LinkedList<>() : null );
 
-        ApplicationClassesContainerInfo appClassesInfo = cacheGet(ApplicationClassesContainerInfo.class);
+        ApplicationClassesContainerInfo appClassesInfo = adapt(getAppContainer(), ApplicationClassesContainerInfo.class);
+        if ( appClassesInfo == null ) {
+            return Collections.emptyList(); // FFDC in 'adapt'
+        }
 
         if ( scanManifestJars ) {
             for ( ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo() ) {
@@ -639,7 +639,11 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
     private Set<EnterpriseApplicationLibraryType> getScanOptions() {
         Set<EnterpriseApplicationLibraryType> libraryTypes = new HashSet<EnterpriseApplicationLibraryType>();
 
-        ApplicationInfoForContainer appInformation = cacheGet(ApplicationInfoForContainer.class);
+        ApplicationInfoForContainer appInformation = adapt(getAppContainer(), ApplicationInfoForContainer.class);
+        if ( appInformation == null ) {
+            return libraryTypes; // FFDC in 'adapt'
+        }
+
         String rawLibraryTypes = appInformation.getAnnotationScanLibrary();
         for ( String rawLibraryType : rawLibraryTypes.split(",") ) {
             rawLibraryType = rawLibraryType.trim().toLowerCase();
@@ -683,7 +687,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
                 if ( getScanOptions().isEmpty() ) {
                     webEJBAnnotations = this;
                 } else {
-                    webEJBAnnotations = new WebEJBAnnotationsImpl(this);
+                    webEJBAnnotations = new WebEJBAnnotationsImpl(this); // throws UnableToAdaptException
                 }
             }
         }

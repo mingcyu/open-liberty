@@ -475,6 +475,8 @@ public abstract class AnnotationsImpl implements Annotations {
     public OverlayContainer getRootOverlayContainer() {
         return rootOverlayContainer;
     }
+    
+    // TODO: These appear to be obsolete ...
 
     protected <T> T cacheGet(Class<T> targetClass) {
         return cacheGet(getRootOverlayContainer(), getContainerPath(), targetClass);
@@ -484,14 +486,57 @@ public abstract class AnnotationsImpl implements Annotations {
         cachePut( getRootOverlayContainer(), getContainerPath(), targetClass, targetObject);
     }
 
+    // TODO: ... except, this is used in:
+    //
+    // AnnotationsImpl.releaseInfoStore()
+    // AnnotationsImpl.releaseTargets()
+
     protected <T> void cacheRemove(Class<T> targetClass) {
         cacheRemove( getRootOverlayContainer(), getContainerPath(), targetClass);
     }
 
+    /**
+     * Adapt a target container to a target type.
+     * 
+     * While the target container is often the root overlay container, the target
+     * may be a parent container, for example, the parent application container of
+     * a web module.
+     * 
+     * Adapting a container usually means looking in the cache of the container and
+     * returning a previously created object of the target type.  If no target yet
+     * exists, one will be created by a registered adapter, stored in the cache,
+     * then returned.
+     * 
+     * @param <T> The target type.
+     * 
+     * @param container The container that is to be adapted to the target type.
+     * @param targetClass The class of the target type.
+     * 
+     * @return The result of adapting the container to the target type.  Null if the
+     *     adapt was not successful.
+     */
+    protected <T> T adapt(Container container, Class<T> targetClass) {
+        try {
+            return container.adapt(targetClass);
+        } catch (UnableToAdaptException e) {
+            return null; // FFDC
+        }
+    }
+    
     //
 
     private final Container rootAdaptableContainer;
 
+    /**
+     * Answer the version of the target container which has adapt function.
+     * 
+     * Caution: The target container is not the correct container for all
+     * adapt calls.  For example, when setting up scanning for a module,
+     * the container of the enclosing application must be used when retrieving
+     * application information.
+     * 
+     * @return The target container.
+     */
     @Override
     public Container getContainer() {
         return rootAdaptableContainer;
