@@ -20,6 +20,7 @@ import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLAS
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_WAR;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_WAR_LIB;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_WAR_NAME;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -80,6 +81,19 @@ public class SharedClassesEarLooseTest extends FATServletClient {
             warLib.delete();
             RemoteFile raJar = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_RAR_NAME + "/" + SHARED_CLASSES_RESOURCE_ADAPTOR_NAME + ".jar");
             raJar.delete();
+
+            String warAPackageDir = io.openliberty.classloading.sharedclasses.war.a.A.class.getPackage().getName().replace('.', '/');
+            RemoteFile warAPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warAPackageDir);
+            RemoteFile warAPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgA/" + warAPackageDir);
+            new File(warAPackageDest.getAbsolutePath()).getParentFile().mkdirs();
+            assertTrue("Could not rename package directory: " + warAPackageDest.getAbsolutePath(), warAPackage.rename(warAPackageDest));
+
+            String warBPackageDir = io.openliberty.classloading.sharedclasses.war.b.B.class.getPackage().getName().replace('.', '/');
+            RemoteFile warBPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warBPackageDir);
+            RemoteFile warBPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgB/" + warBPackageDir);
+            new File(warBPackageDest.getAbsolutePath()).getParentFile().mkdirs();
+            assertTrue("Could not rename package directory: " + warBPackageDest.getAbsolutePath(), warBPackage.rename(warBPackageDest));
+
         }
         if (mode == ServerMode.modifyAppClasses) {
             Thread.sleep(5000);

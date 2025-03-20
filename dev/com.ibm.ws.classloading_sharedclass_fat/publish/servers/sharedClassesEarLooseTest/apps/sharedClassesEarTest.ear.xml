@@ -20,6 +20,10 @@
 		</archive>
 		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesWarTest/WEB-INF/classes"
 			targetInArchive="/WEB-INF/classes" />
+		<dir sourceOnDisk="${server.config.dir}/looseContent/warPkgA"
+			targetInArchive="/WEB-INF/classes" />
+		<dir sourceOnDisk="${server.config.dir}/looseContent/warPkgB"
+			targetInArchive="/WEB-INF/classes" />
 	</archive>
 	<archive targetInArchive="/sharedClassesEJB.jar">
 		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesEJB"
