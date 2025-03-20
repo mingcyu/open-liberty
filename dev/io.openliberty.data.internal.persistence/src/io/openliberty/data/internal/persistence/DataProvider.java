@@ -295,7 +295,9 @@ public class DataProvider implements //
     public void applicationStarting(ApplicationInfo appInfo) throws StateChangeException {
 
     }
-
+    //TODO Renable when  javax.naming.NameNotFoundException is fixed
+    //FutureEMBuilder: InitialContext.doLookup(dataStore)
+    /* 
     @Override
     public void componentMetaDataCreated(MetaDataEvent<ComponentMetaData> event) {
         String appName = event.getMetaData().getJ2EEName().getApplication();
@@ -327,6 +329,11 @@ public class DataProvider implements //
             //Return the WEB Module EMBuilders that can't be completed here
             futureEMBuilders.put(appName, futures);
         }
+    }
+    */
+    
+    @Override
+    public void componentMetaDataCreated(MetaDataEvent<ComponentMetaData> event) {
     }
 
     @Override

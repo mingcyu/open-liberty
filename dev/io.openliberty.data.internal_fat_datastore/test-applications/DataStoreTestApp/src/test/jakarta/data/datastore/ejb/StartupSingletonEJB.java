@@ -15,17 +15,18 @@ package test.jakarta.data.datastore.ejb;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
 
 @Startup
 @Singleton
 public class StartupSingletonEJB {
 
-    @Inject
-    EJBModuleDSDRepo repo;
+    //TODO Renable when  javax.naming.NameNotFoundException is fixed
+    //FutureEMBuilder: InitialContext.doLookup(dataStore)
+    //@Inject
+    //EJBModuleDSDRepo repo;
 
     @PostConstruct
     public void init() {
-        repo.acquire(0);
+        //    repo.acquire(0);
     }
 }
