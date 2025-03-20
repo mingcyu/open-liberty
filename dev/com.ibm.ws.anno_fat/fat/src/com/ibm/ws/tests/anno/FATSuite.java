@@ -71,6 +71,7 @@ import com.ibm.ws.tests.anno.jandex.JandexAppTrueAppMgrTrueTest;
     LooseConfigTest.class,
 
     // BigAppTest.class
+    AnnotationScanInJarTest.class
 })
 
 public class FATSuite {
