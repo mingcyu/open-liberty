@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.NotificationBroadcasterSupport;
 
+import org.osgi.service.component.annotations.Component;
+
 import com.ibm.ws.app.manager.internal.monitor.ApplicationMonitor;
 import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
 import com.ibm.ws.ffdc.FFDCFilter;
@@ -30,6 +32,7 @@ import com.ibm.wsspi.kernel.service.location.WsResource;
 /**
  *
  */
+@Component(service = { ApplicationInfoForContainer.class }, immediate = true)
 public class ApplicationInstallInfo implements ApplicationInformation<Object>, ApplicationInfoForContainer {
     private final ApplicationConfig _config;
     private final AtomicReference<Object> _handlerInfo = new AtomicReference<Object>();
@@ -83,7 +86,7 @@ public class ApplicationInstallInfo implements ApplicationInformation<Object>, A
 
     /** {@inheritDoc} */
     @Override
-    public String getAnnotationScanLibaray() {
+    public String getAnnotationScanLibrary() {
         return _config.getAnnotationScanLibaray();
     }
 
