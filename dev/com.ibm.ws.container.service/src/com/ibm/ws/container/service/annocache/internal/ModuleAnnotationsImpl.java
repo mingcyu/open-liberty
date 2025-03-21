@@ -12,6 +12,10 @@
  *******************************************************************************/
 package com.ibm.ws.container.service.annocache.internal;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.ibm.websphere.ras.Tr;
 
 import com.ibm.wsspi.artifact.ArtifactContainer;
@@ -28,8 +32,9 @@ import com.ibm.ws.container.service.app.deploy.ApplicationInfo;
 import com.ibm.ws.container.service.app.deploy.ContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleInfo;
-
+import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
 import com.ibm.ws.container.service.annocache.ModuleAnnotations;
+import com.ibm.ws.container.service.annocache.internal.WebAnnotationsImpl.EnterpriseApplicationLibraryType;
 
 /*
  * Web module annotation service implementation.
@@ -225,6 +230,11 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
     //
 
     private final ApplicationInfo appInfo;
+    
+    private boolean isSetAppCache;
+    private NonPersistentCache appCache;
+
+    private Set<EnterpriseApplicationLibraryType> appScanOptions;
 
     @Override
     public ApplicationInfo getAppInfo() {
@@ -236,6 +246,95 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
         return getAppInfo().getContainer();
     }
 
+    protected NonPersistentCache getAppCache() {
+        if ( !isSetAppCache ) {
+            NonPersistentCache useAppCache;
+            try {
+                useAppCache = getAppContainer().adapt(NonPersistentCache.class);
+                // 'adapt' throws UnableToAdaptException
+            } catch ( UnableToAdaptException e ) {
+                useAppCache = null; // FFDC
+            }
+
+            appCache = useAppCache;
+            isSetAppCache = true;
+        }
+
+        return appCache;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> T appCacheGet(Class<T> targetClass) {
+        return (T) appCache.getFromCache(targetClass);
+    }
+    
+    protected Set<EnterpriseApplicationLibraryType> getAppScanOptions() {
+        if ( appScanOptions == null ) {
+            appScanOptions = computeAppScanOptions();
+        }
+        return appScanOptions;
+    }
+    
+    private Set<EnterpriseApplicationLibraryType> computeAppScanOptions() {
+        ApplicationInfoForContainer appInformation = appCacheGet(ApplicationInfoForContainer.class);
+        if ( appInformation == null ) {
+            return Collections.emptySet(); // FFDC in 'adaptCacheGet'
+        }
+
+        Set<EnterpriseApplicationLibraryType> libraryTypes = new HashSet<EnterpriseApplicationLibraryType>(3);
+        
+        String rawLibraryTypes = appInformation.getAnnotationScanLibrary();
+        for ( String rawLibraryType : rawLibraryTypes.split(",") ) {
+            rawLibraryType = rawLibraryType.trim().toLowerCase();
+
+            if ( rawLibraryType.equals(ALL_LIBS_KEYWORD) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
+                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+                break;
+
+            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.EAR_LIB.getKeyWord()) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
+            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.MANIFEST_LIB.getKeyWord()) ) {
+                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+            } else {
+                // Should not happen
+            }
+
+            // TODO: If shared libraries were enabled, a step must be added here.
+        }
+
+        return libraryTypes;
+    }    
+    
+    protected ApplicationClassesContainerInfo getAppClassesContainerInfo() {
+        return appCacheGet(ApplicationClassesContainerInfo.class);
+    }
+
+    // TODO: If shared libraries were enabled, a value must be added here.
+    
+    // These values must match the metatype.
+
+    public static final String ALL_LIBS_KEYWORD = "all";    
+    public static final String EAR_LIB_KEYWORD = "earLibraries"; 
+    public static final String MANIFEST_KEYWORD = "manifestClassPath";
+    
+    public static enum EnterpriseApplicationLibraryType {
+        EAR_LIB(EAR_LIB_KEYWORD),
+        MANIFEST_LIB(MANIFEST_KEYWORD);
+
+        private EnterpriseApplicationLibraryType(String keyWord) {
+            this.keyWord = keyWord;
+        }
+
+        private final String keyWord;
+
+        public String getKeyWord() {
+            return keyWord;
+        }
+    }
+
+    //
+    
     /**
      * Override: Retrieve the 'useJandex' setting from
      * the application information.

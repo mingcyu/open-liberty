@@ -37,6 +37,7 @@ import com.ibm.ws.container.service.config.WebFragmentsInfo;
 import com.ibm.ws.javaee.dd.web.WebApp;
 import com.ibm.ws.javaee.dd.web.common.AbsoluteOrdering;
 import com.ibm.wsspi.adaptable.module.Container;
+import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
@@ -509,10 +510,10 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
      * @return True or false telling if any extended scans are enabled.
      */
     protected boolean getExtendScans() {
-        Set<EnterpriseApplicationLibraryType> scanOptions = getScanOptions();
+        Set<EnterpriseApplicationLibraryType> appScanOptions = getAppScanOptions();
 
-        boolean scanManifestJars = scanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
-        boolean scanEarLibJars = scanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
+        boolean scanManifestJars = appScanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+        boolean scanEarLibJars = appScanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
         boolean scanSharedLibs = false; // Shared libs are not supported
 
         return ( scanManifestJars || scanEarLibJars || scanSharedLibs );
@@ -528,28 +529,27 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
      * 
      * Add the containers in 
      * 
+     * @param appScanOptions Application scanning options.
+     * @param appCache The application's non-persistent cache.
+     * 
      * @return The collection of extended containers of the web application.
      */
     @SuppressWarnings("null")
     private List<Container> getApplicationExtendedContainers() {
-        Set<EnterpriseApplicationLibraryType> scanOptions = getScanOptions();
-        
-        boolean scanManifestJars = scanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
-        boolean scanEarLibJars = scanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
-        boolean scanSharedLibs = false; // Shared libs are not supported
-
-        if ( !scanManifestJars && !scanEarLibJars && !scanSharedLibs ) {
+        ApplicationClassesContainerInfo appClassesInfo = getAppClassesContainerInfo();
+        if ( appClassesInfo == null ) {
             return Collections.emptyList();
         }
+
+        Set<EnterpriseApplicationLibraryType> appScanOptions = getAppScanOptions();
+
+        boolean scanManifestJars = appScanOptions.contains(EnterpriseApplicationLibraryType.MANIFEST_LIB);
+        boolean scanEarLibJars = appScanOptions.contains(EnterpriseApplicationLibraryType.EAR_LIB);
+        boolean scanSharedLibs = false; // Shared libs are not supported
 
         List<Container> manifestContainers = ( scanManifestJars ? new LinkedList<>() : null );
         List<Container> earLibContainers = ( scanEarLibJars ? new LinkedList<>() : null );
         List<Container> sharedLibContainers = (scanSharedLibs ? new LinkedList<>() : null );
-
-        ApplicationClassesContainerInfo appClassesInfo = adapt(getAppContainer(), ApplicationClassesContainerInfo.class);
-        if ( appClassesInfo == null ) {
-            return Collections.emptyList(); // FFDC in 'adapt'
-        }
 
         if ( scanManifestJars ) {
             for ( ModuleClassesContainerInfo moduleClassesInfo : appClassesInfo.getModuleClassesContainerInfo() ) {
@@ -566,8 +566,8 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
             }
         }
 
-        if (scanEarLibJars || scanSharedLibs) {
-            for (ContainerInfo containerInfo : appClassesInfo.getLibraryClassesContainerInfo()) {
+        if ( scanEarLibJars || scanSharedLibs ) {
+            for ( ContainerInfo containerInfo : appClassesInfo.getLibraryClassesContainerInfo() ) {
                 if ( scanEarLibJars && (containerInfo.getType() == ContainerInfo.Type.EAR_LIB) ) {
                     Container container = containerInfo.getContainer();
                     if ( container != null ) {
@@ -611,62 +611,6 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
         return appLibraryContainers ;
     }
 
-    // Scan options ...
-
-    // TODO: If shared libraries were enabled, a value must be added here.
-    
-    // These values must match the metatype.
-
-    public static final String ALL_LIBS_KEYWORD = "all";    
-    public static final String EAR_LIB_KEYWORD = "earLibraries"; 
-    public static final String MANIFEST_KEYWORD = "manifestClassPath";
-    
-    public static enum EnterpriseApplicationLibraryType {
-        EAR_LIB(EAR_LIB_KEYWORD),
-        MANIFEST_LIB(MANIFEST_KEYWORD);
-
-        private EnterpriseApplicationLibraryType(String keyWord) {
-            this.keyWord = keyWord;
-        }
-
-        private final String keyWord;
-
-        public String getKeyWord() {
-            return keyWord;
-        }
-    }
-
-    private Set<EnterpriseApplicationLibraryType> getScanOptions() {
-        Set<EnterpriseApplicationLibraryType> libraryTypes = new HashSet<EnterpriseApplicationLibraryType>();
-
-        ApplicationInfoForContainer appInformation = adapt(getAppContainer(), ApplicationInfoForContainer.class);
-        if ( appInformation == null ) {
-            return libraryTypes; // FFDC in 'adapt'
-        }
-
-        String rawLibraryTypes = appInformation.getAnnotationScanLibrary();
-        for ( String rawLibraryType : rawLibraryTypes.split(",") ) {
-            rawLibraryType = rawLibraryType.trim().toLowerCase();
-
-            if ( rawLibraryType.equals(ALL_LIBS_KEYWORD) ) {
-                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
-                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
-                break;
-
-            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.EAR_LIB.getKeyWord()) ) {
-                libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
-            } else if ( rawLibraryType.equals(EnterpriseApplicationLibraryType.MANIFEST_LIB.getKeyWord()) ) {
-                libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
-            } else {
-                // Should not happen
-            }
-
-            // TODO: If shared libraries were enabled, a step must be added here.
-        }
-
-        return libraryTypes;
-    }
-    
     //
     
     private static class WebEJBAnnotationsLock {
@@ -684,7 +628,7 @@ public class WebAnnotationsImpl extends ModuleAnnotationsImpl implements WebAnno
     public WebAnnotationsImpl asEJBAnnotations() throws UnableToAdaptException {
         if ( webEJBAnnotations == null ) {
             synchronized ( webEJBAnnotationsLock ) {
-                if ( getScanOptions().isEmpty() ) {
+                if ( getAppScanOptions().isEmpty() ) {
                     webEJBAnnotations = this;
                 } else {
                     webEJBAnnotations = new WebEJBAnnotationsImpl(this); // throws UnableToAdaptException
