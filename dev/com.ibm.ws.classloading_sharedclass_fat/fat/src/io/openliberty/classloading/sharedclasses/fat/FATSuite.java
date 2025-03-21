@@ -56,6 +56,7 @@ public class FATSuite {
     // Library archive names
     public static final String SHARED_CLASSES_WAR_LIB_NAME = "sharedClassesWarLib";
     public static final String SHARED_CLASSES_EAR_LIB_NAME = "sharedClassesEarLib";
+    public static final String SHARED_CLASSES_EAR_LIB2_NAME = "sharedClassesEarLib2";
     public static final String SHARED_CLASSES_SERVER_LIB_NAME = "sharedClassesServerLib";
 
     // RAR inner jar archive names
@@ -80,6 +81,7 @@ public class FATSuite {
     // Library archives
     static final JavaArchive SHARED_CLASSES_WAR_LIB;
     static final JavaArchive SHARED_CLASSES_EAR_LIB;
+    static final JavaArchive SHARED_CLASSES_EAR_LIB2;
     static final JavaArchive SHARED_CLASSES_SERVER_LIB;
 
     // RAR inner JAR archives
@@ -99,6 +101,9 @@ public class FATSuite {
             SHARED_CLASSES_EAR_LIB = ShrinkHelper.buildJavaArchive(SHARED_CLASSES_EAR_LIB_NAME + ".jar", //
                                                                    io.openliberty.classloading.sharedclasses.earlib.a.A.class.getPackage().getName(), //
                                                                    io.openliberty.classloading.sharedclasses.earlib.b.B.class.getPackage().getName());
+            SHARED_CLASSES_EAR_LIB2 = ShrinkHelper.buildJavaArchive(SHARED_CLASSES_EAR_LIB2_NAME + ".jar", //
+                                                                   io.openliberty.classloading.sharedclasses.earlib2.a.A.class.getPackage().getName(), //
+                                                                   io.openliberty.classloading.sharedclasses.earlib2.b.B.class.getPackage().getName());
             SHARED_CLASSES_SERVER_LIB = ShrinkHelper.buildJavaArchive(SHARED_CLASSES_SERVER_LIB_NAME + ".jar", //
                                                                     io.openliberty.classloading.sharedclasses.serverlib.a.A.class.getPackage().getName(), //
                                                                     io.openliberty.classloading.sharedclasses.serverlib.b.B.class.getPackage().getName());
@@ -133,6 +138,7 @@ public class FATSuite {
                             .addAsModule(SHARED_CLASSES_WAR)
                             .addAsModule(SHARED_CLASSES_EJB)
                             .addAsLibrary(SHARED_CLASSES_EAR_LIB)
+                            .addAsLibrary(SHARED_CLASSES_EAR_LIB2)
                             .addAsModule(SHARED_CLASSES_RAR);
         } catch (Exception e) {
             throw (AssertionFailedError) new AssertionFailedError().initCause(e);
@@ -151,6 +157,8 @@ public class FATSuite {
         testEjbClassesB(io.openliberty.classloading.sharedclasses.ejb.b.B.class),
         testEarLibA(io.openliberty.classloading.sharedclasses.earlib.a.A.class),
         testEarLibB(io.openliberty.classloading.sharedclasses.earlib.b.B.class),
+        testEarLib2A(io.openliberty.classloading.sharedclasses.earlib2.a.A.class, false /* no share url */),
+        testEarLib2B(io.openliberty.classloading.sharedclasses.earlib2.b.B.class),
         testResoureAdaptorClassesA(io.openliberty.classloading.sharedclasses.resourceadaptor.a.A.class),
         testResoureAdaptorClassesB(io.openliberty.classloading.sharedclasses.resourceadaptor.b.B.class),
         testRarClassesA(io.openliberty.classloading.sharedclasses.rar.a.A.class),

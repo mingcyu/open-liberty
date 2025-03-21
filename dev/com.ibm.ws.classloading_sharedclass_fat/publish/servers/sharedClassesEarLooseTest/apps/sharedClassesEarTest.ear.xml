@@ -35,6 +35,12 @@
 		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesEarLib"
 			targetInArchive="/" />
 	</archive>
+	<archive targetInArchive="/lib/sharedClassesEarLib2.jar">
+		<dir sourceOnDisk="${server.config.dir}/looseContent/earLib2PkgA"
+			targetInArchive="/io/openliberty/classloading/sharedclasses/earlib2/a" />
+		<dir sourceOnDisk="${server.config.dir}/looseContent/earLib2PkgB"
+			targetInArchive="/" />
+	</archive>
 	<archive targetInArchive="/sharedClassesRar.rar">
 		<dir sourceOnDisk="${server.config.dir}/looseContent/sharedClassesRar"
 			targetInArchive="/" />

@@ -55,6 +55,14 @@ public class TestSharedClassesEar extends FATServlet{
         new io.openliberty.classloading.sharedclasses.earlib.b.B().toString();
     }
 
+    public void testEarLib2A() throws Exception {
+        new io.openliberty.classloading.sharedclasses.earlib2.a.A().toString();
+    }
+
+    public void testEarLib2B() throws Exception {
+        new io.openliberty.classloading.sharedclasses.earlib2.b.B().toString();
+    }
+
     public void testResoureAdaptorClassesA() throws Exception {
         new io.openliberty.classloading.sharedclasses.resourceadaptor.a.A().toString();
     }

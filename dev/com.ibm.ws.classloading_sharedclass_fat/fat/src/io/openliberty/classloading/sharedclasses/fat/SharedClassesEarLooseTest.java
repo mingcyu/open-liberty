@@ -10,6 +10,8 @@
 package io.openliberty.classloading.sharedclasses.fat;
 
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EAR_LIB;
+import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EAR_LIB2;
+import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EAR_LIB2_NAME;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EAR_LOOSE_TEST_SERVER;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EAR_PATH;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_EJB;
@@ -76,6 +78,7 @@ public class SharedClassesEarLooseTest extends FATServletClient {
             setupLooseContent(SHARED_CLASSES_RAR);
             setupLooseContent(SHARED_CLASSES_RESOURCE_ADAPTOR);
             setupLooseContent(SHARED_CLASSES_EAR_LIB);
+            setupLooseContent(SHARED_CLASSES_EAR_LIB2);
 
             RemoteFile warLib = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/lib");
             warLib.delete();
@@ -104,6 +107,20 @@ public class SharedClassesEarLooseTest extends FATServletClient {
             RemoteFile warCPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warCPackageDir);
             RemoteFile warCPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgC");
             assertTrue("Could not rename package directory: " + warCPackageDest.getAbsolutePath(), warCPackage.rename(warCPackageDest));
+
+            // Need another test with no package directory structure for A and keeps package directory structure for B
+            // This forces a single root URL for the loose container for B
+            String earLib2APackageDir = io.openliberty.classloading.sharedclasses.earlib2.a.A.class.getPackage().getName().replace('.', '/');
+            RemoteFile earLib2APackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_EAR_LIB2_NAME + "/" + earLib2APackageDir);
+            RemoteFile earLib2APackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "earLib2PkgA");
+            assertTrue("Could not rename package directory: " + earLib2APackageDest.getAbsolutePath(), earLib2APackage.rename(earLib2APackageDest));
+
+            // Move the "b" package to "earLib2PkgB"; keeping the package directory structure
+            String earLib2BPackageDir = io.openliberty.classloading.sharedclasses.earlib2.b.B.class.getPackage().getName().replace('.', '/');
+            RemoteFile earLib2BPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_EAR_LIB2_NAME + "/" + earLib2BPackageDir);
+            RemoteFile earLib2BPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "earLib2PkgB/" + earLib2BPackageDir);
+            new File(earLib2BPackageDest.getAbsolutePath()).getParentFile().mkdirs();
+            assertTrue("Could not rename package directory: " + earLib2BPackageDest.getAbsolutePath(), earLib2BPackage.rename(earLib2BPackageDest));
         }
         if (mode == ServerMode.modifyAppClasses) {
             Thread.sleep(5000);
@@ -177,6 +194,16 @@ public class SharedClassesEarLooseTest extends FATServletClient {
 
     @Test
     public void testEarLibB() throws Exception {
+        runTest();
+    }
+
+    @Test
+    public void testEarLib2A() throws Exception {
+        runTest();
+    }
+
+    @Test
+    public void testEarLib2B() throws Exception {
         runTest();
     }
 
