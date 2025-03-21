@@ -110,8 +110,9 @@ public class FATSuite {
 
             SHARED_CLASSES_WAR = ShrinkHelper.buildDefaultApp(SHARED_CLASSES_WAR_NAME + ".war",
                                                               io.openliberty.classloading.sharedclasses.war.TestSharedClassesWar.class.getPackage().getName(), //
+                                                              io.openliberty.classloading.sharedclasses.war.a.A.class.getPackage().getName(), //
                                                               io.openliberty.classloading.sharedclasses.war.b.B.class.getPackage().getName(), //
-                                                              io.openliberty.classloading.sharedclasses.war.a.A.class.getPackage().getName())
+                                                              io.openliberty.classloading.sharedclasses.war.c.C.class.getPackage().getName())
                             .addAsLibrary(SHARED_CLASSES_WAR_LIB);
 
 
@@ -141,6 +142,7 @@ public class FATSuite {
     enum TestMethod {
         testWarClassesA(io.openliberty.classloading.sharedclasses.war.a.A.class),
         testWarClassesB(io.openliberty.classloading.sharedclasses.war.b.B.class),
+        testWarClassesC(io.openliberty.classloading.sharedclasses.war.c.C.class, false /* no share url */),
         testWarLibA(io.openliberty.classloading.sharedclasses.warlib.a.A.class),
         testWarLibB(io.openliberty.classloading.sharedclasses.warlib.b.B.class),
         testServerLibClassesA(io.openliberty.classloading.sharedclasses.serverlib.a.A.class),
@@ -156,12 +158,24 @@ public class FATSuite {
 
 
         private final String className;
+        private final boolean hasShareURL;
         TestMethod(Class<?> c) {
+            this(c, true);
+        }
+        /**
+         *
+         */
+        private TestMethod(Class<?> c, boolean hasShareURL) {
             this.className = c.getName();
+            this.hasShareURL = hasShareURL;
         }
 
         String className() {
             return className;
+        }
+
+        boolean hasShareURL() {
+            return hasShareURL;
         }
     }
 }

@@ -146,6 +146,8 @@ public class SharedClassTestRule implements TestRule {
 
     private final static String STORE_IN_CACHE_MESSAGE = "Called shared class cache to store class";
     private final static String LOAD_FROM_CACHE_MESSAGE = "Found class in shared class cache";
+    private final static String NO_SHARE_URL_FIND = "No shared class cache URL to find class";
+    private final static String NO_SHARE_URL_STORE = "No shared class cache URL to store class";
 
     void checkModifiedClassTrace(LibertyServer server, TestMethod testMethod) throws Exception {
         String expectedTraceMsg = isClassModified.apply(testMethod.className()) ? STORE_IN_CACHE_MESSAGE : LOAD_FROM_CACHE_MESSAGE;
@@ -158,19 +160,26 @@ public class SharedClassTestRule implements TestRule {
         }
         TestMethod testMethod = TestMethod.valueOf(testMethodName);
         runTest(server, SHARED_CLASSES_WAR_NAME + testServletPath, testMethod.name());
+        String expectedMessage = null;;
         switch(serverMode) {
             case storeInCache:
-                checkSharedClassTrace(server, testMethod, STORE_IN_CACHE_MESSAGE);
+                expectedMessage = testMethod.hasShareURL() ? STORE_IN_CACHE_MESSAGE : NO_SHARE_URL_STORE;
                 break;
             case loadFromCache:
-                checkSharedClassTrace(server, testMethod, LOAD_FROM_CACHE_MESSAGE);
+                expectedMessage = testMethod.hasShareURL() ? LOAD_FROM_CACHE_MESSAGE : NO_SHARE_URL_FIND;
                 break;
             case modifyAppClasses:
-                checkModifiedClassTrace(server, testMethod);
+                if (isClassModified.apply(testMethod.className())) {
+                    expectedMessage = testMethod.hasShareURL() ? STORE_IN_CACHE_MESSAGE : NO_SHARE_URL_STORE;
+                } else {
+                    expectedMessage = testMethod.hasShareURL() ? LOAD_FROM_CACHE_MESSAGE : NO_SHARE_URL_FIND;
+                }
                 break;
             default:
                 fail("Unknown serverMode: " + serverMode);
         }
+        assertNotNull("expectedMessage is null", expectedMessage);
+        checkSharedClassTrace(server, testMethod, expectedMessage);
     }
 
     /**

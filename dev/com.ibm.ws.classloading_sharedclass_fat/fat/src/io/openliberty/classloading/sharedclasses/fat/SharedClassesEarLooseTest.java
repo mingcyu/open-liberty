@@ -82,18 +82,28 @@ public class SharedClassesEarLooseTest extends FATServletClient {
             RemoteFile raJar = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_RAR_NAME + "/" + SHARED_CLASSES_RESOURCE_ADAPTOR_NAME + ".jar");
             raJar.delete();
 
+            // Split apart the WAR classes to create 4 different locations on disk that contribute to WEB-INF/classes
+            // Keep the test servlet implementations in the original WEB-INF/classes directory
+
+            // Move the "a" package to "warPkgA"; keeping the package directory structure
             String warAPackageDir = io.openliberty.classloading.sharedclasses.war.a.A.class.getPackage().getName().replace('.', '/');
             RemoteFile warAPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warAPackageDir);
             RemoteFile warAPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgA/" + warAPackageDir);
             new File(warAPackageDest.getAbsolutePath()).getParentFile().mkdirs();
             assertTrue("Could not rename package directory: " + warAPackageDest.getAbsolutePath(), warAPackage.rename(warAPackageDest));
 
+            // Move the "b" package to "warPkgB"; keeping the package directory structure
             String warBPackageDir = io.openliberty.classloading.sharedclasses.war.b.B.class.getPackage().getName().replace('.', '/');
             RemoteFile warBPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warBPackageDir);
             RemoteFile warBPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgB/" + warBPackageDir);
             new File(warBPackageDest.getAbsolutePath()).getParentFile().mkdirs();
             assertTrue("Could not rename package directory: " + warBPackageDest.getAbsolutePath(), warBPackage.rename(warBPackageDest));
 
+            // Move the "c" package to "warPkgC"; remove the package directory structure
+            String warCPackageDir = io.openliberty.classloading.sharedclasses.war.c.C.class.getPackage().getName().replace('.', '/');
+            RemoteFile warCPackage = server.getFileFromLibertyServerRoot("/looseContent/" + SHARED_CLASSES_WAR_NAME + "/WEB-INF/classes/" + warCPackageDir);
+            RemoteFile warCPackageDest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("looseContent"), "warPkgC");
+            assertTrue("Could not rename package directory: " + warCPackageDest.getAbsolutePath(), warCPackage.rename(warCPackageDest));
         }
         if (mode == ServerMode.modifyAppClasses) {
             Thread.sleep(5000);
@@ -132,6 +142,11 @@ public class SharedClassesEarLooseTest extends FATServletClient {
 
     @Test
     public void testWarClassesB() throws Exception {
+        runTest();
+    }
+
+    @Test
+    public void testWarClassesC() throws Exception {
         runTest();
     }
 
