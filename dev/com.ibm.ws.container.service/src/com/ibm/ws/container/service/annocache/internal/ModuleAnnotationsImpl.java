@@ -34,7 +34,6 @@ import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleInfo;
 import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
 import com.ibm.ws.container.service.annocache.ModuleAnnotations;
-import com.ibm.ws.container.service.annocache.internal.WebAnnotationsImpl.EnterpriseApplicationLibraryType;
 
 /*
  * Web module annotation service implementation.
@@ -265,7 +264,7 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
 
     @SuppressWarnings("unchecked")
     protected <T> T appCacheGet(Class<T> targetClass) {
-        return (T) appCache.getFromCache(targetClass);
+        return (T) getAppCache().getFromCache(targetClass);
     }
     
     protected Set<EnterpriseApplicationLibraryType> getAppScanOptions() {
