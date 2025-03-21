@@ -19,7 +19,6 @@ kyleaure/db2-krb5:2.0
 kyleaure/krb5-server:1.0
 kyleaure/oracle-21.3.0-faststart:1.0.full.krb5
 kyleaure/postgres-krb5:1.0
-kyleaure/postgres-ssl:1.0
 kyleaure/postgres-test-table:3.0
 kyleaure/sqlserver-ssl:2019-CU18-ubuntu-20.04
 letsencrypt/pebble-challtestsrv:v2.3.1
