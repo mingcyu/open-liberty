@@ -1461,7 +1461,11 @@ public class DataJPATestServlet extends FATServlet {
     @Test
     public void testEmbeddableDepth2() {
         CursoredPage<Business> page;
-        List<Integer> zipCodes = List.of(55906, 55902, 55901, 55976, 55905);
+        List<ZipCode> zipCodes = List.of(ZipCode.of(55906),
+                                         ZipCode.of(55902),
+                                         ZipCode.of(55901),
+                                         ZipCode.of(55976),
+                                         ZipCode.of(55905));
 
         page = businesses.findByLocationAddressZipIn(zipCodes, PageRequest.ofSize(4).withoutTotal());
 
@@ -1622,7 +1626,7 @@ public class DataJPATestServlet extends FATServlet {
                                      "NW Lakeridge Pl",
                                      "NW Members Parkway",
                                      "W Highway 14"),
-                             businesses.findByLocationAddressZip(55901)
+                             businesses.findByLocationAddressZip(ZipCode.of(55901))
                                              .map(loc -> loc.address.street.direction + " " + loc.address.street.name)
                                              .collect(Collectors.toList()));
     }
@@ -1638,7 +1642,8 @@ public class DataJPATestServlet extends FATServlet {
                                      "SW 1st St",
                                      "SW Enterprise Dr",
                                      "SW Greenview Dr"),
-                             businesses.findByLocationAddressZipNotAndLocationAddressCity(55901, "Rochester")
+                             businesses.findByLocationAddressZipNotAndLocationAddressCity(ZipCode.of(55901),
+                                                                                          "Rochester")
                                              .map(street -> street.direction + " " + street.name)
                                              .collect(Collectors.toList()));
     }
@@ -3622,7 +3627,11 @@ public class DataJPATestServlet extends FATServlet {
     @Test
     public void testParenthesisInsertionForCursorPagination() {
         PageRequest page1Request = PageRequest.ofSize(3);
-        CursoredPage<Business> page1 = mixed.withZipCodeIn(55901, 55904, page1Request, Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page1 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page1Request,
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("Benike Construction", "Crenlo", "Home Federal Savings Bank"),
                      page1.stream()
@@ -3631,7 +3640,11 @@ public class DataJPATestServlet extends FATServlet {
 
         assertEquals(true, page1.hasNext());
 
-        CursoredPage<Business> page2 = mixed.withZipCodeIn(55901, 55904, page1.nextPageRequest(), Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page2 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page1.nextPageRequest(),
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("IBM", "Metafile", "Olmsted Medical"),
                      page2.stream()
@@ -3640,7 +3653,11 @@ public class DataJPATestServlet extends FATServlet {
 
         assertEquals(true, page1.hasNext());
 
-        CursoredPage<Business> page3 = mixed.withZipCodeIn(55901, 55904, page2.nextPageRequest(), Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page3 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page2.nextPageRequest(),
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("RAC", "Think Bank"),
                      page3.stream()
@@ -4760,7 +4777,7 @@ public class DataJPATestServlet extends FATServlet {
             assertEquals("N", ibm.location.address.street.direction);
             assertEquals("Rochester", ibm.location.address.city);
             assertEquals("MN", ibm.location.address.state);
-            assertEquals(55901, ibm.location.address.zip);
+            assertEquals(ZipCode.of(55901), ibm.location.address.zip);
         } finally {
             // restore original values
             ibm.location.latitude = originalLatitude;
@@ -4783,7 +4800,7 @@ public class DataJPATestServlet extends FATServlet {
         assertEquals("NW", ibm.location.address.street.direction);
         assertEquals("Rochester", ibm.location.address.city);
         assertEquals("MN", ibm.location.address.state);
-        assertEquals(55901, ibm.location.address.zip);
+        assertEquals(ZipCode.of(55901), ibm.location.address.zip);
     }
 
     /**
