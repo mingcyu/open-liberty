@@ -75,6 +75,9 @@ import io.openliberty.data.internal.persistence.Util;
 import jakarta.data.exceptions.DataException;
 import jakarta.data.exceptions.MappingException;
 import jakarta.persistence.Convert;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Table;
@@ -387,48 +390,82 @@ public class DBStoreEMBuilder extends EntityManagerBuilder implements DDLGenerat
          */
         Set<Class<?>> converterTypes = new HashSet<>();
 
+        Queue<Class<?>> annotatedEmbeddedClassQueue = new LinkedList<>();
+        Set<Class<?>> embeddedClassesProcessed = new HashSet<>();
+
         // Discover entities that are indirectly referenced via OneToOne, ManyToMany,
         // and so forth. Also discover AttributeConverters that are referenced from
         // classes, fields, and methods.
-        for (Class<?> c; (c = annotatedEntityClassQueue.poll()) != null;)
-            if (entityClassNames.add(c.getName())) {
-                Table table = c.getAnnotation(Table.class);
-                entityTableNames.add(table == null || table.name().length() == 0 //
-                                ? c.getSimpleName() //
-                                : table.name());
+        for (Class<?> c, emb = null; //
+                        (c = annotatedEntityClassQueue.poll()) != null ||
+                                     (emb = annotatedEmbeddedClassQueue.poll()) != null;) {
+            if (c != null) {
+                if (entityClassNames.add(c.getName())) {
+                    Table table = c.getAnnotation(Table.class);
+                    String tableName = table == null || table.name().length() == 0 //
+                                    ? c.getSimpleName() //
+                                    : table.name();
+                    entityTableNames.add(tableName);
 
-                // TODO embeddables with Convert on the attributes
+                    if (trace && tc.isDebugEnabled())
+                        Tr.debug(this, tc, "entity class " + c.getName() +
+                                           " will use table " + tableName);
+                } else {
+                    c = null;
+                }
+            } else if (emb != null) {
+                embeddedClassesProcessed.add(c = emb);
 
-                for (Class<?> e, sc = c; //
-                                sc != null && sc != Object.class; //
-                                sc = sc.getSuperclass()) {
-                    for (Convert convert : sc.getAnnotationsByType(Convert.class))
+                if (trace && tc.isDebugEnabled())
+                    Tr.debug(this, tc, "embedded class " + emb.getName());
+            } else {
+                c = null;
+            }
+
+            for (Class<?> sc = c; //
+                            sc != null && sc != Object.class; //
+                            sc = sc.getSuperclass()) {
+                for (Convert convert : sc.getAnnotationsByType(Convert.class))
+                    if (convert.converter() != null)
+                        converterTypes.add(convert.converter());
+
+                for (Field f : sc.getDeclaredFields()) {
+                    if (f.isAnnotationPresent(Embedded.class) ||
+                        f.isAnnotationPresent(EmbeddedId.class)) {
+                        if (f.getType().isAnnotationPresent(Embeddable.class))
+                            annotatedEmbeddedClassQueue.add(f.getType());
+                        else if ((c = getEmbeddableClass(f.getGenericType())) != null)
+                            annotatedEmbeddedClassQueue.add(c);
+                    } else if (f.getType().isAnnotationPresent(Entity.class)) {
+                        annotatedEntityClassQueue.add(f.getType());
+                    } else if ((c = getEntityClass(f.getGenericType())) != null) {
+                        annotatedEntityClassQueue.add(c);
+                    }
+
+                    for (Convert convert : f.getAnnotationsByType(Convert.class))
                         if (convert.converter() != null)
                             converterTypes.add(convert.converter());
+                }
 
-                    for (Field f : sc.getDeclaredFields()) {
-                        if (f.getType().isAnnotationPresent(Entity.class))
-                            annotatedEntityClassQueue.add(f.getType());
-                        else if ((e = getEntityClass(f.getGenericType())) != null)
-                            annotatedEntityClassQueue.add(e);
-
-                        for (Convert convert : f.getAnnotationsByType(Convert.class))
-                            if (convert.converter() != null)
-                                converterTypes.add(convert.converter());
+                for (Method m : sc.getDeclaredMethods()) {
+                    if (m.isAnnotationPresent(Embedded.class) ||
+                        m.isAnnotationPresent(EmbeddedId.class)) {
+                        if (m.getReturnType().isAnnotationPresent(Embeddable.class))
+                            annotatedEmbeddedClassQueue.add(m.getReturnType());
+                        else if ((c = getEmbeddableClass(m.getGenericReturnType())) != null)
+                            annotatedEmbeddedClassQueue.add(c);
+                    } else if (m.getReturnType().isAnnotationPresent(Entity.class)) {
+                        annotatedEntityClassQueue.add(m.getReturnType());
+                    } else if ((c = getEntityClass(m.getGenericReturnType())) != null) {
+                        annotatedEntityClassQueue.add(c);
                     }
 
-                    for (Method m : sc.getDeclaredMethods()) {
-                        if (m.getReturnType().isAnnotationPresent(Entity.class))
-                            annotatedEntityClassQueue.add(m.getReturnType());
-                        else if ((e = getEntityClass(m.getGenericReturnType())) != null)
-                            annotatedEntityClassQueue.add(e);
-
-                        for (Convert convert : m.getAnnotationsByType(Convert.class))
-                            if (convert.converter() != null)
-                                converterTypes.add(convert.converter());
-                    }
+                    for (Convert convert : m.getAnnotationsByType(Convert.class))
+                        if (convert.converter() != null)
+                            converterTypes.add(convert.converter());
                 }
             }
+        }
 
         for (Entry<Class<?>, Map<String, Class<?>>> e : embeddableTypes.entrySet()) {
             Class<?> type = e.getKey();
@@ -676,6 +713,27 @@ public class DBStoreEMBuilder extends EntityManagerBuilder implements DDLGenerat
                                       databaseStoreId,
                                       x.getMessage()).initCause(x);
         }
+    }
+
+    /**
+     * Obtains the embeddable class (if any) for a type that might be parameterized.
+     *
+     * @param type a type that might be parameterized.
+     * @return embeddable class or null.
+     */
+    @Trivial
+    private Class<?> getEmbeddableClass(java.lang.reflect.Type type) {
+        if (type instanceof ParameterizedType) {
+            java.lang.reflect.Type[] typeParams = //
+                            ((ParameterizedType) type).getActualTypeArguments();
+            for (java.lang.reflect.Type t : typeParams)
+                if (t instanceof Class && ((Class<?>) t).isAnnotationPresent(Embeddable.class)) {
+                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                        Tr.debug(this, tc, "getEmbeddableClass from parameterized " + type + ": " + t);
+                    return (Class<?>) t;
+                }
+        }
+        return null;
     }
 
     /**
