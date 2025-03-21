@@ -24,7 +24,6 @@ wasliberty-infrastructure-docker/jonhawkes/postgresql-ssl:1.0
 wasliberty-infrastructure-docker/kyleaure/cloudant-developer:1.0
 wasliberty-infrastructure-docker/kyleaure/couchdb-ssl:1.0
 wasliberty-infrastructure-docker/kyleaure/db2-krb5:2.0
-wasliberty-infrastructure-docker/kyleaure/db2-ssl:3.0
 wasliberty-infrastructure-docker/kyleaure/krb5-server:1.0
 wasliberty-infrastructure-docker/kyleaure/oracle-21.3.0-faststart:1.0.full.krb5
 wasliberty-infrastructure-docker/kyleaure/oracle-21.3.0-faststart:1.0.full.ssl

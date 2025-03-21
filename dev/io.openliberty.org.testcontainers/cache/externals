@@ -18,7 +18,6 @@ jonhawkes/postgresql-ssl:1.0
 kyleaure/cloudant-developer:1.0
 kyleaure/couchdb-ssl:1.0
 kyleaure/db2-krb5:2.0
-kyleaure/db2-ssl:3.0
 kyleaure/krb5-server:1.0
 kyleaure/oracle-21.3.0-faststart:1.0.full.krb5
 kyleaure/oracle-21.3.0-faststart:1.0.full.ssl
