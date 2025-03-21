@@ -106,7 +106,7 @@ public class Dockerfile implements Comparable<Dockerfile> {
     /**
      * Similar logic to ImageBuilder.findBaseImageFrom(resource)
      * 
-     * However, in this case we can only use the ArtifactoryMirrorSubstitutor so we
+     * However, in this case we can only use the LibertyMirrorSubstitutor so we
      * have to manually put in the Artifactory registry (when available)
      * 
      * @param location of Dockerfile the resource path of the Dockerfile
