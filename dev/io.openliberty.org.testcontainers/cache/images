@@ -24,7 +24,6 @@ wasliberty-infrastructure-docker/kyleaure/db2-krb5:2.0
 wasliberty-infrastructure-docker/kyleaure/krb5-server:1.0
 wasliberty-infrastructure-docker/kyleaure/oracle-21.3.0-faststart:1.0.full.krb5
 wasliberty-infrastructure-docker/kyleaure/postgres-krb5:1.0
-wasliberty-infrastructure-docker/kyleaure/postgres-test-table:3.0
 wasliberty-infrastructure-docker/letsencrypt/pebble-challtestsrv:v2.3.1
 wasliberty-infrastructure-docker/letsencrypt/pebble:v2.3.1
 wasliberty-infrastructure-docker/mariadb:10.3
