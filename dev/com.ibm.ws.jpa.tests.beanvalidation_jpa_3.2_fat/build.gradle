@@ -23,7 +23,7 @@ configurations {
 
 dependencies {
   jpaFatTools project(':com.ibm.ws.jpa_testframework')
-  requiredLibs project(":com.ibm.ws.jpa.tests.beanvalidation_fat.common")
+  requiredLibs project(":com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common")
 
   hibernateJPA31 'com.fasterxml:classmate:1.5.1'
   hibernateJPA31 'net.bytebuddy:byte-buddy:1.12.8'
@@ -48,21 +48,21 @@ task addhibernateJPA31(type: Copy) {
 }
 
 task copyFAT {
-    dependsOn ':com.ibm.ws.jpa.tests.beanvalidation_fat.common:build'
+    dependsOn ':com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common:build'
     copy {
-      from project(':com.ibm.ws.jpa.tests.beanvalidation_fat.common').file('fat/src/com/ibm/ws/jpa/tests/beanvalidation/tests')
+      from project(':com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common').file('fat/src/com/ibm/ws/jpa/tests/beanvalidation/tests')
       into new File('fat/src/com/ibm/ws/jpa/tests/beanvalidation/tests')
     }
 }
 
 task copyCommonFiles {
-  dependsOn ':com.ibm.ws.jpa.tests.beanvalidation_fat.common:build'
+  dependsOn ':com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common:build'
   doLast {
     /*
      * Copy test application resources.
      */
     copy {
-      from project(':com.ibm.ws.jpa.tests.beanvalidation_fat.common').file('test-applications')
+      from project(':com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common').file('test-applications')
       into new File('test-applications')
     }
     
@@ -70,7 +70,7 @@ task copyCommonFiles {
      * Copy common publish files.
      */
     copy {
-      from project(':com.ibm.ws.jpa.tests.beanvalidation_fat.common').file('publish')
+      from project(':com.ibm.ws.jpa.tests.beanvalidation_3.2_fat.common').file('publish')
       into new File('publish')
     }
   }
