@@ -422,6 +422,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         private final URL resourceContainerURL;
         private final URL resourceSharedClassCacheURL;
+        private final File resourceContainerDir;
         public AbstractUniversalContainer(Collection<URL> containerURLs) {
             URL originalRoot = null;
             URL convertedRoot = null;
@@ -442,10 +443,18 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             }
             if (multiple) {
                 resourceContainerURL = null;
+                resourceContainerDir = null;
                 resourceSharedClassCacheURL = null;
             } else {
                 resourceContainerURL = convertedRoot;
-                resourceSharedClassCacheURL = createSharedClassCacheURL(convertedRoot, originalRoot);
+                File containerFile = null;
+                try {
+                    containerFile = resourceContainerURL != null ? new File(resourceContainerURL.toURI()) : null;
+                } catch (URISyntaxException e) {
+                    // Auto-FFDC
+                }
+                resourceContainerDir = containerFile != null && containerFile.isDirectory() ? containerFile : null;
+                resourceSharedClassCacheURL = createSharedClassCacheURL(resourceContainerURL, originalRoot, resourceContainerDir);
             }
         }
 
@@ -468,22 +477,21 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             }
         }
 
-        URL createSharedClassCacheURL(URL containerURL, URL base) {
+        URL createSharedClassCacheURL(URL containerURL, URL originalRoot, File containerDir) {
             if (containerURL == null) {
                 return null;
             }
-            String containerPath = containerURL.getPath();
-            if (containerPath.endsWith(".jar") || containerPath.endsWith(".zip")) {
-                // use containerURL as-is if it is a jar or zip extension
+            if (containerDir != null) {
                 return containerURL;
             }
-
             try {
-                if (new File(containerURL.toURI()).isDirectory()) {
-                    // if the container URL is a directory the use as-is
+                String containerPath = containerURL.getPath();
+                if (containerPath.endsWith(".jar") || containerPath.endsWith(".zip")) {
+                    // use containerURL as-is if it is a jar or zip extension
                     return containerURL;
                 }
-                String basePath = base.getPath();
+
+                String basePath = originalRoot.getPath();
                 int bangSlash = basePath.lastIndexOf("!/");
                 if (bangSlash >= 0) {
                     // append the original !/ path (likely !/WEB-INF/classes)
@@ -499,8 +507,6 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 return new URL(containerURL + "!/l");
             } catch (MalformedURLException e) {
                 return null;
-            } catch (URISyntaxException e) {
-                return null;
             }
 
         }
@@ -508,7 +514,14 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         @Override
         public URL getContainerURL(UniversalResource resource) {
             if (resourceContainerURL != null) {
-                return resourceContainerURL;
+                if (resourceContainerDir != null) {
+                    // need to make sure the resource is really in this directory
+                    if (new File(resourceContainerDir, resource.getResourceName()).exists()) {
+                        return resourceContainerURL;
+                    }
+                } else {
+                    return resourceContainerURL;
+                }
             }
             URL resourceUrl = resource.getResourceURL("jar");
             if (resourceUrl != null) {
@@ -539,7 +552,14 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         @Override
         public URL getSharedClassCacheURL(UniversalResource resource) {
             if (resourceSharedClassCacheURL != null) {
-                return resourceSharedClassCacheURL;
+                if (resourceContainerDir != null) {
+                    // need to make sure the resource is really in this directory
+                    if (new File(resourceContainerDir, resource.getResourceName()).exists()) {
+                        return resourceSharedClassCacheURL;
+                    }
+                } else {
+                    return resourceSharedClassCacheURL;
+                }
             }
             return getSharedClassCacheURLFromResource(resource);
         }
