@@ -27,6 +27,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ import com.ibm.ws.classloading.internal.util.Keyed;
 import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.ws.kernel.boot.classloader.ClassLoaderHook;
+import com.ibm.ws.kernel.boot.classloader.ClassLoaderHookFactory;
 import com.ibm.ws.kernel.feature.ServerStarted;
 import com.ibm.ws.kernel.security.thread.ThreadIdentityManager;
 import com.ibm.ws.kernel.service.util.ServiceCaller;
@@ -87,6 +89,7 @@ import com.ibm.wsspi.kernel.service.utils.PathUtils;
 import io.openliberty.checkpoint.spi.CheckpointPhase;
 
 abstract class ContainerClassLoader extends LibertyLoader implements Keyed<ClassLoaderIdentity> {
+    private static final boolean disableSharedClassesCache = Boolean.getBoolean("liberty.disableApplicationClassSharing");
     static final CheckpointPhase checkpointPhase = CheckpointPhase.getPhase();
     static {
         ClassLoader.registerAsParallelCapable();
@@ -128,6 +131,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
     private final ClassRedefiner redefiner;
 
     final String jarProtocol;
+
+    private final ClassLoaderHook hook;
 
     /**
      * Util method to totally read an input stream into a byte array.
@@ -268,7 +273,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         if (!foundInClassCache) {
             bytes = actualBytes.get();
         }
-        return new ByteResourceInformation(bytes, container, container.getContainerURL(resource), sharedClassCacheURL, foundInClassCache, actualBytes);
+        return new ByteResourceInformation(bytes, container, container.getContainerURL(resource), sharedClassCacheURL, foundInClassCache, actualBytes, hook);
     }
 
     @SuppressWarnings("unchecked")
@@ -423,7 +428,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         private final URL resourceContainerURL;
         private final URL resourceSharedClassCacheURL;
         private final File resourceContainerDir;
-        public AbstractUniversalContainer(Collection<URL> containerURLs) {
+        public AbstractUniversalContainer(Collection<URL> containerURLs, ClassLoaderHook hook) {
             URL originalRoot = null;
             URL convertedRoot = null;
             boolean multiple = false;
@@ -454,7 +459,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     // Auto-FFDC
                 }
                 resourceContainerDir = containerFile != null && containerFile.isDirectory() ? containerFile : null;
-                resourceSharedClassCacheURL = createSharedClassCacheURL(resourceContainerURL, originalRoot, resourceContainerDir);
+                resourceSharedClassCacheURL = hook != null ? createSharedClassCacheURL(resourceContainerURL, originalRoot, resourceContainerDir) : null;
             }
         }
 
@@ -523,6 +528,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     return resourceContainerURL;
                 }
             }
+            // TODO asking for "jar" but that is not honored in all cases so still need to handle "wsjar" being returned
             URL resourceUrl = resource.getResourceURL("jar");
             if (resourceUrl != null) {
                 String protocol = resourceUrl.getProtocol();
@@ -531,6 +537,13 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                         URLConnection conn = resourceUrl.openConnection();
                         if (conn instanceof JarURLConnection) {
                             return((JarURLConnection) conn).getJarFileURL();
+                        }
+                        // unexpected; throw exception for FFDC indicating the connection class
+                        throw new IOException(conn.getClass().getName());
+                    } else if ("wsjar".equals(protocol)) {
+                        URLConnection conn = resourceUrl.openConnection();
+                        if (conn instanceof WSJarURLConnection) {
+                            return ((WSJarURLConnection) conn).getFile().toURI().toURL();
                         }
                         // unexpected; throw exception for FFDC indicating the connection class
                         throw new IOException(conn.getClass().getName());
@@ -546,6 +559,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     // auto-FFDC
                 }
             }
+            // TODO it is questionable to allow null here; currently the code handles null.
             return null;
         }
 
@@ -565,6 +579,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         private URL getSharedClassCacheURLFromResource(UniversalResource resource) {
+            // TODO asking for "jar" but that is not honored in all cases so still need to handle "wsjar" being returned
             URL resourceURL = resource.getResourceURL("jar");
             String resourceName = resource.getResourceName();
             URL sharedClassCacheURL;
@@ -781,8 +796,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         private final boolean isRoot;
         private String debugString;
 
-        public ContainerUniversalContainer(Container container) {
-            super(container.getURLs());
+        public ContainerUniversalContainer(Container container, ClassLoaderHook hook) {
+            super(container.getURLs(), hook);
             this.container = container;
             this.isRoot = container.isRoot();
             // If we are doing checkpoint, process the manifest file when the container is created.
@@ -979,8 +994,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         final ArtifactContainer container;
         final boolean isRoot;
 
-        public ArtifactContainerUniversalContainer(ArtifactContainer container) {
-            super(container.getURLs());
+        public ArtifactContainerUniversalContainer(ArtifactContainer container, ClassLoaderHook hook) {
+            super(container.getURLs(), hook);
             this.container = container;
             this.isRoot = container.isRoot();
             // If we are doing checkpoint, process the manifest file when the container is created.
@@ -1250,6 +1265,12 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         final Set<Container> containers = Collections.newSetFromMap(new WeakHashMap<Container, Boolean>());
 
+        final ClassLoaderHook hook;
+
+        SmartClassPathImpl(ClassLoaderHook hook) {
+            this.hook = hook;
+        }
+
         /**
          * Internal method to add a new UniversalContainer to the list.
          *
@@ -1308,12 +1329,12 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         @Override
         public void addContainer(Container container) {
             containers.add(container);
-            addUniversalContainers(new ContainerUniversalContainer(container));
+            addUniversalContainers(new ContainerUniversalContainer(container, hook));
         }
 
         @Override
         public void addArtifactContainer(ArtifactContainer container) {
-            addUniversalContainers(new ArtifactContainerUniversalContainer(container));
+            addUniversalContainers(new ArtifactContainerUniversalContainer(container, hook));
         }
 
         private List<UniversalContainer> getUniversalContainersForPath(String path, List<UniversalContainer> classpath) {
@@ -1555,8 +1576,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
     private class UnreadSmartClassPath implements SmartClassPath {
         SmartClassPathImpl delegate;
 
-        UnreadSmartClassPath() {
-            delegate = new SmartClassPathImpl();
+        UnreadSmartClassPath(ClassLoaderHook hook) {
+            delegate = new SmartClassPathImpl(hook);
         }
 
         @Override
@@ -1640,18 +1661,20 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         private final URL sharedClassCacheURL;
         private final boolean fromClassCache;
         private final Supplier<byte[]> actualBytes;
+        private final ClassLoaderHook hook;
 
         /**
          * @param bytes
          * @param resourceUrl
          */
-        ByteResourceInformation(byte[] bytes, UniversalContainer root, URL containerURL, URL sharedClassCacheURL, boolean fromClassCache, Supplier<byte[]> actualBytes) {
+        ByteResourceInformation(byte[] bytes, UniversalContainer root, URL containerURL, URL sharedClassCacheURL, boolean fromClassCache, Supplier<byte[]> actualBytes, ClassLoaderHook hook) {
             this.bytes = bytes;
             this.resourceContainer = root;
             this.containerURL = containerURL;
             this.sharedClassCacheURL = sharedClassCacheURL;
             this.fromClassCache = fromClassCache;
             this.actualBytes = actualBytes;
+            this.hook = hook;
         }
 
         /**
@@ -1676,19 +1699,34 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             return containerURL;
         }
 
-        /**
-         * @return
-         */
-        public URL getSharedClassCacheURL() {
-            return sharedClassCacheURL;
-        }
-
         public boolean foundInClassCache() {
             return fromClassCache;
         }
 
         public byte[] getActualBytes() throws IOException {
             return actualBytes.get();
+        }
+
+        public void storeInClassCache(Class<?> clazz, byte[] definedBytes ) {
+            if (foundInClassCache() || hook == null) {
+                return;
+            }
+            if (sharedClassCacheURL == null) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "No shared class cache URL to store class", clazz.getName());
+                }
+                return;
+            }
+            if (!Arrays.equals(definedBytes, getBytes())) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Did not store class because defined bytes got modified", clazz.getName());
+                }
+                return;
+            }
+            hook.storeClass(sharedClassCacheURL, clazz);
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Called shared class cache to store class", new Object[] {clazz.getName(), sharedClassCacheURL});
+            }
         }
     }
 
@@ -1705,7 +1743,8 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         //Temporary, reintroduced until WSJAR is implemented.
         JarCacheDisabler.disableJarCaching();
 
-        smartClassPath = new UnreadSmartClassPath();
+        hook = disableSharedClassesCache ? null : ClassLoaderHookFactory.getClassLoaderHook(this);
+        smartClassPath = new UnreadSmartClassPath(hook);
 
         if (classpath != null) {
             for (Container c : classpath) {
@@ -1714,6 +1753,10 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         this.redefiner = redefiner;
+    }
+
+    ClassLoaderHook getClassLoaderHook() {
+        return hook;
     }
 
     @Override
@@ -1787,7 +1830,10 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         return null;
     }
 
-    protected ByteResourceInformation findClassBytes(String className, String resourceName, ClassLoaderHook hook) throws IOException {
+    // TODO renamed this method with Impl so we can continue to test what happens when this method throws
+    // an IOException in the unit tests with a method override. If it wasn't for the unit test I would
+    // have put the IOException handling directly into this method from AppClassLoader
+    ByteResourceInformation findClassBytesImpl(String className, String resourceName) throws IOException {
         Object token = ThreadIdentityManager.runAsServer();
         try {
             return smartClassPath.getByteResourceInformation(className, resourceName, hook);
@@ -1857,7 +1903,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
     }
 
     protected void addNativeLibraryContainer(Container container) {
-        nativeLibraryContainers.add(new ContainerUniversalContainer(container));
+        nativeLibraryContainers.add(new ContainerUniversalContainer(container, hook));
     }
 
     /**

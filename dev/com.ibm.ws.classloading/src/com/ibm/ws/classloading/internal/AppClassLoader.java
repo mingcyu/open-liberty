@@ -56,8 +56,6 @@ import com.ibm.ws.classloading.internal.providers.Providers;
 import com.ibm.ws.classloading.internal.util.ClassRedefiner;
 import com.ibm.ws.classloading.internal.util.FeatureSuggestion;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
-import com.ibm.ws.kernel.boot.classloader.ClassLoaderHook;
-import com.ibm.ws.kernel.boot.classloader.ClassLoaderHookFactory;
 import com.ibm.ws.kernel.security.thread.ThreadIdentityManager;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.classloading.ApiType;
@@ -125,8 +123,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         PARENT, SELF, DELEGATES
     };
 
-    private static final boolean disableSharedClassesCache = Boolean.getBoolean("liberty.disableApplicationClassSharing");
-
     static final List<SearchLocation> PARENT_FIRST_SEARCH_ORDER = freeze(list(PARENT, SELF, DELEGATES));
 
     private final Set<String> packagesDefined = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()); 
@@ -155,7 +151,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
     private final DeclaredApiAccess apiAccess;
     private final ClassGenerator generator;
     private final ConcurrentHashMap<String, ProtectionDomain> protectionDomains = new ConcurrentHashMap<String, ProtectionDomain>();
-    private final ClassLoaderHook hook;
 
     AppClassLoader(ClassLoader parent, ClassLoaderConfiguration config, List<Container> containers, DeclaredApiAccess access, ClassRedefiner redefiner, ClassGenerator generator, GlobalClassloadingConfiguration globalConfig, List<ClassFileTransformer> systemTransformers) {
         super(containers, parent, redefiner, globalConfig);
@@ -167,7 +162,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         this.privateLibraries = Providers.getPrivateLibraries(config);
         this.delegateLoaders = Providers.getDelegateLoaders(config, apiAccess);
         this.generator = generator;
-        hook = disableSharedClassesCache ? null : ClassLoaderHookFactory.getClassLoaderHook(this);
     }
 
     /** Provides the delegate loaders so the {@link ShadowClassLoader} can mimic the structure. */
@@ -405,8 +399,7 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
             definePackage(byteResourceInformation, packageName);
         }
 
-        URL containerURL = byteResourceInformation.getContainerURL();
-        ProtectionDomain pd = getClassSpecificProtectionDomain(containerURL);
+        ProtectionDomain pd = getClassSpecificProtectionDomain(byteResourceInformation.getContainerURL());
 
         final ProtectionDomain fpd = pd;
         java.security.PermissionCollection pc = null;
@@ -437,29 +430,16 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
                 Tr.debug(cltc, String.format("%s: [%s] [%s] [%s]", message, getKey(), loc, name));
             }
         }
-        if (!byteResourceInformation.foundInClassCache() && hook != null) {
-            URL sharedClassCacheURL = byteResourceInformation.getSharedClassCacheURL();
-            if (sharedClassCacheURL != null && Arrays.equals(bytes, byteResourceInformation.getBytes())) {
-                hook.storeClass(sharedClassCacheURL, clazz);
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "Called shared class cache to store class", new Object[] {clazz.getName(), sharedClassCacheURL});
-                }
-            } else {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    if (sharedClassCacheURL == null) {
-                        Tr.debug(tc, "No shared class cache URL to store class", clazz.getName());
-                    } else {
-                        Tr.debug(tc, "Did not store class because defined bytes got modified", clazz.getName());
-                    }
-                }
-            }
-        }
-        
+        byteResourceInformation.storeInClassCache(clazz, bytes);
         return clazz;
     }
 
     @Trivial // injected trace calls ProtectedDomain.toString() which requires privileged access
     private ProtectionDomain getClassSpecificProtectionDomain(final URL containerUrl) {
+        if (containerUrl == null) {
+            // not expected; there will have been some FFDCs if this is null
+            return config.getProtectionDomain();
+        }
         ProtectionDomain pd = config.getProtectionDomain();
         try {
             pd = AccessController.doPrivileged(new PrivilegedExceptionAction<ProtectionDomain>() {
@@ -508,7 +488,7 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
 
     final ByteResourceInformation findClassBytes(String className, String resourceName) {
         try {
-            return findClassBytes(className, resourceName, hook);
+            return findClassBytesImpl(className, resourceName);
         } catch (IOException e) {
             Tr.error(tc, "cls.class.file.not.readable", className, resourceName);
             String message = String.format("Could not read class '%s' as resource '%s'", className, resourceName);
