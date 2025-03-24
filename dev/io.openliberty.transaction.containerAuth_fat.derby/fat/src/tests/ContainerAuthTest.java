@@ -171,7 +171,7 @@ public class ContainerAuthTest extends FATServletClient {
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
     }
 
-    //@Test
+    @Test
     public void testDynamicContainerAuthEmbed() throws Exception {
 
         serversToCleanup = new LibertyServer[] { conAuthEmbed };
@@ -196,7 +196,7 @@ public class ContainerAuthTest extends FATServletClient {
         runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
     }
 
-    //@Test
+    @Test
     public void testContainerAuth() throws Exception {
 
         serversToCleanup = new LibertyServer[] { conAuth };
@@ -209,7 +209,7 @@ public class ContainerAuthTest extends FATServletClient {
         runTest(conAuth, SERVLET_NAME, "testUserTranLookup");
     }
 
-    //@Test
+    @Test
     @ExpectedFFDC(value = { "javax.resource.spi.SecurityException", "javax.resource.spi.ResourceAllocationException" })
     public void testContainerAuthBadUser() throws Exception {
 
@@ -226,7 +226,7 @@ public class ContainerAuthTest extends FATServletClient {
         assertNotNull("Recovery log should have failed", conAuthBadUser.waitForStringInLog("CWRLS0008_RECOVERY_LOG_FAILED"));
     }
 
-    //@Test
+    @Test
     public void testContainerAuthEmbed() throws Exception {
 
         serversToCleanup = new LibertyServer[] { conAuthEmbed };
@@ -239,7 +239,7 @@ public class ContainerAuthTest extends FATServletClient {
         runTest(conAuthEmbed, SERVLET_NAME, "testUserTranLookup");
     }
 
-    //@Test
+    @Test
     @ExpectedFFDC(value = { "javax.resource.spi.SecurityException", "javax.resource.spi.ResourceAllocationException" })
     public void testContainerAuthEmbedBadUser() throws Exception {
 
