@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -458,7 +459,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 } catch (URISyntaxException e) {
                     // Auto-FFDC
                 }
-                resourceContainerDir = containerFile != null && containerFile.isDirectory() ? containerFile : null;
+                resourceContainerDir = containerFile != null && isDirectory(containerFile) ? containerFile : null;
                 resourceSharedClassCacheURL = hook != null ? createSharedClassCacheURL(resourceContainerURL, originalRoot, resourceContainerDir) : null;
             }
         }
@@ -521,7 +522,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             if (resourceContainerURL != null) {
                 if (resourceContainerDir != null) {
                     // need to make sure the resource is really in this directory
-                    if (new File(resourceContainerDir, resource.getResourceName()).exists()) {
+                    if (exists(new File(resourceContainerDir, resource.getResourceName()))) {
                         return resourceContainerURL;
                     }
                 } else {
@@ -568,7 +569,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             if (resourceSharedClassCacheURL != null) {
                 if (resourceContainerDir != null) {
                     // need to make sure the resource is really in this directory
-                    if (new File(resourceContainerDir, resource.getResourceName()).exists()) {
+                    if (exists(new File(resourceContainerDir, resource.getResourceName()))) {
                         return resourceSharedClassCacheURL;
                     }
                 } else {
@@ -1861,7 +1862,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
     @FFDCIgnore(IllegalStateException.class)
     protected void addLibraryFile(final File f) {
 
-        if (!!!f.exists()) {
+        if (!!!exists(f)) {
             if (tc.isWarningEnabled()) {
                 Tr.warning(tc, "cls.library.archive", f, new FileNotFoundException(f.getName()));
             }
@@ -1869,7 +1870,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         // Skip files that are not archives of some sort.
-        if (!f.isDirectory() && !isArchive(f))
+        if (!isDirectory(f) && !isArchive(f))
             return;
 
         //this area subject to refactor following shared lib rework..
@@ -2109,5 +2110,23 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
     Collection<Collection<URL>> getClassPath() {
         return smartClassPath.getClassPath();
+    }
+
+    static boolean exists(File f) {
+        return System.getSecurityManager() == null ? f.exists() : AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return f.exists();
+            }
+        });
+    }
+
+    static boolean isDirectory(File f) {
+        return System.getSecurityManager() == null ? f.isDirectory() : AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return f.isDirectory();
+            }
+        });
     }
 }
