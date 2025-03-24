@@ -14,7 +14,16 @@ import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLAS
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_SERVER_LIB_PATH;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_WAR;
 import static io.openliberty.classloading.sharedclasses.fat.FATSuite.SHARED_CLASSES_WAR_NAME;
+import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +35,7 @@ import componenttest.annotation.OnlyIfSysProp;
 import componenttest.annotation.Server;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
+import componenttest.topology.impl.LibertyFileManager;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
 import io.openliberty.classloading.sharedclasses.fat.SharedClassTestRule.ServerMode;
@@ -36,7 +46,7 @@ import io.openliberty.classloading.sharedclasses.war.TestSharedClassesServerLib;
  */
 @RunWith(FATRunner.class)
 @OnlyIfSysProp("com.ibm.oti.shared.enabled")
-public class SharedClassesServerLibTest extends FATServletClient {
+public class SharedClassesServerLibExtractedTest extends FATServletClient {
 
 
     @Server(SHARED_CLASSES_LIB_TEST_SERVER)
@@ -45,20 +55,39 @@ public class SharedClassesServerLibTest extends FATServletClient {
 
     @ClassRule
     public static SharedClassTestRule sharedClassTestRule = new SharedClassTestRule()
-                        .setConsoleLogName(SharedClassesServerLibTest.class.getSimpleName())
+                        .setConsoleLogName(SharedClassesServerLibExtractedTest.class.getSimpleName())
+                        .setServerSetup(SharedClassesServerLibExtractedTest::setupTestApp)
                         .setRunAutoExpand(false) // no need to expand the app for this test on server libraries
-                        .setServerSetup(SharedClassesServerLibTest::setupTestApp);
+                        .setIsClassModified((s) -> s.endsWith(".A"));
 
     public static LibertyServer setupTestApp(ServerMode mode) throws Exception {
         if (mode == ServerMode.storeInCache) {
             ShrinkHelper.exportAppToServer(server, SHARED_CLASSES_WAR, DeployOptions.SERVER_ONLY);
-            ShrinkHelper.exportToServer(server, "libs", SHARED_CLASSES_SERVER_LIB, DeployOptions.OVERWRITE);
+            setupLibraryFolder(SHARED_CLASSES_SERVER_LIB);
         }
         if (mode == ServerMode.modifyAppClasses) {
             Thread.sleep(5000);
-            ShrinkHelper.exportToServer(server, "libs", SHARED_CLASSES_SERVER_LIB, DeployOptions.SERVER_ONLY, DeployOptions.OVERWRITE);
+            // touch every A.class to mimic changes to invalidate cache
+            Path dir = Paths.get(server.getInstallRoot() + "/usr/servers/" + SHARED_CLASSES_LIB_TEST_SERVER + "/libs/" + SHARED_CLASSES_SERVER_LIB.getName());
+            try (Stream<Path> stream = Files.walk(dir)) {
+                stream.forEach(p -> {
+                   File f = p.toFile();
+                   if (f.isFile() && "A.class".equals(f.getName())) {
+                       f.setLastModified(System.currentTimeMillis());
+                   }
+                });
+            } catch (IOException e) {
+                fail(e.getMessage());
+            }
         }
         return server;
+    }
+
+    private static void setupLibraryFolder(JavaArchive library) throws Exception {
+        ShrinkHelper.exportArtifact(library, "publish/libs", true, true, true);
+        String libJarName = library.getName();
+        LibertyFileManager.copyFileIntoLiberty(server.getMachine(), server.getInstallRoot() + "/usr/servers/" + SHARED_CLASSES_LIB_TEST_SERVER + "/libs",
+                                               libJarName, "publish/libs/" + libJarName, true, server.getServerRoot());
     }
 
     private void runTest() throws Exception {
