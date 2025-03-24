@@ -71,8 +71,8 @@ public class Dockerfile implements Comparable<Dockerfile> {
         final String version = fullPath.substring(start, end);
 
         // Find repository (between "resources/" and version)
+        end = start - 1; //End where the version started (exclude the path separator)
         start = fullPath.lastIndexOf("resources/") + 10;
-        end = fullPath.indexOf(version) - 1;
         final String repository = fullPath.substring(start, end);
 
         // Construct and return name
