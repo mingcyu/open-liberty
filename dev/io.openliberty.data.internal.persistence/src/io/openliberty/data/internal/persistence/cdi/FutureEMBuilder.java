@@ -598,7 +598,7 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
      *         as the value. Module and component might be null or might not be
      *         present at all.
      */
-    public String getMetadataIdentifier() {
+    private String getMetadataIdentifier() {
         String mdIdentifier;
 
         if (moduleName.getModule() == null) {
