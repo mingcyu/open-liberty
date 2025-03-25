@@ -217,6 +217,7 @@ tested.features: \
 	com.ibm.websphere.org.eclipse.microprofile.openapi.1.0;version=latest,\
 	com.ibm.websphere.org.eclipse.microprofile.config.1.2.1;version=latest,\
 	io.openliberty.com.fasterxml.jackson,\
-	com.fasterxml.jackson.core.jackson-databind
+	com.fasterxml.jackson.core.jackson-databind,\
+	io.openliberty.microprofile.health.internal_fat.common
 
 -sub: *.bnd
