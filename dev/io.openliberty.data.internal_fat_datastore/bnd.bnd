@@ -28,15 +28,16 @@ fat.project: true
 tested.features=connectors-2.1
 
 -buildpath: \
-  com.ibm.ws.componenttest.2.0;version=latest,\
-  fattest.simplicity;version=latest,\
-  io.openliberty.data,\
-  io.openliberty.jakarta.annotation.2.1,\
-  io.openliberty.jakarta.cdi.4.0,\
-  io.openliberty.jakarta.data.1.0,\
-  io.openliberty.jakarta.enterpriseBeans.4.0;version=latest,\
-  io.openliberty.jakarta.interceptor.2.1,\
-  io.openliberty.jakarta.persistence.3.1,\
-  io.openliberty.jakarta.servlet.6.0;version=latest,\
-  io.openliberty.jakarta.transaction.2.0;version=latest,\
-  io.openliberty.org.testcontainers;version=latest
+	com.ibm.ws.componenttest.2.0;version=latest,\
+	fattest.simplicity;version=latest,\
+	io.openliberty.data,\
+	io.openliberty.jakarta.annotation.2.1,\
+	io.openliberty.jakarta.cdi.4.0,\
+	io.openliberty.jakarta.data.1.0,\
+	io.openliberty.jakarta.enterpriseBeans.4.0;version=latest,\
+	io.openliberty.jakarta.interceptor.2.1,\
+	io.openliberty.jakarta.persistence.3.1,\
+	io.openliberty.jakarta.servlet.6.0;version=latest,\
+	io.openliberty.jakarta.transaction.2.0;version=latest,\
+	io.openliberty.org.testcontainers;version=latest,\
+	jakarta.inject.jakarta.inject-api
