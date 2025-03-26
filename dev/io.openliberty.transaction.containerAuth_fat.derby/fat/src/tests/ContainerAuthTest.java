@@ -164,7 +164,7 @@ public class ContainerAuthTest extends FATServletClient {
 
         // This is intermittently failing atm hence the dump
         final String appRestartedMsg = conAuth.waitForStringInLogUsingMark("CWWKZ0003I: The application " + APP_NAME + " updated in ");
-        conAuth.serverDump();
+        conAuth.serverDump("thread");
         assertNotNull("Application " + APP_NAME + " should have been updated", appRestartedMsg);
 
         // Do a little more tx work
