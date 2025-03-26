@@ -447,7 +447,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     }
                 }
             }
-            if (multiple) {
+            if (multiple || convertedRoot == null) {
                 resourceContainerURL = null;
                 resourceContainerDir = null;
                 resourceSharedClassCacheURL = null;
@@ -455,7 +455,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 resourceContainerURL = convertedRoot;
                 File containerFile = null;
                 try {
-                    containerFile = resourceContainerURL != null ? new File(resourceContainerURL.toURI()) : null;
+                    containerFile = new File(resourceContainerURL.toURI());
                 } catch (URISyntaxException e) {
                     // Auto-FFDC
                 }
@@ -501,16 +501,21 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 int bangSlash = basePath.lastIndexOf("!/");
                 if (bangSlash >= 0) {
                     // append the original !/ path (likely !/WEB-INF/classes)
-                    return new URL(containerURL.toExternalForm() + basePath.substring(bangSlash));
+                    String bangSlashPath = basePath.substring(bangSlash);
+                    // If it is not a jar or zip and we add !/ only to the URL it will not be treated as a valid
+                    // archive and should fall to the code below to handle that case.
+                    if (bangSlashPath.length() > 2) {
+                        return new URL(containerURL.toExternalForm() + bangSlashPath);
+                    }
                 }
-                // If the URL is not to a directory and does not end ith jar or zip file extension then
+                // If the URL is not to a directory and does not end with jar or zip file extension then
                 // we assume it is still some type of archive (e.g. rar).
                 // The Semeru shared classes cache logic will not recognize the URL as a valid archive
                 // if it does not end with jar or zip file extension.
                 // The URL will get recognized as a valid archive if it does contain '!/' with any path after.
                 // Here we append '!/l' to the URL so that the Semeru shared classes cache logic will treat it
                 // as a valid archive.  For example: file://path/to/myResourceAdaptor.rar!/l
-                return new URL(containerURL + "!/l");
+                return new URL(containerURL.toExternalForm() + "!/l");
             } catch (MalformedURLException e) {
                 return null;
             }
@@ -1831,9 +1836,10 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         return null;
     }
 
-    // TODO renamed this method with Impl so we can continue to test what happens when this method throws
-    // an IOException in the unit tests with a method override. If it wasn't for the unit test I would
-    // have put the IOException handling directly into this method from AppClassLoader
+    // Renamed this method with an Impl name so we can continue to test what happens when this method throws
+    // an IOException in the unit tests with a method override. If it wasn't for the unit test it would be nice to
+    // put the IOException handling directly into this method from AppClassLoader.
+    // TODO consider mocking smartClassPath.getByteResourceInformation to throw an IOException for the test instead
     ByteResourceInformation findClassBytesImpl(String className, String resourceName) throws IOException {
         Object token = ThreadIdentityManager.runAsServer();
         try {
