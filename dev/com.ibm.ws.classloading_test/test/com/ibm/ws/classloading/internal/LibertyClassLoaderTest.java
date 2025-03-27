@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2022 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -35,7 +35,6 @@ import org.osgi.framework.InvalidSyntaxException;
 
 import com.ibm.ws.classloading.configuration.GlobalClassloadingConfiguration;
 import com.ibm.ws.classloading.internal.TestUtil.ClassSource;
-import com.ibm.ws.kernel.boot.classloader.ClassLoaderHook;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.classloading.ClassLoaderConfiguration;
 import com.ibm.wsspi.classloading.ClassLoaderIdentity;
@@ -66,8 +65,7 @@ public class LibertyClassLoaderTest {
 
         loader = new AppClassLoader(loader.getParent(), loader.config, Arrays.asList(c), (DeclaredApiAccess) (loader.getParent()), null, null, new GlobalClassloadingConfiguration(), Collections.emptyList()) {
             @Override
-            protected com.ibm.ws.classloading.internal.AppClassLoader.ByteResourceInformation findClassBytes(String className, String resourceName,
-                                                                                                             ClassLoaderHook hook) throws IOException {
+            protected com.ibm.ws.classloading.internal.AppClassLoader.ByteResourceInformation findClassBytesImpl(String className, String resourceName) throws IOException {
                 throw new IOException();
             }
         };

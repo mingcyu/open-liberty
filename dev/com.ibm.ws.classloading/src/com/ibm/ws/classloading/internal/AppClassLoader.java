@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -24,9 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.net.JarURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -46,23 +44,18 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
-import com.ibm.ws.artifact.url.WSJarURLConnection;
 import com.ibm.ws.classloading.ClassGenerator;
 import com.ibm.ws.classloading.configuration.GlobalClassloadingConfiguration;
 import com.ibm.ws.classloading.internal.providers.Providers;
 import com.ibm.ws.classloading.internal.util.ClassRedefiner;
 import com.ibm.ws.classloading.internal.util.FeatureSuggestion;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
-import com.ibm.ws.kernel.boot.classloader.ClassLoaderHook;
-import com.ibm.ws.kernel.boot.classloader.ClassLoaderHookFactory;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.kernel.security.thread.ThreadIdentityManager;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.classloading.ApiType;
@@ -130,8 +123,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         PARENT, SELF, DELEGATES
     };
 
-    private static final boolean disableSharedClassesCache = Boolean.getBoolean("liberty.disableApplicationClassSharing");
-
     static final List<SearchLocation> PARENT_FIRST_SEARCH_ORDER = freeze(list(PARENT, SELF, DELEGATES));
 
     private final Set<String> packagesDefined = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()); 
@@ -160,7 +151,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
     private final DeclaredApiAccess apiAccess;
     private final ClassGenerator generator;
     private final ConcurrentHashMap<String, ProtectionDomain> protectionDomains = new ConcurrentHashMap<String, ProtectionDomain>();
-    private final ClassLoaderHook hook;
 
     AppClassLoader(ClassLoader parent, ClassLoaderConfiguration config, List<Container> containers, DeclaredApiAccess access, ClassRedefiner redefiner, ClassGenerator generator, GlobalClassloadingConfiguration globalConfig, List<ClassFileTransformer> systemTransformers) {
         super(containers, parent, redefiner, globalConfig);
@@ -172,7 +162,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         this.privateLibraries = Providers.getPrivateLibraries(config);
         this.delegateLoaders = Providers.getDelegateLoaders(config, apiAccess);
         this.generator = generator;
-        hook = disableSharedClassesCache ? null : ClassLoaderHookFactory.getClassLoaderHook(this);
     }
 
     /** Provides the delegate loaders so the {@link ShadowClassLoader} can mimic the structure. */
@@ -410,8 +399,7 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
             definePackage(byteResourceInformation, packageName);
         }
 
-        URL resourceURL = byteResourceInformation.getResourceUrl();
-        ProtectionDomain pd = getClassSpecificProtectionDomain(resourceName, resourceURL);
+        ProtectionDomain pd = getClassSpecificProtectionDomain(byteResourceInformation.getContainerURL());
 
         final ProtectionDomain fpd = pd;
         java.security.PermissionCollection pc = null;
@@ -437,45 +425,27 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         } finally {
             final TraceComponent cltc;
             if (TraceComponent.isAnyTracingEnabled() && (cltc = getClassLoadingTraceComponent(packageName)).isDebugEnabled()) {
-                String loc = "" + byteResourceInformation.getResourceUrl();
-                String path = byteResourceInformation.getResourcePath();
-                if (loc.endsWith(path))
-                    loc = loc.substring(0, loc.length() - path.length());
-                if (loc.endsWith("!/"))
-                    loc = loc.substring(0, loc.length() - 2);
+                String loc = byteResourceInformation.getContainerURL().toString();
                 String message = clazz == null ? "CLASS FAIL" : "CLASS LOAD";
                 Tr.debug(cltc, String.format("%s: [%s] [%s] [%s]", message, getKey(), loc, name));
             }
         }
-        if (!byteResourceInformation.foundInClassCache() && hook != null) {
-            URL sharedClassCacheURL = getSharedClassCacheURL(resourceURL, byteResourceInformation.getResourcePath());
-            if (sharedClassCacheURL != null && Arrays.equals(bytes, byteResourceInformation.getBytes())) {
-                hook.storeClass(sharedClassCacheURL, clazz);
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "Called shared class cache to store class", new Object[] {clazz.getName(), sharedClassCacheURL});
-                }
-            } else {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    if (sharedClassCacheURL == null) {
-                        Tr.debug(tc, "No shared class cache URL to store class", clazz.getName());
-                    } else {
-                        Tr.debug(tc, "Did not store class because defined bytes got modified", clazz.getName());
-                    }
-                }
-            }
-        }
-        
+        byteResourceInformation.storeInClassCache(clazz, bytes);
         return clazz;
     }
 
     @Trivial // injected trace calls ProtectedDomain.toString() which requires privileged access
-    private ProtectionDomain getClassSpecificProtectionDomain(final String resourceName, final URL resourceUrl) {
+    private ProtectionDomain getClassSpecificProtectionDomain(final URL containerUrl) {
+        if (containerUrl == null) {
+            // not expected; there will have been some FFDCs if this is null
+            return config.getProtectionDomain();
+        }
         ProtectionDomain pd = config.getProtectionDomain();
         try {
             pd = AccessController.doPrivileged(new PrivilegedExceptionAction<ProtectionDomain>() {
                 @Override
                 public ProtectionDomain run() {
-                    return getClassSpecificProtectionDomainPrivileged(resourceName, resourceUrl);
+                    return getClassSpecificProtectionDomainPrivileged(containerUrl);
                 }
             });
         } catch (PrivilegedActionException paex) {
@@ -486,39 +456,12 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
 
     }
 
-    ProtectionDomain getClassSpecificProtectionDomainPrivileged(String resourceName, URL resourceUrl) {
-        ProtectionDomain pd;
-
-        try {
-            URLConnection conn = resourceUrl.openConnection();
-            URL containerUrl;
-            if (conn instanceof JarURLConnection) {
-                containerUrl = ((JarURLConnection) conn).getJarFileURL();
-            } else if (conn instanceof WSJarURLConnection) {
-                containerUrl = ((WSJarURLConnection) conn).getFile().toURI().toURL();
-            } else {
-                // this is most likely a file URL - i.e. the contents of the classes are expanded on the disk.
-                // so a path like:  .../myServer/dropins/myWar.war/WEB-INF/classes/com/myPkg/MyClass.class
-                // should convert to: .../myServer/dropins/myWar.war/WEB-INF/classes/
-                containerUrl = new URL(resourceUrl.toString().replace(resourceName, ""));
-            }
-            String containerUrlString = containerUrl.toString();
-            pd = protectionDomains.get(containerUrlString);
-            
-            if (pd == null) {
-                ProtectionDomain pdFromConfig = config.getProtectionDomain();
-                CodeSource cs = new CodeSource(containerUrl, pdFromConfig.getCodeSource().getCertificates());
-                pd = new ProtectionDomain(cs, pdFromConfig.getPermissions());
-                ProtectionDomain oldPD = protectionDomains.putIfAbsent(containerUrlString, pd);                
-                if (oldPD != null) {
-                    pd = oldPD;
-                }
-            } 
-        } catch (IOException ex) {
-            // Auto-FFDC - and then use the protection domain from the classloader configuration
-            pd = config.getProtectionDomain();
-        }
-        return pd;
+    ProtectionDomain getClassSpecificProtectionDomainPrivileged(URL containerUrl) {
+        return protectionDomains.computeIfAbsent(containerUrl.toString(), (c) -> {
+            ProtectionDomain pdFromConfig = config.getProtectionDomain();
+            CodeSource cs = new CodeSource(containerUrl, pdFromConfig.getCodeSource().getCertificates());
+            return new ProtectionDomain(cs, pdFromConfig.getPermissions());
+        });
     }
 
     /**
@@ -545,7 +488,7 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
 
     final ByteResourceInformation findClassBytes(String className, String resourceName) {
         try {
-            return findClassBytes(className, resourceName, hook);
+            return findClassBytesImpl(className, resourceName);
         } catch (IOException e) {
             Tr.error(tc, "cls.class.file.not.readable", className, resourceName);
             String message = String.format("Could not read class '%s' as resource '%s'", className, resourceName);
