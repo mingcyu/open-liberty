@@ -505,18 +505,6 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         }
     }
 
-    final ByteResourceInformation findClassBytes(String className, String resourceName) {
-        try {
-            return findClassBytesImpl(className, resourceName);
-        } catch (IOException e) {
-            Tr.error(tc, "cls.class.file.not.readable", className, resourceName);
-            String message = String.format("Could not read class '%s' as resource '%s'", className, resourceName);
-            ClassFormatError error = new ClassFormatError(message);
-            error.initCause(e);
-            throw error;
-        }
-    }
-
     @Override
     @Trivial
     protected final Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {

@@ -61,17 +61,12 @@ public class LibertyClassLoaderTest {
 
     @Test
     public void testClassFormatError() throws Exception {
-        Container c = buildMockContainer("testClasses", getOtherClassesURL(ClassSource.A));
+        Container c = buildMockContainer("testClasses", getOtherClassesURL(ClassSource.A), true);
 
-        loader = new AppClassLoader(loader.getParent(), loader.config, Arrays.asList(c), (DeclaredApiAccess) (loader.getParent()), null, null, new GlobalClassloadingConfiguration(), Collections.emptyList()) {
-            @Override
-            protected com.ibm.ws.classloading.internal.AppClassLoader.ByteResourceInformation findClassBytesImpl(String className, String resourceName) throws IOException {
-                throw new IOException();
-            }
-        };
+        loader = new AppClassLoader(loader.getParent(), loader.config, Arrays.asList(c), (DeclaredApiAccess) (loader.getParent()), null, null, new GlobalClassloadingConfiguration(), Collections.emptyList());
 
         try {
-            loader.findClassBytes("test", "test.class");
+            loader.findClassBytes("test.DummyServlet", "test/DummyServlet.class");
             fail("call should have thrown an exception");
         } catch (ClassFormatError e) {
             assertTrue("Should have traced an error", outputManager.checkForStandardErr("CWWKL0002E"));

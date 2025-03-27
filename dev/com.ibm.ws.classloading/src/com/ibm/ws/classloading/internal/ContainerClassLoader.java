@@ -181,6 +181,10 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             this.url = url;
             this.urlString = url.toString();
         }
+        @Override
+        public String toString() {
+            return urlString;
+        }
     }
 
     /**
@@ -245,7 +249,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         /**
          * Defines a package using the provided <code>LibertyLoader</code>
          */
-        void definePackage(String packageName, LibertyLoader loader, ContainerURL sealBase);
+        void definePackage(String packageName, LibertyLoader loader, ContainerURL containerURL);
 
         /**
          * Returns the container URL where the content of the resource is located for this container
@@ -1836,14 +1840,16 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         return null;
     }
 
-    // Renamed this method with an Impl name so we can continue to test what happens when this method throws
-    // an IOException in the unit tests with a method override. If it wasn't for the unit test it would be nice to
-    // put the IOException handling directly into this method from AppClassLoader.
-    // TODO consider mocking smartClassPath.getByteResourceInformation to throw an IOException for the test instead
-    ByteResourceInformation findClassBytesImpl(String className, String resourceName) throws IOException {
+    final ByteResourceInformation findClassBytes(String className, String resourceName) {
         Object token = ThreadIdentityManager.runAsServer();
         try {
             return smartClassPath.getByteResourceInformation(className, resourceName, hook);
+        } catch (IOException e) {
+            Tr.error(tc, "cls.class.file.not.readable", className, resourceName);
+            String message = String.format("Could not read class '%s' as resource '%s'", className, resourceName);
+            ClassFormatError error = new ClassFormatError(message);
+            error.initCause(e);
+            throw error;
         } finally {
             ThreadIdentityManager.reset(token);
         }
