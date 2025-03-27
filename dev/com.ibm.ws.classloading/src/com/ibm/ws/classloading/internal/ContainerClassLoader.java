@@ -174,10 +174,19 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
     }
 
+    static class ContainerURL {
+        final URL url;
+        final String urlString;
+        ContainerURL(URL url) {
+            this.url = url;
+            this.urlString = url.toString();
+        }
+    }
+
     /**
      * A unifying interface to bridge ArtifactContainers, and adaptable Containers.
      */
-    private interface UniversalContainer {
+    interface UniversalContainer {
 
         /**
          * A resource located within a UniversalContainer
@@ -236,45 +245,18 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         /**
          * Defines a package using the provided <code>LibertyLoader</code>
          */
-        void definePackage(String packageName, LibertyLoader loader, URL sealBase);
+        void definePackage(String packageName, LibertyLoader loader, ContainerURL sealBase);
 
         /**
          * Returns the container URL where the content of the resource is located for this container
          * @return the container URL
          */
-        URL getContainerURL(UniversalResource resource);
+        ContainerURL getContainerURL(UniversalResource resource);
 
         /**
          * @return
          */
         URL getSharedClassCacheURL(UniversalResource resource);
-    }
-
-    static ByteResourceInformation getClassBytesFromHook(UniversalContainer container, UniversalContainer.UniversalResource resource, String className, ClassLoaderHook hook, Supplier<byte[]> actualBytes) {
-        byte[] bytes = null;
-        URL sharedClassCacheURL = null;
-        if (hook != null) {
-            sharedClassCacheURL = container.getSharedClassCacheURL(resource);
-            if (sharedClassCacheURL != null) {
-                bytes = hook.loadClass(sharedClassCacheURL, className);
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    if (bytes != null) {
-                        Tr.debug(tc, "Found class in shared class cache", new Object[] {className, sharedClassCacheURL});
-                    } else {
-                        Tr.debug(tc, "Did not find class in shared class cache", new Object[] {className, sharedClassCacheURL});
-                    }
-                }
-            } else {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "No shared class cache URL to find class", className);
-                }
-            }
-        }
-        boolean foundInClassCache = bytes != null;
-        if (!foundInClassCache) {
-            bytes = actualBytes.get();
-        }
-        return new ByteResourceInformation(bytes, container, container.getContainerURL(resource), sharedClassCacheURL, foundInClassCache, actualBytes, hook);
     }
 
     @SuppressWarnings("unchecked")
@@ -325,7 +307,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         public ByteResourceInformation getByteResourceInformation(String className, ClassLoaderHook hook) throws IOException {
-            return ContainerClassLoader.getClassBytesFromHook(container, this, className, hook, this::getActualBytes);
+            return new ByteResourceInformation(container, this, className, this::getActualBytes, hook);
         }
 
         private byte[] getActualBytes() {
@@ -426,7 +408,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         private volatile Map<Name, String> manifestMainAttributes = null;
         private volatile Map<String, Map<Name, String>> manifestEntryAttributes = null;
 
-        private final URL resourceContainerURL;
+        private final ContainerURL resourceContainerURL;
         private final URL resourceSharedClassCacheURL;
         private final File resourceContainerDir;
         public AbstractUniversalContainer(Collection<URL> containerURLs, ClassLoaderHook hook) {
@@ -452,10 +434,10 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 resourceContainerDir = null;
                 resourceSharedClassCacheURL = null;
             } else {
-                resourceContainerURL = convertedRoot;
+                resourceContainerURL = new ContainerURL(convertedRoot);
                 File containerFile = null;
                 try {
-                    containerFile = new File(resourceContainerURL.toURI());
+                    containerFile = new File(resourceContainerURL.url.toURI());
                 } catch (URISyntaxException e) {
                     // Auto-FFDC
                 }
@@ -483,18 +465,18 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
             }
         }
 
-        URL createSharedClassCacheURL(URL containerURL, URL originalRoot, File containerDir) {
+        URL createSharedClassCacheURL(ContainerURL containerURL, URL originalRoot, File containerDir) {
             if (containerURL == null) {
                 return null;
             }
             if (containerDir != null) {
-                return containerURL;
+                return containerURL.url;
             }
             try {
-                String containerPath = containerURL.getPath();
+                String containerPath = containerURL.url.getPath();
                 if (containerPath.endsWith(".jar") || containerPath.endsWith(".zip")) {
                     // use containerURL as-is if it is a jar or zip extension
-                    return containerURL;
+                    return containerURL.url;
                 }
 
                 String basePath = originalRoot.getPath();
@@ -505,7 +487,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     // If it is not a jar or zip and we add !/ only to the URL it will not be treated as a valid
                     // archive and should fall to the code below to handle that case.
                     if (bangSlashPath.length() > 2) {
-                        return new URL(containerURL.toExternalForm() + bangSlashPath);
+                        return new URL(containerURL.urlString + bangSlashPath);
                     }
                 }
                 // If the URL is not to a directory and does not end with jar or zip file extension then
@@ -515,15 +497,14 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 // The URL will get recognized as a valid archive if it does contain '!/' with any path after.
                 // Here we append '!/l' to the URL so that the Semeru shared classes cache logic will treat it
                 // as a valid archive.  For example: file://path/to/myResourceAdaptor.rar!/l
-                return new URL(containerURL.toExternalForm() + "!/l");
+                return new URL(containerURL.urlString + "!/l");
             } catch (MalformedURLException e) {
                 return null;
             }
-
         }
 
         @Override
-        public URL getContainerURL(UniversalResource resource) {
+        public ContainerURL getContainerURL(UniversalResource resource) {
             if (resourceContainerURL != null) {
                 if (resourceContainerDir != null) {
                     // need to make sure the resource is really in this directory
@@ -542,14 +523,14 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                     if ("jar".equals(protocol)) {
                         URLConnection conn = resourceUrl.openConnection();
                         if (conn instanceof JarURLConnection) {
-                            return((JarURLConnection) conn).getJarFileURL();
+                            return new ContainerURL(((JarURLConnection) conn).getJarFileURL());
                         }
                         // unexpected; throw exception for FFDC indicating the connection class
                         throw new IOException(conn.getClass().getName());
                     } else if ("wsjar".equals(protocol)) {
                         URLConnection conn = resourceUrl.openConnection();
                         if (conn instanceof WSJarURLConnection) {
-                            return ((WSJarURLConnection) conn).getFile().toURI().toURL();
+                            return new ContainerURL(((WSJarURLConnection) conn).getFile().toURI().toURL());
                         }
                         // unexpected; throw exception for FFDC indicating the connection class
                         throw new IOException(conn.getClass().getName());
@@ -557,7 +538,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                         // A file URL - i.e. the contents of the classes are expanded on the disk.
                         // so a path like:  .../myServer/dropins/myWar.war/WEB-INF/classes/com/myPkg/MyClass.class
                         // should convert to: .../myServer/dropins/myWar.war/WEB-INF/classes/
-                        return new URL(resourceUrl.toString().replace(resource.getResourceName(), ""));
+                        return new ContainerURL(new URL(resourceUrl.toString().replace(resource.getResourceName(), "")));
                     }
                     // unexpected; throw exception for FFDC indicating the unexpected protocol
                     throw new IOException(protocol);
@@ -639,7 +620,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         @FFDCIgnore(value = { IllegalArgumentException.class })
-        public final void definePackage(String packageName, LibertyLoader loader, URL sealBase) {
+        public final void definePackage(String packageName, LibertyLoader loader, ContainerURL containerURL) {
             Map<Name, String> mainAttributes = getManifestMainAttributes();
             try {
                 if (mainAttributes == NULL_MAIN_ATTRIBUTES && manifestEntryAttributes == null) {
@@ -693,8 +674,9 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                         }
                     }
 
-                    if (sealedString == null || !sealedString.equalsIgnoreCase("true")) {
-                        sealBase = null;
+                    URL sealBase = null;
+                    if (sealedString != null && sealedString.equalsIgnoreCase("true")) {
+                        sealBase = containerURL.url;
                     }
 
                     loader.definePackage(packageName, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor, sealBase);
@@ -963,7 +945,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
 
         @Override
         public ByteResourceInformation getByteResourceInformation(String className, ClassLoaderHook hook) throws IOException {
-            return ContainerClassLoader.getClassBytesFromHook(container, this, className, hook, this::getActualBytes);
+            return new ByteResourceInformation(container, this, className, this::getActualBytes, hook);
         }
 
         byte[] getActualBytes() {
@@ -1663,7 +1645,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
     static final class ByteResourceInformation {
         private final byte[] bytes;
         private final UniversalContainer resourceContainer;
-        private final URL containerURL;
+        private final ContainerURL containerURL;
         private final URL sharedClassCacheURL;
         private final boolean fromClassCache;
         private final Supplier<byte[]> actualBytes;
@@ -1673,12 +1655,34 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
          * @param bytes
          * @param resourceUrl
          */
-        ByteResourceInformation(byte[] bytes, UniversalContainer root, URL containerURL, URL sharedClassCacheURL, boolean fromClassCache, Supplier<byte[]> actualBytes, ClassLoaderHook hook) {
-            this.bytes = bytes;
+        ByteResourceInformation(UniversalContainer root, UniversalContainer.UniversalResource resource, String className, Supplier<byte[]> actualBytes, ClassLoaderHook hook) {
+            byte[] classBytes = null;
+            if (hook == null) {
+                sharedClassCacheURL = null;
+            } else {
+                sharedClassCacheURL = root.getSharedClassCacheURL(resource);
+                if (sharedClassCacheURL != null) {
+                    classBytes = hook.loadClass(sharedClassCacheURL, className);
+                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                        if (classBytes != null) {
+                            Tr.debug(tc, "Found class in shared class cache", new Object[] {className, sharedClassCacheURL});
+                        } else {
+                            Tr.debug(tc, "Did not find class in shared class cache", new Object[] {className, sharedClassCacheURL});
+                        }
+                    }
+                } else {
+                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                        Tr.debug(tc, "No shared class cache URL to find class", className);
+                    }
+                }
+            }
+            fromClassCache = classBytes != null;
+            if (!fromClassCache) {
+                classBytes = actualBytes.get();
+            }
+            this.bytes = classBytes;
             this.resourceContainer = root;
-            this.containerURL = containerURL;
-            this.sharedClassCacheURL = sharedClassCacheURL;
-            this.fromClassCache = fromClassCache;
+            this.containerURL = root.getContainerURL(resource);
             this.actualBytes = actualBytes;
             this.hook = hook;
         }
@@ -1693,7 +1697,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         void definePackage(String packageName, LibertyLoader loader) {
-            resourceContainer.definePackage(packageName, loader, getContainerURL());
+            resourceContainer.definePackage(packageName, loader, containerURL);
         }
 
         /**
@@ -1701,7 +1705,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
          *
          * @return
          */
-        public URL getContainerURL() {
+        public ContainerURL getContainerURL() {
             return containerURL;
         }
 
@@ -1714,7 +1718,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         public void storeInClassCache(Class<?> clazz, byte[] definedBytes ) {
-            if (foundInClassCache() || hook == null) {
+            if (fromClassCache || hook == null) {
                 return;
             }
             if (sharedClassCacheURL == null) {
@@ -1723,7 +1727,7 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
                 }
                 return;
             }
-            if (!Arrays.equals(definedBytes, getBytes())) {
+            if (!Arrays.equals(definedBytes, bytes)) {
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                     Tr.debug(tc, "Did not store class because defined bytes got modified", clazz.getName());
                 }
@@ -1759,10 +1763,6 @@ abstract class ContainerClassLoader extends LibertyLoader implements Keyed<Class
         }
 
         this.redefiner = redefiner;
-    }
-
-    ClassLoaderHook getClassLoaderHook() {
-        return hook;
     }
 
     @Override

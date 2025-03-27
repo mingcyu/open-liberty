@@ -26,7 +26,9 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.AllPermission;
 import java.security.CodeSource;
+import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -115,10 +117,17 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         return forbidden;
     }
 
+    private static final PermissionCollection ALLPERMISSIONS;
+
     static {
         ClassLoader.registerAsParallelCapable();
+        AllPermission allPerm = new AllPermission();
+        ALLPERMISSIONS = allPerm.newPermissionCollection();
+        if (ALLPERMISSIONS != null) {
+            ALLPERMISSIONS.add(allPerm);
+        }
     }
-    
+
     enum SearchLocation {
         PARENT, SELF, DELEGATES
     };
@@ -390,6 +399,33 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         return bytes;
     }
 
+    /*
+     * Update the PermissionCollection for the Protection domain if it isn't set.
+     */
+    private ProtectionDomain setPermissionCollectionIfNeeded(ProtectionDomain pd) {
+        java.security.PermissionCollection pc = null;
+        if (pd.getPermissions() == null) {
+            if (System.getSecurityManager() == null) {
+                // No need to do anything else when there is no security manager.
+                // This handles cases where the security manager isn't supported (e.g. Java 24).
+                pc = ALLPERMISSIONS;
+            } else {
+                try {
+                    pc = AccessController.doPrivileged(new PrivilegedExceptionAction<java.security.PermissionCollection>() {
+                        @Override
+                        public java.security.PermissionCollection run() {
+                            java.security.Policy p = java.security.Policy.getPolicy();
+                            java.security.PermissionCollection fpc = p.getPermissions(pd.getCodeSource());
+                            return fpc;
+                        }
+                    });
+                } catch (PrivilegedActionException paex) {
+                } 
+            }
+        }
+        return pc == null ? pd : new ProtectionDomain(pd.getCodeSource(), pc);
+    }
+    
     private Class<?> definePackageAndClass(final String name, String resourceName, final ByteResourceInformation byteResourceInformation, byte[] bytes) throws ClassFormatError {
         // Now define a package for this class if it has one
         int lastDotIndex = name.lastIndexOf('.');
@@ -400,28 +436,11 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
         }
 
         ProtectionDomain pd = getClassSpecificProtectionDomain(byteResourceInformation.getContainerURL());
-
-        final ProtectionDomain fpd = pd;
-        java.security.PermissionCollection pc = null;
-        if (pd.getPermissions() == null) {
-            try {
-                pc = AccessController.doPrivileged(new PrivilegedExceptionAction<java.security.PermissionCollection>() {
-                    @Override
-                    public java.security.PermissionCollection run() {
-                        java.security.Policy p = java.security.Policy.getPolicy();
-                        java.security.PermissionCollection fpc = p.getPermissions(fpd.getCodeSource());
-                        return fpc;
-                    }
-                });
-            } catch (PrivilegedActionException paex) {
-            } 
-            pd = new ProtectionDomain(pd.getCodeSource(), pc);
-        }
+        pd = setPermissionCollectionIfNeeded(pd);
 
         Class<?> clazz = null;
         try {
             clazz = defineClass(name, bytes, 0, bytes.length, pd);
-
         } finally {
             final TraceComponent cltc;
             if (TraceComponent.isAnyTracingEnabled() && (cltc = getClassLoadingTraceComponent(packageName)).isDebugEnabled()) {
@@ -435,12 +454,12 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
     }
 
     @Trivial // injected trace calls ProtectedDomain.toString() which requires privileged access
-    private ProtectionDomain getClassSpecificProtectionDomain(final URL containerUrl) {
+    private ProtectionDomain getClassSpecificProtectionDomain(final ContainerURL containerUrl) {
         if (containerUrl == null) {
             // not expected; there will have been some FFDCs if this is null
             return config.getProtectionDomain();
         }
-        ProtectionDomain pd = config.getProtectionDomain();
+        ProtectionDomain pd = null;
         try {
             pd = AccessController.doPrivileged(new PrivilegedExceptionAction<ProtectionDomain>() {
                 @Override
@@ -450,16 +469,16 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
             });
         } catch (PrivilegedActionException paex) {
             //auto FFDC
-            return config.getProtectionDomain();
+            pd = config.getProtectionDomain();
         }
         return pd;
 
     }
 
-    ProtectionDomain getClassSpecificProtectionDomainPrivileged(URL containerUrl) {
-        return protectionDomains.computeIfAbsent(containerUrl.toString(), (c) -> {
+    ProtectionDomain getClassSpecificProtectionDomainPrivileged(ContainerURL containerUrl) {
+        return protectionDomains.computeIfAbsent(containerUrl.urlString, (c) -> {
             ProtectionDomain pdFromConfig = config.getProtectionDomain();
-            CodeSource cs = new CodeSource(containerUrl, pdFromConfig.getCodeSource().getCertificates());
+            CodeSource cs = new CodeSource(containerUrl.url, pdFromConfig.getCodeSource().getCertificates());
             return new ProtectionDomain(cs, pdFromConfig.getPermissions());
         });
     }
@@ -592,30 +611,8 @@ public class AppClassLoader extends ContainerClassLoader implements SpringLoader
                     } catch (PrivilegedActionException paex) {                 
                     }
 
-                    final ProtectionDomain fpd = pd;
-                    java.security.PermissionCollection pc = null;
-                    if (pd.getPermissions() == null) {
-                        try {
-                            pc = AccessController.doPrivileged(new PrivilegedExceptionAction<java.security.PermissionCollection>() {
-                                @Override
-                                public java.security.PermissionCollection run() {
-                                    java.security.Policy p = java.security.Policy.getPolicy();
-
-                                    java.security.PermissionCollection fpc = p.getPermissions(fpd.getCodeSource());
-
-                                 return fpc;
-                                }
-                            });
-
-                            pd = new ProtectionDomain(pd.getCodeSource(), pc);
-                            generatedClass = defineClass(name, bytes, 0, bytes.length, pd);
-
-                        } catch (PrivilegedActionException paex) {
-                        } 
-
-                    } else {
-                        generatedClass = defineClass(name, bytes, 0, bytes.length, pd);
-                    }
+                    pd = setPermissionCollectionIfNeeded(pd);
+                    generatedClass = defineClass(name, bytes, 0, bytes.length, pd);
 
                 } else {
                     generatedClass = defineClass(name, bytes, 0, bytes.length, config.getProtectionDomain());
