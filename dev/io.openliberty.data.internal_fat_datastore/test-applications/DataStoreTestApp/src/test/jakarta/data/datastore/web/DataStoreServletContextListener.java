@@ -17,6 +17,8 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 
+import test.jakarta.data.datastore.lib.ServerDSEntity;
+
 /**
  * Servlet context listener that uses Jakarta Data to pre-populate the table
  * that is used by the ServerDSResRefRepo entity.
@@ -34,11 +36,10 @@ public class DataStoreServletContextListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent event) {
         System.out.println("DataStoreServletContextListener.contextInitialized:" +
-                           " populate tables for " + // serverDSResRefRepo.toString());
-                           " TODO: serverDSResRefRepo.toString()");
+                           " populate tables for " + serverDSResRefRepo.toString());
 
-        // TODO add code to write values here
-        // and include test in servlet to read them
+        serverDSResRefRepo.write(ServerDSEntity.of("DSSCL-one", 1));
+        serverDSResRefRepo.write(ServerDSEntity.of("DSSCL-two", 2));
     }
 
 }
