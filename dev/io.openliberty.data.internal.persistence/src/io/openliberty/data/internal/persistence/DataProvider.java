@@ -144,6 +144,14 @@ public class DataProvider implements //
     public final DataVersionCompatibility compat;
 
     /**
+     * Map of JEE name to ComponentMetaData for modules.
+     * Entries from the map are added on componentMetaDataCreated
+     * and removed on componentMetaDataDestroyed.
+     */
+    public final ConcurrentHashMap<J2EEName, ComponentMetaData> componentMetadatasForModules = //
+                    new ConcurrentHashMap<>();
+
+    /**
      * For dynamically creating configuration in response to values that are
      * specified on @Repository.
      */
@@ -344,10 +352,6 @@ public class DataProvider implements //
     */
 
     @Override
-    public void componentMetaDataCreated(MetaDataEvent<ComponentMetaData> event) {
-    }
-
-    @Override
     public void applicationStarted(ApplicationInfo appInfo) throws StateChangeException {
         String appName = appInfo.getName();
         Collection<FutureEMBuilder> futures = futureEMBuildersInWeb.get(appName);
@@ -365,11 +369,6 @@ public class DataProvider implements //
                 futureEMBuilder.registerDDLGenerationParticipant(appName);
             }
         }
-    }
-
-    @Override
-    public void componentMetaDataDestroyed(MetaDataEvent<ComponentMetaData> event) {
-
     }
 
     @Override
@@ -424,6 +423,35 @@ public class DataProvider implements //
                 it.remove();
             }
         }
+    }
+
+    @Override
+    @Trivial
+    public void componentMetaDataCreated(MetaDataEvent<ComponentMetaData> event) {
+        ComponentMetaData metadata = event.getMetaData();
+        J2EEName jeeName = metadata.getJ2EEName();
+
+        // Jakarta Data repositories can be in modules, applications, or libraries,
+        // but never in components.
+        if (metadata.getJ2EEName().getComponent() == null)
+            componentMetadatasForModules.put(jeeName, metadata);
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+            Tr.debug(this, tc, "componentMetaDataCreated " + jeeName, metadata);
+    }
+
+    @Override
+    @Trivial
+    public void componentMetaDataDestroyed(MetaDataEvent<ComponentMetaData> event) {
+        ComponentMetaData metadata = event.getMetaData();
+        J2EEName jeeName = metadata.getJ2EEName();
+
+        if (metadata.getJ2EEName().getComponent() == null)
+            componentMetadatasForModules.remove(jeeName);
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+            Tr.debug(this, tc, "componentMetaDataDestroyed " + jeeName, metadata);
+
     }
 
     /**
