@@ -14,7 +14,7 @@
         <fileset dir="${server.config.dir}/libs" includes="*.jar" />
     </library>
 
-    <enterpriseApplication location="springTest.ear" annotationScanLibaray="ALL">
+    <enterpriseApplication location="springTest.ear" annotationScanLibrary="ALL">
         <classloader commonLibraryRef="sharedlib" />
     </enterpriseApplication>
 

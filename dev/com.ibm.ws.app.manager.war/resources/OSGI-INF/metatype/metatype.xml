@@ -37,7 +37,7 @@
             <Option label="%earapp.addWebModuleClassPathTo.warLoader" value="war"/>
             <Option label="%earapp.addWebModuleClassPathTo.earLoader" value="ear"/>
         </AD>
-        <AD id="annotationScanLibaray" ibm:beta="true" name="%earapp.annotationScanLibaray.name" description="%earapp.annotationScanLibaray.desc" type="String" required="false"/>
+        <AD id="annotationScanLibrary" ibm:beta="true" name="%earapp.annotationScanLibrary.name" description="%earapp.annotationScanLibrary.desc" type="String" required="false"/>
       </OCD>  
     <Designate factoryPid="com.ibm.ws.app.manager.earappcfg">
         <Object ocdref="com.ibm.ws.app.manager.earappcfg"/>
