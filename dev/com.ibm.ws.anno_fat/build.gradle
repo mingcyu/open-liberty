@@ -41,8 +41,7 @@ task downloadSpringLibs(type: Copy) {
 }
 
 addRequiredLibraries {
-  dependsOn downloadSpringLibs	
-  dependsOn addJakartaTransformer
+  dependsOn downloadSpringLibs
 }
 
 

@@ -43,7 +43,7 @@ public class ApplicationManager {
     private long startTimeout;
     private long stopTimeout;
     private String expandLocation;
-    private String annotationScanLibaray;
+    private String annotationScanLibrary;
 
     private File extractedLog;
     private final ConcurrentMap<String, ExtractedLogData> extractsDataLog = new ConcurrentHashMap<>();
@@ -138,8 +138,8 @@ public class ApplicationManager {
         setUseJandex(useJandexValue == null ? false : useJandexValue);
         //System.setProperty("com.ibm.ws.jandex.enable", useJandexValue.toString()); // Temporary -- REMOVE THIS LATER ////
 
-        String annotationScanLibarayValue = getProperty(properties, "annotationScanLibaray", "");
-        setAnnotationScanLibaray(annotationScanLibarayValue);
+        String annotationScanLibraryValue = getProperty(properties, "annotationScanLibrary", "");
+        setAnnotationScanLibrary(annotationScanLibraryValue);
 
         long startTimeoutValue = getProperty(properties, "startTimeout", 30L);
         setStartTimeout(startTimeoutValue);
@@ -264,31 +264,31 @@ public class ApplicationManager {
         return this.expandLocation;
     }
 
-//    private void setAnnotationScanLibaray(String annotationScanLibarayValue) {
+//    private void setAnnotationScanLibrary(String annotationScanLibraryValue) {
 //
-//        annotationScanLibaray.clear();
-//        String[] split = annotationScanLibarayValue.split(",");
+//        annotationScanLibrary.clear();
+//        String[] split = annotationScanLibraryValue.split(",");
 //
 //        for (String s : split) {
 //            if (s.trim().equals("ALL")) {
-//                annotationScanLibaray.clear();
-//                annotationScanLibaray.add(AnnotationScanLibarayValues.ALL);
+//                annotationScanLibrary.clear();
+//                annotationScanLibrary.add(AnnotationScanLibraryValues.ALL);
 //                break;
 //            } else if (s.trim().equals("earLib")) {
-//                annotationScanLibaray.add(AnnotationScanLibarayValues.earLib);
+//                annotationScanLibrary.add(AnnotationScanLibraryValues.earLib);
 //            } else if (s.trim().equals("earLib")) {
-//                annotationScanLibaray.add(AnnotationScanLibarayValues.ManifestLib);
+//                annotationScanLibrary.add(AnnotationScanLibraryValues.ManifestLib);
 //            }
 //        }
 //    }
 
-    private void setAnnotationScanLibaray(String annotationScanLibarayValue) {
+    private void setAnnotationScanLibrary(String annotationScanLibraryValue) {
 
-        annotationScanLibaray = annotationScanLibarayValue;
+        annotationScanLibrary = annotationScanLibraryValue;
     }
 
-    public String getAnnotationScanLibaray() {
-        return annotationScanLibaray;
+    public String getAnnotationScanLibrary() {
+        return annotationScanLibrary;
     }
 
     private static class ExtractedLogData {

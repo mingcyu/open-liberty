@@ -43,7 +43,7 @@ public class AnnotationScanInJarTest extends FATServletClient {
 	public static LibertyServer server;
 
 	@ClassRule
-	public static RepeatTests r = EERepeatActions.repeat(SERVER_NAME,
+	public static RepeatTests r = EERepeatActions.repeat(SERVER_NAME, true,
 			EERepeatActions.EE10,
 			EERepeatActions.EE11);
 

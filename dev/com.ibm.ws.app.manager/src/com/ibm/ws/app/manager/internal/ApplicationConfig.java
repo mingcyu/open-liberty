@@ -200,18 +200,18 @@ public final class ApplicationConfig {
         return _applicationManager.getUseJandex();
     }
 
-    public String getAnnotationScanLibaray() {
+    public String getAnnotationScanLibrary() {
         // First try to get the value from the application configuration
         // which overrides the value on the application manager configuration.
         if (_config != null) {
-            Object result = _config.get(AppManagerConstants.ANNOTATION_SCAN_LIBARAY);
+            Object result = _config.get(AppManagerConstants.ANNOTATION_SCAN_LIBRARY);
             if (result instanceof String) {
                 return (String) result;
             }
         }
 
         // If that fails, try to get the value from the application manager
-        return _applicationManager.getAnnotationScanLibaray();
+        return _applicationManager.getAnnotationScanLibrary();
     }
 
     public String[] getStartAfter() {
