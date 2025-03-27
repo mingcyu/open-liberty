@@ -602,7 +602,7 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
 
     /**
      * Obtains the module name in which the repository interface is defined,
-     * or lacking that, the name of the application in which is is defined or used.
+     * or lacking that, the name of the application in which it is defined or used.
      *
      * @param repositoryInterface   the repository interface.
      * @param repositoryClassLoader class loader of the repository interface.
