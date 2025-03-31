@@ -7,7 +7,7 @@ FROM ${BASE_IMAGE}
 
 COPY couchdb-config/testcontainers_config.ini /opt/couchdb/etc/local.d/
 
-COPY startup/couch-startup.sh /tmp/couch-startup.sh
+COPY startup/ /tmp/
 RUN chmod 777 /tmp/couch-startup.sh && /tmp/couch-startup.sh
 
 # Passing locally 02/21/2024
