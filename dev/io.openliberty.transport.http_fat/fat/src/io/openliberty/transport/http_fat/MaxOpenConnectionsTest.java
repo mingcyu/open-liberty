@@ -25,6 +25,8 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
+import componenttest.custom.junit.runner.Mode;
+import componenttest.custom.junit.runner.Mode.TestMode;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.HttpUtils;
 
@@ -32,6 +34,7 @@ import componenttest.topology.utils.HttpUtils;
  * Test to ensure that the tcpOptions maxOpenConnections works.
  */
 @RunWith(FATRunner.class)
+@Mode(TestMode.FULL)
 public class MaxOpenConnectionsTest {
 
     static final Logger LOG = Logger.getLogger(MaxOpenConnectionsTest.class.getName());
