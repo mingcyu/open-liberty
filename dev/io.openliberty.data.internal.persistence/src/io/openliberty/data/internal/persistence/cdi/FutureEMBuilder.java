@@ -353,7 +353,21 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
                 accessor.beginContext(metadata);
             try {
                 if (namespace != null) {
-                    Object resource = InitialContext.doLookup(dataStore);
+                    //Object resource = InitialContext.doLookup(dataStore);
+                    // TODO use the above instead of the following temporary workaround
+                    Object resource = null;
+                    NamingException failure = null;
+                    for (long start = System.nanoTime(); //
+                                    resource == null && System.nanoTime() - start < TimeUnit.SECONDS.toNanos(30); //
+                                    TimeUnit.SECONDS.sleep(2))
+                        try {
+                            resource = InitialContext.doLookup(dataStore);
+                        } catch (NamingException namingX) {
+                            failure = namingX;
+                        }
+                    if (failure != null && resource == null)
+                        throw failure;
+                    // end of code to replace
 
                     if (trace && tc.isDebugEnabled())
                         Tr.debug(this, tc, dataStore + " is the JNDI name for " + resource);
