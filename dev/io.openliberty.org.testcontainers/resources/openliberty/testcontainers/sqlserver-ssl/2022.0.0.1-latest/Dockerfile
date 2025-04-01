@@ -6,7 +6,7 @@ ARG BASE_IMAGE="mcr.microsoft.com/mssql/server:2022-latest"
 FROM ${BASE_IMAGE}
 
 COPY container-files/mssql.conf /var/opt/mssql/mssql.conf
-COPY startup/sqlserver_startup.sh /tmp/sqlserver_startup.sh
+COPY startup/ /tmp/
 
 USER root
 RUN chown mssql /var/opt/mssql/mssql.conf && \

@@ -2,25 +2,23 @@
 
 ### Setup server certificates
 CONF_DIR=/usr/ssl
-DN="/CN=localhost/OU=sqlserver"
-PASSWORD=WalletPasswd123
 
 mkdir -p $CONF_DIR/certs
 
 echo "(*) Create server certificate signing request"
-openssl req -new -text -passout pass:$PASSWORD -subj $DN -out $CONF_DIR/server.req -keyout $CONF_DIR/privkey.pem 2>/dev/null && echo "Successful" || echo "Failure"
+openssl req -x509 -config /tmp/csr.conf -days 3650 -nodes -keyout $CONF_DIR/server.key -out $CONF_DIR/certs/server.crt 2>/dev/null && echo "Successful" || echo "Failure"
 
-echo "(*) Create server signing key"
-openssl rsa -in $CONF_DIR/privkey.pem -passin pass:$PASSWORD -out $CONF_DIR/server.key
-
-echo "(*) Create server certificate" 
-openssl req -x509 -days 3650 -in $CONF_DIR/server.req -text -key $CONF_DIR/server.key -out $CONF_DIR/certs/server.crt
+echo "(*) Debug certificate files"
+cat $CONF_DIR/server.key
+cat $CONF_DIR/certs/server.crt
 
 echo "(*) Change owner of certificate files to mssql"
 chown mssql $CONF_DIR/certs/server.crt && ls -la $CONF_DIR/certs/server.crt
 chown mssql $CONF_DIR/server.key && ls -la $CONF_DIR/server.key
 
 # Note client does not have a key/cert, exchange is one way server -> client
+PASSWORD=WalletPasswd123
+
 echo "(*) Create truststore for client"
 openssl pkcs12 -export -nokeys \
                -in $CONF_DIR/certs/server.crt \
