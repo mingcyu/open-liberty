@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018,2024 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ package com.ibm.ws.springboot.support.fat;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,7 +54,8 @@ public abstract class AbstractSpringTests {
     static enum AppConfigType {
         DROPINS_SPRING,
         DROPINS_ROOT,
-        SPRING_BOOT_APP_TAG
+        SPRING_BOOT_APP_TAG,
+        DROPINS_ROOT_WAR
     }
 
     public static final String ID_DEFAULT_HOST = "default_host";
@@ -73,6 +75,7 @@ public abstract class AbstractSpringTests {
     public static final String SPRING_BOOT_20_APP_WEBANNO = "com.ibm.ws.springboot.fat20.webanno.app-0.0.1-SNAPSHOT.jar";
     public static final String SPRING_BOOT_20_APP_WEBFLUX = "com.ibm.ws.springboot.fat20.webflux.app-0.0.1-SNAPSHOT.jar";
     public static final String SPRING_BOOT_20_APP_WEBSOCKET = "com.ibm.ws.springboot.fat20.websocket.app-0.0.1-SNAPSHOT.jar";
+    public static final String SPRING_BOOT_20_APP_TRANSACTIONS = "com.ibm.ws.springboot.fat20.transactions.app-0.0.1-SNAPSHOT.war";
 
     public static final String LIBERTY_USE_DEFAULT_HOST = "server.liberty.use-default-host";
     public static final String SPRING_LIB_INDEX_CACHE = "lib.index.cache";
@@ -282,6 +285,18 @@ public abstract class AbstractSpringTests {
                         appFile.copyToDest(copyDest);
                         dropinFiles.add(copyDest);
                     }
+                    dropinsTest = true;
+                    break;
+                }
+                case DROPINS_ROOT_WAR: {
+                    new File(new File(server.getServerRoot()), "dropins/").mkdirs();
+                    String appName = appFile.getName();
+                    if (!appName.endsWith(".war")) {
+                        fail("Wrong application type for WAR dropins test: " + appName);
+                    }
+                    RemoteFile dest = server.getMachine().getFile(server.getFileFromLibertyServerRoot("dropins/"), appName);
+                    appFile.copyToDest(dest);
+                    dropinFiles.add(dest);
                     dropinsTest = true;
                     break;
                 }
