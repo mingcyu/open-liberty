@@ -24,6 +24,7 @@ import com.ibm.ws.container.service.app.deploy.ContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleClassesContainerInfo;
 import com.ibm.ws.container.service.app.deploy.ModuleInfo;
 import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
@@ -255,7 +256,23 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
         return (T) getAppCache().getFromCache(targetClass);
     }
 
+    private static boolean issuedBetaMessage = false;
+
+    private void betaFenceCheck() throws UnsupportedOperationException {
+        // Not running beta edition, throw exception
+        if (!ProductInfo.getBetaEdition()) {
+            throw new UnsupportedOperationException("This method is beta and is not available.");
+        } else {
+            // Running beta exception, issue message if we haven't already issued one for this class
+            if (!issuedBetaMessage) {
+                Tr.info(tc, "BETA: A beta method has been invoked for the class " + this.getClass().getName() + " for the first time.");
+                issuedBetaMessage = !issuedBetaMessage;
+            }
+        }
+    }
+
     protected Set<EnterpriseApplicationLibraryType> getAppScanOptions() {
+        betaFenceCheck();
         if (appScanOptions == null) {
             appScanOptions = computeAppScanOptions();
         }
@@ -263,6 +280,7 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
     }
 
     private Set<EnterpriseApplicationLibraryType> computeAppScanOptions() {
+        betaFenceCheck();
         ApplicationInfoForContainer appInformation = appCacheGet(ApplicationInfoForContainer.class);
         if (appInformation == null) {
             return Collections.emptySet(); // FFDC in 'adaptCacheGet'

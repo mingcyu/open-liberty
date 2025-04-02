@@ -98,5 +98,6 @@ public interface ApplicationInformation<T> {
     /**
      * This indicates which libraries that are not usually considered war libs should be scanned for web application annotations
      */
+    @Deprecated
     public String getAnnotationScanLibrary();
 }
