@@ -292,14 +292,14 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
         for (String rawLibraryType : rawLibraryTypes.split(",")) {
             rawLibraryType = rawLibraryType.trim().toLowerCase();
 
-            if (rawLibraryType.equals(ALL_LIBS_KEYWORD)) {
+            if (rawLibraryType.equals(ALL_LIBS_KEYWORD.toLowerCase())) {
                 libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
                 libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
                 break;
 
-            } else if (rawLibraryType.equals(EnterpriseApplicationLibraryType.EAR_LIB.getKeyWord())) {
+            } else if (rawLibraryType.equals(EnterpriseApplicationLibraryType.EAR_LIB.getKeyWord().toLowerCase())) {
                 libraryTypes.add(EnterpriseApplicationLibraryType.EAR_LIB);
-            } else if (rawLibraryType.equals(EnterpriseApplicationLibraryType.MANIFEST_LIB.getKeyWord())) {
+            } else if (rawLibraryType.equals(EnterpriseApplicationLibraryType.MANIFEST_LIB.getKeyWord().toLowerCase())) {
                 libraryTypes.add(EnterpriseApplicationLibraryType.MANIFEST_LIB);
             } else {
                 // Should not happen
@@ -512,20 +512,20 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
      * com.ibm.ws.app.manager.internal.ApplicationInstallInfo@9806c854
      * null
      * com.ibm.ws.app.manager.ear.internal.EARDeployedAppInfo@59933dcd
-     * 
+     *
      * -- "EJB_500", which is labelled as "appName", is the name from server.xml
      * -- "HugeEJBs_500", which is labelled as "preferredName" is either the name from application.xml or from the application archive.
-     * 
+     *
      * Within the factory method:
-     * 
+     *
      * J2EEName j2eeName = j2eeNameFactory.getService().create(appName, null, null);
      * String name = reserveName(preferredName);
-     * 
+     *
      * ExtendedApplicationInfo appInfo = new ApplicationInfoImpl(name, j2eeName, container, configHelper, applicationInformation);
-     * 
+     *
      * -- "appName" is used to generate the J2EE name of the application.
      * -- "preferredName" is disambiguated and is used as the name of the application.
-     * 
+     *
      * [2/9/19 13:36:03:791 EST] 00000036 id=00000000 ws.container.service.app.deploy.internal.ApplicationInfoImpl >
      * <init> Entry
      * HugeEJBs_500
@@ -533,11 +533,11 @@ public class ModuleAnnotationsImpl extends AnnotationsImpl implements ModuleAnno
      * com.ibm.ws.adaptable.module.internal.InterpretedContainerImpl@fb995bd0
      * com.ibm.ws.app.manager.module.ApplicationNestedConfigHelper@e065e7a1
      * com.ibm.ws.app.manager.internal.ApplicationInstallInfo@9806c854
-     * 
+     *
      * -- "HugeEjbs_500", which was obtained from application.xml or from the application archive,
      * is set as the "name" of the application information.
      * -- "EJB_500" is used to create metadata for the application.
-     * 
+     *
      * ApplicationInfoImpl(String appName, J2EEName j2eeName, ...
      * this.appName = appName;
      * this.appMetaData = new ApplicationMetaDataImpl(j2eeName);
