@@ -19,12 +19,14 @@ import org.junit.runners.Suite.SuiteClasses;
 
 import com.ibm.ws.fat.util.FatLogHandler;
 import com.ibm.ws.tests.anno.caching.AppReplaceTest;
-import com.ibm.ws.tests.anno.caching.AnnotationScanInJarTest;
 import com.ibm.ws.tests.anno.caching.CacheEnablementTest;
 import com.ibm.ws.tests.anno.caching.FragmentOrderTest;
 import com.ibm.ws.tests.anno.caching.LooseConfigTest;
 import com.ibm.ws.tests.anno.caching.MetadataCompleteTest;
 import com.ibm.ws.tests.anno.caching.MetadataIncompleteTest;
+import com.ibm.ws.tests.anno.caching.extrascan.AnnotationScanInJarTestModeAll;
+import com.ibm.ws.tests.anno.caching.extrascan.AnnotationScanInJarTestModeEarLib;
+import com.ibm.ws.tests.anno.caching.extrascan.AnnotationScanInJarTestModeManifestClassPath;
 import com.ibm.ws.tests.anno.caching.unused.BigAppTest;
 import com.ibm.ws.tests.anno.jandex.JandexAppDefaultAppMgrDefaultTest;
 import com.ibm.ws.tests.anno.jandex.JandexAppDefaultAppMgrTrueTest;
@@ -55,7 +57,7 @@ import com.ibm.ws.tests.anno.jandex.JandexAppTrueAppMgrTrueTest;
  */
 @RunWith(Suite.class)
 @SuiteClasses({
-    // Jandex tests
+//    // Jandex tests
     JandexAppDefaultAppMgrDefaultTest.class,
     JandexAppDefaultAppMgrTrueTest.class,
     JandexAppFalseAppMgrFalseTest.class,
@@ -71,7 +73,10 @@ import com.ibm.ws.tests.anno.jandex.JandexAppTrueAppMgrTrueTest;
     LooseConfigTest.class,
 
     // BigAppTest.class
-    AnnotationScanInJarTest.class
+    AnnotationScanInJarTestModeAll.class,
+    AnnotationScanInJarTestModeEarLib.class,
+    AnnotationScanInJarTestModeManifestClassPath.class
+    
 })
 
 public class FATSuite {
