@@ -126,19 +126,21 @@ public class RepositoryProducer<R> implements Producer<R>, ProducerFactory<R>, B
      * EntityManagerBuilder.
      *
      * @param repositoryInterface the repository interface.
-     * @param exception           the TimeoutException.
+     * @param cause               the TimeoutException.
      * @return DataException with an appropriate error message.
      */
     @Trivial
-    private DataException excTimedOut(Class<?> repositoryInterface, Throwable exception) {
+    private DataException excTimedOut(Class<?> repositoryInterface,
+                                      Throwable cause) {
+        DataException x;
         if (CheckpointPhase.getPhase().restored()) {
             // No checkpoint in progress
-            return exc(DataException.class,
-                       "CWWKD1106.init.timed.out",
-                       repositoryInterface.getName(),
-                       futureEMBuilder.dataStore,
-                       futureEMBuilder.jeeName,
-                       INIT_TIMEOUT_SEC);
+            x = exc(DataException.class,
+                    "CWWKD1106.init.timed.out",
+                    repositoryInterface.getName(),
+                    futureEMBuilder.dataStore,
+                    futureEMBuilder.jeeName,
+                    INIT_TIMEOUT_SEC);
         } else { // during checkpoint
             ComponentMetaData metadata = ComponentMetaDataAccessorImpl //
                             .getComponentMetaDataAccessor() //
@@ -147,11 +149,13 @@ public class RepositoryProducer<R> implements Producer<R>, ProducerFactory<R>, B
                             ? futureEMBuilder.jeeName //
                             : metadata.getJ2EEName();
 
-            return exc(DataException.class,
-                       "CWWKD1107.init.timed.out.checkpoint",
-                       jeeName,
-                       repositoryInterface.getName());
+            x = exc(DataException.class,
+                    "CWWKD1107.init.timed.out.checkpoint",
+                    jeeName,
+                    repositoryInterface.getName());
         }
+        x.initCause(cause);
+        return x;
     }
 
     @Override
