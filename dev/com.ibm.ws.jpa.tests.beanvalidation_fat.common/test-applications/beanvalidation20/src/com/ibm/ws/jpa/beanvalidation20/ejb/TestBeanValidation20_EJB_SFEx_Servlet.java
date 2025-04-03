@@ -104,12 +104,6 @@ public class TestBeanValidation20_EJB_SFEx_Servlet extends EJBDBTestVehicleServl
         final String testMethod = "testBeanValidationAnno004";
         final String testResource = "test-jpa-resource-cmex";
 
-        // TODO : enable test when issue #28659 is resolved - timestamp column mapping unexpected
-        if (isUsingJPA32Feature()) {
-            System.out.println("Skipping" + testName + " - uses a timestamp field which has differnt conversion for persistence-3.2");
-            return;
-        }
-
         executeTest(testName, testMethod, testResource);
     }
 
@@ -119,12 +113,6 @@ public class TestBeanValidation20_EJB_SFEx_Servlet extends EJBDBTestVehicleServl
         final String testName = "jpa_beanvalidation_testBeanValidationXML004_EJB_SFEx_CMEX_Web";
         final String testMethod = "testBeanValidationXML004";
         final String testResource = "test-jpa-resource-cmex";
-
-        // TODO : enable test when issue #28659 is resolved - timestamp column mapping unexpected
-        if (isUsingJPA32Feature()) {
-            System.out.println("Skipping" + testName + " - uses a timestamp field which has differnt conversion for persistence-3.2");
-            return;
-        }
 
         executeTest(testName, testMethod, testResource);
     }
