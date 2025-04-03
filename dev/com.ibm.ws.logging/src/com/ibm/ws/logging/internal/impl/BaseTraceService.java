@@ -1615,6 +1615,16 @@ public class BaseTraceService implements TrService {
                     if (LogTraceList.contains(entry[0])) {
                         messageMap.put(entry[0], entry[1]);
                     }
+                } 
+                else if (entry.length == 3) {
+                    entry[1] = entry[1].trim();
+                    entry[2] = entry[2].trim();
+                    //add properties to their respective hashmaps and trim whitespaces
+                    if (CollectorConstants.MESSAGES_CONFIG_VAL.equals(entry[0])) {
+                        if (LogTraceList.contains(entry[1]) || entry[1].startsWith("ext_")) {
+                            messageMap.put(entry[1], entry[2]);
+                        }
+                    } 
                 }
             }
         }
