@@ -212,19 +212,13 @@ public class WebAppTransactionCollaboratorImpl implements IWebAppTransactionColl
     @Override
     public TxCollaboratorConfig preInvoke(final HttpServletRequest request, final boolean isServlet23) throws ServletException {
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "Calling preInvoke. Request=" + request + " | isServlet23=" + isServlet23 + " | TM state=" + TxTMHelper.getState());
-        }
-
-        switch (TxTMHelper.getState()) {
-            case STOPPED:
-            case STOPPING:
-                return null;
+            Tr.debug(tc, "preInvoke", new Exception("TM state=" + TxTMHelper.getState()));
         }
 
         //First we check if there's a global transaction
         try {
             final EmbeddableWebSphereTransactionManager tranManager = getTranMgr();
-            if (tranManager != null) {
+            if (tranManager != null && TxTMHelper.ready()) {
                 final Transaction incumbentTx = tranManager.getTransaction();
 
                 if (incumbentTx != null) {
@@ -312,13 +306,7 @@ public class WebAppTransactionCollaboratorImpl implements IWebAppTransactionColl
     public void postInvoke(HttpServletRequest request, Object txConfig,
                            boolean isServlet23) throws ServletException {
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "Calling postInvoke. Request=" + request + " | isServlet23=" + isServlet23 + " | TM state=" + TxTMHelper.getState());
-        }
-
-        switch (TxTMHelper.getState()) {
-            case STOPPED:
-            case STOPPING:
-                return;
+            Tr.debug(tc, "postInvoke", new Exception("TM state=" + TxTMHelper.getState()));
         }
 
         LocalTransactionCurrent ltCurrent = getLtCurrent();
@@ -370,7 +358,7 @@ public class WebAppTransactionCollaboratorImpl implements IWebAppTransactionColl
             // new transaction
             // and it needs to be checked for possible rollback
             final EmbeddableWebSphereTransactionManager tranManager = getTranMgr();
-            if (tranManager != null) {
+            if (tranManager != null && TxTMHelper.ready()) {
                 try {
                     final Transaction tx = tranManager.getTransaction();
 
