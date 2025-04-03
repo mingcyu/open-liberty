@@ -131,7 +131,7 @@ public class RepositoryProducer<R> implements Producer<R>, ProducerFactory<R>, B
      */
     @Trivial
     private DataException excTimedOut(Class<?> repositoryInterface, Throwable exception) {
-        if (CheckpointPhase.getPhase() == CheckpointPhase.INACTIVE) {
+        if (CheckpointPhase.getPhase().restored()) {
             // No checkpoint in progress
             return exc(DataException.class,
                        "CWWKD1106.init.timed.out",
