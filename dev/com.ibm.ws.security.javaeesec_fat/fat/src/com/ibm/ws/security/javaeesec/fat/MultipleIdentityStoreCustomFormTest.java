@@ -455,8 +455,9 @@ public class MultipleIdentityStoreCustomFormTest extends JavaEESecTestBase {
 
 /* ------------------------ support methods ---------------------- */
     protected String getViewState(String form) {
-        Pattern p = Pattern.compile("id=.*(javax.faces.ViewState|jakarta.faces.ViewState).*value=\"(.*?)\"(\\s)*?(autocomplete=)?");
+        Pattern p = Pattern.compile("[\\s\\S]*id=.*(javax.faces.ViewState|jakarta.faces.ViewState).*value=\"(.*?)\"[\\s\\S]*");
         Matcher m = p.matcher(form);
+        m.matches();
         String viewState = null;
         if (m.matches()) {
             viewState = m.group(2);

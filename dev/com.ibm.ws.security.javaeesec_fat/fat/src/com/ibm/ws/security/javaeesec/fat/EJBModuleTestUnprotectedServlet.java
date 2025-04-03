@@ -419,7 +419,7 @@ public class EJBModuleTestUnprotectedServlet extends JavaEESecTestBase {
 
 /* ------------------------ support methods ---------------------- */
     protected String getViewState(String form) {
-        Pattern p = Pattern.compile("id=.*(javax.faces.ViewState|jakarta.faces.ViewState).*value=\"(.*?)\"(\\s)*?(autocomplete=)?");
+        Pattern p = Pattern.compile("[\\s\\S]*id=.*(javax.faces.ViewState|jakarta.faces.ViewState).*value=\"(.*?)\"[\\s\\S]*");
         Matcher m = p.matcher(form);
         String viewState = null;
         if (m.matches()) {
