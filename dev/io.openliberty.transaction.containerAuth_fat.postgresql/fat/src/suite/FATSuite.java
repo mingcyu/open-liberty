@@ -22,7 +22,6 @@ import componenttest.rules.repeater.FeatureReplacementAction;
 import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.database.container.DatabaseContainerType;
 import componenttest.topology.database.container.PostgreSQLContainer;
-import suite.FATSuite;
 import tests.ContainerAuthTest;
 
 @RunWith(Suite.class)
@@ -40,7 +39,7 @@ public class FATSuite extends TxTestContainerSuite {
          * The command used in that directory was: docker build -t jonhawkes/postgresql-ssl:1.0 .
          * With the resulting image being pushed to docker hub.
          */
-        testContainer = new PostgreSQLContainer("jonhawkes/postgresql-ssl:1.0")
+        testContainer = new PostgreSQLContainer(TxTestContainerSuite.POSTGRES_SSL)
                         .withDatabaseName(POSTGRES_DB)
                         .withUsername(POSTGRES_USER)
                         .withPassword(POSTGRES_PASS)
