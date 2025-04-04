@@ -225,7 +225,9 @@ public class EJBLocalNamingHelperImpl extends EJBNamingInstancer implements EJBL
         writeLock.lock();
 
         try {
-            EJBLocalContextsCache.clear();
+            if (EJBLocalContextsCache != null) {
+                EJBLocalContextsCache.clear();
+            }
             EJBLocalBindings.remove(name);
         } finally {
             writeLock.unlock();
@@ -244,7 +246,9 @@ public class EJBLocalNamingHelperImpl extends EJBNamingInstancer implements EJBL
         writeLock.lock();
 
         try {
-            EJBLocalContextsCache.clear();
+            if (EJBLocalContextsCache != null) {
+                EJBLocalContextsCache.clear();
+            }
             for (String name : names) {
                 if (isTraceOn && tc.isDebugEnabled()) {
                     Tr.debug(tc, "unbinding: " + name);
