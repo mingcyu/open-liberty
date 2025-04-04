@@ -122,7 +122,7 @@ public abstract class AbstractAnnotationScanInJarTest extends FATServletClient {
 		ServerConfiguration config = server.getServerConfiguration();
 		ConfigElementList<EnterpriseApplication> entApps = config.getEnterpriseApplications();
 
-		//sanity check
+		//quick check
 		Assert.assertEquals(1, entApps.size());
 
 		EnterpriseApplication entApp = entApps.get(0);
