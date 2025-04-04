@@ -80,6 +80,7 @@ public final class Dns {
 	  public static final int REFUSED     = 5;
 	  public static final int TRY_TCP     = 6;
 	  public static final int NOT_AUTH    = 8; 
+	  public static final int NOT_ZONE    = 9;
 	 
 }
 
