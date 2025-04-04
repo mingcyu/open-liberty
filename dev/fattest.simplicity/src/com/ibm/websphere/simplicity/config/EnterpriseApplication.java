@@ -19,6 +19,8 @@ public class EnterpriseApplication extends Application {
 
     private String contextRoot;
     private String annotationScanLibrary;
+    private String defaultClientModule;
+    private String webModuleClassPathLoader;
 
     /**
      * @return the contextRoot
@@ -30,7 +32,7 @@ public class EnterpriseApplication extends Application {
     /**
      * @param contextRoot the contextRoot to set
      */
-    @XmlAttribute
+    @XmlAttribute(name = "context-root")
     public void setContextRoot(String contextRoot) {
         this.contextRoot = contextRoot;
     }
@@ -44,18 +46,54 @@ public class EnterpriseApplication extends Application {
     }
 
     /**
-     * @return the contextRoot
+     * @return the annotationScanLibrary
      */
     public String getAnnotationScanLibrary() {
         return annotationScanLibrary;
     }
 
+    /**
+     * @param defaultClientModule the defaultClientModule option to set
+     */
+    @XmlAttribute
+    public void setDefaultClientModule(String defaultClientModule) {
+        this.defaultClientModule = defaultClientModule;
+    }
+
+    /**
+     * @return the defaultClientModule
+     */
+    public String getDefaultClientModule() {
+        return defaultClientModule;
+    }
+
+    /**
+     * @param webModuleClassPathLoader the webModuleClassPathLoader option to set
+     */
+    @XmlAttribute
+    public void setWebModuleClassPathLoader(String webModuleClassPathLoader) {
+        this.webModuleClassPathLoader = webModuleClassPathLoader;
+    }
+
+    /**
+     * @return the webModuleClassPathLoader
+     */
+    public String getWebModuleClassPathLoader() {
+        return webModuleClassPathLoader;
+    }
+
     @Override
     public String toString() {
-        StringBuffer buf = new StringBuffer("WebApplication{");
+        StringBuffer buf = new StringBuffer("EnterpriseApplication{");
         buf.append(super.toString());
         if (contextRoot != null)
             buf.append("contextRoot=\"" + contextRoot + "\" ");
+        if (annotationScanLibrary != null)
+            buf.append("annotationScanLibrary=\"" + annotationScanLibrary + "\" ");
+        if (defaultClientModule != null)
+            buf.append("defaultClientModule=\"" + defaultClientModule + "\" ");
+        if (webModuleClassPathLoader != null)
+            buf.append("webModuleClassPathLoader=\"" + webModuleClassPathLoader + "\" ");
         buf.append("}");
 
         return buf.toString();

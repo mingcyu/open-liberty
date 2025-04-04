@@ -910,7 +910,7 @@ public abstract class ServerConfiguration implements Cloneable {
     }
 
     /**
-     * @return explicitly installed web applications
+     * @return explicitly installed enterprise applications
      */
     public ConfigElementList<EnterpriseApplication> getEnterpriseApplications() {
         if (this.enterpriseApplications == null) {
