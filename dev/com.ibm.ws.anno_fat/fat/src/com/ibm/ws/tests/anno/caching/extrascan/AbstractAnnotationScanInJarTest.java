@@ -78,12 +78,12 @@ public abstract class AbstractAnnotationScanInJarTest extends FATServletClient {
 		JavaArchive sharedLib = ShrinkWrap.create(JavaArchive.class, "sharedLib.jar")
 				.addPackages(true, SharedLibInit.class.getPackage());
 
-		JavaArchive maifestJar = ShrinkWrap.create(JavaArchive.class, "manifestLib.jar")
+		JavaArchive manifestJar = ShrinkWrap.create(JavaArchive.class, "manifestLib.jar")
 				.addPackage(ManifestInit.class.getPackage());
 
 		EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class, APP_NAME + ".ear")
 				.addAsModule(war)
-				.addAsModule(maifestJar)
+				.addAsModule(manifestJar)
 				.addAsLibraries(jar);
 
 		//Add the spring libs 
