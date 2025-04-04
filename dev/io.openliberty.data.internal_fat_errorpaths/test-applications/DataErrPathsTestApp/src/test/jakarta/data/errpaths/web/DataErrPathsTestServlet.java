@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Resource;
@@ -773,7 +772,7 @@ public class DataErrPathsTestServlet extends FATServlet {
 
             fail("Used an entity that has Jakarta Persistence annotations on" +
                  " members, but lacks the Entity annotation.");
-        } catch (CompletionException x) {
+        } catch (MappingException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1108E:") ||
                 !x.getMessage().contains("jakarta.persistence.Entity"))
@@ -1824,7 +1823,7 @@ public class DataErrPathsTestServlet extends FATServlet {
 
             fail("Used a record entity that has a Jakarta Persistence annotation" +
                  " on a record component.");
-        } catch (CompletionException x) {
+        } catch (MappingException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1109E:") ||
                 !x.getMessage().contains("jakarta.persistence.Column"))
@@ -1861,7 +1860,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                             .bornOn(LocalDate.of(1977, Month.SEPTEMBER, 26));
             fail("Should not be able to use repository that sets the dataStore " +
                  "to a JNDI name that does not exist. Found: " + found);
-        } catch (CompletionException x) {
+        } catch (DataException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1079E:") ||
                 !x.getMessage().contains("<persistence-unit name=\"MyPersistenceUnit\">"))
@@ -1883,7 +1882,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                                             "5455 W River Rd NW, Rochester, MN 55901"));
             fail("Should not be able to use repository that sets the dataStore " +
                  "to a name that does not exist. Added: " + added);
-        } catch (CompletionException x) {
+        } catch (DataException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1078E:") ||
                 !x.getMessage().contains("<dataSource id=\"MyDataSource\" jndiName=\"jdbc/ds\""))
@@ -1903,7 +1902,7 @@ public class DataErrPathsTestServlet extends FATServlet {
             fail("Should not be able to use repository that sets the dataStore" +
                  " to a DataSource that is configured to use a database that does" +
                  " not exist. Found: " + found);
-        } catch (CompletionException x) {
+        } catch (DataException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1080E:") ||
                 !x.getMessage().contains(InvalidDatabaseRepo.class.getName()))
@@ -1922,7 +1921,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                             .save(new Invention(1, 2, "Perpetual Motion Machine"));
             fail("Should not be able to use a repository operation for an entity" +
                  " that is not valid because it has no Id attribute. Saved: " + i);
-        } catch (CompletionException x) {
+        } catch (DataException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1080E:") ||
                 !x.getMessage().contains(Invention.class.getName()))
@@ -1943,7 +1942,7 @@ public class DataErrPathsTestServlet extends FATServlet {
             found = errDefaultDataSourceNotConfigured.findById(123445678);
             fail("Should not be able to use repository without DefaultDataSource " +
                  "being configured. Found: " + found);
-        } catch (CompletionException x) {
+        } catch (DataException x) {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1077E:") ||
                 !x.getMessage().contains("<dataSource id=\"DefaultDataSource\""))
