@@ -283,9 +283,9 @@ public class LTPAValidationKeyTests {
      * <LI> Successful authentication to simple servlet application on server #2 using the SSO cookie
      * </OL>
      */
-    @Mode(TestMode.LITE)
+    @Mode(TestMode.FULL)
     @Test
-    public void testValidationKeys_sameKeyPW_monitorValidationKeysDir_true() throws Exception {
+    public void testValidationKeys_sameKeyPW_monitorDir_true() throws Exception {
 
         // Configure the servers
         configureServer("true", "10", true, server1);
@@ -351,7 +351,7 @@ public class LTPAValidationKeyTests {
      */
     @Mode(TestMode.FULL)
     @Test
-    public void testValidationKeys_sameKeyPW_monitorValidationKeysDir_false() throws Exception {
+    public void testValidationKeys_sameKeyPW_monitorDir_false() throws Exception {
 
         // Configure the servers
         configureServer("false", "10", false, server1);
@@ -420,7 +420,7 @@ public class LTPAValidationKeyTests {
      */
     @Mode(TestMode.LITE)
     @Test
-    public void testValidationKeys_differentKeyPW_monitorValidationKeysDir_true() throws Exception {
+    public void testValidationKeys_differentKeyPW_monitorDir_true() throws Exception {
 
         // Configure the servers
         configureServer("true", "10", true, server1);
@@ -469,8 +469,8 @@ public class LTPAValidationKeyTests {
     }
 
     /**
-     * Verify that an SSO cookie retrieved from authentication on one server fails on a server with an invalid validation key.
-     * An FFDC will be created for server 2 because an invalid key (badly formatted) can not be decrypted, we can allow it to validate the SSO failure on server 2.
+     * Verify that an SSO cookie retrieved from authentication on one server fails on a server with an incorrectly formatted primary key and different/wrong validation key.
+     * An FFDC will be created for server 2 because an invalid key (badly formatted) can not be decrypted, we can allow it to validate the SSO failure.
      *
      * Steps:
      * <OL>
@@ -543,7 +543,7 @@ public class LTPAValidationKeyTests {
      * </OL>
      */
 
-    @Mode(TestMode.LITE)
+    @Mode(TestMode.FULL)
     @Test
     @AllowedFFDC({ "java.lang.IllegalArgumentException" })
     public void testLTPA_fipskey_in_nonfips_and_vice_versa() throws Exception {
@@ -574,7 +574,7 @@ public class LTPAValidationKeyTests {
     }
 
     /**
-     * Verify that an SSO cookie retrieved from authentication on one server fails in a server with a validation key configured with a different/incorrect password
+     * Verify that an SSO cookie retrieved from authentication on one server fails in a server with the correct validation key but with an incorrectly configured password.
      *
      * Steps:
      * <OL>
@@ -625,7 +625,8 @@ public class LTPAValidationKeyTests {
     }
 
     /**
-     * Verify that an SSO cookie retrieved from authentication on one server works in another server where the validation keys are set dynamically from passing to failing.
+     * Verify that an SSO cookie retrieved from authentication on one server works in another server where the validation key is set correctly, then fails when
+     * the validation key switched to a wrong/invalid key.
      *
      * Steps:
      * <OL>
