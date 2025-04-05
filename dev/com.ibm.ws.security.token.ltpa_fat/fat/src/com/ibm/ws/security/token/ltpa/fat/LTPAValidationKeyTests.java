@@ -40,6 +40,7 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.config.ValidationKeys;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.webcontainer.security.test.servlets.FormLoginClient;
+import com.ibm.websphere.simplicity.config.Authentication;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.custom.junit.runner.FATRunner;
@@ -94,6 +95,7 @@ public class LTPAValidationKeyTests {
     private static final String VALIDATION_KEY3_PATH = "resources/security/validation3.keys";
     private static final String BAD_SHARED_VALIDATION_KEY2_PATH = "resources/security/validation4.keys";
     private static final String DIFFERENT_PW_VALIDATION_KEY_PATH = "resources/security/validation9.keys";
+    private static final String BAD_PRIVATE_VALIDATION_KEY2_PATH = "resources/security/validation6.keys";
     private static final String VALIDATION_KEY1 = "validation1.keys";
     private static final String VALIDATION_KEY4 = "validation4.keys";
     private static final String VALIDATION_KEY9 = "validation9.keys";
@@ -103,7 +105,7 @@ public class LTPAValidationKeyTests {
 
     List<String> PREBUILT_KEYS = Arrays.asList(DIFFERENT_PW_VALIDATION_KEY_PATH, BAD_SHARED_VALIDATION_KEY2_PATH,
                                                VALIDATION_KEY3_PATH,
-                                               VALIDATION_KEY2_PATH, VALIDATION_KEY1_PATH);
+                                               VALIDATION_KEY2_PATH, VALIDATION_KEY1_PATH, BAD_PRIVATE_VALIDATION_KEY2_PATH);
 
     /**  */
 
@@ -112,6 +114,7 @@ public class LTPAValidationKeyTests {
     private static String ALT_VALIDATION_KEY2_PATH = "alternate/validation2.keys";
     private static String ALT_VALIDATION_KEY3_PATH = "alternate/validation3.keys";
     private static String ALT_VALIDATION_KEY4_PATH = "alternate/validation4.keys";
+    private static String ALT_VALIDATION_KEY6_PATH = "alternate/validation6.keys";
     private static String ALT_VALIDATION_KEY9_PATH = "alternate/validation9.keys";
 
     // Define the paths to the alternate key files
@@ -119,6 +122,7 @@ public class LTPAValidationKeyTests {
     private static String ALT_FIPS_VALIDATION_KEY2_PATH = "alternateFIPS/validation2.keys";
     private static String ALT_FIPS_VALIDATION_KEY3_PATH = "alternateFIPS/validation3.keys";
     private static String ALT_FIPS_VALIDATION_KEY4_PATH = "alternateFIPS/validation4.keys";
+    private static String ALT_FIPS_VALIDATION_KEY6_PATH = "alternateFIPS/validation6.keys";
     private static String ALT_FIPS_VALIDATION_KEY9_PATH = "alternateFIPS/validation9.keys";
 
     // Define fipsEnabled
@@ -140,6 +144,7 @@ public class LTPAValidationKeyTests {
             ALT_VALIDATION_KEY2_PATH = ALT_FIPS_VALIDATION_KEY2_PATH;
             ALT_VALIDATION_KEY3_PATH = ALT_FIPS_VALIDATION_KEY3_PATH;
             ALT_VALIDATION_KEY4_PATH = ALT_FIPS_VALIDATION_KEY4_PATH;
+            ALT_VALIDATION_KEY6_PATH = ALT_FIPS_VALIDATION_KEY6_PATH;
             ALT_VALIDATION_KEY9_PATH = ALT_FIPS_VALIDATION_KEY9_PATH;
             LTPA_DEFAULT_PASSWORD = LTPA_FIPS_DEFAULT_PASSWORD;
         }
@@ -302,7 +307,7 @@ public class LTPAValidationKeyTests {
         assertNotNull("Expected LTPA configuration ready message not found in the log.",
                       server2.waitForStringInLogUsingMark("CWWKS4105I"));
 
-        // Replace the randomly generated LTPA keys with the known valid ltpa keys and assert the change occurs
+        // Replace the LTPA keys with the known valid ltpa keys and assert the change occurs
         renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
         renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY2_PATH, DEFAULT_KEY_PATH, server2);
 
@@ -362,7 +367,7 @@ public class LTPAValidationKeyTests {
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY2_PATH, server2);
 
-        // Replace the server generated LTPA keys with the known valid ltpa keys and assert the change occurs
+        // Replace the LTPA keys with the known valid ltpa keys and assert the change occurs
         renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
         renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY2_PATH, DEFAULT_KEY_PATH, server2);
 
@@ -435,7 +440,7 @@ public class LTPAValidationKeyTests {
         // Copy valid ltpa keys to each server, the ltpa keys are configured using different keysPassword
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY9_PATH, server1);
 
-        // Replace the server generated LTPA keys with the known valid ltpa keys and assert the change occurs
+        // Replace the LTPA keys with the known valid ltpa keys and assert the change occurs
         renameKeyAndWaitForLtpaConfigReady(DIFFERENT_PW_VALIDATION_KEY_PATH, DEFAULT_KEY_PATH, server1);
 
         server2.setMarkToEndOfLog();
@@ -469,23 +474,31 @@ public class LTPAValidationKeyTests {
     }
 
     /**
-     * Verify that an SSO cookie retrieved from authentication on one server fails on a server with an incorrectly formatted primary key and different/wrong validation key.
-     * An FFDC will be created for server 2 because an invalid key (badly formatted) can not be decrypted, we can allow it to validate the SSO failure.
+     * Verify that authentication on one server fails with an incorrectly formatted primary key and different/corrupted validation keys. A bad primary key with a corrupted private key 
+     * will result in an auth failure but no FFDC, a primary incorrect key (improper length in the 3DES/shared key component) will result in an FFDC,
+     * a validation key with a bad shared/3des key value will result in no FFDCs but will continue to fail SSO.
      *
      * Steps:
      * <OL>
-     * <LI> Server #1 and Server #2 contain different primary LTPA keys with same LTPA keys passwords
-     * <LI> Place an invalid primary and validation key into Server #2 (different than primary key of Server #1)
+     * <LI> Place an invalid primary (bad private value)
      * <LI> Access a simple servlet with form login using valid credentials on Server #1
-     * <LI> Attempt to access the simple servlet with form login on Server #2 using the SSO cookie from Server #1
+     * <LI> Relace the primary key with a new bad key (improper length in the 3DES/shared key component)
+     * <LI> Place a validation key with a bad shared/3des key value 
+     * <LI> Retrieve cookie from the last login
+     * <LI> Copy over a valid validation key like validation1.keys
+     * <LI> Access a simple servlet with form login using SSO cookie from the last login on Server #1
      * </OL>
      *
      * Expected Results:
      * <OL>
-     * <LI> Successful copy and rename to ltpa.keys in server 1
-     * <LI> Successful copy and rename of files to ltpa.keys and validation4.keys in server 2
-     * <LI> Authentication should be successful and retrieve the SSO cookie
-     * <LI> Authentication fails because the SSO token cannot be decrypted by the primary and validation key
+     * <LI> Successful copy and rename of files to ltpa.keys (validation6.keys value)
+     * <LI> Authentication fails because the LTPA token cannot be decrypted by the primary and validation key
+     * <LI> Successful copy and rename of files to ltpa.keys (validation3.keys value)
+     * <LI> Succesful copy of validation4.keys created in server 1
+     * <LI> Succesful cookie retrieval
+     * <LI> Succesful copy of validation1.keys created
+     * <LI> SSO fails because the SSO token cannot be decrypted by the primary and validation key and as it still uses
+     * the invalid cookie from the last login.
      * </OL>
      *
      */
@@ -496,35 +509,51 @@ public class LTPAValidationKeyTests {
     //FFDC because validation3.keys is an incorrectly formatted corrupted key which will cause an Illegal Argument exceptions
     public void testValidationKeys_invalid_validationKey() throws Exception {
 
-        // Configure both servers
         configureServer("true", "10", true, server1);
-        configureServer("true", "10", true, server2);
+        // Set cacheEnabled to false to avoid caching the validation keys
+        ServerConfiguration serverConfiguration = server1.getServerConfiguration();
+        Authentication auth = serverConfiguration.getAuthentication();
+        setAuthenticationCacheEnabledElement(auth, "false");
+        updateConfigDynamically(server1, serverConfiguration);
+     
+        // Copy validation keys file (validation6.keys) to the server. This file has swapped values in the Private key from another validation.keys file.
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY6_PATH,server1);
+        
 
-        // Copy valid ltpa keys to server1 and invalid primary and valid key to server 2
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY3_PATH, server2);
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY4_PATH, server2);
+        // Replace the primary key with a different invalid key
+        renameKeyAndWaitForLtpaConfigReady(BAD_PRIVATE_VALIDATION_KEY2_PATH, DEFAULT_KEY_PATH, server1);
 
-        //replace the server generated LTPA key with a known valid ltpa key
-        renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
-        renameKeyAndWaitForMessage(VALIDATION_KEY3_PATH, DEFAULT_KEY_PATH, server2, "CWWKS4106E");
 
-        // Initial login to simple servlet for form login1
-        server1FlClient1.accessProtectedServletWithAuthorizedCredentials(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword);
+        // Attempt initial login to simple servlet for form login1
+        assertTrue("Authentication should fail with decryption failure",
+        server1FlClient1.accessProtectedServletWithAuthorizedCredentialsExpectsFailure(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword));
+
+        // Wait for a security token cannot be validated message in the log
+       assertNotNull("Expected security token cannot be validated message not found in the log.",
+                      server1.waitForStringInLogUsingMark("CWWKS4001I"));
+
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY3_PATH,server1);
+
+        renameKeyAndWaitForMessage(VALIDATION_KEY3_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4106E");
+
+
+        //copy over validation4.keys with a bad shared/3des value
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY4_PATH,server1);
 
         // Get the SSO cookie from the login
         String server1Cookie = server1FlClient1.getCookieFromLastLogin();
         assertNotNull("Expected SSO Cookie 1 is missing.", server1Cookie);
 
-        // Change the default keysPassword to that of the added ltpa keys file (Liberty)
-        ServerConfiguration server2Config = server2.getServerConfiguration();
-        LTPA ltpa2 = server2Config.getLTPA();
-        setLTPAValidationKey(ltpa2, VALIDATION_KEY4, LTPA_DEFAULT_PASSWORD);
-        updateConfigDynamically(server2, server2Config);
+        //Copy over a valid validation key like validation1.keys
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH,server1);
 
-        // Attempt to login to the simple servlet on server #2 and assert that the login  fails as expected
+       // Attempt to login to the simple servlet on server #1 and assert that the login  fails as expected as it is still using the old (bad) cookie
         assertTrue("An invalid cookie should result in an authorization challenge",
-                   server2FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
+                    server1FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
+
+        // Set cacheEnabled back to true
+        setAuthenticationCacheEnabledElement(auth, "true");
+        updateConfigDynamically(server1, serverConfiguration);
     }
 
     /**
@@ -554,7 +583,7 @@ public class LTPAValidationKeyTests {
             copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY1_PATH, server1);
             copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY2_PATH, server1);
 
-            // Configure the server, and replace the generated LTPA key with the fips key
+            // Configure the server, and replace the LTPA key with the fips key
             configureServer("true", "10", true, server1);
             renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
         }
@@ -565,7 +594,7 @@ public class LTPAValidationKeyTests {
             copyFileToServerResourcesSecurityDir("alternate/validation1.keys", server1);
             copyFileToServerResourcesSecurityDir("alternate/validation2.keys", server1);
 
-            // Configure the server, and replace the generated LTPA key with the non fips key
+            // Configure the server, and replace the LTPA key with the non fips key
             configureServer("true", "10", true, server1);
             renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
 
@@ -665,7 +694,7 @@ public class LTPAValidationKeyTests {
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY4_PATH, server2);
 
-        // Replace the server generated LTPA keys with the known validation keys
+        // Replace the LTPA keys with the known validation keys
         renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
         renameKeyAndWaitForLtpaConfigReady(BAD_SHARED_VALIDATION_KEY2_PATH, DEFAULT_KEY_PATH, server2);
 
@@ -822,6 +851,14 @@ public class LTPAValidationKeyTests {
         }
         return false; // Config update is not needed;
 
+    }
+     // Function to configure the cacheEnabled element for authentication cache
+    public boolean setAuthenticationCacheEnabledElement(Authentication auth, String value) {
+        if (!auth.cacheEnabled.equals(value)) {
+            auth.cacheEnabled = value;
+            return true; // Config update is needed
+        }
+        return false; // Config update is not needed;
     }
 
     // Function to configure the fileName for validation keys
