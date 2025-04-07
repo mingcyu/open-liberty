@@ -13,29 +13,13 @@ package com.ibm.websphere.simplicity.config;
 import javax.xml.bind.annotation.XmlAttribute;
 
 /**
- * Represents a &lt;webApplication> configuration element
+ * Represents a &lt;enterpriseApplication> configuration element
  */
 public class EnterpriseApplication extends Application {
 
-    private String contextRoot;
     private String annotationScanLibrary;
     private String defaultClientModule;
     private String webModuleClassPathLoader;
-
-    /**
-     * @return the contextRoot
-     */
-    public String getContextRoot() {
-        return contextRoot;
-    }
-
-    /**
-     * @param contextRoot the contextRoot to set
-     */
-    @XmlAttribute(name = "context-root")
-    public void setContextRoot(String contextRoot) {
-        this.contextRoot = contextRoot;
-    }
 
     /**
      * @param annotationScanLibrary the annotationScanLibrary option to set
@@ -86,8 +70,6 @@ public class EnterpriseApplication extends Application {
     public String toString() {
         StringBuffer buf = new StringBuffer("EnterpriseApplication{");
         buf.append(super.toString());
-        if (contextRoot != null)
-            buf.append("contextRoot=\"" + contextRoot + "\" ");
         if (annotationScanLibrary != null)
             buf.append("annotationScanLibrary=\"" + annotationScanLibrary + "\" ");
         if (defaultClientModule != null)
