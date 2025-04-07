@@ -4059,7 +4059,7 @@
     <dependency>
       <groupId>org.jboss.weld.environment</groupId>
       <artifactId>weld-environment-common</artifactId>
-      <version>6.0.1.Final</version>
+      <version>6.0.2.Final</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.weld.se</groupId>
@@ -4079,7 +4079,7 @@
     <dependency>
       <groupId>org.jboss.weld.se</groupId>
       <artifactId>weld-se-core</artifactId>
-      <version>6.0.1.Final</version>
+      <version>6.0.2.Final</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.weld</groupId>
@@ -4104,7 +4104,7 @@
     <dependency>
       <groupId>org.jboss.weld</groupId>
       <artifactId>weld-osgi-bundle</artifactId>
-      <version>6.0.1.Final</version>
+      <version>6.0.2.Final</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.weld</groupId>
