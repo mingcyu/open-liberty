@@ -37,7 +37,6 @@ public class ThreadLocalStorage
 			digester = MessageDigest.getInstance("MD5");
 			_msgDigest.set( digester);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	    return digester;

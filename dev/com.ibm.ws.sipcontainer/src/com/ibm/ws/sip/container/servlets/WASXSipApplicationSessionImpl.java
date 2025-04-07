@@ -542,7 +542,5 @@ public class WASXSipApplicationSessionImpl extends SipApplicationSessionImpl imp
 
 		@Override
 		public void sync() {
-			// TODO Auto-generated method stub
-			
 		}
 }

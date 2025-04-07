@@ -1559,7 +1559,6 @@ public class StatefullProxy	extends BranchManager
 	 * @see com.ibm.ws.sip.container.proxy.BranchManager#getAddToPathValue()
 	 */
 	boolean getAddToPathValue() {
-		// TODO Auto-generated method stub
 		return getAddToPath();
 	}
 

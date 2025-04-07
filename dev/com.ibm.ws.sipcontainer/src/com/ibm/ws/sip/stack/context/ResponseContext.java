@@ -81,7 +81,6 @@ public class ResponseContext extends MessageContext {
 					return;
 				}
 			} catch (SIPTransportException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

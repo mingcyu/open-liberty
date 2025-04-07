@@ -134,7 +134,6 @@ public class ProxyTimer extends BaseTimer{
 	 *  @see com.ibm.ws.sip.container.timer.BaseTimer#priority()
 	 */
 	public int priority() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

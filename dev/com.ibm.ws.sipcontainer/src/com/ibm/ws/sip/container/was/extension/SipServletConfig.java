@@ -347,31 +347,26 @@ public class SipServletConfig extends ServletConfigWrapper implements IServletCo
 
 	@Override
 	public Set<String> setServletSecurity(ServletSecurityElement arg0) {
-		// TODO Auto-generated method stub
 		return _servletConfig.setServletSecurity(arg0);
 	}
 
 	@Override
 	public String getRunAsRole() {
-		// TODO Auto-generated method stub
 		return _servletConfig.getRunAsRole();
 	}
 	
 	@Override
 	public MultipartConfigElement getMultipartConfig() {
-	    // TODO Auto-generated method stub
 	    return _servletConfig.getMultipartConfig();
 	}
 	
 	@Override
 	public void setMultipartBaseLocation(File arg0) {
-	    // TODO Auto-generated method stub
 	    _servletConfig.setMultipartBaseLocation(arg0);
 	}
 
 	@Override
 	public File getMultipartBaseLocation() {
-	    // TODO Auto-generated method stub
 	    return _servletConfig.getMultipartBaseLocation();
 	}
 
@@ -382,13 +377,11 @@ public class SipServletConfig extends ServletConfigWrapper implements IServletCo
 
 	@Override
 	public ServletSecurityElement getServletSecurity() {
-		// TODO Auto-generated method stub
 		return _servletConfig.getServletSecurity();
 	}
 
 	@Override
 	public boolean isClassDefined() {
-		// TODO Auto-generated method stub
 		return _servletConfig.isClassDefined();
 	}
 

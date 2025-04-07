@@ -266,10 +266,8 @@ public class OutgoingSipServletResponse extends SipServletResponseImpl
 				}
 			}       
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SipParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

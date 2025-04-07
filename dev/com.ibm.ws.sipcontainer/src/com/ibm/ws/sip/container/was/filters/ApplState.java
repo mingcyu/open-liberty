@@ -31,7 +31,6 @@ public class ApplState implements ApplicationStateListener{
 	 private static final LogMgr c_logger =
              Log.get(ApplState.class);
 	public ApplState()  {
-		// TODO Auto-generated constructor stub
 	}
 
 	
@@ -59,20 +58,14 @@ public class ApplState implements ApplicationStateListener{
 	@Override
 	public void applicationStarted(ApplicationInfo appInfo)
 			throws StateChangeException {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void applicationStopping(ApplicationInfo appInfo) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void applicationStopped(ApplicationInfo appInfo) {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

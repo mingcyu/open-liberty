@@ -124,7 +124,7 @@ public class SipSessionSeqLog extends SequenceLogger {
      * @see com.ibm.sip.util.seqlog.SequenceLogger#dumpStateDesc(int, java.lang.StringBuffer)
      */
     public void dumpStateDesc(int state, StringBuffer buf) {
-        switch(state)// TODO Auto-generated method stub
+        switch(state)
         {
         	case INIT:
         	    buf.append("Init");

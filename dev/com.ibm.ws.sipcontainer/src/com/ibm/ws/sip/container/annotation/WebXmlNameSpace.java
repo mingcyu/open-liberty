@@ -39,7 +39,6 @@ public class WebXmlNameSpace implements NamespaceContext {
 	 * Dummy implementation not in use
 	 */
 	public Iterator getPrefixes(String s) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

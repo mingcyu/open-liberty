@@ -26,7 +26,6 @@ public class HttpDestroyedEvent extends EventObject {
 
 	public HttpDestroyedEvent(HttpSession source) {
 		super(source);
-		// TODO Auto-generated constructor stub
 	}
 
 	/**

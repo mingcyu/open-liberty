@@ -98,13 +98,10 @@ public class SessionRepository
 			m_tuBaseRepo = new TuBaseRepoFactoryImpl().createRepository();
 			m_SKBTrepo = new SKBTRepositoryFactory().createRepository();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

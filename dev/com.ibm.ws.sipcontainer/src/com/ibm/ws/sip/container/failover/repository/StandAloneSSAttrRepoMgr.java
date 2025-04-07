@@ -126,17 +126,14 @@ public class StandAloneSSAttrRepoMgr implements SSAttrRepository {
 	}
 
 	public Object beginTx() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public Object commitTx(Object txKey) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public Object rollback(Object txKey) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

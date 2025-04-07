@@ -407,7 +407,6 @@ public class SipProtocolLayer implements SipListener
 	 */
 	public void stop()
 	{
-		// TODO Auto-generated method stub
 
 	}
 

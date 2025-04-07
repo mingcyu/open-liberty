@@ -1796,7 +1796,6 @@ public class SipAppDesc extends GenericAppDesc {
 	 * @param wasInitialized
 	 */
 	public boolean wasInitialized() {
-		// TODO Auto-generated method stub
 		return m_wasInitialized;
 	}
 	

@@ -47,8 +47,6 @@ public class SipModuleStateListener implements ModuleStateListener {
 	@Override
 	public void moduleStarting(ModuleInfo moduleInfo)
 			throws StateChangeException {
-		// TODO Auto-generated method stub
-
 	}
 
 	/**
@@ -71,8 +69,6 @@ public class SipModuleStateListener implements ModuleStateListener {
 	 */
 	@Override
 	public void moduleStopping(ModuleInfo moduleInfo) {
-		// TODO Auto-generated method stub
-
 	}
 
 	/**
@@ -80,8 +76,6 @@ public class SipModuleStateListener implements ModuleStateListener {
 	 */
 	@Override
 	public void moduleStopped(ModuleInfo moduleInfo) {
-		// TODO Auto-generated method stub
-
 	}
 
 }
