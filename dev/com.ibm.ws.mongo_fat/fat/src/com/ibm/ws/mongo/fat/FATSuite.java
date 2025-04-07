@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2023 IBM Corporation and others.
+ * Copyright (c) 2013, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -40,6 +41,7 @@ import componenttest.topology.impl.LibertyServer;
                 MongoDefaultSSLTest.class,
                 MongoConfigUpdateTest.class
 })
+@Ignore //Turning off the testcases to prevent build failures due to docker image - Defect 303550
 public class FATSuite {
     public static final String APP_NAME = "mongo";
     public static String HOST_NAME;
