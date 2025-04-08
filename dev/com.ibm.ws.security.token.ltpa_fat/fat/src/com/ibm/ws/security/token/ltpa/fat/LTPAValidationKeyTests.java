@@ -34,13 +34,13 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
+import com.ibm.websphere.simplicity.config.Authentication;
 import com.ibm.websphere.simplicity.config.ConfigElementList;
 import com.ibm.websphere.simplicity.config.LTPA;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.config.ValidationKeys;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.webcontainer.security.test.servlets.FormLoginClient;
-import com.ibm.websphere.simplicity.config.Authentication;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.custom.junit.runner.FATRunner;
@@ -55,13 +55,6 @@ import componenttest.vulnerability.LeakedPasswordChecker;
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
 public class LTPAValidationKeyTests {
-
-    // Initialize needed strings for the tests
-    protected static String METHODS = null;
-    protected static final String APP_NAME = "ltpavalidationKeyTestServer";
-    protected static final String PROGRAMMATIC_API_SERVLET = "ProgrammaticAPIServlet";
-    protected static final String authTypeForm = "FORM";
-    protected static final String cookieName = "LtpaToken2";
 
     // Initialize two liberty servers for form login
     private static LibertyServer server1 = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.validationKeyTestServer1");
@@ -106,8 +99,6 @@ public class LTPAValidationKeyTests {
     List<String> PREBUILT_KEYS = Arrays.asList(DIFFERENT_PW_VALIDATION_KEY_PATH, BAD_SHARED_VALIDATION_KEY2_PATH,
                                                VALIDATION_KEY3_PATH,
                                                VALIDATION_KEY2_PATH, VALIDATION_KEY1_PATH, BAD_PRIVATE_VALIDATION_KEY2_PATH);
-
-    /**  */
 
     // Define the paths to the alternate key files
     private static String ALT_VALIDATION_KEY1_PATH = "alternate/validation1.keys";
@@ -258,10 +249,6 @@ public class LTPAValidationKeyTests {
         resetServer(server2);
     }
 
-    public void resetConnection() {
-
-    }
-
     @AfterClass
     public static void tearDown() throws Exception {
         server1FlClient1.releaseClient();
@@ -288,9 +275,8 @@ public class LTPAValidationKeyTests {
      * <LI> Successful authentication to simple servlet application on server #2 using the SSO cookie
      * </OL>
      */
-    @Mode(TestMode.FULL)
     @Test
-    public void testValidationKeys_sameKeyPW_monitorDir_true() throws Exception {
+    public void testValidationKeys_sameKeyPW_monitorDirTrue() throws Exception {
 
         // Configure the servers
         configureServer("true", "10", true, server1);
@@ -354,9 +340,8 @@ public class LTPAValidationKeyTests {
      * <LI> Successful authentication to simple servlet application on server #2 using SSO cookie
      * </OL>
      */
-    @Mode(TestMode.FULL)
     @Test
-    public void testValidationKeys_sameKeyPW_monitorDir_false() throws Exception {
+    public void testValidationKeys_sameKeyPW_monitorDirFalse() throws Exception {
 
         // Configure the servers
         configureServer("false", "10", false, server1);
@@ -425,7 +410,7 @@ public class LTPAValidationKeyTests {
      */
     @Mode(TestMode.LITE)
     @Test
-    public void testValidationKeys_differentKeyPW_monitorDir_true() throws Exception {
+    public void testValidationKeys_differentKeyPW_monitorDirTrue() throws Exception {
 
         // Configure the servers
         configureServer("true", "10", true, server1);
@@ -474,7 +459,8 @@ public class LTPAValidationKeyTests {
     }
 
     /**
-     * Verify that authentication on one server fails with an incorrectly formatted primary key and different/corrupted validation keys. A bad primary key with a corrupted private key 
+     * Verify that authentication on one server fails with an incorrectly formatted primary key and different/corrupted validation keys. A bad primary key with a corrupted private
+     * key
      * will result in an auth failure but no FFDC, a primary incorrect key (improper length in the 3DES/shared key component) will result in an FFDC,
      * a validation key with a bad shared/3des key value will result in no FFDCs but will continue to fail SSO.
      *
@@ -483,7 +469,7 @@ public class LTPAValidationKeyTests {
      * <LI> Place an invalid primary (bad private value)
      * <LI> Access a simple servlet with form login using valid credentials on Server #1
      * <LI> Relace the primary key with a new bad key (improper length in the 3DES/shared key component)
-     * <LI> Place a validation key with a bad shared/3des key value 
+     * <LI> Place a validation key with a bad shared/3des key value
      * <LI> Retrieve cookie from the last login
      * <LI> Copy over a valid validation key like validation1.keys
      * <LI> Access a simple servlet with form login using SSO cookie from the last login on Server #1
@@ -502,12 +488,10 @@ public class LTPAValidationKeyTests {
      * </OL>
      *
      */
-
-    @Mode(TestMode.FULL)
     @Test
     @AllowedFFDC({ "java.lang.IllegalArgumentException" })
     //FFDC because validation3.keys is an incorrectly formatted corrupted key which will cause an Illegal Argument exceptions
-    public void testValidationKeys_invalid_validationKey() throws Exception {
+    public void testValidationKeys_invalidValidationKey() throws Exception {
 
         configureServer("true", "10", true, server1);
         // Set cacheEnabled to false to avoid caching the validation keys
@@ -515,142 +499,42 @@ public class LTPAValidationKeyTests {
         Authentication auth = serverConfiguration.getAuthentication();
         setAuthenticationCacheEnabledElement(auth, "false");
         updateConfigDynamically(server1, serverConfiguration);
-     
+
         // Copy validation keys file (validation6.keys) to the server. This file has swapped values in the Private key from another validation.keys file.
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY6_PATH,server1);
-        
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY6_PATH, server1);
 
         // Replace the primary key with a different invalid key
         renameKeyAndWaitForLtpaConfigReady(BAD_PRIVATE_VALIDATION_KEY2_PATH, DEFAULT_KEY_PATH, server1);
 
-
         // Attempt initial login to simple servlet for form login1
         assertTrue("Authentication should fail with decryption failure",
-        server1FlClient1.accessProtectedServletWithAuthorizedCredentialsExpectsFailure(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword));
+                   server1FlClient1.accessProtectedServletWithAuthorizedCredentialsExpectsFailure(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword));
 
         // Wait for a security token cannot be validated message in the log
-       assertNotNull("Expected security token cannot be validated message not found in the log.",
+        assertNotNull("Expected security token cannot be validated message not found in the log.",
                       server1.waitForStringInLogUsingMark("CWWKS4001I"));
 
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY3_PATH,server1);
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY3_PATH, server1);
 
         renameKeyAndWaitForMessage(VALIDATION_KEY3_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4106E");
 
-
         //copy over validation4.keys with a bad shared/3des value
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY4_PATH,server1);
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY4_PATH, server1);
 
         // Get the SSO cookie from the login
         String server1Cookie = server1FlClient1.getCookieFromLastLogin();
         assertNotNull("Expected SSO Cookie 1 is missing.", server1Cookie);
 
         //Copy over a valid validation key like validation1.keys
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH,server1);
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
 
-       // Attempt to login to the simple servlet on server #1 and assert that the login  fails as expected as it is still using the old (bad) cookie
+        // Attempt to login to the simple servlet on server #1 and assert that the login  fails as expected as it is still using the old (bad) cookie
         assertTrue("An invalid cookie should result in an authorization challenge",
-                    server1FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
+                   server1FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
 
         // Set cacheEnabled back to true
         setAuthenticationCacheEnabledElement(auth, "true");
         updateConfigDynamically(server1, serverConfiguration);
-    }
-
-    /**
-     * Verify that copying a fips key in a non fips environment (and vice versa) will result in the correct argument exception as the key is not formatted correctly.
-     *
-     * Steps:
-     * <OL>
-     * <LI> Server #1 contains primary fips LTPA keys(in non fips) and non fips LTPA key(in fips)
-     * <LI> Place a fips validation key (in non fips) and non fips validation key(in fips)
-     * </OL>
-     *
-     * Expected Results:
-     * <OL>
-     * <LI> non-fips: com.ibm.websphere.ltpa.3DESKey property is missing exception
-     * <LI> fips: com.ibm.websphere.ltpa.sharedKey property is missing exception
-     * </OL>
-     */
-
-    @Mode(TestMode.FULL)
-    @Test
-    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
-    public void testLTPA_fipskey_in_nonfips_and_vice_versa() throws Exception {
-
-        if (!fipsEnabled) {
-
-            // Copy valid fips primary and validation keys into server 1
-            copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY1_PATH, server1);
-            copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY2_PATH, server1);
-
-            // Configure the server, and replace the LTPA key with the fips key
-            configureServer("true", "10", true, server1);
-            renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
-        }
-
-        else {
-            // Copy valid non fips primary and validation keys into server 1
-            //Have to use the full path as keys get overriden on the top
-            copyFileToServerResourcesSecurityDir("alternate/validation1.keys", server1);
-            copyFileToServerResourcesSecurityDir("alternate/validation2.keys", server1);
-
-            // Configure the server, and replace the LTPA key with the non fips key
-            configureServer("true", "10", true, server1);
-            renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
-
-        }
-
-    }
-
-    /**
-     * Verify that an SSO cookie retrieved from authentication on one server fails in a server with the correct validation key but with an incorrectly configured password.
-     *
-     * Steps:
-     * <OL>
-     * <LI> Server #1 and Server #2 contain the same primary LTPA keys and validation key respectively with different keys passwords
-     * <LI> Access a simple servlet with form login using valid credentials on server #1
-     * <LI> Replace the `password` property of the validation key with 'garbage' values on server #2
-     * <LI> Attempt to access the SimpleServlet with form login on server #2 using the same cookie token from Server #1
-     * </OL>
-     *
-     *
-     * Expected Results:
-     * <OL>
-     * <LI> Succesful file copy and file rename to ltpa.keys and to validation1.keys in server 1 and server 2 respectively.
-     * <LI> Authentication should be successful and retrieve the SSO cookie on server 1
-     * <LI> Authentication fails on server 2, the keypassword is different
-     * </OL>
-     */
-
-    @Mode(TestMode.FULL)
-    @Test
-    @AllowedFFDC({ "javax.crypto.BadPaddingException" })
-    public void testValidationKeys_different_Validation_keysPW() throws Exception {
-
-        configureServer("true", "10", true, server1);
-        configureServer("true", "10", true, server2);
-
-        // Copy valid ltpa keys to each server, the ltpa keys are configured using different keysPassword
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
-        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server2);
-        renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
-
-        // Initial login to simple servlet for form login1
-        server1FlClient1.accessProtectedServletWithAuthorizedCredentials(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword);
-
-        // Get the SSO cookie from the login
-        String server1Cookie = server1FlClient1.getCookieFromLastLogin();
-        assertNotNull("Expected SSO Cookie 1 is missing.", server1Cookie);
-
-        // Change the default password  to another value
-        ServerConfiguration server2Config = server2.getServerConfiguration();
-        LTPA ltpa2 = server2Config.getLTPA();
-        setLTPAValidationKey(ltpa2, "validation1.keys", "garbage");
-        updateConfigDynamically(server2, server2Config);
-
-        // Attempt to login to the simple servlet on server #2 and assert that the login fails
-        assertTrue("An invalid cookie should result in an authorization challenge",
-                   server2FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
     }
 
     /**
@@ -681,10 +565,8 @@ public class LTPAValidationKeyTests {
      * <LI> Authentication fails because keys file are invalid on server 2
      * </OL>
      */
-
-    @Mode(TestMode.FULL)
     @Test
-    public void testValidationKeys_switch_validationKeys() throws Exception {
+    public void testValidationKeys_switchValidationKeys() throws Exception {
 
         // Configure both servers
         configureServer("true", "10", true, server1);
@@ -736,7 +618,98 @@ public class LTPAValidationKeyTests {
         // Attempt to login to the simple servlet on server #2 and assert that the login fails
         assertTrue("An invalid cookie should result in an authorization challenge",
                    server2FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
+    }
 
+    /**
+     * Verify that an SSO cookie retrieved from authentication on one server fails in a server with the correct validation key but with an incorrectly configured password.
+     *
+     * Steps:
+     * <OL>
+     * <LI> Server #1 and Server #2 contain the same primary LTPA keys and validation key respectively with different keys passwords
+     * <LI> Access a simple servlet with form login using valid credentials on server #1
+     * <LI> Replace the `password` property of the validation key with 'garbage' values on server #2
+     * <LI> Attempt to access the SimpleServlet with form login on server #2 using the same cookie token from Server #1
+     * </OL>
+     *
+     *
+     * Expected Results:
+     * <OL>
+     * <LI> Succesful file copy and file rename to ltpa.keys and to validation1.keys in server 1 and server 2 respectively.
+     * <LI> Authentication should be successful and retrieve the SSO cookie on server 1
+     * <LI> Authentication fails on server 2, the keypassword is different
+     * </OL>
+     */
+    @Test
+    @AllowedFFDC({ "javax.crypto.BadPaddingException" })
+    public void testValidationKeys_differentValidationKeysPW() throws Exception {
+
+        configureServer("true", "10", true, server1);
+        configureServer("true", "10", true, server2);
+
+        // Copy valid ltpa keys to each server, the ltpa keys are configured using different keysPassword
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server1);
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH, server2);
+        renameKeyAndWaitForLtpaConfigReady(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1);
+
+        // Initial login to simple servlet for form login1
+        server1FlClient1.accessProtectedServletWithAuthorizedCredentials(FormLoginClient.PROTECTED_SIMPLE, validUser, validPassword);
+
+        // Get the SSO cookie from the login
+        String server1Cookie = server1FlClient1.getCookieFromLastLogin();
+        assertNotNull("Expected SSO Cookie 1 is missing.", server1Cookie);
+
+        // Change the default password  to another value
+        ServerConfiguration server2Config = server2.getServerConfiguration();
+        LTPA ltpa2 = server2Config.getLTPA();
+        setLTPAValidationKey(ltpa2, "validation1.keys", "garbage");
+        updateConfigDynamically(server2, server2Config);
+
+        // Attempt to login to the simple servlet on server #2 and assert that the login fails
+        assertTrue("An invalid cookie should result in an authorization challenge",
+                   server2FlClient1.accessProtectedServletWithInvalidCookie(FormLoginClient.PROTECTED_SIMPLE, server1Cookie));
+    }
+
+    /**
+     * Verify that copying a fips key in a non fips environment (and vice versa) will result in the correct argument exception as the key is not formatted correctly.
+     *
+     * Steps:
+     * <OL>
+     * <LI> Server #1 contains primary fips LTPA keys(in non fips) and non fips LTPA key(in fips)
+     * <LI> Place a fips validation key (in non fips) and non fips validation key(in fips)
+     * </OL>
+     *
+     * Expected Results:
+     * <OL>
+     * <LI> non-fips: com.ibm.websphere.ltpa.3DESKey property is missing exception
+     * <LI> fips: com.ibm.websphere.ltpa.sharedKey property is missing exception
+     * </OL>
+     */
+    @Test
+    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
+    public void testLTPA_cannotReadFipsKeysInNonFipsEnvAndViceVersa() throws Exception {
+
+        if (!fipsEnabled) {
+
+            // Copy valid fips primary and validation keys into server 1
+            copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY1_PATH, server1);
+            copyFileToServerResourcesSecurityDir(ALT_FIPS_VALIDATION_KEY2_PATH, server1);
+
+            // Configure the server, and replace the LTPA key with the fips key
+            configureServer("true", "10", true, server1);
+            renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
+        }
+
+        else {
+            // Copy valid non fips primary and validation keys into server 1
+            //Have to use the full path as keys get overriden on the top
+            copyFileToServerResourcesSecurityDir("alternate/validation1.keys", server1);
+            copyFileToServerResourcesSecurityDir("alternate/validation2.keys", server1);
+
+            // Configure the server, and replace the LTPA key with the non fips key
+            configureServer("true", "10", true, server1);
+            renameKeyAndWaitForMessage(VALIDATION_KEY1_PATH, DEFAULT_KEY_PATH, server1, "CWWKS4102E");
+
+        }
     }
 
     public void moveLogMarkForServer(LibertyServer server) throws Exception {
@@ -852,7 +825,8 @@ public class LTPAValidationKeyTests {
         return false; // Config update is not needed;
 
     }
-     // Function to configure the cacheEnabled element for authentication cache
+
+    // Function to configure the cacheEnabled element for authentication cache
     public boolean setAuthenticationCacheEnabledElement(Authentication auth, String value) {
         if (!auth.cacheEnabled.equals(value)) {
             auth.cacheEnabled = value;
