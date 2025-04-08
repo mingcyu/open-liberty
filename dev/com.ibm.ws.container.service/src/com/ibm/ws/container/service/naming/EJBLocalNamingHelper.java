@@ -56,9 +56,9 @@ public interface EJBLocalNamingHelper<EJBBinding> {
      * provide the names and objects bound into a context.
      *
      * @param context Sub-context within the namespace where the list operation
-     *                    is being performed, including "/" suffix, e.g. for a list
-     *                    of the "ejblocal:<app>" context this context would be
-     *                    "<app>/". Must be the empty string for the root context.
+     *                    is being performed, e.g. for a list of the "ejblocal:<app>"
+     *                    context this context would be "<app>". Must be the empty
+     *                    string for the root context.
      * @param name    String form of the jndi name, excluding the namespace prefix
      *                    and the sub-context (if any), e.g. for the resource
      *                    "ejblocal:<app>/<module>.jar" this name would be

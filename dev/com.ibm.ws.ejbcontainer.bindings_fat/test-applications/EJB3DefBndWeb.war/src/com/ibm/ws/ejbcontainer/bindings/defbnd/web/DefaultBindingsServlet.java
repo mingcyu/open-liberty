@@ -272,193 +272,217 @@ public class DefaultBindingsServlet extends FATServlet {
 
         try {
             list = rootctx.list("/");
-            fail("3 --> list / for " + rootContext + " did not fail : " + list);
+            fail("5 --> list / for " + rootContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("5 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         list = rootctx.list(application);
-        assertNotNull("4 --> list " + application + " for " + rootContext + " was null", list);
+        assertNotNull("6 --> list " + application + " for " + rootContext + " was null", list);
         verifyList(list, AppList);
 
         try {
             list = rootctx.list(application + "/");
-            fail("3 --> list " + application + "/  for " + rootContext + " did not fail : " + list);
+            fail("7 --> list " + application + "/  for " + rootContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/"));
+            assertTrue("7 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/"));
         }
 
         list = rootctx.list(application + "/" + module);
-        assertNotNull("4 --> list " + application + "/" + module + " for " + rootContext + " was null", list);
+        assertNotNull("8 --> list " + application + "/" + module + " for " + rootContext + " was null", list);
         verifyList(list, ModList);
 
         try {
             list = rootctx.list(application + "/" + module + "/");
-            fail("3 --> list " + application + "/" + module + "/  for " + rootContext + " did not fail : " + list);
+            fail("9 --> list " + application + "/" + module + "/  for " + rootContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/" + module + "/"));
+            assertTrue("9 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/" + module + "/"));
         }
 
         NamingEnumeration<Binding> bindings = rootctx.listBindings("");
-        assertNotNull("4 --> listBindings empty for " + rootContext + " was null", bindings);
-        verifyBindings(bindings, RootList);
+        assertNotNull("10 --> listBindings empty for " + rootContext + " was null", bindings);
+        verifyBindings(bindings, RootList, rootContext + rootSeparator);
 
         try {
             bindings = rootctx.listBindings("/");
-            fail("3 --> listBindings / for " + rootContext + " did not fail : " + bindings);
+            fail("11 --> listBindings / for " + rootContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("11 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         bindings = rootctx.listBindings(application);
-        assertNotNull("4 --> listBindings " + application + " for " + rootContext + " was null", bindings);
-        verifyBindings(bindings, AppList);
+        assertNotNull("12 --> listBindings " + application + " for " + rootContext + " was null", bindings);
+        verifyBindings(bindings, AppList, appContext + "/");
+
+        // verify using a returned binding to lookup a bean
+        boolean beanFromListBindingFound = false;
+        bindings = rootctx.listBindings(application);
+        while (bindings.hasMore()) {
+            Binding binding = bindings.next();
+            String foundName = binding.getName();
+            if (foundName.equals(module)) {
+                Context foundContext = (Context) binding.getObject();
+                LocalBusiness bean = (LocalBusiness) foundContext.lookup(jndiNameBean);
+                assertNotNull("13 --> lookup " + jndiNameBean + " in listBinding context " + module + " was null", bean);
+                assertEquals("14 --> getString() returned unexpected value", "Success", bean.getString());
+
+                String nameInNameSpace = foundContext.getNameInNamespace();
+                bean = (LocalBusiness) new InitialContext().lookup(nameInNameSpace + "/" + jndiNameBean);
+                assertNotNull("15 --> lookup " + nameInNameSpace + "/" + jndiNameBean + " in InitialContext was null", bean);
+                assertEquals("16 --> getString() returned unexpected value", "Success", bean.getString());
+
+                beanFromListBindingFound = true;
+                break;
+            }
+        }
+        assertTrue("17 --> bean not found in " + module + " context from listBindings", beanFromListBindingFound);
 
         try {
             bindings = rootctx.listBindings(application + "/");
-            fail("3 --> listBindings " + application + "/  for " + rootContext + " did not fail : " + bindings);
+            fail("18 --> listBindings " + application + "/  for " + rootContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/"));
+            assertTrue("18 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/"));
         }
 
         bindings = rootctx.listBindings(application + "/" + module);
-        assertNotNull("4 --> listBindings " + application + "/" + module + " for " + rootContext + " was null", bindings);
-        verifyBindings(bindings, ModList);
+        assertNotNull("19 --> listBindings " + application + "/" + module + " for " + rootContext + " was null", bindings);
+        verifyBindings(bindings, ModList, modContext + "/");
 
         try {
             bindings = rootctx.listBindings(application + "/" + module + "/");
-            fail("3 --> listBindings " + application + "/" + module + "/  for " + rootContext + " did not fail : " + bindings);
+            fail("20 --> listBindings " + application + "/" + module + "/  for " + rootContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/" + module + "/"));
+            assertTrue("20 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application + "/" + module + "/"));
         }
 
         LocalBusiness bean = (LocalBusiness) rootctx.lookup(jndiName);
-        assertNotNull("2 --> lookup " + jndiName + " in " + rootContext + " was null", bean);
-        assertEquals("3 --> getString() returned unexpected value", "Success", bean.getString());
+        assertNotNull("21 --> lookup " + jndiName + " in " + rootContext + " was null", bean);
+        assertEquals("22 --> getString() returned unexpected value", "Success", bean.getString());
 
         // ---------------------------------------------------------------------
         // test application context
         // ---------------------------------------------------------------------
 
         Context appctx = (Context) rootctx.lookup(application);
-        assertNotNull("4 --> lookup " + application + " for " + rootContext + " was null", appctx);
+        assertNotNull("23 --> lookup " + application + " for " + rootContext + " was null", appctx);
 
         // java:global does not support root context lookup; ejblocal: does
         if ("java:global".equals(rootContext)) {
             try {
                 appctx = (Context) rootctx.lookup(appContext);
-                fail("3 --> lookup " + appContext + " for " + rootContext + " did not fail : " + appctx);
+                fail("24 --> lookup " + appContext + " for " + rootContext + " did not fail : " + appctx);
             } catch (NameNotFoundException ex) {
-                assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + appContext));
+                assertTrue("24 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + appContext));
             }
         } else {
             appctx = (Context) rootctx.lookup(appContext);
-            assertNotNull("4 --> lookup " + appContext + " for " + rootContext + " was null", appctx);
+            assertNotNull("24 --> lookup " + appContext + " for " + rootContext + " was null", appctx);
         }
 
         try {
             appctx = (Context) rootctx.lookup(appContext + "/");
-            fail("3 --> lookup " + appContext + "/  for " + appContext + "/ did not fail : " + appctx);
+            fail("25 --> lookup " + appContext + "/  for " + appContext + "/ did not fail : " + appctx);
         } catch (NameNotFoundException ex) {
             if ("java:global".equals(rootContext)) {
-                assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + appContext + "/"));
+                assertTrue("25 --> Expected exception text not present : " + ex,
+                           ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + appContext + "/"));
             } else {
                 // ejblocal: lookup strips off an extra ejblocal: prefix
-                assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/"));
+                assertTrue("25 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/"));
             }
         }
 
         appctx = (Context) appctx.lookup("");
-        assertNotNull("4 --> lookup empty for " + appContext + " was null", appctx);
+        assertNotNull("26 --> lookup empty for " + appContext + " was null", appctx);
 
         try {
             appctx = (Context) appctx.lookup("/");
-            fail("3 --> lookup /  for " + rootContext + "/" + application + " did not fail : " + appctx);
+            fail("27 --> lookup /  for " + rootContext + "/" + application + " did not fail : " + appctx);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/"));
+            assertTrue("27 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/"));
         }
 
         list = appctx.list("");
-        assertNotNull("4 --> list empty for " + appContext + " was null", list);
+        assertNotNull("28 --> list empty for " + appContext + " was null", list);
         verifyList(list, AppList);
 
         try {
             list = appctx.list("/");
-            fail("3 --> list / for " + appContext + " did not fail : " + list);
+            fail("29 --> list / for " + appContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("29 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         try {
             list = appctx.list(application);
-            fail("3 --> list " + application + " for " + appContext + " did not fail : " + list);
+            fail("30 --> list " + application + " for " + appContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
+            assertTrue("30 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
         }
 
         list = appctx.list(module);
-        assertNotNull("4 --> list " + module + " for " + appContext + " was null", list);
+        assertNotNull("31 --> list " + module + " for " + appContext + " was null", list);
         verifyList(list, ModList);
 
         try {
             list = appctx.list(module + "/");
-            fail("3 --> list " + module + "/ for " + appContext + " did not fail : " + list);
+            fail("32 --> list " + module + "/ for " + appContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module + "/"));
+            assertTrue("32 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module + "/"));
         }
 
         bindings = appctx.listBindings("");
-        assertNotNull("4 --> listBindings empty for " + appContext + " was null", bindings);
-        verifyBindings(bindings, AppList);
+        assertNotNull("33 --> listBindings empty for " + appContext + " was null", bindings);
+        verifyBindings(bindings, AppList, appContext + "/");
 
         try {
             bindings = appctx.listBindings("/");
-            fail("3 --> listBindings / for " + appContext + " did not fail : " + bindings);
+            fail("34--> listBindings / for " + appContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("34 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         try {
             bindings = appctx.listBindings(application);
-            fail("3 --> listBindings " + application + " for " + appContext + " did not fail : " + bindings);
+            fail("35 --> listBindings " + application + " for " + appContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
+            assertTrue("35 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
         }
 
         bindings = appctx.listBindings(module);
-        assertNotNull("4 --> listBindings " + module + " for " + appContext + " was null", bindings);
-        verifyBindings(bindings, ModList);
+        assertNotNull("36 --> listBindings " + module + " for " + appContext + " was null", bindings);
+        verifyBindings(bindings, ModList, modContext + "/");
 
         try {
             bindings = appctx.listBindings(module + "/");
-            fail("3 --> listBindings " + module + "/ for " + appContext + " did not fail : " + bindings);
+            fail("37 --> listBindings " + module + "/ for " + appContext + " did not fail : " + bindings);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module + "/"));
+            assertTrue("37 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module + "/"));
         }
 
         try {
             bean = (LocalBusiness) appctx.lookup(jndiName);
-            fail("3 --> lookup " + jndiName + " for " + appContext + " did not fail : " + bean);
+            fail("38 --> lookup " + jndiName + " for " + appContext + " did not fail : " + bean);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/" + jndiName));
+            assertTrue("38 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + appContext + "/" + jndiName));
         }
 
         bean = (LocalBusiness) appctx.lookup(jndiNameModule);
-        assertNotNull("2 --> lookup " + jndiNameModule + " in " + appContext + " was null", bean);
-        assertEquals("3 --> getString() returned unexpected value", "Success", bean.getString());
+        assertNotNull("39 --> lookup " + jndiNameModule + " in " + appContext + " was null", bean);
+        assertEquals("40 --> getString() returned unexpected value", "Success", bean.getString());
 
         try {
             list = appctx.list(jndiNameModule);
-            fail("3 --> list " + jndiNameModule + " for " + appContext + " did not fail : " + list);
+            fail("41 --> list " + jndiNameModule + " for " + appContext + " did not fail : " + list);
         } catch (NotContextException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + appContext + "/" + jndiNameModule));
+            assertTrue("41 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + appContext + "/" + jndiNameModule));
         }
 
         try {
             bindings = appctx.listBindings(jndiNameModule);
-            fail("3 --> listBindings " + jndiNameModule + " for " + modContext + " did not fail : " + bindings);
+            fail("42 --> listBindings " + jndiNameModule + " for " + modContext + " did not fail : " + bindings);
         } catch (NotContextException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + appContext + "/" + jndiNameModule));
+            assertTrue("42 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + appContext + "/" + jndiNameModule));
         }
 
         // ---------------------------------------------------------------------
@@ -466,107 +490,114 @@ public class DefaultBindingsServlet extends FATServlet {
         // ---------------------------------------------------------------------
 
         Context modctx = (Context) rootctx.lookup(application + "/" + module);
-        assertNotNull("4 --> lookup " + application + "/" + module + " for " + rootContext + " was null", modctx);
+        assertNotNull("43--> lookup " + application + "/" + module + " for " + rootContext + " was null", modctx);
 
         modctx = (Context) appctx.lookup(module);
-        assertNotNull("4 --> lookup " + module + " for " + appContext + " was null", modctx);
+        assertNotNull("44 --> lookup " + module + " for " + appContext + " was null", modctx);
 
         // java:global does not support root context lookup; ejblocal: does
         if ("java:global".equals(rootContext)) {
             try {
                 modctx = (Context) rootctx.lookup(modContext);
-                fail("3 --> lookup " + modContext + " for " + rootContext + " did not fail : " + modctx);
+                fail("45 --> lookup " + modContext + " for " + rootContext + " did not fail : " + modctx);
             } catch (NameNotFoundException ex) {
-                assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + modContext));
+                assertTrue("45 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + rootContext + rootSeparator + modContext));
             }
         } else {
             modctx = (Context) rootctx.lookup(modContext);
-            assertNotNull("4 --> lookup " + modContext + " for " + rootContext + " was null", modctx);
+            assertNotNull("45 --> lookup " + modContext + " for " + rootContext + " was null", modctx);
         }
 
         modctx = (Context) modctx.lookup("");
-        assertNotNull("4 --> lookup empty for " + modContext + " was null", modctx);
+        assertNotNull("46 --> lookup empty for " + modContext + " was null", modctx);
 
         try {
             modctx = (Context) modctx.lookup("/");
-            fail("3 --> lookup / for " + modContext + " did not fail : " + modctx);
+            fail("47 --> lookup / for " + modContext + " did not fail : " + modctx);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/"));
+            assertTrue("47 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/"));
         }
 
         list = modctx.list("");
-        assertNotNull("4 --> list empty for " + modContext + " was null", list);
+        assertNotNull("48 --> list empty for " + modContext + " was null", list);
         verifyList(list, ModList);
 
         try {
             list = modctx.list("/");
-            fail("3 --> list / for " + modContext + " did not fail : " + list);
+            fail("49 --> list / for " + modContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("49 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         try {
             list = modctx.list(application);
-            fail("3 --> list " + application + " for " + modContext + " did not fail : " + list);
+            fail("50 --> list " + application + " for " + modContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
+            assertTrue("50 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
         }
 
         try {
             list = modctx.list(module);
-            fail("3 --> list " + module + " for " + modContext + " did not fail : " + list);
+            fail("51 --> list " + module + " for " + modContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module));
+            assertTrue("51 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + module));
         }
 
         bindings = modctx.listBindings("");
-        assertNotNull("4 --> listBindings empty for " + modContext + " was null", bindings);
-        verifyBindings(bindings, ModList);
+        assertNotNull("52 --> listBindings empty for " + modContext + " was null", bindings);
+        verifyBindings(bindings, ModList, modContext + "/");
 
         try {
             bindings = modctx.listBindings("/");
-            fail("3 --> listBindings / for " + modContext + " did not fail : " + list);
+            fail("53 --> listBindings / for " + modContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
+            assertTrue("53 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: /"));
         }
 
         try {
             bindings = modctx.listBindings(application);
-            fail("3 --> listBindings " + application + " for " + modContext + " did not fail : " + list);
+            fail("54 --> listBindings " + application + " for " + modContext + " did not fail : " + list);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
+            assertTrue("54 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + application));
         }
 
         try {
             bean = (LocalBusiness) modctx.lookup(jndiName);
-            fail("3 --> lookup " + jndiName + " for " + modContext + " did not fail : " + bean);
+            fail("55 --> lookup " + jndiName + " for " + modContext + " did not fail : " + bean);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/" + jndiName));
+            assertTrue("55 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/" + jndiName));
         }
 
         try {
             bean = (LocalBusiness) modctx.lookup(jndiNameModule);
-            fail("3 --> lookup " + jndiNameModule + " for " + modContext + " did not fail : " + bean);
+            fail("56 --> lookup " + jndiNameModule + " for " + modContext + " did not fail : " + bean);
         } catch (NameNotFoundException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/" + jndiNameModule));
+            assertTrue("56 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/" + jndiNameModule));
         }
 
         bean = (LocalBusiness) modctx.lookup(jndiNameBean);
-        assertNotNull("2 --> lookup " + jndiNameBean + " in " + modContext + " was null", bean);
-        assertEquals("3 --> getString() returned unexpected value", "Success", bean.getString());
+        assertNotNull("57 --> lookup " + jndiNameBean + " in " + modContext + " was null", bean);
+        assertEquals("58 --> getString() returned unexpected value", "Success", bean.getString());
+
+        try {
+            bean = (LocalBusiness) modctx.lookup("/" + jndiNameBean);
+            fail("59 --> lookup /" + jndiNameBean + " for " + modContext + " did not fail : " + bean);
+        } catch (NameNotFoundException ex) {
+            assertTrue("59 --> Expected exception text not present : " + ex, ex.toString().contains("NameNotFoundException: " + modContext + "/" + "/" + jndiNameBean));
+        }
 
         try {
             list = modctx.list(jndiNameBean);
-            fail("3 --> list " + jndiNameBean + " for " + modContext + " did not fail : " + list);
+            fail("60 --> list " + jndiNameBean + " for " + modContext + " did not fail : " + list);
         } catch (NotContextException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + modContext + "/" + jndiNameBean));
+            assertTrue("60 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + modContext + "/" + jndiNameBean));
         }
 
         try {
             bindings = modctx.listBindings(jndiNameBean);
-            fail("3 --> listBindings " + jndiNameBean + " for " + modContext + " did not fail : " + bindings);
+            fail("61 --> listBindings " + jndiNameBean + " for " + modContext + " did not fail : " + bindings);
         } catch (NotContextException ex) {
-            assertTrue("3 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + modContext + "/" + jndiNameBean));
+            assertTrue("61 --> Expected exception text not present : " + ex, ex.toString().contains("NotContextException: " + modContext + "/" + jndiNameBean));
         }
     }
 
@@ -593,18 +624,19 @@ public class DefaultBindingsServlet extends FATServlet {
         }
     }
 
-    private void verifyBindings(NamingEnumeration<Binding> foundBindings, Map<String, String> expectedBindings) throws Exception {
+    private void verifyBindings(NamingEnumeration<Binding> foundBindings, Map<String, String> expectedBindings, String namespacePrefix) throws Exception {
         Map<String, String> expected = new HashMap<String, String>(expectedBindings);
         int index = 0;
         while (foundBindings.hasMore()) {
             Binding binding = foundBindings.next();
-            System.out.println("binding " + index + " : " + binding.getName() + ", " + binding.getClassName());
+            System.out.println("binding " + index + " : " + binding.getName() + ", " + binding.getClassName() + ", " + binding.isRelative());
             index++;
             String foundName = binding.getName();
             String foundClass = binding.getClassName();
             String expectedClass = expected.get(foundName);
             assertNotNull("   --> Context.listBinding contained unexpected entry : " + foundName + ", " + foundClass, expectedClass);
             assertEquals("   --> Context.listBinding contained entry with incorrect type : " + foundName, expectedClass, foundClass);
+            assertTrue("   --> Context.listBinding contained entry with isRelative false", binding.isRelative());
             expected.remove(foundName);
 
             if (foundClass.equals(LocalBusiness.class.getName())) {
@@ -613,8 +645,10 @@ public class DefaultBindingsServlet extends FATServlet {
                 assertNotNull("   --> Context.listBinding for LocalBusiness did not return bean", bean);
                 assertEquals("   --> getString() returned unexpected value", "Success", bean.getString());
             } else if (foundClass.equals(Context.class.getName())) {
-                System.out.println("  testing context obtained from listBindings : " + binding.getObject());
+                System.out.println("  testing context obtained from listBindings : " + binding.getName() + ", " + binding.getObject());
                 assertNotNull("   --> Context.listBinding did not return the Context for a binding : " + binding.getName(), binding.getObject());
+                String nameInNamespace = ((Context) binding.getObject()).getNameInNamespace();
+                assertEquals("   --> Context.listBinding returned context.getNameInNamespace not correct", namespacePrefix + binding.getName(), nameInNamespace);
             }
         }
         if (expected.size() > 0) {

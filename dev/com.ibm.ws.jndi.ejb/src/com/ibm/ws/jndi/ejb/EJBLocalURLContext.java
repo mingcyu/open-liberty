@@ -52,7 +52,7 @@ public class EJBLocalURLContext extends WSContextBase implements Context {
     private final Map<String, Object> environment = new ConcurrentHashMap<String, Object>();
     private final ConcurrentServiceReferenceSet<EJBLocalNamingHelper> helperServices;
 
-    // The sub-context, if this context represents a sub-context of ejblocal:; ends with "/"
+    // The sub-context, if this context represents a sub-context of ejblocal:
     private final String subContext;
 
     /**
@@ -79,7 +79,7 @@ public class EJBLocalURLContext extends WSContextBase implements Context {
     public EJBLocalURLContext(EJBLocalURLContext copy, String subContext) {
         this.environment.putAll(copy.environment);
         this.helperServices = copy.helperServices;
-        this.subContext = subContext + "/";
+        this.subContext = subContext;
     }
 
     /**
@@ -113,7 +113,7 @@ public class EJBLocalURLContext extends WSContextBase implements Context {
      */
     @Override
     public String getNameInNamespace() throws NamingException {
-        return "ejblocal:";
+        return "ejblocal:" + subContext;
     }
 
     /**
@@ -174,8 +174,8 @@ public class EJBLocalURLContext extends WSContextBase implements Context {
         }
 
         if (lookup.equals("/")) {
-            // subContext already includes a /, avoid message text with double slash at end
-            String nameStr = "ejblocal:" + (subContext.isEmpty() ? lookup : subContext);
+            // avoid message text with double slash at end
+            String nameStr = "ejblocal:" + subContext + lookup;
             throw new NameNotFoundException(NameNotFoundException.class.getName() + ": " + nameStr);
         }
 
@@ -195,8 +195,8 @@ public class EJBLocalURLContext extends WSContextBase implements Context {
         if (lookupModified.startsWith("ejblocal:")) {
             lookupModified = lookupModified.substring(9);
             listModified = lookupModified;
-        } else {
-            lookupModified = subContext + lookupModified;
+        } else if (!subContext.isEmpty()) {
+            lookupModified = subContext + "/" + lookupModified;
         }
 
         for (Iterator<EJBLocalNamingHelper> it = helperServices.getServices(); it.hasNext();) {

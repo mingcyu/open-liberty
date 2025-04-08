@@ -75,7 +75,7 @@ public class EJBLocalNamingHelperImpl extends EJBNamingInstancer implements EJBL
 
     @Override
     public Collection<? extends NameClassPair> listInstances(String context, String name) throws NamingException {
-        String contextName = context + name;
+        String contextName = context.isEmpty() ? name : (context + "/" + name);
         // append a "/" to ensure search is over a context; unless searching root
         String contextKey = contextName + (name.isEmpty() ? "" : "/");
         boolean root = contextKey.isEmpty();
