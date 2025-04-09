@@ -4920,7 +4920,7 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Use repository methods with Rounded, RoundedUp, and RoundedDown keywords.
+     * Use repository methods with ROUND, CEILING, and FLOOR functions in a Query.
      */
     @Test
     public void testRounding() {

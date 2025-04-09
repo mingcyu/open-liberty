@@ -2373,34 +2373,12 @@ public class QueryInfo {
 
         String function = null;
         boolean ignoreCase = false;
-        boolean rounded = false;
 
         switch (methodName.charAt(endBefore - 1)) {
             case 'e':
                 if (ignoreCase = endsWith("IgnoreCas", methodName, start, endBefore - 1)) {
                     function = "LOWER(";
                     endBefore -= 10;
-                } else if (endsWith("AbsoluteValu", methodName, start, endBefore - 1)) {
-                    function = "ABS(";
-                    endBefore -= 13;
-                }
-                break;
-            case 'd':
-                if (rounded = endsWith("Rounde", methodName, start, endBefore - 1)) {
-                    function = "ROUND(";
-                    endBefore -= 7;
-                }
-                break;
-            case 'n':
-                if (endsWith("RoundedDow", methodName, start, endBefore - 1)) {
-                    function = "FLOOR(";
-                    endBefore -= 11;
-                }
-                break;
-            case 'p':
-                if (endsWith("RoundedU", methodName, start, endBefore - 1)) {
-                    function = "CEILING(";
-                    endBefore -= 9;
                 }
                 break;
             case 't':
@@ -2435,10 +2413,7 @@ public class QueryInfo {
         if (trimmed)
             attributeExpr.append(')');
         if (function != null)
-            if (rounded)
-                attributeExpr.append(", 0)"); // round to zero digits beyond the decimal
-            else
-                attributeExpr.append(')');
+            attributeExpr.append(')');
 
         if (negated) {
             Condition negatedCondition = condition.negate();

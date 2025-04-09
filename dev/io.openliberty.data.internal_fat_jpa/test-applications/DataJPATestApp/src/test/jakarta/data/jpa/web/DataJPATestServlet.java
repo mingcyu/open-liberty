@@ -289,11 +289,13 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
-     * Test the AbsoluteValue keyword by querying on values that could be positive or negative.
+     * Test that the ABS JDQL function can be used in a Query with the BETWEEN
+     * operation, and that it queries on values that could be positive or negative.
      */
     @Test
-    public void testAbsoluteValueKeyword() {
-        List<Business> found = businesses.findByLocationLongitudeAbsoluteValueBetween(92.503f, 92.504f);
+    public void testAbsoluteValueFunctionBetween() {
+        List<Business> found = businesses.longitudeAbsoluteValueBetween(92.503f,
+                                                                        92.504f);
         assertNotNull(found);
         assertEquals("Found " + found.toString(), 1, found.size());
         assertEquals("IBM", found.get(0).name);
