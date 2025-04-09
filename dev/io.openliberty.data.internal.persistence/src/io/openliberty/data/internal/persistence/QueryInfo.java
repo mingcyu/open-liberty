@@ -2380,9 +2380,6 @@ public class QueryInfo {
                 if (ignoreCase = endsWith("IgnoreCas", methodName, start, endBefore - 1)) {
                     function = "LOWER(";
                     endBefore -= 10;
-                } else if (endsWith("WithMinut", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (MINUTE FROM ";
-                    endBefore -= 10;
                 } else if (endsWith("AbsoluteValu", methodName, start, endBefore - 1)) {
                     function = "ABS(";
                     endBefore -= 13;
@@ -2392,9 +2389,6 @@ public class QueryInfo {
                 if (rounded = endsWith("Rounde", methodName, start, endBefore - 1)) {
                     function = "ROUND(";
                     endBefore -= 7;
-                } else if (endsWith("WithSecon", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (SECOND FROM ";
-                    endBefore -= 10;
                 }
                 break;
             case 'n':
@@ -2409,18 +2403,6 @@ public class QueryInfo {
                     endBefore -= 9;
                 }
                 break;
-            case 'r':
-                if (endsWith("WithYea", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (YEAR FROM ";
-                    endBefore -= 8;
-                } else if (endsWith("WithHou", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (HOUR FROM ";
-                    endBefore -= 8;
-                } else if (endsWith("WithQuarte", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (QUARTER FROM ";
-                    endBefore -= 11;
-                }
-                break;
             case 't':
                 if (endsWith("CharCoun", methodName, start, endBefore - 1)) {
                     function = "LENGTH(";
@@ -2428,24 +2410,6 @@ public class QueryInfo {
                 } else if (endsWith("ElementCoun", methodName, start, endBefore - 1)) {
                     function = "SIZE(";
                     endBefore -= 12;
-                }
-                break;
-            case 'y':
-                if (endsWith("WithDa", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (DAY FROM ";
-                    endBefore -= 7;
-                }
-                break;
-            case 'h':
-                if (endsWith("WithMont", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (MONTH FROM ";
-                    endBefore -= 9;
-                }
-                break;
-            case 'k':
-                if (endsWith("WithWee", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (WEEK FROM ";
-                    endBefore -= 8;
                 }
                 break;
         }

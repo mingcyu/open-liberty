@@ -12,6 +12,7 @@
  *******************************************************************************/
 package test.jakarta.data.experimental.web;
 
+import static io.openliberty.data.repository.Is.Op.Equal;
 import static io.openliberty.data.repository.Is.Op.GreaterThanEqual;
 import static io.openliberty.data.repository.Is.Op.In;
 import static io.openliberty.data.repository.Is.Op.LessThanEqual;
@@ -159,10 +160,9 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
 
     HashSet<Reservation> findByLocationAndInviteesNotContains(String location, String noninvitee);
 
-    @OrderBy("host")
-    List<Long> findMeetingIdByStartWithHourBetweenAndStartWithMinute(int minHour, int maxHour, int minute);
-
-    List<Long> findMeetingIdByStopWithSecond(int second);
+    @Find
+    @Select("meetingId")
+    List<Long> findMeetingIdStoppingAtSecond(@By("stop") @Extract(SECOND) int second);
 
     // Use a record as the return type
     @Find
@@ -187,6 +187,13 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
     List<String> locationsThatStartWith(@By("location") @Is(Prefixed) String beginningOfLocationName);
 
     int removeByHostNotIn(Collection<String> hosts);
+
+    @Find
+    @Select("meetingId")
+    @OrderBy("host")
+    List<Long> startingWithin(@By("start") @Extract(HOUR) @Is(GreaterThanEqual) int minHour,
+                              @By("start") @Extract(HOUR) @Is(LessThanEqual) int maxHour,
+                              @By("start") @Extract(MINUTE) @Is(Equal) int minute);
 
     @Find
     @Select("meetingID")

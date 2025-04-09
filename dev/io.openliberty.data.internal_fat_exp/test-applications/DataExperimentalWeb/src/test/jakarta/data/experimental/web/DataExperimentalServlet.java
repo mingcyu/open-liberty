@@ -334,7 +334,7 @@ public class DataExperimentalServlet extends FATServlet {
         // WithHour, WithMinute. We cannot compare the hour without knowing which time zone the database stores it in.
 
         assertEquals(List.of(113001L, 213002L),
-                     reservations.findMeetingIdByStartWithHourBetweenAndStartWithMinute(0, 23, 15));
+                     reservations.startingWithin(0, 23, 15));
 
         assertEquals(List.of(313003L),
                      reservations.startsWithinHoursWithMinute(0, 23, 35));
@@ -342,7 +342,7 @@ public class DataExperimentalServlet extends FATServlet {
         // WithSecond
 
         assertEquals(List.of(313003L),
-                     reservations.findMeetingIdByStopWithSecond(30));
+                     reservations.findMeetingIdStoppingAtSecond(30));
 
         assertEquals(List.of(113001L, 213002L, 413004L),
                      reservations.endsAtSecond(0));
