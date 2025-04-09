@@ -74,6 +74,18 @@ CWWKC1207.lacks.qualifier.anno.explanation=The Qualifier annotation indicates \
 CWWKC1207.lacks.qualifier.anno.useraction=Add the @Qualifier and \
  @Retention(RUNTIME) annotations to the qualifier class.
 
+CWWKC1208.global.with.qualifiers=CWWKC1208E: The {0} application artifact \
+ specifies a {1} annotation or {2} deployment descriptor element that has the \
+ {3} name and {4} qualifiers list. The combination of qualifiers and the \
+ java:global name space is not permitted by Jakarta Concurrency. Switch to the \
+ java:app name space or remove the qualifiers from the configuration of the \
+ resource that has the {3} name.
+CWWKC1208.global.with.qualifiers.explanation=Jakarta Concurrency resource \
+ configuration cannot have both a java:global name space and qualifiers.
+CWWKC1208.global.with.qualifiers.useraction=Update the configuration of the \
+ application-defined Jakarta Concurrency resource to omit the qualifiers or \
+ use a different name space.
+
 CWWKC1217.no.virtual.threads=CWWKC1217I: The Concurrency specification requires \
  virtual=true to be ignored on the {0} application artifact's \
  {1} annotation or {2} deployment descriptor element with the {3} name \
