@@ -2371,29 +2371,8 @@ public class QueryInfo {
         boolean negated = endsWith("Not", methodName, start, endBefore);
         endBefore -= (negated ? 3 : 0);
 
-        String function = null;
-        boolean ignoreCase = false;
-
-        switch (methodName.charAt(endBefore - 1)) {
-            case 'e':
-                if (ignoreCase = endsWith("IgnoreCas", methodName, start, endBefore - 1)) {
-                    function = "LOWER(";
-                    endBefore -= 10;
-                }
-                break;
-            case 't':
-                if (endsWith("CharCoun", methodName, start, endBefore - 1)) {
-                    function = "LENGTH(";
-                    endBefore -= 9;
-                } else if (endsWith("ElementCoun", methodName, start, endBefore - 1)) {
-                    function = "SIZE(";
-                    endBefore -= 12;
-                }
-                break;
-        }
-
-        boolean trimmed = endsWith("Trimmed", methodName, start, endBefore);
-        endBefore -= (trimmed ? 7 : 0);
+        boolean ignoreCase = endsWith("IgnoreCase", methodName, start, endBefore);
+        endBefore -= (ignoreCase ? 10 : 0);
 
         String attribute = methodName.substring(start, endBefore);
 
@@ -2403,16 +2382,12 @@ public class QueryInfo {
         String name = getAttributeName(attribute, true);
 
         StringBuilder attributeExpr = new StringBuilder();
-        if (function != null)
-            attributeExpr.append(function); // such as LOWER(  or  ROUND(
-        if (trimmed)
-            attributeExpr.append("TRIM(");
+        if (ignoreCase)
+            attributeExpr.append("LOWER(");
 
         appendAttributeName(name, attributeExpr);
 
-        if (trimmed)
-            attributeExpr.append(')');
-        if (function != null)
+        if (ignoreCase)
             attributeExpr.append(')');
 
         if (negated) {

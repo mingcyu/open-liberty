@@ -485,17 +485,6 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Test the CharCount keyword to query based on string length.
-     */
-    @Test
-    public void testCharCountKeyword() {
-        assertIterableEquals(List.of("eleven", "nineteen", "seven", "thirteen", "three"),
-                             primes.findByNameCharCountBetween(5, 8)
-                                             .map(p -> p.name)
-                                             .collect(Collectors.toList()));
-    }
-
-    /**
      * Asynchronous repository method that returns a CompletableFuture of Page.
      */
     @Test
@@ -2448,6 +2437,10 @@ public class DataTestServlet extends FATServlet {
         // Equals
         assertEquals("twenty-nine", primes.findByNameIgnoreCase("Twenty-Nine").name);
 
+        Prime prime = primes.findByNameIgnoreCase(" Four Thousand Twenty-One ");
+        assertEquals(4021L, prime.numberId);
+        assertEquals(" Four thousand twenty-one ", prime.name);
+
         // Not
         assertIterableEquals(List.of("two", "five", "seven"),
                              primes.findByNameIgnoreCaseNotAndNumberIdLessThanOrderByNumberIdAsc("Three", 10)
@@ -3468,6 +3461,21 @@ public class DataTestServlet extends FATServlet {
     public void testLeftFunction() {
         assertEquals(List.of("seven", "seventeen"),
                      primes.matchLeftSideOfName("seven"));
+    }
+
+    /**
+     * Test the LENGTH JDQL function to query based on string length.
+     */
+    @Test
+    public void testLengthFunction() {
+        assertIterableEquals(List.of("eleven",
+                                     "nineteen",
+                                     "seven",
+                                     "thirteen",
+                                     "three"),
+                             primes.findByLengthOfNameBetween(5, 8)
+                                             .map(p -> p.name)
+                                             .collect(Collectors.toList()));
     }
 
     /**
@@ -6037,19 +6045,16 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Test the Trimmed keyword by querying against data that has leading and trailing blank space.
+     * Test the TRIM function by querying against data that has leading and trailing
+     * blank space.
      */
     @Test
-    public void testTrimmedKeyword() {
-        List<Prime> found = primes.findByNameTrimmedCharCountAndNumberIdBetween(24, 4000L, 4025L);
+    public void testTrimFunction() {
+        List<Prime> found = primes.withTrimmedNameLengthAndNumBetween(24, 4000L, 4025L);
         assertNotNull(found);
         assertEquals("Found: " + found, 1, found.size());
         assertEquals(4021L, found.get(0).numberId);
         assertEquals(" Four thousand twenty-one ", found.get(0).name);
-
-        Prime prime = primes.findByNameTrimmedIgnoreCase("FOUR THOUSAND TWENTY-ONE").orElseThrow();
-        assertEquals(4021L, prime.numberId);
-        assertEquals(" Four thousand twenty-one ", prime.name);
     }
 
     /**

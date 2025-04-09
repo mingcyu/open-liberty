@@ -100,9 +100,6 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
 
     Iterable<Reservation> findByHost(String host);
 
-    @OrderBy(ID)
-    Stream<Reservation> findByInviteesElementCount(int size);
-
     Collection<Reservation> findByLocationContainsOrderByMeetingID(String locationSubstring);
 
     Stream<Reservation> findByMeetingIdIn(Iterable<Long> ids);
