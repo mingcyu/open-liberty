@@ -42,6 +42,7 @@ import com.ibm.websphere.simplicity.config.SSL;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.config.SpringBootApplication;
 import com.ibm.websphere.simplicity.config.VirtualHost;
+import com.ibm.websphere.simplicity.config.WebApplication;
 
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
@@ -55,7 +56,8 @@ public abstract class AbstractSpringTests {
         DROPINS_SPRING,
         DROPINS_ROOT,
         SPRING_BOOT_APP_TAG,
-        DROPINS_ROOT_WAR
+        DROPINS_ROOT_WAR,
+        WEB_APP_TAG
     }
 
     public static final String ID_DEFAULT_HOST = "default_host";
@@ -233,6 +235,10 @@ public abstract class AbstractSpringTests {
         // do nothing by default
     }
 
+    public void modifyAppConfiguration(WebApplication appConfig) {
+        // do nothing by default
+    }
+
     public void modifyServerConfiguration(ServerConfiguration config) {
         // do nothing by default
     }
@@ -309,6 +315,15 @@ public abstract class AbstractSpringTests {
                         app.getApplicationArguments().add("--" + LIBERTY_USE_DEFAULT_HOST + "=false");
                     }
                     config.getSpringBootApplications().add(app);
+                    break;
+                }
+
+                case WEB_APP_TAG: {
+                    WebApplication app = new WebApplication();
+                    app.setLocation(appFile.getName());
+                    app.setName("testName");
+                    modifyAppConfiguration(app);
+                    config.getWebApplications().add(app);
                     break;
                 }
                 default:

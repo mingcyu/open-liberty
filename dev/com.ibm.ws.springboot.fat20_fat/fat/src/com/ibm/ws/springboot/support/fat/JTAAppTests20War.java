@@ -20,22 +20,35 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import componenttest.custom.junit.runner.FATRunner;
+import componenttest.topology.utils.HttpUtils;
 
 @RunWith(FATRunner.class)
 public class JTAAppTests20War extends JTAAppAbstractTests {
 
     @Test
-    public void testJTAWar() throws Exception {
-        assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("TESTS PASSED"));
+    public void testTransactionsAppRunnerWar() throws Exception {
+        assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("TRANSACTION TESTS PASSED"));
+    }
+
+    @Test
+    public void testTransactionsWebContext() throws Exception {
+        HttpUtils.findStringInUrl(server, "testName/testTransactions", "TESTED TRANSACTIONS");
+        assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("WebContext: TRANSACTION TESTS PASSED"));
+    }
+
+    @Test
+    public void testJNDIWebContext() throws Exception {
+        HttpUtils.findStringInUrl(server, "testName/testJNDI", "TESTED JNDI");
+        assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("WebContext: JNDI TESTS PASSED"));
     }
 
     @Override
     public Set<String> getFeatures() {
-        return new HashSet<>(Arrays.asList("servlet-4.0", "jca-1.7", "jdbc-4.2", "jndi-1.0"));
+        return new HashSet<>(Arrays.asList("servlet-4.0", "jca-1.7", "jdbc-4.2", "jndi-1.0", "componenttest-1.0", "cdi-2.0", "ejbLite-3.2"));
     }
 
     @Override
     public AppConfigType getApplicationConfigType() {
-        return AppConfigType.DROPINS_ROOT_WAR;
+        return AppConfigType.WEB_APP_TAG;
     }
 }

@@ -10,27 +10,68 @@
  *******************************************************************************/
 package com.ibm.ws.springboot.support.fat;
 
+import static org.junit.Assert.fail;
+
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.FileAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 
+import com.ibm.websphere.simplicity.ShrinkHelper;
+import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
 import com.ibm.websphere.simplicity.config.ConfigElementList;
 import com.ibm.websphere.simplicity.config.DataSource;
 import com.ibm.websphere.simplicity.config.File;
 import com.ibm.websphere.simplicity.config.JdbcDriver;
 import com.ibm.websphere.simplicity.config.Library;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
+import com.ibm.websphere.simplicity.config.SpringBootApplication;
+import com.ibm.websphere.simplicity.config.WebApplication;
 import com.ibm.websphere.simplicity.config.dsprops.Properties_derby_embedded;
 
 import componenttest.custom.junit.runner.FATRunner;
+import ejbapp1.EJBEvent;
+import ejbapp1.LocalEJBServlet;
+import ejbapp1.LocalInterface;
+import ejbapp1.TestObserver;
 
 @RunWith(FATRunner.class)
 public abstract class JTAAppAbstractTests extends AbstractSpringTests {
+
     @Override
-    public boolean expectWebApplication() {
-        return false;
+    public void modifyAppConfiguration(SpringBootApplication appConfig) {
+        appConfig.setStartAfter("ejbapp1");
+    }
+
+    @Override
+    public void modifyAppConfiguration(WebApplication appConfig) {
+        appConfig.setStartAfter("ejbapp1");
     }
 
     @Override
     public void modifyServerConfiguration(ServerConfiguration config) {
+        WebArchive ejbMisc = ShrinkWrap.create(WebArchive.class, "ejbapp1.war")
+                        .addClass(LocalEJBServlet.class)
+                        .addClass(TestObserver.class)
+                        .addClass(LocalInterface.class)
+                        .addClass(EJBEvent.class)
+                        .addPackages(true, LocalEJBServlet.class.getPackage())
+                        .add(new FileAsset(new java.io.File("test-applications/ejbapp1/resources/META-INF/permissions.xml")),
+                             "/META-INF/permissions.xml")
+                        .add(new FileAsset(new java.io.File("test-applications/ejbapp1/resources/WEB-INF/beans.xml")), "/WEB-INF/beans.xml");
+        try {
+            ShrinkHelper.exportAppToServer(server, ejbMisc, DeployOptions.SERVER_ONLY);
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+
+        WebApplication ejbapp1War = new WebApplication();
+        ejbapp1War.setId("ejbapp1");
+        ejbapp1War.setLocation("ejbapp1.war");
+        ejbapp1War.setContextRoot("ejbapp1");
+        config.getWebApplications().add(ejbapp1War);
+
         ConfigElementList<Library> libraries = config.getLibraries();
         libraries.clear();
         ConfigElementList<DataSource> dataSources = config.getDataSources();
@@ -70,8 +111,18 @@ public abstract class JTAAppAbstractTests extends AbstractSpringTests {
         dataSources.add(derbyDS2);
     }
 
+    @Before
+    public void setDefaultPort() {
+        server.setHttpDefaultPort(DEFAULT_HTTP_PORT);
+    }
+
     @Override
     public String getApplication() {
         return SPRING_BOOT_20_APP_TRANSACTIONS;
+    }
+
+    @Override
+    public boolean useDefaultVirtualHost() {
+        return true;
     }
 }

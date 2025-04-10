@@ -43,6 +43,7 @@ import com.ibm.websphere.simplicity.config.SSL;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.config.SpringBootApplication;
 import com.ibm.websphere.simplicity.config.VirtualHost;
+import com.ibm.websphere.simplicity.config.WebApplication;
 
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
@@ -382,6 +383,14 @@ public abstract class AbstractSpringTests {
                 config.getSpringBootApplications().add(app);
                 break;
             }
+            case WEB_APP_TAG: {
+                WebApplication app = new WebApplication();
+                app.setLocation(appFile.getName());
+                app.setName("testName");
+                modifyAppConfiguration(app);
+                config.getWebApplications().add(app);
+                break;
+            }
         }
 
         return dropinsTest;
@@ -579,7 +588,9 @@ public abstract class AbstractSpringTests {
         /** Use the application as-is in the "apps" folder. */
         SPRING_BOOT_APP_TAG,
         /** Drop the application in the root dropins folder, as a war app */
-        DROPINS_ROOT_WAR
+        DROPINS_ROOT_WAR,
+        /** Use the application as a WAR in the "apps" folder. */
+        WEB_APP_TAG
     }
 
     /**
@@ -643,6 +654,10 @@ public abstract class AbstractSpringTests {
     }
 
     public void modifyAppConfiguration(SpringBootApplication appConfig) {
+        // do nothing by default
+    }
+
+    public void modifyAppConfiguration(WebApplication appConfig) {
         // do nothing by default
     }
 
