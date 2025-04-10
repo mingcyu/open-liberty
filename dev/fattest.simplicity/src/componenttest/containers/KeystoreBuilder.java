@@ -148,13 +148,32 @@ public class KeystoreBuilder {
 
         Objects.requireNonNull(trustoreDirectory, "Must configure a truststore directory before calling export()");
 
-        // Create a new KeyStore object
+        File truststoreFile = new File(trustoreDirectory, truststoreFilename + storeType.extension);
+
         KeyStore ks;
-        try {
-            ks = KeyStore.getInstance(storeType.name());
-            ks.load(null, truststorePassword.toCharArray());
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create in-memory keystore", e);
+        if (truststoreFile.exists()) {
+            // Load existing KeyStore object
+            try (FileInputStream fis = new FileInputStream(truststoreFile)) {
+                ks = KeyStore.getInstance(storeType.name());
+                ks.load(fis, truststorePassword.toCharArray());
+            } catch (Exception e) {
+                throw new RuntimeException("Could not create in-memory keystore from existing keystore: " + truststoreFile.getAbsolutePath(), e);
+            }
+        } else {
+            // Create file for later storage
+            try {
+                Files.createParentDirs(truststoreFile);
+                Files.touch(truststoreFile);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to create new keystore file at: " + truststoreFile.getAbsolutePath(), e);
+            }
+            // Create a new KeyStore object
+            try {
+                ks = KeyStore.getInstance(storeType.name());
+                ks.load(null, truststorePassword.toCharArray());
+            } catch (Exception e) {
+                throw new RuntimeException("Could not create in-memory keystore for storage type: " + storeType.name(), e);
+            }
         }
 
         // Insert the certificate(s) using an alias
@@ -165,19 +184,6 @@ public class KeystoreBuilder {
                 throw new RuntimeException("Could not add certificate to in-memory keystore. Alias: " + alias, e);
             }
         });
-
-        File truststoreFile = new File(trustoreDirectory, truststoreFilename + storeType.extension);
-
-        if (truststoreFile.exists()) {
-            throw new IllegalStateException("Cannot persist a keystore to a location where one already exists: " + truststoreFile.toString());
-        } else {
-            try {
-                Files.createParentDirs(truststoreFile);
-                Files.touch(truststoreFile);
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to create keystore file at: " + truststoreFile.getAbsolutePath(), e);
-            }
-        }
 
         // Persist keystore to disk
         try (FileOutputStream fos = new FileOutputStream(truststoreFile.getAbsolutePath())) {

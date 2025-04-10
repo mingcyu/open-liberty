@@ -176,6 +176,7 @@ public class KeystoreBuilderTest {
     public void testKeystoreMiniumConfiguration() {
         commonSetup();
 
+        //Where the keystore will end up
         File tempDir = new File(System.getProperty("java.io.tmpdir"), "testKeystoreWithNoCertificate");
 
         File keystore = null;
@@ -187,7 +188,7 @@ public class KeystoreBuilderTest {
             System.out.println("Exported keystore to: " + keystore.getAbsolutePath());
 
             assertTrue("Keystore should not have been empty", keystore.length() > 0);
-            verifyNoCertificateAlias(keystore, STORE_TYPE.PKCS12.name(), "liberty");
+            verifyNoCertificateAliases(keystore, STORE_TYPE.PKCS12.name(), "liberty");
         } catch (Exception e) {
             // unexpected
             fail("Caught unexpected exception: " + e.getLocalizedMessage());
@@ -212,9 +213,11 @@ public class KeystoreBuilderTest {
             return null;
         }).when(cont).copyFileFromContainer(Mockito.anyString(), Mockito.anyString());
 
+        // Where the migrating certificate will end up
         File testDestination = new File(System.getProperty("java.io.tmpdir"), "testKeystoreMaximumConfiguration.cert");
         testDestination.deleteOnExit();
 
+        // Where the keystore will end up
         File tempDir = new File(System.getProperty("java.io.tmpdir"), "testKeystoreMaximumConfiguration");
 
         File keystore = null;
@@ -243,6 +246,55 @@ public class KeystoreBuilderTest {
         }
     }
 
+    @Test
+    public void testExistingKeystore() throws Exception {
+        commonSetup();
+
+        //Copy file from classpath instead of from inside container because it doesn't actually exist
+        doAnswer(invocation -> {
+            URL src = KeystoreBuilderTest.class.getResource("test.crt");
+            String dest = (String) invocation.getArgument(1); // The second parameter
+
+            FileUtils.copyURLToFile(src, new File(dest));
+
+            return null;
+        }).when(cont).copyFileFromContainer(Mockito.anyString(), Mockito.anyString());
+
+        // Copy the existing keystore to a known location
+        URL classpathKeystore = KeystoreBuilderTest.class.getResource("test.p12");
+        File destinationKeystore = new File(System.getProperty("java.io.tmpdir"), "testExistingKeystore.p12");
+        FileUtils.copyURLToFile(classpathKeystore, destinationKeystore);
+
+        //Ensure keystore doesn't already have a trusted certificate with alias myAlias, but does have a user certificate
+        assertTrue("Keystore file should have been copied from classpath.", destinationKeystore.exists());
+        verifyNoCertificateAlias("myAlias", destinationKeystore, STORE_TYPE.PKCS12.name(), "liberty");
+        verifyCertificateAlias("user", destinationKeystore, STORE_TYPE.PKCS12.name(), "liberty");
+
+        File outputKeystore = null;
+        try {
+            outputKeystore = KeystoreBuilder.of(server, cont)
+                            .withCertificate("myAlias", "/fake/path/in/container/cert.txt")
+                            .withDirectory(destinationKeystore.getParent())
+                            .withFilename(destinationKeystore.getName())
+                            .withStoreType(STORE_TYPE.PKCS12)
+                            .withPassword("liberty")
+                            .export();
+
+            System.out.println("Appended to keystore at: " + outputKeystore.getAbsolutePath());
+
+            assertTrue("Keystore should not have been empty", outputKeystore.length() > 0);
+            verifyCertificateAlias("myAlias", outputKeystore, STORE_TYPE.PKCS12.name(), "liberty");
+            verifyCertificateAlias("user", outputKeystore, STORE_TYPE.PKCS12.name(), "liberty");
+        } catch (Exception e) {
+            // unexpected
+            fail("Caught unexpected exception: " + e.getLocalizedMessage());
+        } finally {
+            if (destinationKeystore != null && destinationKeystore.exists()) {
+                destinationKeystore.delete();
+            }
+        }
+    }
+
     private void verifyCertificateAlias(String alias, File keystore, String storetype, String password) {
         Builder builder = KeyStore.Builder.newInstance(storetype, null, keystore, new PasswordProtection(password.toCharArray()));
 
@@ -255,12 +307,25 @@ public class KeystoreBuilderTest {
         }
     }
 
-    private void verifyNoCertificateAlias(File keystore, String storetype, String password) {
+    private void verifyNoCertificateAliases(File keystore, String storetype, String password) {
         Builder builder = KeyStore.Builder.newInstance(storetype, null, keystore, new PasswordProtection(password.toCharArray()));
 
         try {
             KeyStore loadedTruststore = builder.getKeyStore();
-            assertFalse("Truststore should not have had any aliases", loadedTruststore.aliases().hasMoreElements());
+            String alias = loadedTruststore.aliases().hasMoreElements() ? loadedTruststore.aliases().nextElement() : "";
+            assertFalse("Truststore should not have had any aliases, but had: " + alias, loadedTruststore.aliases().hasMoreElements());
+        } catch (KeyStoreException e) {
+            // unexpected
+            fail("Caught unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+
+    private void verifyNoCertificateAlias(String alias, File keystore, String storetype, String password) {
+        Builder builder = KeyStore.Builder.newInstance(storetype, null, keystore, new PasswordProtection(password.toCharArray()));
+
+        try {
+            KeyStore loadedTruststore = builder.getKeyStore();
+            assertFalse("Truststore should not have had alias " + alias, loadedTruststore.containsAlias(alias));
         } catch (KeyStoreException e) {
             // unexpected
             fail("Caught unexpected exception: " + e.getLocalizedMessage());
