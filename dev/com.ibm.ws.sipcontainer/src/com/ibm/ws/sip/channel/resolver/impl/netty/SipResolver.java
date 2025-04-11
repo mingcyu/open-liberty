@@ -515,6 +515,7 @@ public class SipResolver implements SipResolverTransportListener {
                     break;
 
                 case Dns.FORM_ERROR:
+		case Dns.SERVER_FAIL:
                 case Dns.NOT_IMPL:
                 case Dns.REFUSED:
                 case Dns.NOT_ZONE:
