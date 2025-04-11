@@ -111,7 +111,7 @@ public class KeystoreBuilder {
      * @return           this
      */
     public KeystoreBuilder withDirectory(String directory) {
-        Objects.nonNull(directory);
+        Objects.requireNonNull(directory);
         this.trustoreDirectory = directory;
         return this;
     }
@@ -124,10 +124,8 @@ public class KeystoreBuilder {
      * @return
      */
     public KeystoreBuilder withFilename(String filename) {
-        Objects.nonNull(filename);
-
+        Objects.requireNonNull(filename);
         this.truststoreFilename = Files.getNameWithoutExtension(filename);
-
         return this;
     }
 
@@ -137,7 +135,7 @@ public class KeystoreBuilder {
     }
 
     public KeystoreBuilder withPassword(String password) {
-        Objects.nonNull(password);
+        Objects.requireNonNull(password);
         this.truststorePassword = password;
         return this;
     }
@@ -198,8 +196,8 @@ public class KeystoreBuilder {
     ///// VERIFIER /////
 
     private static void validateState(LibertyServer server, GenericContainer<?> container) {
-        Objects.nonNull(server);
-        Objects.nonNull(container);
+        Objects.requireNonNull(server);
+        Objects.requireNonNull(container);
 
         if (server.isStarted()) {
             throw new IllegalStateException("Cannot build a keystore file after the server has started.");
@@ -253,8 +251,8 @@ public class KeystoreBuilder {
          * @return          instance
          */
         public static MigratingCertificate of(String srcPath, String destPath) {
-            Objects.nonNull(srcPath);
-            Objects.nonNull(destPath);
+            Objects.requireNonNull(srcPath);
+            Objects.requireNonNull(destPath);
 
             return new MigratingCertificate(srcPath, destPath);
         }
@@ -268,7 +266,7 @@ public class KeystoreBuilder {
          * @return         instance
          */
         public static MigratingCertificate of(String srcPath) {
-            Objects.nonNull(srcPath);
+            Objects.requireNonNull(srcPath);
 
             String filename = Files.getNameWithoutExtension(srcPath);
             String extension = Files.getFileExtension(srcPath);
