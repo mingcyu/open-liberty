@@ -517,7 +517,8 @@ public class SipResolver implements SipResolverTransportListener {
                 case Dns.FORM_ERROR:
                 case Dns.NOT_IMPL:
                 case Dns.REFUSED:
-                case Dns.NOT_AUTH:
+		case Dns.XRRSET:
+		case Dns.NOT_AUTH:
                 case Dns.NOT_ZONE:
                     event = new SipResolverEvent();
 
