@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2024 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -69,6 +69,8 @@ public class StoreServicesSecurityTests extends FATServletClient {
         storeJWTSSoServer.startServer(c.getSimpleName() + ".log");
         assertNotNull("CWWKO0219I.*ssl not received", storeJWTSSoServer.waitForStringInLog("CWWKO0219I.*ssl"));
 
+        // Error CWWKS4000E shows up intermittently due to LTPA slowness
+        // Add CWWKS4105I: LTPA configuration is ready check to avoid this
         assertNotNull("CWWKS4105I LTPA configuration message not found.",
                       storeJWTSSoServer.waitForStringInLogUsingMark("CWWKS4105I.*"));
 
@@ -82,6 +84,8 @@ public class StoreServicesSecurityTests extends FATServletClient {
         consumerServer.startServer(c.getSimpleName() + ".log");
         assertNotNull("CWWKO0219I.*ssl not received", consumerServer.waitForStringInLog("CWWKO0219I.*ssl"));
 
+        // Error CWWKS4000E shows up intermittently due to LTPA slowness
+        // Add CWWKS4105I: LTPA configuration is ready check to avoid this
         assertNotNull("CWWKS4105I LTPA configuration message not found.",
                       consumerServer.waitForStringInLogUsingMark("CWWKS4105I.*"));
 
