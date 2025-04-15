@@ -69,6 +69,9 @@ public class StoreServicesSecurityTests extends FATServletClient {
         storeJWTSSoServer.startServer(c.getSimpleName() + ".log");
         assertNotNull("CWWKO0219I.*ssl not received", storeJWTSSoServer.waitForStringInLog("CWWKO0219I.*ssl"));
 
+        assertNotNull("CWWKS4105I LTPA configuration message not found.",
+                      storeJWTSSoServer.waitForStringInLogUsingMark("CWWKS4105I.*"));
+
         // set bvt.prop.member_1.http=8080 and bvt.prop.member_1.https=8081
         consumerServer.setHttpDefaultPort(Integer.parseInt(getSysProp("member_1.http")));
         int securePort = Integer.parseInt(getSysProp("member_1.https"));
@@ -78,6 +81,9 @@ public class StoreServicesSecurityTests extends FATServletClient {
         consumerServer.setHttpDefaultSecurePort(securePort);
         consumerServer.startServer(c.getSimpleName() + ".log");
         assertNotNull("CWWKO0219I.*ssl not received", consumerServer.waitForStringInLog("CWWKO0219I.*ssl"));
+
+        assertNotNull("CWWKS4105I LTPA configuration message not found.",
+                      consumerServer.waitForStringInLogUsingMark("CWWKS4105I.*"));
 
     }
 
