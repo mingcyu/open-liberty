@@ -3,6 +3,6 @@ symbolicName=io.openliberty.mpCompatible-7.1
 visibility=private
 singleton=true
 -features=com.ibm.websphere.appserver.eeCompatible-10.0; ibm.tolerates:="11.0"
-kind=ga
-edition=core
+kind=noship
+edition=full
 WLP-Activation-Type: parallel
