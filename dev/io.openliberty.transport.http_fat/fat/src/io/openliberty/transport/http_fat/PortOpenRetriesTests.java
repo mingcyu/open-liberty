@@ -54,7 +54,7 @@ public class PortOpenRetriesTests {
     public static void tearDown() throws Exception {
         // Stop server1.
         if (server1 != null && server1.isStarted()) {
-            //CWWKG0011W: The configuration validation did not succeed. Value "-1" is out of range.
+            // CWWKG0011W: The configuration validation did not succeed. Value "-1" is out of range.
             // CWWKG0083W: A validation failure occurred while processing the [portOpenRetries] property, value = [-1]. Default value in use: [0].
             server1.stopServer("CWWKG0011W", "CWWKG0083W");
         }
@@ -89,7 +89,7 @@ public class PortOpenRetriesTests {
      */
     @After
     public void afterTest() throws Exception {
-        // Restore the servers to their default state.
+        // Restore the server to the default state.
         server1.setMarkToEndOfLog();
         server1.setTraceMarkToEndOfDefaultTrace();
         server1.restoreServerConfiguration();
@@ -156,7 +156,7 @@ public class PortOpenRetriesTests {
         server1.updateServerConfiguration(configuration);
         server1.waitForConfigUpdateInLogUsingMark(null);
 
-        //CWWKG0011W: The configuration validation did not succeed. Value "-1" is out of range.
+        // CWWKG0011W: The configuration validation did not succeed. Value "-1" is out of range.
         assertNotNull("The CWWKG0011W was not found in the logs!", server1.waitForStringInLogUsingMark("CWWKG0011W"));
 
         // CWWKG0083W: A validation failure occurred while processing the [portOpenRetries] property, value = [-1]. Default value in use: [0].
