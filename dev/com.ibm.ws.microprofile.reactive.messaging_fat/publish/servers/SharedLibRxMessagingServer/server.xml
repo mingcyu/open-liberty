@@ -39,4 +39,16 @@
     <javaPermission codebase="${kafkaCodebase}" className="java.net.SocketPermission" name="*" actions="connect"/>
     <javaPermission codebase="${kafkaCodebase}" className="java.lang.RuntimePermission" name="getClassLoader" actions="*"/>
     <javaPermission codebase="${kafkaCodebase}" className="java.io.FilePermission" name="*" actions="read"/>
+    
+    <!-- same permissions for when we're using Kafka client 4 -->
+    <variable name="kafkaCodebase4" value="${server.config.dir}/kafkaLib/kafka-clients-4.0.0.jar"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="javax.management.MBeanServerPermission" name="createMBeanServer"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="javax.management.MBeanPermission" name="*" actions="*"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="javax.management.MBeanTrustPermission" name="register"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="java.util.PropertyPermission" name="*" actions="read"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="java.net.SocketPermission" name="*" actions="connect"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="java.lang.RuntimePermission" name="getClassLoader" actions="*"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="java.io.FilePermission" name="*" actions="read"/>
+    <javaPermission codebase="${kafkaCodebase4}" className="java.lang.RuntimePermission" name="accessDeclaredMembers" actions="*"/>
+
 </server>
