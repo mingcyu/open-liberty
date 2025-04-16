@@ -38,7 +38,7 @@ import componenttest.topology.impl.LibertyServer;
 import io.openliberty.checkpoint.spi.CheckpointPhase;
 
 /**
- * Basic WebSockets tests to ensure the behavior works as expected after a checkpoint restore. 
+ * Basic WebSockets tests to ensure the behavior works as expected after a checkpoint restore.
  */
 @RunWith(FATRunner.class)
 @CheckpointTest
@@ -61,7 +61,6 @@ public class BasicTest {
         // Build the war app and add the dependencies
         ShrinkHelper.defaultDropinApp(server, APP_NAME + ".war", "io.openliberty.wsoc.basic");
 
-        server.setCheckpoint(CheckpointPhase.AFTER_APP_START, true, null);
         server.setCheckpoint(CheckpointPhase.AFTER_APP_START, false,
                              server -> {
                                  assertNotNull("'SRVE0169I: Loading Web Module: " + APP_NAME + "' message not found in log before rerstore",
