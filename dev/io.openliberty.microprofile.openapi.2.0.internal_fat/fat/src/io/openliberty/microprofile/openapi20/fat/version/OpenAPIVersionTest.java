@@ -93,8 +93,12 @@ public class OpenAPIVersionTest extends FATServletClient {
     }
 
     @Test
-    @SkipForRepeat({ MicroProfileActions.MP70_EE10_ID,
-        MicroProfileActions.MP70_EE11_ID })
+    @SkipForRepeat({
+        MicroProfileActions.MP70_EE10_ID,
+        MicroProfileActions.MP70_EE11_ID,
+        MicroProfileActions.MP71_EE10_ID,
+        MicroProfileActions.MP71_EE11_ID,
+    })
     public void testInvalid31Versions() throws Exception {
         testInvalidVersion("3.1", ErrorCondition.NOT_SUPPORTED);
         testInvalidVersion("3.1.0", ErrorCondition.NOT_SUPPORTED);
