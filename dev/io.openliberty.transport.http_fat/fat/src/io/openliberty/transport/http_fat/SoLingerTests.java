@@ -121,7 +121,7 @@ public class SoLingerTests {
         server.updateServerConfiguration(configuration);
         server.waitForConfigUpdateInLogUsingMark(null);
 
-        // Validate that maxOpenConnections is set to 2.
+        // Validate that soLinger is set to 20.
         assertNotNull("The configured value of soLinger was not 20!", server.waitForStringInTraceUsingMark("soLinger: 20"));
     }
 
