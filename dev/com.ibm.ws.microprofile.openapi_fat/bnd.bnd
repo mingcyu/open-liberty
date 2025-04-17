@@ -28,6 +28,7 @@ tested.features=\
   mpOpenAPI-3.0,\
   mpOpenAPI-3.1,\
   mpOpenAPI-4.0,\
+  mpOpenAPI-4.1,\
   jsonb-1.0,\
   jsonb-2.0,\
   jsonb-3.0,\
