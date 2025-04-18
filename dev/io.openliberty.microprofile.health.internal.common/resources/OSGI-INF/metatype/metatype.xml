@@ -18,6 +18,7 @@
 
     <OCD id="io.openliberty.microprofile.health" name="%mpHealth" description="%mpHealth.desc" ibm:alias="mpHealth" ibm:beta="true">
         <AD id="fileUpdateInterval" name="%fileUpdateInterval" description="%fileUpdateInterval.desc" required="false" type="String" ibm:beta="true"/>
+        <AD id="fileCreateInterval" name="%fileCreateInterval" description="%fileCreateInterval.desc" required="false" type="String" ibm:beta="true"/>
     </OCD>
 
     <Designate pid="io.openliberty.microprofile.health">

@@ -43,4 +43,13 @@ public class HealthCheckConstants {
 
     public static final String HEALTH_ENV_CONFIG_FILE_UPDATE_INTERVAL = "MP_HEALTH_FILE_UPDATE_INTERVAL";
 
+    public static final String HEALTH_SERVER_CONFIG_FILE_CREATE_INTERVAL = "fileCreateInterval";
+
+    public static final String HEALTH_ENV_CONFIG_FILE_CREATE_INTERVAL = "MP_HEALTH_FILE_CREATE_INTERVAL";
+
+    public static final int DEFAULT_CREATE_INTERVAL_MILLI = 100; //100 milliseconds
+    public static final int DEFAULT_UPDATE_INTERVAL_MILLI = 10000; //10 seconds
+
+    public static final int CONFIG_NOT_SET = -1;
+
 }

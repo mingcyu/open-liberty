@@ -71,7 +71,15 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
      * INITIAL STARTING VALUE is -1.
      * Cheapo way of indicating that this config was never configured before to avoid using another variable.
      */
-    private volatile int fileUpdateIntevalMilliseconds = -1;
+    private volatile int fileUpdateIntevalMilliseconds = HealthCheckConstants.CONFIG_NOT_SET;
+
+    /**
+     * USE getFileCreateInterval() to get value. It will provide logic to resolve <= 0 values to the default 100ms.
+     * The value (in ms) defined for the file create interval.
+     * Value of 0 defaults back to 100ms.
+     *
+     */
+    private volatile int fileCreateIntervalMilliseconds = HealthCheckConstants.CONFIG_NOT_SET;
 
     protected volatile boolean isCheckPointFinished = false;
 
@@ -84,6 +92,15 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
      */
     private boolean isFileHealthCheckingEnabled() {
         return fileUpdateIntevalMilliseconds > 0;
+    }
+
+    /**
+     * Returns fileCreateInterval; default to 100ms if 0 or not configured or invalid (negative values)
+     *
+     * @return value of fileCreateInterval
+     */
+    private int getFileCreateInterval() {
+        return (fileCreateIntervalMilliseconds <= 0) ? HealthCheckConstants.DEFAULT_CREATE_INTERVAL_MILLI : fileCreateIntervalMilliseconds;
     }
 
     protected boolean isValidSystemForFileHealthCheck = false;
@@ -153,6 +170,9 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
          * Beta guard
          */
         if (ProductInfo.getBetaEdition()) {
+
+            //Check fileUpdateInterval
+
             /*
              * Activation time is only time when check env var
              * for the MP_HEALTH_FILE_UPDATE_INTERVAL only if server.xml
@@ -163,6 +183,14 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                 processUpdateIntervalConfig(serverFileUpdateIntervalConfig);
             } else {
                 processUpdateIntervalConfig(System.getenv(HealthCheckConstants.HEALTH_ENV_CONFIG_FILE_UPDATE_INTERVAL));
+            }
+
+            //Check createUpdateInterval
+            String serverCreateUpdateIntervalConfig;
+            if ((serverCreateUpdateIntervalConfig = (String) properties.get(HealthCheckConstants.HEALTH_SERVER_CONFIG_FILE_CREATE_INTERVAL)) != null) {
+                processCreateIntervalConfig(serverCreateUpdateIntervalConfig);
+            } else {
+                processCreateIntervalConfig(System.getenv(HealthCheckConstants.HEALTH_ENV_CONFIG_FILE_CREATE_INTERVAL));
             }
 
             if (isFileHealthCheckingEnabled()) {
@@ -195,7 +223,16 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                     }
                 }
 
-            } // end isFileHealthCheckingEnabled
+            }
+            /*
+             * If createUpdateInterval is set (not -1) , but fileUpdateInterval is not set. Issue warning.
+             */
+            else if (!isFileHealthCheckingEnabled() && (fileCreateIntervalMilliseconds != HealthCheckConstants.CONFIG_NOT_SET)) {
+
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.warning(tc, "file.create.interval.config.only.set.CWMMH01011W"); //TODO make message, verify numbers
+                }
+            }
 
         }
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -226,7 +263,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
             } else {
                 Tr.warning(tc, "file.update.interval.config.invalid.CWMMH01010W", configValue);
                 //Default of 10 seconds.
-                fileUpdateIntevalMilliseconds = 10000;
+                fileUpdateIntevalMilliseconds = HealthCheckConstants.DEFAULT_UPDATE_INTERVAL_MILLI;
             }
 
             String updateValueMessage = String.format("The fileUpdateInterval is read in as [%s] and is resolved to be [%d] milliseconds", configValue,
@@ -234,6 +271,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
             /*
              * Check if value has been updated
              * If so, we must stop the existing Timers and start new ones based on the new config (as long as the config isn't 0).
+             * Zero/0 means disable!
              *
              * If prevConfigIntervalMilliseconds is < 0 that means this is the first read in of the config and we don't need to run the below logic.
              * (We can either be starting the server (with the config) or updating the server.xml during runtime with the fileUpdateInterval config for the first time)
@@ -245,7 +283,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                 updateValueMessage = "The configuration has been updated. " + updateValueMessage;
                 stopTimers();
 
-                //Only start new timer processes if config value is not 0.
+                //Only start new timer processes if config value is not 0. Zero/0 means we disable the feature!
                 if (isFileHealthCheckingEnabled()) {
                     startFileHealthCheckProcesses();
                 }
@@ -255,7 +293,46 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                 Tr.debug(tc, updateValueMessage);
             }
         }
+    }
 
+    /**
+     * Processes the configuration value for the create update interval.
+     * Either from server.xml or read through an environment variable.
+     *
+     * @param configValue The (possibly null) value read from server.xml or env var.
+     */
+    protected void processCreateIntervalConfig(String configValue) {
+        if (configValue != null && !configValue.isEmpty()) {
+
+            configValue = configValue.trim();
+            if (configValue.matches("^\\d+(ms|s)?$")) {
+                if (configValue.endsWith("ms")) {
+                    fileCreateIntervalMilliseconds = Integer.parseInt(configValue.substring(0, configValue.length() - 2));
+                } else if (configValue.endsWith("s")) {
+                    fileCreateIntervalMilliseconds = Integer.parseInt(configValue.substring(0, configValue.length() - 1)) * 1000;
+                } else {
+                    fileCreateIntervalMilliseconds = Integer.parseInt(configValue) * 1000;
+                }
+            } else {
+                Tr.warning(tc, "file.create.interval.config.invalid.CWMMH01010W", configValue); //TODO - create the message / verify numbers
+
+                //Default of 100ms.
+                fileCreateIntervalMilliseconds = HealthCheckConstants.DEFAULT_CREATE_INTERVAL_MILLI;
+            }
+
+            /*
+             * If this is part of a config update, no need to stop timers.
+             * That would imply they decided to change create interval via server.xml right as the server starts
+             * or immediately after they deployed an app into an already running server.
+             */
+
+            String updateValueMessage = String.format("The fileCreateInterval is read in as [%s] and is resolved to be [%d] milliseconds", configValue,
+                                                      fileCreateIntervalMilliseconds);
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, updateValueMessage);
+            }
+        }
     }
 
     @Modified
@@ -270,6 +347,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
          */
         if (isValidSystemForFileHealthCheck) {
             processUpdateIntervalConfig((String) properties.get(HealthCheckConstants.HEALTH_SERVER_CONFIG_FILE_UPDATE_INTERVAL));
+            processCreateIntervalConfig((String) properties.get(HealthCheckConstants.HEALTH_SERVER_CONFIG_FILE_CREATE_INTERVAL));
         }
 
     }
