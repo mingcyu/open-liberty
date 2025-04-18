@@ -13,6 +13,7 @@
 package test.jakarta.data.global;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import javax.json.JsonObject;
 
@@ -56,6 +57,43 @@ public class DataJavaGlobalTest extends FATServletClient {
         ShrinkHelper.exportAppToServer(server, DataGlobalRestApp);
 
         server.startServer();
+
+        // initialize some data for tests to use
+
+        JsonObject saved1, saved2, saved3;
+        saved1 = new HttpRequest(server, "/DataGlobalRestApp/data/reminder/save")
+                        .method("POST")
+                        .jsonBody("""
+                                        {
+                                          "id": 1,
+                                          "message": "Do this first."
+                                        }""")
+                        .run(JsonObject.class);
+
+        saved2 = new HttpRequest(server, "/DataGlobalRestApp/data/reminder/save")
+                        .method("POST")
+                        .jsonBody("""
+                                        {
+                                          "id": 2,
+                                          "message": "Do this second."
+                                        }""")
+                        .run(JsonObject.class);
+
+        saved3 = new HttpRequest(server, "/DataGlobalRestApp/data/reminder/save")
+                        .method("POST")
+                        .jsonBody("""
+                                        {
+                                          "id": 3,
+                                          "message": "Do this third."
+                                        }""")
+                        .run(JsonObject.class);
+
+        assertEquals(1, saved1.getInt("id"));
+        assertEquals(2, saved2.getInt("id"));
+        assertEquals(3, saved3.getInt("id"));
+        assertEquals("Do this first.", saved1.getString("message"));
+        assertEquals("Do this second.", saved2.getString("message"));
+        assertEquals("Do this third.", saved3.getString("message"));
     }
 
     @AfterClass
@@ -68,13 +106,30 @@ public class DataJavaGlobalTest extends FATServletClient {
      */
     @Test
     public void testFindById() throws Exception {
-        String path = "/DataGlobalRestApp/data/reminder/id/10";
+        String path = "/DataGlobalRestApp/data/reminder/id/1";
         JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
 
         String err = "unexpected response: " + json;
 
-        assertEquals(err, 10, json.getInt("id"));
-        assertEquals(err, "Testing 123", json.getString("message"));
+        assertEquals(err, 1, json.getInt("id"));
+        assertEquals(err, "Do this first.", json.getString("message"));
     }
 
+    /**
+     * Verify that a non-matching entity Id gets a 404 error indicating that an
+     * entity is not found in the database.
+     */
+    @Test
+    public void testNotFound() throws Exception {
+        String path = "/DataGlobalRestApp/data/reminder/id/97531";
+        try {
+            JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
+            fail("Should not find " + json);
+        } catch (Exception x) {
+            if (x.getMessage() != null && x.getMessage().contains("404"))
+                ; // expected
+            else
+                throw x;
+        }
+    }
 }

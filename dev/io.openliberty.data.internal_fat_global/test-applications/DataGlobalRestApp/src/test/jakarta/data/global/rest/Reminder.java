@@ -30,4 +30,9 @@ public class Reminder {
         r.message = message;
         return r;
     }
+
+    @Override
+    public String toString() {
+        return "Reminder#" + id + ":" + message;
+    }
 }

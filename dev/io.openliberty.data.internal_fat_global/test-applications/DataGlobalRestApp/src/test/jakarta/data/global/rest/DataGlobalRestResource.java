@@ -13,8 +13,11 @@
 package test.jakarta.data.global.rest;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -23,12 +26,24 @@ import jakarta.ws.rs.core.MediaType;
 @ApplicationScoped
 @Path("/reminder")
 public class DataGlobalRestResource {
+    @Inject
+    Reminders reminders;
+
     @GET
     @Path("/id/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Reminder getReminder(@PathParam("id") long id) {
-        //throw new NotFoundException("id: " + id);
-        return Reminder.of(id, "Testing 123");
+
+        return reminders.findById(id)
+                        .orElseThrow(() -> new NotFoundException("id: " + id));
     }
 
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/save")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Reminder saveReminder(Reminder reminder) {
+
+        return reminders.save(reminder);
+    }
 }
