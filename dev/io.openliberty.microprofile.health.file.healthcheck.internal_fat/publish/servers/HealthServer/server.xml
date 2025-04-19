@@ -10,7 +10,7 @@
     </featureManager>
 	
 	
-	<mpHealth fileUpdateInterval="5s"/>
+	<mpHealth fileCreateInterval="1s" fileUpdateInterval="5s"/>
 	
 	<logging traceSpecification="*=info:HEALTH=all:com.ibm.websphere.org.eclipse.microprofile.health.2.0.*=all=enabled"/>
 	

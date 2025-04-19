@@ -142,17 +142,18 @@ public class MPConfigDefaultValuesTest {
          * [X] /health dir
          * [ ] Started
          * [ ] Ready
-         * [X] Live
+         * [ ] Live
          *
          * Not Expected:
          * [X] Started
          * [X] Ready
-         * [ ] Live
+         * [X] Live
+         *
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
         // SRVE0242I: [HealthDemo] [/HealthDemo] [DelayedServlet]: Initialization successful.
         server.waitForStringInLogUsingMark("SRVE0242I*DelayedServlet");
@@ -169,11 +170,15 @@ public class MPConfigDefaultValuesTest {
          * [ ] Ready
          * [ ] Live
          */
-        //Check started and ready created
+        //Check that all files have been created.
         Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        //Check live file had been updating
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+
+        //Check that live and ready files have been updating.
+        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED,
+                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
 
         cleanup(server);
     }
@@ -183,6 +188,8 @@ public class MPConfigDefaultValuesTest {
      * Test where the MP Config elements are:
      * [DEFAULT - DOWN] mp.health.default.ready.empty.response
      * [UP] mp.health.default.startup.empty.response
+     *
+     * Same result as above. All three health files created only when all 3 statuses report UP.
      */
     public void DefaultStartupNoDefaultReadyConfigTest() throws Exception {
         final String METHOD_NAME = "DefaultStartupNoDefaultReadyConfigTest";
@@ -208,19 +215,19 @@ public class MPConfigDefaultValuesTest {
         /*
          * Expect:
          * [X] /health dir
-         * [X] Started
+         * [ ] Started
          * [ ] Ready
-         * [X] Live
+         * [ ] Live
          *
          * Not Expected:
-         * [] Started
+         * [X] Started
          * [X] Ready
-         * [ ] Live
+         * [X] Live
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
         // SRVE0242I: [HealthDemo] [/HealthDemo] [DelayedServlet]: Initialization successful.
         server.waitForStringInLogUsingMark("SRVE0242I*DelayedServlet");
@@ -238,10 +245,15 @@ public class MPConfigDefaultValuesTest {
          * [ ] Live
          */
 
-        //Check ready created
+        //Check that all files have been created.
+        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        //Check live has been updating
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+
+        //Check that live and ready files have been updating.
+        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED,
+                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
 
         cleanup(server);
     }
@@ -251,6 +263,8 @@ public class MPConfigDefaultValuesTest {
      * Test where the MP Config elements are:
      * [UP] mp.health.default.ready.empty.response
      * [DEFAULT - DOWN] mp.health.default.startup.empty.response
+     *
+     * Same result as above. All three health files created only when all 3 statuses report UP.
      */
     public void DefaultReadyupNoDefaultStartupConfigTest() throws Exception {
         final String METHOD_NAME = "DefaultReadyupNoDefaultStartupConfigTest";
@@ -277,18 +291,18 @@ public class MPConfigDefaultValuesTest {
          * Expect:
          * [X] /health dir
          * [ ] Started
-         * [X] Ready
-         * [X] Live
+         * [ ] Ready
+         * [ ] Live
          *
          * Not Expected:
          * [X] Started
-         * [ ] Ready
-         * [ ] Live
+         * [X] Ready
+         * [X] Live
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
         // SRVE0242I: [HealthDemo] [/HealthDemo] [DelayedServlet]: Initialization successful.
         server.waitForStringInLogUsingMark("SRVE0242I*DelayedServlet");
@@ -306,13 +320,16 @@ public class MPConfigDefaultValuesTest {
          * [ ] Live
          */
 
-        //Check started created
+        //Check that all files have been created.
         Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
-        //Check ready and live have been updated
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_UPDATED,
+        //Check that live and ready files have been updating.
+        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED,
                           HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+
         cleanup(server);
     }
 

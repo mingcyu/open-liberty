@@ -130,13 +130,13 @@ public class SimpleFileBasedHealthCheckTest {
          * [X] Ready
          * [X] Live
          *
-         *
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
         Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
         Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
+        //Want to wait time to check that files have been updated.
         TimeUnit.SECONDS.sleep(10);
 
         //Check that live and ready files have been updating.
@@ -176,33 +176,31 @@ public class SimpleFileBasedHealthCheckTest {
          * Expect:
          * [X] /health dir
          * [ ] Started
-         * [X] Ready
-         * [X] Live
+         * [ ] Ready
+         * [ ] Live
          *
          * Not Expected:
          * [X] Started
-         * [] Ready
-         * [ ] Live
+         * [X] Ready
+         * [X] Live
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
-        //Started file should still not be created
+        //Started file should still not be created; consequently no other files are created
         TimeUnit.SECONDS.sleep(10);
         Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-
-        //Check that live and ready are still being updated
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_UPDATED,
-                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
     }
 
     @Test
     /*
      * Liveness check fails.
+     *
      */
     public void failedLivenessHealthCheckTest() throws Exception {
         final String METHOD_NAME = "failedLivenessHealthCheckTest";
@@ -229,27 +227,27 @@ public class SimpleFileBasedHealthCheckTest {
         /*
          * Expect:
          * [X] /health dir
-         * [X] Started
-         * [X] Ready
+         * [ ] Started
+         * [ ] Ready
          * [ ] Live
          *
          * Not Expected:
-         * [ ] Started
-         * [ ] Ready
+         * [X] Started
+         * [X] Ready
          * [X] Live
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
         TimeUnit.SECONDS.sleep(10);
 
+        Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
-        //Check that ready is still being updated
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_UPDATED,
-                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
     }
 
     @Test
@@ -278,25 +276,26 @@ public class SimpleFileBasedHealthCheckTest {
         /*
          * Expect:
          * [X] /health dir
-         * [X] Started
+         * [ ] Started
          * [ ] Ready
-         * [X] Live
+         * [ ] Live
          *
          * Not Expected:
-         * [ ] Started
+         * [X] Started
          * [X] Ready
-         * [ ] Live
+         * [X] Live
          */
         Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
         Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
 
         TimeUnit.SECONDS.sleep(10);
-        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
 
-        //Check that live is still being updated
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+        Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.STARTED_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
+        Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
     }
 
     @Test
@@ -348,6 +347,9 @@ public class SimpleFileBasedHealthCheckTest {
 
         TimeUnit.SECONDS.sleep(10);
 
+        /*
+         * Now expect ready to be updated. Expect liveness to have been updated.
+         */
         Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED, HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
         Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_UPDATED,
                            HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
@@ -402,6 +404,10 @@ public class SimpleFileBasedHealthCheckTest {
         Assert.assertTrue("200 Response code expected", con.getResponseCode() == 200);
 
         TimeUnit.SECONDS.sleep(10);
+
+        /*
+         * Now expect live to not be updated. Expect ready to have been updated.
+         */
 
         Assert.assertTrue(Constants.READY_SHOULD_HAVE_UPDATED,
                           HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
