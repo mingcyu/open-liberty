@@ -57,12 +57,18 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
 
     private static final TraceComponent tc = Tr.register(HealthCheck40ServiceImpl.class);
 
+    private final AtomicBoolean isAllFilesCreated = new AtomicBoolean(false);
+    private final AtomicBoolean isLiveUp = new AtomicBoolean(false);
+    private final AtomicBoolean isReadyUp = new AtomicBoolean(false);
+
     private AppTracker appTracker;
     private HealthCheck40Executor hcExecutor;
 
-    private Timer startedTimer;
-    private Timer liveTimer;
-    private Timer readyTimer;
+    private Timer createStartedTimer;
+    private Timer createLiveTimer;
+    private Timer createReadyTimer;
+    private Timer updateLiveTimer;
+    private Timer updateReadyTimer;
 
     /**
      * The value (in ms) defined for the file update interval.
@@ -135,18 +141,28 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
          * Not really needed, but just in case.
          */
         if (ProductInfo.getBetaEdition()) {
-            if (startedTimer != null) {
-                startedTimer.cancel();
-                startedTimer = null;
+            if (createStartedTimer != null) {
+                createStartedTimer.cancel();
+                createStartedTimer = null;
             }
 
-            if (liveTimer != null) {
-                liveTimer.cancel();
-                liveTimer = null;
+            if (createLiveTimer != null) {
+                createLiveTimer.cancel();
+                createLiveTimer = null;
             }
-            if (readyTimer != null) {
-                readyTimer.cancel();
-                readyTimer = null;
+
+            if (createReadyTimer != null) {
+                createReadyTimer.cancel();
+                createReadyTimer = null;
+            }
+
+            if (updateLiveTimer != null) {
+                updateLiveTimer.cancel();
+                updateLiveTimer = null;
+            }
+            if (updateReadyTimer != null) {
+                updateReadyTimer.cancel();
+                updateReadyTimer = null;
             }
         }
     }
@@ -230,7 +246,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
             else if (!isFileHealthCheckingEnabled() && (fileCreateIntervalMilliseconds != HealthCheckConstants.CONFIG_NOT_SET)) {
 
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.warning(tc, "file.create.interval.config.only.set.CWMMH01011W"); //TODO make message, verify numbers
+                    Tr.warning(tc, "file.create.interval.config.only.set.CWMMH01012W");
                 }
             }
 
@@ -283,9 +299,18 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                 updateValueMessage = "The configuration has been updated. " + updateValueMessage;
                 stopTimers();
 
-                //Only start new timer processes if config value is not 0. Zero/0 means we disable the feature!
-                if (isFileHealthCheckingEnabled()) {
-                    startFileHealthCheckProcesses();
+                /*
+                 * If were were already in the update phase when config was modified.
+                 * Call method to start the update timers.
+                 *
+                 * This is an very unlikely scenario. file-based/local health checks are
+                 * only valid in a Kubernetes use case. Running this outside of a container environment
+                 * will not occur unless somebody is "experimenting".
+                 *
+                 * Otherwise, nothing to do.
+                 */
+                if (isFileHealthCheckingEnabled() && isAllFilesCreated.get()) {
+                    startUpdateHealthCheckFileProcesses();
                 }
             }
 
@@ -314,7 +339,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                     fileCreateIntervalMilliseconds = Integer.parseInt(configValue) * 1000;
                 }
             } else {
-                Tr.warning(tc, "file.create.interval.config.invalid.CWMMH01010W", configValue); //TODO - create the message / verify numbers
+                Tr.warning(tc, "file.create.interval.config.invalid.CWMMH01011W", configValue);
 
                 //Default of 100ms.
                 fileCreateIntervalMilliseconds = HealthCheckConstants.DEFAULT_CREATE_INTERVAL_MILLI;
@@ -366,35 +391,126 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
         if (isValidSystemForFileHealthCheck && isFileHealthCheckingEnabled() && ProductInfo.getBetaEdition()) {
 
             File startFile = HealthFileUtils.getStartFile();
+
+            /*
+             * Kick off start file creation process.
+             * Queries each fileCreateInterval until UP.
+             */
+            if (!startFile.exists()) {
+
+                createStartedTimer = new Timer(true);
+                createStartedTimer.schedule(new StartedFileCreateProcess(), 0, getFileCreateInterval());
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Initiated startup phase for local health check funcitonality. Querying for first succesful startup status.");
+                }
+            } else {
+
+                /*
+                 * Case where started file already exists. Which it shouldn't since that's part of the system
+                 * validation check.
+                 *
+                 * Something is very wrong and we should not continue.
+                 */
+
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.warning(tc, "file.healthcheck.system.inconsistency.CWMMH0107W");
+                }
+            }
+        }
+    }
+
+    public void startLiveFileCreateHealthCheckProcess() {
+        if (isValidSystemForFileHealthCheck && isFileHealthCheckingEnabled() && ProductInfo.getBetaEdition()) {
+            File liveFile = HealthFileUtils.getLiveFile();
+            createLiveTimer = new Timer(true);
+            createLiveTimer.schedule(new FileCreateProcess(liveFile, HealthCheckConstants.HEALTH_CHECK_LIVE), 0, getFileCreateInterval());
+
+        }
+    }
+
+    public void startReadyFileCreateHealthCheckProcess() {
+        if (isValidSystemForFileHealthCheck && isFileHealthCheckingEnabled() && ProductInfo.getBetaEdition()) {
+            File readyFile = HealthFileUtils.getReadyFile();
+            createReadyTimer = new Timer(true);
+            createReadyTimer.schedule(new FileCreateProcess(readyFile, HealthCheckConstants.HEALTH_CHECK_READY), 0, getFileCreateInterval());
+        }
+    }
+
+    /*
+     * Applies to the update of liveness and readiness files
+     */
+    public void startUpdateHealthCheckFileProcesses() {
+        if (isValidSystemForFileHealthCheck && isFileHealthCheckingEnabled() && ProductInfo.getBetaEdition()) {
+
             File readyFile = HealthFileUtils.getReadyFile();
             File liveFile = HealthFileUtils.getLiveFile();
 
-            /*
-             * Start health check process.
-             * First check if start file exists, if it does then we must be updating the fileUpdateInterval during runtime after a started file
-             * has been created. In no way should this exist from a previous run of this server (i.e. crash) as validation of the system would have
-             * failed and this we would never get here if that was the case.
-             *
-             *
-             * Perform a check immediately and if status is DOWN, start the process.
-             */
-            if (!startFile.exists() && performFileHealthCheck(startFile, HealthCheckConstants.HEALTH_CHECK_START).equals(Status.DOWN)) {
-                startedTimer = new Timer(false);
-                startedTimer.schedule(new FileUpdateProcess(startFile, HealthCheckConstants.HEALTH_CHECK_START, true), 0, 1000);
+            //Cancel again just in case.
+            if (updateReadyTimer != null) {
+                updateReadyTimer.cancel();
+            }
+
+            if (updateLiveTimer != null) {
+                updateLiveTimer.cancel();
+            }
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Initiated update phase for local health check funcitonality.");
             }
             /*
-             * Perform an immediate check and then start the processes for checking ready and live status.
+             * Timers to update the Live and ready files at the fileUpdateIntervalMilliseconds.
              */
-            performFileHealthCheck(readyFile, HealthCheckConstants.HEALTH_CHECK_READY);
-            readyTimer = new Timer(false);
-            readyTimer.schedule(new FileUpdateProcess(readyFile, HealthCheckConstants.HEALTH_CHECK_READY), 0, fileUpdateIntevalMilliseconds);
+            updateReadyTimer = new Timer(true);
+            updateReadyTimer.schedule(new FileUpdateProcess(readyFile, HealthCheckConstants.HEALTH_CHECK_READY), 0, fileUpdateIntevalMilliseconds);
 
-            performFileHealthCheck(liveFile, HealthCheckConstants.HEALTH_CHECK_LIVE);
-            liveTimer = new Timer(false);
-            liveTimer.schedule(new FileUpdateProcess(liveFile, HealthCheckConstants.HEALTH_CHECK_LIVE), 0, fileUpdateIntevalMilliseconds);
+            updateLiveTimer = new Timer(true);
+            updateLiveTimer.schedule(new FileUpdateProcess(liveFile, HealthCheckConstants.HEALTH_CHECK_LIVE), 0, fileUpdateIntevalMilliseconds);
+        }
+    }
 
+    /**
+     *
+     * This method is called twice. Once when Ready status is UP
+     * for the first time and once when Live status UP for the first time.
+     * We want to ensure the second call captures the READY=UP and LIVE=UP
+     * to create all three health check files.
+     *
+     * IF not synchronized, we could get to the check where:
+     * - READY finishes, checks if Live is finished.
+     */
+    public synchronized void reportUpStatusFor(String healthCheckProcedure) {
+
+        //Toggle appropriate flags
+        if (healthCheckProcedure.equals(HealthCheckConstants.HEALTH_CHECK_READY)) {
+            isReadyUp.set(true);
+        } else if (healthCheckProcedure.equals(HealthCheckConstants.HEALTH_CHECK_LIVE)) {
+            isLiveUp.set(true);
         }
 
+        /*
+         * If both files are created (It is implied that start is UP).
+         * We create all health files.
+         *
+         * We kick off update processes for ready and live files.
+         */
+        if (isReadyUp.get() == true && isLiveUp.get() == true) {
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Creating `started`, `live` and `ready` health check files");
+            }
+
+            HealthFileUtils.createFile(HealthFileUtils.getStartFile());
+            HealthFileUtils.createFile(HealthFileUtils.getLiveFile());
+            HealthFileUtils.createFile(HealthFileUtils.getReadyFile());
+
+            isAllFilesCreated.set(true);
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Startup phase for local health check functionality completed.");
+            }
+
+            startUpdateHealthCheckFileProcesses();
+        }
     }
 
     @Deactivate
@@ -515,7 +631,10 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                             x -> fhc.handleUndeterminedResponse(),
                             responses -> fhc.addResponses(responses));
 
-            fhc.updateFile();
+            //Only update file if all health files had been created.
+            if (isAllFilesCreated.get() == true) {
+                fhc.updateFile();
+            }
 
             issueMessagesForUnstartedApps(unstartedAppSet, healthCheckProcedure);
 
@@ -666,37 +785,99 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
 
     /**
      * Only used here in this class.
+     * TimerTask used in the update phase.
+     * Will run forever quering its assigned health check type until cancelled.
      */
     public class FileUpdateProcess extends TimerTask {
 
         File file;
         String healthCheckProcedure;
-        boolean isStopOnCreate = false;
-
-        public FileUpdateProcess(File file, String healthCheckProcedure) {
-            this(file, healthCheckProcedure, false);
-        }
 
         /**
          * Timer task that will execute a performHealthCheck() call on the supplied file.
          *
          * @param file                 The file that this TimerTask will perform file updates on (i.e., update last modified access time).
          * @param healthCheckProcedure The health check procedure.
-         * @param isStopOnCreate       Stop this timer if the file exists.
          */
-        public FileUpdateProcess(File file, String healthCheckProcedure, boolean isStopOnCreate) {
+        public FileUpdateProcess(File file, String healthCheckProcedure) {
             this.file = file;
             this.healthCheckProcedure = healthCheckProcedure;
-            this.isStopOnCreate = isStopOnCreate;
         }
 
         @Override
         public void run() {
             performFileHealthCheck(file, healthCheckProcedure);
-            if (isStopOnCreate && file.exists()) {
+        }
+    }
+
+    /**
+     * Only used here in this class.
+     * Specific TimerTask for the creation process of started file.
+     * Once a successful UP status is resolved, it will kick of the creation process
+     * for the live and ready files. It will also cancel itself.
+     */
+    public class StartedFileCreateProcess extends TimerTask {
+
+        File startFile = HealthFileUtils.getStartFile();
+        String healthCheckProcedure = HealthCheckConstants.HEALTH_CHECK_START;
+
+        @Override
+        public void run() {
+            Status retStatus = performFileHealthCheck(startFile, healthCheckProcedure);
+            if (retStatus.equals(Status.UP)) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "First UP Status resolved for the health check procedure: " + healthCheckProcedure);
+                }
+                /*
+                 * Startup status is UP. This Timer is no longer useful.
+                 * Defer file creation until both Ready and Live status are UP.
+                 */
                 cancel();
+                /*
+                 * Start the creation processs for live and ready files
+                 */
+                startLiveFileCreateHealthCheckProcess();
+                startReadyFileCreateHealthCheckProcess();
             }
 
         }
     }
+
+    /**
+     * Only used here in this class.
+     * This TimerTask is for the creation process of a live OR ready file.
+     * When a UP status is resolved, it will notify the HealthCheckService
+     * that the respective health check has reported an UP. This task will also cancel itself
+     * at this time.
+     */
+    public class FileCreateProcess extends TimerTask {
+
+        File file;
+        String healthCheckProcedure;
+
+        public FileCreateProcess(File file, String healthCheckProcedure) {
+            this.file = file;
+            this.healthCheckProcedure = healthCheckProcedure;
+        }
+
+        @Override
+        public void run() {
+            Status retStatus = performFileHealthCheck(file, healthCheckProcedure);
+            if (retStatus.equals(Status.UP)) {
+
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "First UP Status resolved for the health check procedure: " + healthCheckProcedure);
+                }
+                /*
+                 * The status is UP (either for live or ready). This Timer is no longer useful.
+                 *
+                 * Report the UP status to HealthCheckService.
+                 */
+                cancel();
+                reportUpStatusFor(healthCheckProcedure);
+            }
+
+        }
+    }
+
 }
