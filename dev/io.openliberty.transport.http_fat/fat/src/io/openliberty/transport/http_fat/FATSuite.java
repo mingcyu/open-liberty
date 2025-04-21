@@ -25,7 +25,8 @@ import io.openliberty.transport.http_fat.accesslists.AccessListsTests;
                 AccessListsTests.class,
                 MaxOpenConnectionsTest.class,
                 PortOpenRetriesTests.class,
-                SoLingerTests.class
+                SoLingerTests.class,
+                SoReuseAddrTests.class
 })
 
 public class FATSuite {
