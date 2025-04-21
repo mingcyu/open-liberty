@@ -7,27 +7,18 @@
 # 
 # SPDX-License-Identifier: EPL-2.0
 #*******************************************************************************
--include= ~../cnf/resources/bnd/bundle.props
+-include= ~../cnf/resources/bnd/liberty-release.props
 
-Bundle-Name: MicroProfile OpenAPI Unit tests
-Bundle-SymbolicName: io.openliberty.microprofile.openapi.4.1.internal_test
-Bundle-Description: MicroProfile OpenAPI 4.1 tests, version ${bVersion}
-
-bVersion=1.0
-
-Import-Package: \
-    *
+-nobundles: true
 
 test.project: true
 
--buildpath: \
+-testpath: \
 	io.openliberty.microprofile.openapi.4.0.internal.services;version=latest,\
 	io.openliberty.io.smallrye.openapi41.core;verison=latest,\
-	io.openliberty.org.eclipse.microprofile.openapi.2.0,\
+	io.openliberty.org.eclipse.microprofile.openapi.4.1,\
 	com.ibm.ws.logging;version=latest,\
 	org.hamcrest:hamcrest-all;version='1.3',\
 	com.ibm.ws.componenttest.2.0,\
-	io.openliberty.microprofile.openapi.2.0.internal.jakarta
-
--testpath: \
+	io.openliberty.microprofile.openapi.2.0.internal.jakarta,\
 	io.openliberty.org.eclipse.microprofile.config.3.1;version=latest
