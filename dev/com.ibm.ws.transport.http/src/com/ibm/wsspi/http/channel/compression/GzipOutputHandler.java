@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2023 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -265,6 +265,66 @@ public class GzipOutputHandler implements CompressionHandler {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
             Tr.exit(tc, "finish, return list of size " + list.size());
         }
+        return list;
+    }
+
+    /*
+     * @see com.ibm.wsspi.http.channel.compression.CompressionHandler#flush(boolean isFinal)
+     */
+
+    public List<WsByteBuffer> flush(boolean isFinal) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+            Tr.entry(tc, "flush");
+        }
+        List<WsByteBuffer> list = new LinkedList<WsByteBuffer>();
+
+        if (isFinished()) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+                Tr.exit(tc, "flush, already finished");
+            }
+            return list;
+        }
+
+        if (isFinal) {
+            // Delegate final flush to the finish() method
+            Tr.debug(tc, "flush for final write called, calling finish() on the compression handler");
+            return this.finish();
+        } else {
+            Tr.debug(tc,
+                    "flush for non-final write called, performing intermediate flush without finishing the compression stream");
+            int offset = 0; // variable to track current position in buffer
+            int len;
+
+            // Loop until deflater has no more output for now
+            while ((len = this.deflater.deflate(this.buf, offset,
+                    this.buf.length - offset, Deflater.SYNC_FLUSH)) > 0) {
+
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Compressed amount=" + len +
+                            " read=" + this.deflater.getBytesRead() +
+                            " written=" + this.deflater.getBytesWritten());
+                }
+
+                offset += len;
+
+                if (offset == this.buf.length) {
+                    // Buffer is full, add it to list and reset offset
+                    list.add(makeBuffer(offset));
+                    offset = 0;
+                }
+            }
+
+            // If we have any remaining data in the buffer, create a final buffer
+            if (offset > 0) {
+                list.add(makeBuffer(offset));
+            }
+
+        }
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+            Tr.exit(tc, "flush, return list of size " + list.size());
+        }
+
         return list;
     }
 
