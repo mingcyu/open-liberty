@@ -30,6 +30,9 @@
     <classloader commonLibraryRef="DerbyLib"/>
   </application>
 
+  <application location="DataGlobalWebApp.war">
+  </application>
+
   <library id="DerbyLib">
     <file name="${shared.resource.dir}/derby/derby.jar"/>
   </library>

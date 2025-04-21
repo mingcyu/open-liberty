@@ -28,10 +28,12 @@ import com.ibm.websphere.simplicity.ShrinkHelper;
 
 import componenttest.annotation.MinimumJavaLevel;
 import componenttest.annotation.Server;
+import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
 import componenttest.topology.utils.HttpRequest;
+import test.jakarta.data.global.webapp.DataGlobalWebAppServlet;
 
 @RunWith(FATRunner.class)
 @MinimumJavaLevel(javaLevel = 17)
@@ -46,6 +48,7 @@ public class DataJavaGlobalTest extends FATServletClient {
                     };
 
     @Server("io.openliberty.data.internal.fat.global")
+    @TestServlet(servlet = DataGlobalWebAppServlet.class, contextRoot = "DataGlobalWebApp")
     public static LibertyServer server;
 
     @BeforeClass
@@ -55,6 +58,11 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .create(WebArchive.class, "DataGlobalRestApp.war")
                         .addPackage("test.jakarta.data.global.rest");
         ShrinkHelper.exportAppToServer(server, DataGlobalRestApp);
+
+        WebArchive DataGlobalWebApp = ShrinkWrap
+                        .create(WebArchive.class, "DataGlobalWebApp.war")
+                        .addPackage("test.jakarta.data.global.webapp");
+        ShrinkHelper.exportAppToServer(server, DataGlobalWebApp);
 
         server.startServer();
 
