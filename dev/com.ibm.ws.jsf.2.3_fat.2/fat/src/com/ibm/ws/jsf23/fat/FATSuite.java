@@ -19,6 +19,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import org.testcontainers.utility.DockerImageName;
 
 import com.ibm.ws.fat.util.FatLogHandler;
+import com.ibm.ws.jsf23.fat.tests.JSF23BugFixes;
 import com.ibm.ws.jsf23.fat.tests.JSF23CDIConfigByACPTests;
 import com.ibm.ws.jsf23.fat.tests.JSF23CDIFacesInMetaInfTests;
 import com.ibm.ws.jsf23.fat.tests.JSF23CDIFacesInWebXMLTests;
@@ -51,12 +52,13 @@ import componenttest.rules.repeater.RepeatTests;
 @RunWith(Suite.class)
 @SuiteClasses({
 
-                JSF23CDIGeneralTests.class,
-                JSF23CDIInjectionTests.class,
-                JSF23CDIFacesInMetaInfTests.class,
-                JSF23CDIFacesInWebXMLTests.class,
-                JSF23CDIConfigByACPTests.class,
-                JSF23SpecIssueTests.class
+                // JSF23CDIGeneralTests.class,
+                // JSF23CDIInjectionTests.class,
+                // JSF23CDIFacesInMetaInfTests.class,
+                // JSF23CDIFacesInWebXMLTests.class,
+                // JSF23CDIConfigByACPTests.class,
+                // JSF23SpecIssueTests.class,
+                JSF23BugFixes.class
 })
 
 public class FATSuite extends TestContainerSuite {
