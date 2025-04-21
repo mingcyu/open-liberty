@@ -24,7 +24,7 @@ javac.target: 17
 fat.minimum.java.level: 17
 fat.project: true
 
-tested.features: databaseRotation, checkpoint, connectors-2.1
+tested.features: databaseRotation, checkpoint
 
 # Uncomment to use remote docker host to simulate continuous build behavior.
 #fat.test.use.remote.docker: true
