@@ -91,6 +91,6 @@ file.create.interval.config.invalid.CWMMH01011W=CWMMH01011W: An invalid value [{
 file.create.interval.config.invalid.CWMMH01011W.explanation=The file create interval configuration only accepts a number followed by an optional time unit of "ms" for milliseconds or "s" for seconds. If no time unit is specified, the value is in milliseconds by default.
 file.create.interval.config.invalid.CWMMH01011W.useraction=Input a correct value for the file create interval configuration.
 
-file.create.interval.config.only.set.CWMMH01012W=CWMMH01011W: The file create interval configuration was set without the file update interval configuration set. The file update interval is required to be configured to enable the file-based health check.
+file.create.interval.config.only.set.CWMMH01012W=CWMMH01012W: The file create interval configuration was set without the file update interval configuration set. The file update interval is required to be configured to enable the file-based health check.
 file.create.interval.config.only.set.CWMMH01012W.explanation=Configuring the file create interval by itself will not enable the file-based health check mechanism. 
 file.create.interval.config.only.set.CWMMH01012W.useraction=If the the file-based health check mechanism is required, then the file update interval must be configured.

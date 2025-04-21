@@ -48,7 +48,7 @@ import io.openliberty.microprofile.health.internal_fat.shared.HealthActions;
  *
  */
 @RunWith(FATRunner.class)
-@AllowedFFDC("javax.management.InstanceNotFoundException")
+@AllowedFFDC({ "javax.management.InstanceNotFoundException", "java.lang.IllegalStateException" })
 public class SimpleFileBasedHealthCheckTest {
 
     final static String SERVER_NAME = "HealthServer";
@@ -63,7 +63,7 @@ public class SimpleFileBasedHealthCheckTest {
     final static String TOGGLE_APP = "ToggleApp";
     final static String TOGGLE_APP_WAR = TOGGLE_APP + ".war";
 
-    private static final String[] FAILS_TO_START_EXPECTED_FAILURES = { "CWMMH0052W", "CWMMH0054W", "CWMMH0053W" };
+    private static final String[] IGNORED_FAILURES = { "CWMMH0052W", "CWMMH0054W", "CWMMH0053W", "CWMMH0050E" };
 
     public static final int APP_STARTUP_TIMEOUT = 120 * 1000;
 
@@ -100,7 +100,7 @@ public class SimpleFileBasedHealthCheckTest {
     @After
     public void after() throws Exception {
         if (server != null && server.isStarted()) {
-            server.stopServer(FAILS_TO_START_EXPECTED_FAILURES);
+            server.stopServer(IGNORED_FAILURES);
         }
     }
 
@@ -131,10 +131,11 @@ public class SimpleFileBasedHealthCheckTest {
          * [X] Live
          *
          */
-        Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        /*
+         * Checks that require to check that all files are created may encounter a scenario where FAT test is way ahead of the server.
+         * This results in the files not existing yet. isFilesCreated() will retry up to 2 seconds (w/ 250ms cycles).
+         */
+        Assert.assertTrue("Expected all files to be created: Review isAllHealthCheckFilesCreated logs for state of files.", FATSuite.isFilesCreated(serverRootDirFile));
 
         //Want to wait time to check that files have been updated.
         TimeUnit.SECONDS.sleep(10);
@@ -335,10 +336,11 @@ public class SimpleFileBasedHealthCheckTest {
          * [ ] Ready
          * [ ] Live
          */
-        Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        /*
+         * Checks that require to check that all files are created may encounter a scenario where FAT test is way ahead of the server.
+         * This results in the files not existing yet. isFilesCreated() will retry up to 2 seconds (w/ 250ms cycles).
+         */
+        Assert.assertTrue("Expected all files to be created: Review isAllHealthCheckFilesCreated logs for state of files.", FATSuite.isFilesCreated(serverRootDirFile));
 
         URL url = HttpUtils.createURL(server, "/" + TOGGLE_APP + "/HealthAppServlet?ready=false");
         HttpURLConnection con = HttpUtils.getHttpConnection(url, HttpUtils.DEFAULT_TIMEOUT, HTTPRequestMethod.GET);
@@ -393,10 +395,11 @@ public class SimpleFileBasedHealthCheckTest {
          * [ ] Ready
          * [ ] Live
          */
-        Assert.assertTrue(Constants.HEALTH_DIR_SHOULD_HAVE_CREATED, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.STARTED_SHOULD_HAVE_CREATED, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.READY_SHOULD_HAVE_CREATED, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
-        Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_CREATED, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        /*
+         * Checks that require to check that all files are created may encounter a scenario where FAT test is way ahead of the server.
+         * This results in the files not existing yet. isFilesCreated() will retry up to 2 seconds (w/ 250ms cycles).
+         */
+        Assert.assertTrue("Expected all files to be created: Review isAllHealthCheckFilesCreated logs for state of files.", FATSuite.isFilesCreated(serverRootDirFile));
 
         URL url = HttpUtils.createURL(server, "/" + TOGGLE_APP + "/HealthAppServlet?live=false");
         HttpURLConnection con = HttpUtils.getHttpConnection(url, HttpUtils.DEFAULT_TIMEOUT, HTTPRequestMethod.GET);
