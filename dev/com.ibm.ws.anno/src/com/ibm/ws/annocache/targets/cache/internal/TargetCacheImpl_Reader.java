@@ -536,7 +536,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
                 didHandle = true;
 
-            } else if ( (reader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // PHXXXXX
+            } else if ( (reader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // Issue 30315
                 if ( name == null ) {
                     addParseError("Signature [ " + parsedValue + " ] does not follow [ " + NAME_TAG + " ]: Ignoring");
                 } else if ( signature != null ) {

@@ -82,7 +82,7 @@ public class TargetsTableContainersImpl
     //
 
     protected final List<String> names;
-    protected final Map<String, String> signatures; // PHXXXXX
+    protected final Map<String, String> signatures; // Issue 30315
     protected final Map<String, ScanPolicy> policies;
 
     private void putSignature(String name, String signature) {
@@ -272,7 +272,7 @@ public class TargetsTableContainersImpl
                 }
             }
 
-            // PHXXXXX: Add in signature changes.
+            // Issue 30315: Add in signature changes.
 
             String thisSig = getSignature(thisName);
             String otherSig = otherTable.getSignature(thisName);

@@ -56,7 +56,7 @@ public interface TargetCache_BinaryConstants {
     String[] CONTAINER_TABLE_VERSIONS = { CONTAINER_TABLE_VERSION_10, CONTAINER_TABLE_VERSION_20 };
 
     String CONTAINER_TABLE_NAME = "Container";
-    String CONTAINER_TABLE_VERSION = CONTAINER_TABLE_VERSION_20; // PHXXXXX
+    String CONTAINER_TABLE_VERSION = CONTAINER_TABLE_VERSION_20; // Issue 30315
 
     String RESOLVED_REFS_NAME = "Resolved References";
     String RESOLVED_REFS_VERSION = "1.0";
@@ -65,7 +65,7 @@ public interface TargetCache_BinaryConstants {
     String UNRESOLVED_REFS_VERSION = "1.0";
 
     // Containers table: ...
-    byte SIGNATURE_BYTE           = 0x22; // "Signature" // PHXXXXX; the byte value '22' is correct.
+    byte SIGNATURE_BYTE           = 0x22; // "Signature" // Issue 30315; the byte value '22' is correct.
     byte POLICY_BYTE              = 0x21; // "Policy"
 
     // Module classes table ...

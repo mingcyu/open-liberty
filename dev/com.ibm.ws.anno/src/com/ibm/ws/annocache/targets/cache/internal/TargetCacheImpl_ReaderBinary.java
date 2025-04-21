@@ -222,7 +222,7 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
         requireHeader(tableName, new String[] { tableVersion }); // throws IOException
     }
 
-    // PHXXXXX
+    // Issue 30315
     public String requireHeader(String tableName, String[] tableVersions) throws IOException {
         bufInput.requireByte(HEADER_BYTE);
 
@@ -280,7 +280,7 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     //
 
     protected String requireContainersHeader() throws IOException {
-        return requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSIONS); // PHXXXXX
+        return requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSIONS); // Issue 30315
     }
 
     protected void requireModuleClassesHeader() throws IOException {
