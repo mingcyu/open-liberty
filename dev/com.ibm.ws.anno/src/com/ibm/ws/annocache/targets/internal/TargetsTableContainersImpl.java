@@ -226,6 +226,20 @@ public class TargetsTableContainersImpl
     public static final boolean DO_DETAIL = true;
     public static final String COARSE_CHANGE = "Changed";
 
+    /**
+     * Compare this table with another table.  Answer null if the tables are the
+     * same.
+     * 
+     * Tables are the same if they have equal elements, and if no elements have
+     * unknown or unrecorded signatures.
+     * 
+     * Conditionally, return a coarse message or a detail message, based on
+     * the 'describe' parameter.
+     * 
+     * @param otherTable
+     * @param describe
+     * @return
+     */
     public String sameAs(TargetsTableContainersImpl otherTable, boolean describe) {
         if ( otherTable == null ) {
             return ( describe ? "Prior null table" : COARSE_CHANGE );
@@ -262,7 +276,13 @@ public class TargetsTableContainersImpl
 
             String thisSig = getSignature(thisName);
             String otherSig = otherTable.getSignature(thisName);
-            if ( !strEquals(thisSig, otherSig) ) {
+            if ( (thisSig == null) || thisSig.equals(ClassSource.UNRECORDED_STAMP) || thisSig.equals(ClassSource.UNAVAILABLE_STAMP) ) {
+                if ( !describe ) {
+                    return COARSE_CHANGE; 
+                } else {
+                    return ( "Container number [ " + nameNo + " ] named [ " + thisName + " ]: Uncomparable signature [ " + thisSig + " ]");
+                }
+            } else if ( (otherSig == null) || !thisSig.equals(otherSig) ) {
                 if ( !describe ) {
                     return COARSE_CHANGE; 
                 } else {
@@ -282,16 +302,6 @@ public class TargetsTableContainersImpl
         }
 
         return null;
-    }
-
-    protected boolean strEquals(String v1, String v2) {
-        if ( v1 == null ) {
-            return ( v2 == null );
-        } else if ( v2 == null ) {
-            return false;
-        } else {
-            return ( v1.equals(v2) );
-        }
     }
     
     //
