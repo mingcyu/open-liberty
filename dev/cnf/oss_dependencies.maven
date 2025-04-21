@@ -957,6 +957,10 @@ org.springframework:spring-expression:4.3.13.RELEASE
 org.springframework:spring-expression:5.3.21
 org.springframework:spring-expression:5.3.39
 org.springframework:spring-expression:6.1.14
+org.springframework:spring-jdbc:5.3.39
+org.springframework:spring-jdbc:6.1.14
+org.springframework:spring-tx:5.3.39
+org.springframework:spring-tx:6.1.14
 org.springframework:spring-web:3.0.7.RELEASE
 org.springframework:spring-web:4.3.13.RELEASE
 org.springframework:spring-web:5.3.39
