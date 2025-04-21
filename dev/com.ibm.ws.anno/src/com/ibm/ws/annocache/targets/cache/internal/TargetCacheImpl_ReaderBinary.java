@@ -31,6 +31,7 @@ import com.ibm.ws.annocache.util.internal.UtilImpl_InternMap;
 import com.ibm.ws.annocache.util.internal.UtilImpl_ReadBuffer;
 import com.ibm.ws.annocache.util.internal.UtilImpl_ReadBufferFull;
 import com.ibm.ws.annocache.util.internal.UtilImpl_ReadBufferPartial;
+import com.ibm.wsspi.annocache.classsource.ClassSource;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
 import com.ibm.wsspi.annocache.targets.cache.TargetCache_BinaryConstants;
 import com.ibm.wsspi.annocache.targets.cache.TargetCache_ExternalConstants;
@@ -218,6 +219,11 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     //
 
     public void requireHeader(String tableName, String tableVersion) throws IOException {
+        requireHeader(tableName, new String[] { tableVersion }); // throws IOException
+    }
+
+    // PHXXXXX
+    public String requireHeader(String tableName, String[] tableVersions) throws IOException {
         bufInput.requireByte(HEADER_BYTE);
 
         String actualEncoding = bufInput.requireField(ENCODING_BYTE, HEADER_WIDTH);
@@ -241,12 +247,20 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
                     " for [ " + getPath() + "]");
         }
 
-        if ( !tableVersion.equals(actualVersion) ) {
+        String matchVersion = null;
+        for ( String tableVersion : tableVersions ) {
+            if ( actualVersion.equals(tableVersion) ) {
+                matchVersion = tableVersion;
+                break;
+            }
+        }
+        if ( matchVersion == null ) {
             throw new IOException(
                 "Unexpected table version [ " + actualVersion + " ]:" +
-                " Expecting table version [ " + tableVersion + " ]" +
+                " Expecting table versions [ " + tableVersions + " ]" +
                 " for [ " + getPath() + "]");
         }
+        return matchVersion;
     }
 
     //
@@ -265,8 +279,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
 
     //
 
-    protected void requireContainersHeader() throws IOException {
-        requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSION);
+    protected String requireContainersHeader() throws IOException {
+        return requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSIONS); // PHXXXXX
     }
 
     protected void requireModuleClassesHeader() throws IOException {
@@ -466,7 +480,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     }
 
     public void readFragment(TargetsTableContainersImpl containerTable) throws IOException {
-        requireContainersHeader();
+        String readVersion = requireContainersHeader();
+        boolean readStamps = readVersion.equals(TargetCache_BinaryConstants.CONTAINER_TABLE_VERSION_20);
 
         bufInput.requireByte(DATA_BYTE);
 
@@ -477,6 +492,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
             if ( containerName.equals(TargetCache_ExternalConstants.CANONICAL_ROOT_CONTAINER_NAME) ) {
                 containerName = TargetCache_ExternalConstants.ROOT_CONTAINER_NAME;
             }
+
+            String containerSignature = ( readStamps ? requireCompact(SIGNATURE_BYTE) : ClassSource.UNAVAILABLE_STAMP ); 
 
             String containerPolicyText = requireCompact(POLICY_BYTE);
             ScanPolicy containerPolicy;
@@ -489,7 +506,7 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
                     " of [ " + getPath() + " ]"); 
             }
 
-            containerTable.addName(containerName, containerPolicy);
+            containerTable.addName(containerName, containerSignature, containerPolicy);
         }
     }
 

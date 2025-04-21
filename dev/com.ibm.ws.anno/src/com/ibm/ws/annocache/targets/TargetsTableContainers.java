@@ -46,6 +46,17 @@ public interface TargetsTableContainers {
     List<String> getNames();
 
     /**
+     * <p>Answer the stamp associated with a name.  Answer
+     * null if the name is not managed by this table, or if no
+     * stamp is provided with the name.
+     * 
+     * @param name A name of interest.
+     * 
+     * @return The stamp associated with the name.
+     */
+    String getSignature(String name);
+    
+    /**
      * <p>Answer the scan policy associated with a name.  Answer
      * null if the name is not one managed by this container table.</p>
      *
@@ -65,7 +76,19 @@ public interface TargetsTableContainers {
      * @param name The name to add.
      * @param policy The scan policy associated with the name.
      */
+    @Deprecated    
     void addName(String name, ScanPolicy policy);
+    
+    /**
+     * <p>Add a name and a scan policy to this container table.</p>
+     *
+     * <p>Names are kept in the order in which they were added.</p>
+     *
+     * @param name The name to add.
+     * @param signature The signature associated with the name.
+     * @param policy The scan policy associated with the name.
+     */
+    void addName(String name, String signature, ScanPolicy policy);    
 
     /**
      * <p>Add a name after a specified name.</p>
@@ -77,7 +100,21 @@ public interface TargetsTableContainers {
      * @param policy The scan policy associated with the name.
      * @param afterName The name after which to add the new name.
      */
+    @Deprecated        
     void addNameAfter(String name, ScanPolicy policy, String afterName);
+    
+    /**
+     * <p>Add a name after a specified name.</p>
+     *
+     * <p>An {@link IndexOutOfBoundsException} exception is thrown if the
+     * after name is not a name of the container table.</p>
+     *
+     * @param name The name to add.
+     * @param signature The signature associated with the name.
+     * @param policy The scan policy associated with the name.
+     * @param afterName The name after which to add the new name.
+     */
+    void addNameAfter(String name, String signature, ScanPolicy policy, String afterName);    
 
     /**
      * <p>Add a name before a specified name.</p>
@@ -89,7 +126,21 @@ public interface TargetsTableContainers {
      * @param policy The scan policy associated with the name.
      * @param beforeName The name before which to add the new name.
      */
+    @Deprecated        
     void addNameBefore(String name, ScanPolicy policy, String beforeName);
+    
+    /**
+     * <p>Add a name before a specified name.</p>
+     *
+     * <p>An {@link IndexOutOfBoundsException} exception is thrown if the
+     * before name is not a name of the container table.</p>
+     *
+     * @param name The name to add.
+     * @param signature The signature associated with the name.
+     * @param policy The scan policy associated with the name.
+     * @param beforeName The name before which to add the new name.
+     */
+    void addNameBefore(String name, String signature, ScanPolicy policy, String beforeName);    
 
     /**
      * <p>Remove a name from this container table.</p>

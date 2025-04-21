@@ -25,7 +25,6 @@ public interface TargetCache_BinaryConstants {
     byte TRAILER_BYTE    = 0x04;
 
     // Header table ...
-
 	int HEADER_WIDTH = 60;
 
     byte ENCODING_BYTE  = 0x11; // "Encoding"
@@ -51,8 +50,13 @@ public interface TargetCache_BinaryConstants {
     String TARGETS_TABLE_NAME = "Annotation Targets";
     String TARGETS_TABLE_VERSION = "1.0";
 
+    String CONTAINER_TABLE_VERSION_10 = "1.0";
+    String CONTAINER_TABLE_VERSION_20 = "2.0";
+
+    String[] CONTAINER_TABLE_VERSIONS = { CONTAINER_TABLE_VERSION_10, CONTAINER_TABLE_VERSION_20 };
+
     String CONTAINER_TABLE_NAME = "Container";
-    String CONTAINER_TABLE_VERSION = "1.0";
+    String CONTAINER_TABLE_VERSION = CONTAINER_TABLE_VERSION_20; // PHXXXXX
 
     String RESOLVED_REFS_NAME = "Resolved References";
     String RESOLVED_REFS_VERSION = "1.0";
@@ -61,6 +65,7 @@ public interface TargetCache_BinaryConstants {
     String UNRESOLVED_REFS_VERSION = "1.0";
 
     // Containers table: ...
+    byte SIGNATURE_BYTE           = 0x22; // "Signature" // PHXXXXX; the byte value '22' is correct.
     byte POLICY_BYTE              = 0x21; // "Policy"
 
     // Module classes table ...

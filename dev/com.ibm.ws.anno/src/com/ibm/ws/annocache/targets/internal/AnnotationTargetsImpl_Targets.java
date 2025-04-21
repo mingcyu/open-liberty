@@ -754,8 +754,8 @@ public class AnnotationTargetsImpl_Targets implements AnnotationTargets_Targets 
 
         if ( logger.isLoggable(Level.FINER) ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
-                "[ {0} ] Class name intern map [ {1} ]",
-                new Object[] { getHashName(), classNameInternMap.getHashText() });
+                    "[ {0} ] Class name intern map [ {1} ]",
+                    new Object[] { getHashName(), classNameInternMap.getHashText() });
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                 "[ {0} ] Seed cass name intern map [ {1} ]",
                 new Object[] { getHashName(), seedTable.getClassNameInternMap().getHashText() });

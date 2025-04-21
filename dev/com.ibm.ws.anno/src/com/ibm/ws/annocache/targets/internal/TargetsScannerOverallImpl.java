@@ -729,9 +729,11 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
      */
     protected boolean validContainerTable() {
         String methodName = "validContainerTable";
-
+        boolean doDetail = logger.isLoggable(Level.FINER);
+        
+        
         if ( containerTable != null ) {
-            if ( logger.isLoggable(Level.FINER) ) {
+            if ( doDetail ) {
                 String resultMsg = priorResult("container table",
                     changedContainerTableReason, !changedContainerTable);
                 logger.logp(Level.FINER, CLASS_NAME, methodName, resultMsg);
@@ -739,7 +741,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             return !changedContainerTable;
         }
 
-        if ( logger.isLoggable(Level.FINER) ) {
+        if( doDetail ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName, "[ {0} ] ENTER", getHashText());
         }
 
@@ -775,13 +777,18 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
 
                 } else {
                     TargetsTableContainersImpl newContainerTable = createContainerTable(rootClassSource);
-                    if ( newContainerTable.sameAs(useContainerTable) ) {
+                    String changeDetail = newContainerTable.sameAs(useContainerTable, doDetail);
+                    if ( changeDetail == null ) {
                         isChanged = false;
                         isChangedReason = "Cache hit (valid)";
                     } else {
                         useContainerTable = newContainerTable;
                         isChanged = true;
-                        isChangedReason = "Cache hit (invalid)";
+                        if ( doDetail ) {
+                            isChangedReason = "Cache hit (invalid: " + changeDetail + ")";
+                        } else {
+                            isChangedReason = "Cache hit (invalid)";
+                        }
                     }
                 }
             }
@@ -795,7 +802,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
 
         setContainerTable(useContainerTable, isChangedReason, isChanged);
 
-        if ( logger.isLoggable(Level.FINER) ) {
+        if ( doDetail ) {
             String resultMsg = newResult("container table", isChangedReason, !isChanged);
             logger.logp(Level.FINER, CLASS_NAME, methodName, resultMsg);
         }
@@ -1747,6 +1754,11 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
         } else {
             didRead = readInternalResults_Select(cachedTables);
             if ( didRead ) {
+                // for ( TargetsTableImpl cachedTable : cachedTables ) {
+                //     if ( cachedTable != null ) {
+                //         System.out.println("Read table [ " + cachedTable.getName() + " ] Stamp [ " + cachedTable.getStamp() + " ]");
+                //     }
+                // }
                 validReason = "Cache hit";
             } else {
                 validReason = "Cache miss or read failure";

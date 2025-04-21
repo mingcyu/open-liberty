@@ -73,6 +73,8 @@ public class TargetsScannerBaseImpl {
         
         this.hashText = getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
 
+        // (new Throwable(this.hashText)).printStackTrace(System.out);
+
         if ( targets == null ) {
             throw new IllegalArgumentException(getClass().getSimpleName() + ": " + this.hashText + " created with null targets");
         } else if ( rootClassSource == null ) {
@@ -395,6 +397,8 @@ public class TargetsScannerBaseImpl {
                 logger.logp(Level.FINER, CLASS_NAME, methodName,
                     "Location {0}: Classes {1}: Scan type {2}",
                     new Object[] { nextClassSource.getCanonicalName(), nextClassCount, scanType });
+                logger.logp(Level.FINER, CLASS_NAME, methodName,
+			    "Jandex Path: {0}", nextClassSource.getOptions().getJandexPath());
             }
         }
 

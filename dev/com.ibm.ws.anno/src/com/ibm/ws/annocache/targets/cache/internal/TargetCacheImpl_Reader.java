@@ -35,6 +35,7 @@ import com.ibm.ws.annocache.targets.TargetsTableTimeStamp;
 import com.ibm.ws.annocache.targets.cache.TargetCache_ParseError;
 import com.ibm.ws.annocache.targets.cache.TargetCache_Reader;
 import com.ibm.ws.annocache.util.internal.UtilImpl_InternMap;
+import com.ibm.wsspi.annocache.classsource.ClassSource;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Aggregate.ScanPolicy;
 import com.ibm.wsspi.annocache.targets.cache.TargetCache_ExternalConstants;
 import com.ibm.wsspi.annocache.targets.cache.TargetCache_InternalConstants;
@@ -134,6 +135,42 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
     protected String parsedName;
     protected String parsedValue;
 
+    protected String parsedTable;
+    protected String parsedVersion;
+    protected String parsedStamp;
+    protected String parsedEncoding;
+
+    protected boolean isCompletedHeader;
+    protected int parsedVersionValue;
+
+    protected void clearHeader() {
+        if ( isCompletedHeader) {
+            parsedVersionValue = 0;
+            isCompletedHeader = false;
+        }
+        
+        parsedTable = null;
+        parsedVersion = null;
+        parsedStamp = null;
+        parsedEncoding = null;
+    }
+
+    protected void setCompletedHeader() {
+        isCompletedHeader =
+            ( (parsedTable != null) && (parsedVersion != null) &&
+              (parsedStamp != null) && (parsedEncoding != null) );
+        
+        if ( isCompletedHeader ) {
+            if ( parsedVersion.equals(VERSION_10) ) {
+                parsedVersionValue = VERSION_VALUE_10;
+            } else if ( parsedVersion.equals(VERSION_20) ) {
+                parsedVersionValue = VERSION_VALUE_20;
+            } else {
+                parsedVersionValue = VERSION_VALUE_UNKNOWN;
+            }
+        }
+    }
+    
     @Trivial
     protected boolean isComment() {
         return line.startsWith(COMMENT_TAG);
@@ -173,33 +210,45 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
      * {@link #ENCODING_TAG}, and {@link #TIMESTAMP_TAG}.</p>
      *
      * @param expectedTable The expected table tag.
-     * @param expectedTableVersion The expected table version.
+     * @param acceptedTableVersions The accepted table versions.
      *
      * @return True if the line was handled as a header line.
      *         Otherwise, false.
      */
-    public boolean handleHeader(String expectedTableTag, String expectedTableVersion) {
+    public boolean handleHeader(String expectedTableTag, String[] acceptedTableVersions) {
         boolean isHeaderField;
 
         if (parsedName.equals(TABLE_TAG)) {
-            if ( !parsedValue.equals(expectedTableTag)) {
-                addParseError("Value [ " + parsedValue + " ] does not match [ " + expectedTableTag + " ] for class [ " + getClass().getName() + " ]");
-            }
-
             isHeaderField = true;
 
+            if ( !unexpectedHeader(expectedTableTag) && !dupHeader(parsedTable) ) {
+                parsedTable = parsedValue;
+                setCompletedHeader();                    
+            }
+            
         } else if (parsedName.equals(VERSION_TAG)) {
-            if ( !parsedValue.equals(expectedTableVersion)) {
-                addParseError("Value [ " + parsedValue + " ] does not match [ " + expectedTableVersion + " ] for class [ " + getClass().getName() + " ]");
-            }
-
             isHeaderField = true;
+            
+            if ( !unexpectedHeader(acceptedTableVersions) && !dupHeader(parsedVersion) ) {            
+                parsedVersion = parsedValue;
+                setCompletedHeader();                                        
+            }
 
         } else if (parsedName.equals(ENCODING_TAG)) {
             isHeaderField = true;
 
+            if ( !dupHeader(parsedEncoding) ) {
+                parsedEncoding = parsedValue;
+                setCompletedHeader();                
+            }
+
         } else if (parsedName.equals(TIMESTAMP_TAG)) {
             isHeaderField = true;
+
+            if ( !dupHeader(parsedStamp) ) {
+                parsedStamp = parsedValue;
+                setCompletedHeader();                                    
+            }            
 
         } else {
             isHeaderField = false;
@@ -208,6 +257,40 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
         return isHeaderField;
     }
 
+    private boolean unexpectedHeader(String allowedValue) {
+        if ( !parsedValue.equals(allowedValue) ) {        
+            addParseError("Value [ " + parsedValue + " ] does not match [ " + allowedValue + " ] for class [ " + getClass().getName() + " ]");
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    private boolean unexpectedHeader(String[] allowedValues) {
+        boolean matched = false;
+        for ( String allowedValue : allowedValues ) {
+            if ( parsedValue.equals(allowedValue) ) {
+                matched = true;
+                break;
+            }
+        }
+        if ( !matched ) {
+            addParseError("Value [ " + parsedValue + " ] does not match [ " + allowedValues + " ] for class [ " + getClass().getName() + " ]");
+            return true;
+        } else {
+            return false;
+        }
+    }    
+
+    private boolean dupHeader(String priorValue) {
+        if ( priorValue != null ) {
+            addParseError("Header [ " + parsedName + " ] duplication: Old [ " + priorValue + " ] New [ " + parsedValue + " ]");
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     // Main parse step ...
 
     /**
@@ -228,12 +311,14 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
         String methodName = "parse";
 
         String expectedTableTag = useReader.getTableTag();
-        String expectedTableVersion = useReader.getTableVersion();
+        String[] acceptedTableVersions = useReader.getTableVersions();
 
         if ( logger.isLoggable(Level.FINER) ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName, "Expected table [ " + expectedTableTag + " ]");
-            logger.logp(Level.FINER, CLASS_NAME, methodName, "Expected table version [ " + expectedTableVersion + " ]");            
+            logger.logp(Level.FINER, CLASS_NAME, methodName, "Accepted table version [ " + acceptedTableVersions + " ]");            
         }
+
+        clearHeader();
 
         while ((line = readNextLine()) != null) { // IOException
             lineNo++;
@@ -256,10 +341,10 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                 continue;
             }
 
-            if ( !handleHeader(expectedTableTag, expectedTableVersion) ) {
-                if ( !useReader.handleBody() ) {
-                    // Ignore
-                }
+            if ( !isCompletedHeader ) {
+                handleHeader(expectedTableTag, acceptedTableVersions);
+            } else {
+                useReader.handleBody();
             }
         }
 
@@ -335,6 +420,19 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
          */
         public abstract String getTableVersion();
 
+        /**
+         * Answer the versions which are accepted within the version
+         * line, "Version: &lt;tableVersion&gt;".</p>
+         *
+         * <p>Used by {@link #handleHeader()} to validate the table which
+         * is being parsed.</p>
+         *
+         * @return The versions which are accepted on the version line.
+         */
+        public String[] getTableVersions() {
+            return new String[] { getTableVersion() };
+        }
+
         // Body protocol:
 
         // Intern operations ... depend on the target data
@@ -383,15 +481,19 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
     }
 
     public class ContainerTableReader extends TargetsReader {
-        public ContainerTableReader(TargetsTableContainers containerTable) {
+        public ContainerTableReader(TargetsTableContainers containerTable, TargetCacheImpl_Reader reader) {
             this.containerTable = containerTable;
-
+            this.reader = reader;
+            
             this.name = null;
+            this.signature = null;
         }
 
         //
 
         protected final TargetsTableContainers containerTable;
+
+        protected final TargetCacheImpl_Reader reader;
 
         //
 
@@ -402,12 +504,18 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
         @Override
         public String getTableVersion() {
-            return CONTAINER_TABLE_VERSION;
+            return CONTAINER_TABLE_VERSION_20;
+        }
+        
+        @Override
+        public String[] getTableVersions() {
+            return CONTAINER_TABLE_VERSIONS;
         }
 
         //
 
         protected String name;
+        protected String signature;
 
         @Override
         public boolean handleBody() {
@@ -415,8 +523,9 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
             if ( parsedName.equals(NAME_TAG) ) {
                 if ( name != null ) {
-                    addParseError("Tag [ " + parsedName + " ] immediately follows unclosed [ " + NAME_TAG + " ]: Ignoring prior name [ " + name + " ]");
+                    addParseError("Tag [ " + parsedName + " ] follows unclosed [ " + NAME_TAG + " ]: Ignoring prior name [ " + name + " ]");
                     name = null;
+                    signature = null; // Could have been 'name, stamp, name'
                 }
 
                 if ( parsedValue.equals(TargetCache_ExternalConstants.ROOT_CONTAINER_NAME) ) {
@@ -427,13 +536,38 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
                 didHandle = true;
 
+            } else if ( (reader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // PHXXXXX
+                if ( name == null ) {
+                    addParseError("Signature [ " + parsedValue + " ] does not follow [ " + NAME_TAG + " ]: Ignoring");
+                } else if ( signature != null ) {
+                    addParseError("Signature [ " + parsedValue + " ] collision at [ " + name + " ]; prior value [ " + signature + " ]");                    
+                } else {
+                    signature = parsedValue;
+                }
+
+                didHandle = true;
+
             } else if ( parsedName.equals(POLICY_TAG) ) {
                 if ( name == null ) {
-                    addParseError("Tag [ " + parsedName + " ] does not immediately follow [ " + NAME_TAG + " ]: Ignoring");
+                    addParseError("Tag [ " + parsedName + " ] does not follow [ " + NAME_TAG + " ]: Ignoring");
 
                 } else {
-                    String useName = name; // Always consume the name.
+                    String useName = name;
                     name = null;
+                    
+                    String useSignature;
+                    
+                    if (reader.parsedVersionValue < VERSION_VALUE_20) {
+                        useSignature = ClassSource.UNAVAILABLE_STAMP;
+                    } else {
+                        if ( signature == null ) {
+                            addParseError("No signature for [ " + name + " ]; marking as unavailable");
+                            useSignature = ClassSource.UNAVAILABLE_STAMP;
+                        } else {
+                            useSignature = signature;
+                            signature = null;
+                        }
+                    }
 
                     ScanPolicy policy;
                     try {
@@ -446,10 +580,9 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                     if ( policy != null ) {
                         ScanPolicy lastPolicy = containerTable.removeName(name);
                         if ( lastPolicy != null ) {
-                            addParseError("Policy [ " + parsedValue + " ] collision at [ " + name + " ] with prior assignment to policy [ " + lastPolicy.name() + " ]: Replacing");
+                            addParseError("Policy [ " + parsedValue + " ] collision at [ " + useName + " ] with prior assignment to policy [ " + lastPolicy.name() + " ]: Replacing");
                         }
-
-                        containerTable.addName(useName, policy);
+                        containerTable.addName(useName, useSignature, policy);
                     }
                 }
 
@@ -556,7 +689,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
         public String getTableVersion() {
             return STAMP_TABLE_VERSION;
         }
-
+        
         @Override
         public boolean handleBody() {
             boolean didHandle;
@@ -1178,7 +1311,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
     @Override
     public List<TargetCache_ParseError> read(TargetsTableContainers containerTable) throws IOException {
-        ContainerTableReader containerReader = new ContainerTableReader(containerTable);
+        ContainerTableReader containerReader = new ContainerTableReader(containerTable, this);
         return parse(containerReader); // throws IOException
     }
 
