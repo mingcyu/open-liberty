@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -60,10 +60,10 @@ import componenttest.custom.junit.runner.Mode.TestMode;
 import componenttest.topology.impl.LibertyServer;
 
 /**
- * Tests for Bug Fixes in the JSF 2.3
+ * Tests for Bug Fixes in JSF 2.3
  */
 @RunWith(FATRunner.class)
-// @Mode(TestMode.FULL)
+@Mode(TestMode.FULL)
 public class JSF23BugFixes {
 
     protected static final Class<?> c = JSF23BugFixes.class;
@@ -108,7 +108,7 @@ public class JSF23BugFixes {
     /**
      * https://github.com/OpenLiberty/open-liberty/issues/27496
      * 
-     * Ensure Liberty picks up the FacesConfig annoation via HandlesTypes.
+     * Ensure Liberty picks up the FacesConfig annotation via HandlesTypes.
      * Note - Liberty extends MyFacesContainerInitializer via WASMyFacesContainerInitializer
      * 
      * The app has no mappings to the Faces Servlet, so they will need to be added automatically due to the FacesConfig annotation.
