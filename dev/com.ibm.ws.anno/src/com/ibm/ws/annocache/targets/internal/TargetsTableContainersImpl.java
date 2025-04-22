@@ -230,15 +230,8 @@ public class TargetsTableContainersImpl
      * Compare this table with another table.  Answer null if the tables are the
      * same.
      * 
-     * Tables are the same if they have equal elements, and if no elements have
-     * unknown or unrecorded signatures.
-     * 
      * Conditionally, return a coarse message or a detail message, based on
      * the 'describe' parameter.
-     * 
-     * @param otherTable
-     * @param describe
-     * @return
      */
     public String sameAs(TargetsTableContainersImpl otherTable, boolean describe) {
         if ( otherTable == null ) {
@@ -274,9 +267,16 @@ public class TargetsTableContainersImpl
 
             // Issue 30315: Add in signature changes.
 
+            // NOTE!!!
+            //
+            // We allow the container to be 'the same' if the signature is either unrecorded or unavailable.
+            // This works because the call to 'sameAs', from 'TargetsScannerOverallImpl.validContainerTable()',
+            // does additional checks to ensure that containers are individually valid.  That includes steps
+            // which test containers which are unrecorded or unavailable. 
+
             String thisSig = getSignature(thisName);
             String otherSig = otherTable.getSignature(thisName);
-            if ( (thisSig == null) || thisSig.equals(ClassSource.UNRECORDED_STAMP) || thisSig.equals(ClassSource.UNAVAILABLE_STAMP) ) {
+            if ( thisSig == null ) { // || thisSig.equals(ClassSource.UNRECORDED_STAMP) || thisSig.equals(ClassSource.UNAVAILABLE_STAMP) ) {
                 if ( !describe ) {
                     return COARSE_CHANGE; 
                 } else {
