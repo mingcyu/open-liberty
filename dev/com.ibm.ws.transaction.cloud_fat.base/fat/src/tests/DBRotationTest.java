@@ -471,29 +471,26 @@ public class DBRotationTest extends CloudFATServletClient {
     }
 
     @Test
-    @AllowedFFDC(value = { "javax.transaction.xa.XAException", "com.ibm.ws.recoverylog.spi.RecoveryFailedException",
-                           "javax.transaction.SystemException", "com.ibm.ws.recoverylog.spi.InternalLogException",
-                           "com.ibm.ws.recoverylog.spi.LogsUnderlyingTablesMissingException", "java.lang.Exception" })
+    // Annoying that all these have to be allowed rather that some being expected. Thanks Derby.
+    @AllowedFFDC(value = { "com.ibm.ws.recoverylog.spi.LogsUnderlyingTablesMissingException", "javax.transaction.SystemException", "java.lang.Exception",
+                           "com.ibm.ws.recoverylog.spi.InternalLogException" })
     public void testReactionToDeletedTables() throws Exception {
-        final String method = "testReactionToDeletedTables";
-        StringBuilder sb = null;
-        if (!TxTestContainerSuite.isDerby()) { // Embedded Derby cannot support tests with concurrent server startup
 
+        if (!TxTestContainerSuite.isDerby()) { // Can't get a connection to drop tables on embedded Derby
             serversToCleanup = new LibertyServer[] { server2, noRecoveryGroupServer1 };
-            //            server2.setHttpDefaultPort(cloud2ServerPort);
             server2.useSecondaryHTTPPort();
-            FATUtils.startServers(_runner, server2);
-            assertNotNull("Home server recovery failed", server2.waitForStringInTrace("Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
-            FATUtils.startServers(_runner, noRecoveryGroupServer1);
 
-            sb = runTestWithResponse(noRecoveryGroupServer1, SERVLET_NAME, "dropServer2Tables");
-            Log.info(c, method, "testReactionToDeletedTables dropServer2Tables returned: " + sb);
+            FATUtils.startServers(_runner, server2, noRecoveryGroupServer1);
+            assertNotNull("Home server recovery should have completed",
+                          server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
 
-            assertNotNull("Failed to drop tables", noRecoveryGroupServer1.waitForStringInTrace("<<< END:   dropServer2Tables", FATUtils.LOG_SEARCH_TIMEOUT));
+            runTestWithResponse(noRecoveryGroupServer1, SERVLET_NAME, "dropServer2Tables");
 
-            sb = runTestWithResponse(server2, SERVLET_NAME, "twoTrans");
-            Log.info(c, method, "testReactionToDeletedTables twoTrans returned: " + sb);
-            assertNotNull("Home server tables are still present", server2.waitForStringInTrace("Underlying SQL tables missing", FATUtils.LOG_SEARCH_TIMEOUT));
+            runTestWithResponse(server2, SERVLET_NAME, "twoTrans");
+            assertNotNull("Home server tables sould have been deleted", server2.waitForStringInTrace("Underlying SQL tables missing", FATUtils.LOG_SEARCH_TIMEOUT));
+
+            assertNotNull("Server should have stopped",
+                          server2.waitForStringInLog("CWWKE0036I: The server com.ibm.ws.transaction_ANYDBCLOUD002 stopped", FATUtils.LOG_SEARCH_TIMEOUT));
         }
     }
 
