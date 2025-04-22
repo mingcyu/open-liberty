@@ -15,6 +15,8 @@ package test.jakarta.data.global;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.util.Set;
+
 import javax.json.JsonObject;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -25,13 +27,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
+import com.ibm.websphere.simplicity.config.ServerConfiguration;
 
 import componenttest.annotation.MinimumJavaLevel;
 import componenttest.annotation.Server;
+import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
 import componenttest.topology.utils.HttpRequest;
+import test.jakarta.data.global.webapp.DataGlobalWebAppServlet;
 
 @RunWith(FATRunner.class)
 @MinimumJavaLevel(javaLevel = 17)
@@ -46,6 +51,7 @@ public class DataJavaGlobalTest extends FATServletClient {
                     };
 
     @Server("io.openliberty.data.internal.fat.global")
+    @TestServlet(servlet = DataGlobalWebAppServlet.class, contextRoot = "DataGlobalWebApp")
     public static LibertyServer server;
 
     @BeforeClass
@@ -55,6 +61,11 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .create(WebArchive.class, "DataGlobalRestApp.war")
                         .addPackage("test.jakarta.data.global.rest");
         ShrinkHelper.exportAppToServer(server, DataGlobalRestApp);
+
+        WebArchive DataGlobalWebApp = ShrinkWrap
+                        .create(WebArchive.class, "DataGlobalWebApp.war")
+                        .addPackage("test.jakarta.data.global.webapp");
+        ShrinkHelper.exportAppToServer(server, DataGlobalWebApp);
 
         server.startServer();
 
@@ -98,7 +109,27 @@ public class DataJavaGlobalTest extends FATServletClient {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        server.stopServer(EXPECTED_ERROR_MESSAGES);
+        try {
+            // Stop an application that has a repository that uses a DataSource
+            // that is defined in a different application
+            ServerConfiguration config = server.getServerConfiguration();
+            config.getApplications().removeBy("location", "DataGlobalWebApp.war");
+            server.setMarkToEndOfLog();
+            server.updateServerConfiguration(config);
+            server.waitForConfigUpdateInLogUsingMark(Set.of(),
+                                                     "CWWKZ0009I.*DataGlobalWebApp");
+
+            // Verify that the repository in the remaining application can continue
+            // to be used.
+            String path = "/DataGlobalRestApp/data/reminder/id/3";
+            JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
+
+            String found = "found: " + json;
+            assertEquals(found, 3, json.getInt("id"));
+            assertEquals(found, "Do this third.", json.getString("message"));
+        } finally {
+            server.stopServer(EXPECTED_ERROR_MESSAGES);
+        }
     }
 
     /**
@@ -109,10 +140,10 @@ public class DataJavaGlobalTest extends FATServletClient {
         String path = "/DataGlobalRestApp/data/reminder/id/1";
         JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
 
-        String err = "unexpected response: " + json;
+        String found = "found: " + json;
 
-        assertEquals(err, 1, json.getInt("id"));
-        assertEquals(err, "Do this first.", json.getString("message"));
+        assertEquals(found, 1, json.getInt("id"));
+        assertEquals(found, "Do this first.", json.getString("message"));
     }
 
     /**
