@@ -29,20 +29,16 @@ import jakarta.websocket.WebSocketContainer;
 
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.log.Log;
+import com.ibm.ws.springboot.support.fat.AbstractSpringTests.AppConfigType;
 
-import componenttest.annotation.MinimumJavaLevel;
-import componenttest.custom.junit.runner.FATRunner;
+public abstract class WebSocketAbstractTests extends AbstractSpringTests {
 
-@RunWith(FATRunner.class)
-@MinimumJavaLevel(javaLevel = 17)
-public class WebSocketTests30 extends AbstractSpringTests {
-
-    private WebSocketContainer wsContainer;
-    private WebSocketTests30EndpointEcho clientEndpoint;
+    private static WebSocketContainer wsContainer;
+    private static WebSocketTests30EndpointEcho clientEndpoint;
 
     // java.lang.RuntimeException: Could not find an implementation class.
     // at jakarta.websocket.ContainerProvider.getWebSocketContainer(ContainerProvider.java:59)
@@ -69,16 +65,20 @@ public class WebSocketTests30 extends AbstractSpringTests {
     // )
     // https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-client-api
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         wsContainer = ContainerProvider.getWebSocketContainer();
         clientEndpoint = new WebSocketTests30EndpointEcho();
     }
+    
+    @Before
+    public void setDefaultPort() {
+        server.setHttpDefaultPort(DEFAULT_HTTP_PORT);
+    }
 
-    @Test
     public void testEchoWebSocket30() throws Exception {
         Log.info(getClass(), "testWebSocket30", wsContainer.toString());
-        Session session = wsContainer.connectToServer(clientEndpoint, new URI("ws://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/echo"));
+        Session session = wsContainer.connectToServer(clientEndpoint, new URI("ws://" + server.getHostname() + ":" + server.getHttpDefaultPort() + getContextRoot() +"echo"));
         assertNotNull("Session cannot be null", session);
         assertTrue("Session is not open", session.isOpen());
         CountDownLatch latch = new CountDownLatch(1);
@@ -91,16 +91,20 @@ public class WebSocketTests30 extends AbstractSpringTests {
      * Test websocket using a custom websocket configurer.
      *
      * The application registers a custom websocket handler and a abstract handshake handler.
-     * The org.springframework.web.socket.server.support.AbstractHandshakeHandler looksup websphere websocket code which is now being removed in spring framework 7.x.
-     * This test should fail for future Spring Boot versions using spring framework 7.x, we might have to use the websocket-2.2 feature and do some implementation changes if
-     * required.
+     * The org.springframework.web.socket.server.support.AbstractHandshakeHandler looks up com.ibm.websphere.wsoc.WsWsocServerContainer 
+     * to do the WebSocket upgrade on provided HttpServletRequest and HttpServletResponse using 
+     * com.ibm.websphere.wsoc.WsWsocServerContainer#doUpgrade(HttpServletRequest req, HttpServletResponse resp, ServerEndpointConfig sec, Map<String, String> pathParams)
+     * 
+     * Since websocket-2.1 - jakarta.websocket.server.ServerContainer#upgradeHttpToWebSocket(Object httpServletRequest, Object httpServletResponse, ServerEndpointConfig sec, Map<String,String> pathParameters) can be used.
+     * 
+     * So looking for WsWsocServerContainer in order to do the upgrade is no longer required and is being removed in spring framework 7.x.
+     * 
      *
      * @throws Exception
      */
-    @Test
     public void testEchoWithCustomWebsocketHandler() throws Exception {
         Log.info(getClass(), "testEchoWithCustomWebsocketHandler", wsContainer.toString());
-        Session session = wsContainer.connectToServer(clientEndpoint, new URI("ws://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/customHandler"));
+        Session session = wsContainer.connectToServer(clientEndpoint, new URI("ws://" + server.getHostname() + ":" + server.getHttpDefaultPort() + getContextRoot() +"customHandler"));
         assertNotNull("Session cannot be null", session);
         assertTrue("Session is not open", session.isOpen());
         CountDownLatch latch = new CountDownLatch(1);
@@ -110,13 +114,17 @@ public class WebSocketTests30 extends AbstractSpringTests {
     }
 
     @Override
-    public Set<String> getFeatures() {
-        return new HashSet<>(Arrays.asList("springBoot-3.0", "servlet-6.0", "websocket-2.1"));
+    public String getApplication() {
+        return SPRING_BOOT_30_APP_WEBSOCKET;
     }
 
     @Override
-    public String getApplication() {
-        return SPRING_BOOT_30_APP_WEBSOCKET;
+    public boolean useDefaultVirtualHost() {
+        return true;
+    }
+    
+    public String getContextRoot() {
+        return "/";
     }
 
     @AfterClass
