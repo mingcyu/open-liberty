@@ -115,6 +115,7 @@ public class BasicAuthTest extends ContainerKDCCommonTest {
 
     @Test
     @SkipIfSysProp(SkipIfSysProp.OS_ZOS) // Skip on z/OS due to configuration error
+    @SkipIfSysProp(SkipIfSysProp.OS_IBMI) //Skip on iSeries due to connection refusal by kerberos client
     public void testSpnegoSuccessful() throws Exception {
         refreshCommonSpnegoToken();
         setDefaultSpnegoServerConfig(ENABLE_INFO_LOGGING);
@@ -123,6 +124,7 @@ public class BasicAuthTest extends ContainerKDCCommonTest {
 
     @Test
     @SkipIfSysProp(SkipIfSysProp.OS_ZOS) // Skip on z/OS due to configuration error
+    @SkipIfSysProp(SkipIfSysProp.OS_IBMI) //Skip on iSeries due to connection refusal by kerberos client
     public void testSpnegoSuccessful_withJwtSsoFeature() throws Exception {
         refreshCommonSpnegoToken();
         setDefaultSpnegoServerConfig();
@@ -175,6 +177,7 @@ public class BasicAuthTest extends ContainerKDCCommonTest {
      */
     @Test
     @SkipIfSysProp(SkipIfSysProp.OS_ZOS) // Skip on z/OS due to configuration error
+    @SkipIfSysProp(SkipIfSysProp.OS_IBMI) //Skip on iSeries due to connection refusal by kerberos client
     public void testSpnegoSuccessfulforSSLClient() throws Exception {
         spnegoTestSetupChecks();
         commonSuccessfulSpnegoServletCallSSLClient();
