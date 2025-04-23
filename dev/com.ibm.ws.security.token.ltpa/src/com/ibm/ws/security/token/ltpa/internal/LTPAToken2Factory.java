@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2023 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -111,47 +111,49 @@ public class LTPAToken2Factory implements TokenFactory {
         // validation keys (secondary keys)
         if (validationKeys != null) {
             Exception lastException = null;
+            
+            synchronized (validationKeys) {
 
-            Iterator<LTPAValidationKeysInfo> validationKeysIterator = validationKeys.iterator();
+                Iterator<LTPAValidationKeysInfo> validationKeysIterator = validationKeys.iterator();
 
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "go through " + validationKeys.size() + " validationKeys");
-            }
-            while (validationKeysIterator.hasNext()) { // go through all validation keys until successfully validated the token
-                LTPAValidationKeysInfo ltpaKeyInfo = validationKeysIterator.next();
-                byte[] sharedKeyForValidation = ltpaKeyInfo.getSecretKey();
-                LTPAPrivateKey ltpaPrivateKeyForValidation = ltpaKeyInfo.getLTPAPrivateKey();
-                LTPAPublicKey ltpaPublicKeyForValidation = ltpaKeyInfo.getLTPAPublicKey();
-                if (ltpaKeyInfo.isValidUntilDateExpired()) {
-                    validationKeysIterator.remove();
-                } else {
-                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                        Tr.debug(tc, "validateTokenBytes with validationKeys: " + ltpaKeyInfo);
-                    }
-                    if (sharedKeyForValidation != null && ltpaPrivateKeyForValidation != null && ltpaPublicKeyForValidation != null) {
-                        try {
-                            validatedToken = new LTPAToken2(tokenBytes, sharedKeyForValidation, ltpaPrivateKeyForValidation, ltpaPublicKeyForValidation, expDiffAllowed, removeAttributes);
-                            if (validatedToken != null) {
-                                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                                    Tr.debug(tc, "validateTokenBytes with validationKeys (success)");
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "go through " + validationKeys.size() + " validationKeys");
+                }
+                while (validationKeysIterator.hasNext()) { // go through all validation keys until successfully validated the token
+                    LTPAValidationKeysInfo ltpaKeyInfo = validationKeysIterator.next();
+                    byte[] sharedKeyForValidation = ltpaKeyInfo.getSecretKey();
+                    LTPAPrivateKey ltpaPrivateKeyForValidation = ltpaKeyInfo.getLTPAPrivateKey();
+                    LTPAPublicKey ltpaPublicKeyForValidation = ltpaKeyInfo.getLTPAPublicKey();
+                    if (ltpaKeyInfo.isValidUntilDateExpired()) {
+                        validationKeysIterator.remove();
+                    } else {
+                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                            Tr.debug(tc, "validateTokenBytes with validationKeys: " + ltpaKeyInfo);
+                        }
+                        if (sharedKeyForValidation != null && ltpaPrivateKeyForValidation != null && ltpaPublicKeyForValidation != null) {
+                            try {
+                                validatedToken = new LTPAToken2(tokenBytes, sharedKeyForValidation, ltpaPrivateKeyForValidation, ltpaPublicKeyForValidation, expDiffAllowed, removeAttributes);
+                                if (validatedToken != null) {
+                                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                                        Tr.debug(tc, "validateTokenBytes with validationKeys (success)");
+                                    }
+                                    return validatedToken;
                                 }
-                                return validatedToken;
-                            }
-                        } catch (Exception e) {
-                            if (e instanceof com.ibm.websphere.security.auth.TokenExpiredException) {
-                                if (tc.isEntryEnabled())
-                                    Tr.exit(tc, "validateTokenBytes (expired)");
-                                throw (com.ibm.websphere.security.auth.TokenExpiredException) e;
-                            }
+                            } catch (Exception e) {
+                                if (e instanceof com.ibm.websphere.security.auth.TokenExpiredException) {
+                                    if (tc.isEntryEnabled())
+                                        Tr.exit(tc, "validateTokenBytes (expired)");
+                                    throw (com.ibm.websphere.security.auth.TokenExpiredException) e;
+                                }
 
-                            lastException = e;
-                            // no ffdc needed.
-                            Tr.debug(tc, "Exception validating LTPAToken using validation keys.", new Object[] { e.getMessage() });
+                                lastException = e;
+                                // no ffdc needed.
+                                Tr.debug(tc, "Exception validating LTPAToken using validation keys.", new Object[] { e.getMessage() });
+                            }
                         }
                     }
                 }
             }
-
             if (lastException != null && lastException instanceof com.ibm.websphere.security.auth.InvalidTokenException) {
                 if (tc.isEntryEnabled())
                     Tr.exit(tc, "validateTokenBytes (invalid token)");

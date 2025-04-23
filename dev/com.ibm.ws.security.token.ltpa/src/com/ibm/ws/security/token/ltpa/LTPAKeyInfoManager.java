@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2023 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -126,28 +126,30 @@ public class LTPAKeyInfoManager {
         }
         if (validationKeys != null && !validationKeys.isEmpty()) {
             ltpaValidationKeysInfos.clear();
-            //load validationKeys
-            Iterator<Properties> validationKeysIterator = validationKeys.iterator();
-            while (validationKeysIterator.hasNext()) {
-                OffsetDateTime validUntilDateOdt = null;
-                Properties vKeys = validationKeysIterator.next();
-                String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
-                if (!this.importFileCache.contains(vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME))) {
-                    String validUntilDate = ((String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_VALID_UNTIL_DATE));
-                    if (validUntilDate != null) {
-                        try {
-                            validUntilDateOdt = OffsetDateTime.parse(validUntilDate);
-                            if (validUntilDateOdt != null && isValidUntilDateExpired(filename, validUntilDateOdt)) {
+            synchronized (validationKeys) {
+                //load validationKeys
+                Iterator<Properties> validationKeysIterator = validationKeys.iterator();
+                while (validationKeysIterator.hasNext()) {
+                    OffsetDateTime validUntilDateOdt = null;
+                    Properties vKeys = validationKeysIterator.next();
+                    String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
+                    if (!this.importFileCache.contains(vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME))) {
+                        String validUntilDate = ((String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_VALID_UNTIL_DATE));
+                        if (validUntilDate != null) {
+                            try {
+                                validUntilDateOdt = OffsetDateTime.parse(validUntilDate);
+                                if (validUntilDateOdt != null && isValidUntilDateExpired(filename, validUntilDateOdt)) {
+                                    continue; //Skip this LTPA validationKeys
+                                }
+                            } catch (Exception e) {
+                                Tr.error(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_INVALID_FORMAT", validUntilDate, filename);
                                 continue; //Skip this LTPA validationKeys
                             }
-                        } catch (Exception e) {
-                            Tr.error(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_INVALID_FORMAT", validUntilDate, filename);
-                            continue; //Skip this LTPA validationKeys
                         }
-                    }
 
-                    byte[] password = getKeyPasswordBytes(vKeys);
-                    loadLtpaKeysFile(locService, filename, password, true, validUntilDateOdt);
+                        byte[] password = getKeyPasswordBytes(vKeys);
+                        loadLtpaKeysFile(locService, filename, password, true, validUntilDateOdt);
+                    }
                 }
             }
         }
