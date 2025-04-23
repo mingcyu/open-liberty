@@ -15,10 +15,14 @@ package test.jakarta.data.global.rest;
 import jakarta.data.repository.BasicRepository;
 import jakarta.data.repository.Repository;
 
+import javax.sql.DataSource;
+
 /**
  * A repository that relies on a DataSource with a java:global/env
  * resource reference that is defined in another application.
  */
 @Repository(dataStore = "java:global/env/jdbc/WebAppDataSourceRef")
 public interface Referrals extends BasicRepository<Referral, String> {
+
+    DataSource getDataSource();
 }

@@ -48,6 +48,7 @@ public class DataJavaGlobalTest extends FATServletClient {
      */
     private static final String[] EXPECTED_ERROR_MESSAGES = //
                     new String[] {
+                                   "CWWKD1064E.*getDataSource" // other app stopped
                     };
 
     @Server("io.openliberty.data.internal.fat.global")
@@ -127,6 +128,20 @@ public class DataJavaGlobalTest extends FATServletClient {
             String found = "found: " + json;
             assertEquals(found, 3, json.getInt("id"));
             assertEquals(found, "Do this third.", json.getString("message"));
+
+            // Attempt to access a repository that depends on resource reference and
+            // DataSource in java:global from the other application which has already
+            // been stopped.
+            path = "/DataGlobalRestApp/data/referral/datasource";
+            try {
+                json = new HttpRequest(server, path).run(JsonObject.class);
+                fail("Should not find " + json);
+            } catch (Exception x) {
+                if (x.getMessage() != null && x.getMessage().contains("500"))
+                    ; // expected
+                else
+                    throw x;
+            }
         } finally {
             server.stopServer(EXPECTED_ERROR_MESSAGES);
         }
@@ -197,6 +212,23 @@ public class DataJavaGlobalTest extends FATServletClient {
         assertEquals(found,
                      5075554321L,
                      json.getJsonNumber("phone").longValue());
+
+        path = "/DataGlobalRestApp/data/referral/datasource";
+        json = new HttpRequest(server, path).run(JsonObject.class);
+
+        found = "found: " + json;
+
+        assertEquals(found,
+                     "Apache Derby",
+                     json.getString("DatabaseProductName"));
+
+        assertEquals(found,
+                     "Apache Derby Embedded JDBC Driver",
+                     json.getString("DriverName"));
+
+        assertEquals(found,
+                     "dbuser2",
+                     json.getString("UserName"));
     }
 
     /**
