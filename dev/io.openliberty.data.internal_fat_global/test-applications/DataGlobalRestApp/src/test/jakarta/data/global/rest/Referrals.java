@@ -12,31 +12,13 @@
  *******************************************************************************/
 package test.jakarta.data.global.rest;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.data.repository.BasicRepository;
+import jakarta.data.repository.Repository;
 
 /**
- * A simple entity for a repository that relies on a DataSource with a
- * java:global JNDI name that is defined in this application.
+ * A repository that relies on a DataSource with a java:global/env
+ * resource reference that is defined in another application.
  */
-@Entity
-public class Reminder {
-    @Id
-    public long id;
-
-    @Column(nullable = false)
-    public String message;
-
-    public static Reminder of(long id, String message) {
-        Reminder r = new Reminder();
-        r.id = id;
-        r.message = message;
-        return r;
-    }
-
-    @Override
-    public String toString() {
-        return "Reminder#" + id + ":" + message;
-    }
+@Repository(dataStore = "java:global/env/jdbc/WebAppDataSourceRef")
+public interface Referrals extends BasicRepository<Referral, String> {
 }

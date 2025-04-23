@@ -10,33 +10,29 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package test.jakarta.data.global.rest;
+package test.jakarta.data.global.webapp;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 /**
- * A simple entity for a repository that relies on a DataSource with a
- * java:global JNDI name that is defined in this application.
+ * A simple entity to use with a Jakarta Data repository that requires a DataSource
+ * with a java:global/env resource reference that that is defined by this
+ * application.
  */
 @Entity
-public class Reminder {
+public class Letter {
     @Id
-    public long id;
+    public char id;
 
-    @Column(nullable = false)
-    public String message;
-
-    public static Reminder of(long id, String message) {
-        Reminder r = new Reminder();
-        r.id = id;
-        r.message = message;
-        return r;
+    public static Letter of(char letter) {
+        Letter w = new Letter();
+        w.id = letter;
+        return w;
     }
 
     @Override
     public String toString() {
-        return "Reminder#" + id + ":" + message;
+        return "Letter:" + id;
     }
 }

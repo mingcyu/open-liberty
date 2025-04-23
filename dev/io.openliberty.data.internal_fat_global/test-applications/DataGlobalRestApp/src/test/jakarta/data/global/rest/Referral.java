@@ -18,25 +18,29 @@ import jakarta.persistence.Id;
 
 /**
  * A simple entity for a repository that relies on a DataSource with a
- * java:global JNDI name that is defined in this application.
+ * java:global/env resource reference that is defined in another application.
  */
 @Entity
-public class Reminder {
+public class Referral {
     @Id
-    public long id;
+    public String email;
 
     @Column(nullable = false)
-    public String message;
+    public String name;
 
-    public static Reminder of(long id, String message) {
-        Reminder r = new Reminder();
-        r.id = id;
-        r.message = message;
+    @Column
+    public Long phone;
+
+    public static Referral of(String email, String name, Long phone) {
+        Referral r = new Referral();
+        r.email = email;
+        r.name = name;
+        r.phone = phone;
         return r;
     }
 
     @Override
     public String toString() {
-        return "Reminder#" + id + ":" + message;
+        return "Referral:" + email + " " + name + " #" + phone;
     }
 }

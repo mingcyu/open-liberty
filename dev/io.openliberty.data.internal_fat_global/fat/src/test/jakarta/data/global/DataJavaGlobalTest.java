@@ -134,9 +134,11 @@ public class DataJavaGlobalTest extends FATServletClient {
 
     /**
      * Verify that an entity can be found in the database by querying on its Id.
+     * The DataSource used by the repository has a java:global name and is located
+     * in the same application as the repository.
      */
     @Test
-    public void testFindById() throws Exception {
+    public void testFindByIdGlobalDataSourceSameApp() throws Exception {
         String path = "/DataGlobalRestApp/data/reminder/id/1";
         JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
 
@@ -147,11 +149,62 @@ public class DataJavaGlobalTest extends FATServletClient {
     }
 
     /**
+     * Verify that an entity can be found in the database by querying on its Id.
+     * The DataSource resource reference used by the repository has a
+     * java:global/env name and is located in a different application than the
+     * repository.
+     */
+    @Test
+    public void testGlobalResRefFromDifferentApp() throws Exception {
+        JsonObject saved = new HttpRequest(server, "/DataGlobalRestApp/data/referral/save")
+                        .method("POST")
+                        .jsonBody("""
+                                        {
+                                          "email": "testGlobalResRef1@openliberty.io",
+                                          "name": "TestGlobalResRefFromDifferentApp",
+                                          "phone": 5075554321
+                                        }""")
+                        .run(JsonObject.class);
+
+        String response = saved.toString();
+
+        assertEquals(response,
+                     "testGlobalResRef1@openliberty.io",
+                     saved.getString("email"));
+
+        assertEquals(response,
+                     "TestGlobalResRefFromDifferentApp",
+                     saved.getString("name"));
+
+        assertEquals(response,
+                     5075554321L,
+                     saved.getJsonNumber("phone").longValue());
+
+        String path = "/DataGlobalRestApp/data/referral/email/" +
+                      "testGlobalResRef1@openliberty.io";
+        JsonObject json = new HttpRequest(server, path).run(JsonObject.class);
+
+        String found = "found: " + json;
+
+        assertEquals(found,
+                     "testGlobalResRef1@openliberty.io",
+                     json.getString("email"));
+
+        assertEquals(found,
+                     "TestGlobalResRefFromDifferentApp",
+                     json.getString("name"));
+
+        assertEquals(found,
+                     5075554321L,
+                     json.getJsonNumber("phone").longValue());
+    }
+
+    /**
      * Verify that a non-matching entity Id gets a 404 error indicating that an
      * entity is not found in the database.
      */
     @Test
-    public void testNotFound() throws Exception {
+    public void testNotFoundGlobalDataSourceSameApp() throws Exception {
         String path = "/DataGlobalRestApp/data/reminder/id/97531";
         try {
             JsonObject json = new HttpRequest(server, path).run(JsonObject.class);

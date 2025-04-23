@@ -16,6 +16,10 @@ import jakarta.annotation.sql.DataSourceDefinition;
 import jakarta.data.repository.CrudRepository;
 import jakarta.data.repository.Repository;
 
+/**
+ * A repository that relies on a DataSource with a java:global JNDI name
+ * that is defined in this application.
+ */
 @DataSourceDefinition(name = "java:global/jdbc/RestResourceDataSource",
                       className = "org.apache.derby.jdbc.EmbeddedXADataSource",
                       databaseName = "memory:testdb",
