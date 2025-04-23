@@ -697,6 +697,9 @@ public abstract class AbstractSpringTests {
         List<SpringBootApplication> applications = config.getSpringBootApplications();
         applications.clear();
 
+        List<WebApplication> webApplications = config.getWebApplications();
+        webApplications.clear();
+
         Set<String> features = config.getFeatureManager().getFeatures();
         features.clear();
         features.addAll(getFeatures());
