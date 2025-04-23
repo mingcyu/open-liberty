@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2024 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -281,7 +281,7 @@ public class EE11Features {
         features.remove("microProfile-7.0");
         //In preparation for the release of MpTelemetry 2.1 and MpOpenAPI 4.1
         //features.remove("mpTelemetry-2.0");
-        //features.remove("mpOpenAPI-4.0");
+        features.remove("mpOpenAPI-4.0");
 
         // remove client features
         features.remove("jakartaeeClient-11.0");
