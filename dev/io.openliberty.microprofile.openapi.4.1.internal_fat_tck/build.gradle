@@ -13,5 +13,3 @@ apply from: '../wlp-gradle/subprojects/maven-central-mirror.gradle'
 dependencies {
   requiredLibs 'org.hamcrest:hamcrest:2.1'
 }
-
-addRequiredLibraries.dependsOn addJakartaTransformer
