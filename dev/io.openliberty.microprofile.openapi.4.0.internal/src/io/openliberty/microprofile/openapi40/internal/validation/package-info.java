@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -7,8 +7,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-@TraceOptions(traceGroup = Constants.TRACE_GROUP)
-package io.openliberty.microprofile.openapi40.internal.services.impl;
+
+@TraceOptions(traceGroup = Constants.TRACE_GROUP, messageBundle = Constants.TRACE_VALIDATION)
+package io.openliberty.microprofile.openapi40.internal.validation;
 
 import com.ibm.websphere.ras.annotation.TraceOptions;
 

@@ -7,9 +7,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-@TraceOptions(traceGroup = Constants.TRACE_GROUP)
 package io.openliberty.microprofile.openapi40.internal.services.impl;
 
-import com.ibm.websphere.ras.annotation.TraceOptions;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import io.openliberty.microprofile.openapi20.internal.utils.Constants;
+import io.openliberty.microprofile.openapi20.internal.services.OpenAPIModelOperations;
+import io.openliberty.microprofile.openapi40.internal.impl.OpenAPI31ModelOperations;
+
+@Component(configurationPolicy = ConfigurationPolicy.IGNORE, service = OpenAPIModelOperations.class)
+public class OpenAPI31ModelOperations40Impl extends OpenAPI31ModelOperations {}
