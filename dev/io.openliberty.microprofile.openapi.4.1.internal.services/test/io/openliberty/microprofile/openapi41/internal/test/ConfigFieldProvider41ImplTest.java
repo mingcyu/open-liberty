@@ -27,9 +27,12 @@ import java.util.List;
 import org.junit.Test;
 
 import io.openliberty.microprofile.openapi20.internal.services.ConfigField;
-import io.openliberty.microprofile.openapi40.internal.services.impl.ConfigFieldProvider40Impl;
+import io.openliberty.microprofile.openapi40.internal.impl.ConfigFieldProvider40Impl;
 import io.smallrye.openapi.api.OpenApiConfig;
 
+/**
+ * Tests that {@link ConfigFieldProvider40Impl} still covers all the config fields in SmallRye OpenAPI 4.1
+ */
 public class ConfigFieldProvider41ImplTest {
 
     /**
