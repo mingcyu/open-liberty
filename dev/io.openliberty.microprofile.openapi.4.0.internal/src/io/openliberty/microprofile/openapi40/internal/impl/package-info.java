@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 @com.ibm.websphere.ras.annotation.TraceOptions(traceGroup = Constants.TRACE_GROUP, messageBundle = Constants.TRACE_OPENAPI)
-@org.osgi.annotation.versioning.Version("0.1")
+@org.osgi.annotation.versioning.Version("1.0")
 package io.openliberty.microprofile.openapi40.internal.impl;
 
 import io.openliberty.microprofile.openapi20.internal.utils.Constants;
