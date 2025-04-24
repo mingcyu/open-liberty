@@ -62,7 +62,7 @@ public class DataTest extends FATServletClient {
 
     @Server("io.openliberty.data.internal.fat")
     @TestServlets({ @TestServlet(servlet = DataTestServlet.class, contextRoot = "DataTestApp"),
-                    @TestServlet(servlet = ProviderTestServlet.class, contextRoot = "ProviderTestApp") })
+                    @TestServlet(servlet = ProviderTestServlet.class, contextRoot = "DifferentAppName") })
     public static LibertyServer server;
 
     @BeforeClass
@@ -88,7 +88,10 @@ public class DataTest extends FATServletClient {
                         .addAsLibrary(providerJar);
         ShrinkHelper.exportAppToServer(server, providerWar);
 
-        server.startServer();
+        //Validate apps separately due to the different app name
+        server.startServerAndValidate(LibertyServer.DEFAULT_PRE_CLEAN, LibertyServer.DEFAULT_CLEANSTART, false);
+        server.validateAppLoaded("DataTestApp");
+        server.validateAppLoaded("DifferentAppName");
     }
 
     @AfterClass
