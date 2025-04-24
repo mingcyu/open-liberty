@@ -27,6 +27,8 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import com.ibm.tx.jta.ut.util.XAResourceImpl;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
+import com.ibm.websphere.simplicity.config.ServerConfiguration;
+import com.ibm.websphere.simplicity.config.Transaction;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.transaction.fat.util.FATUtils;
 import com.ibm.ws.transaction.fat.util.SetupRunner;
@@ -553,18 +555,46 @@ public class DBRotationTest extends CloudFATServletClient {
         longLeaseServerB.setHttpDefaultPort(longLeaseServerPortB);
         longLeaseServerC.setHttpDefaultPort(longLeaseServerPortC);
 
-        FATUtils.startServers(_runner, longLeaseServerA, longLeaseServerB, longLeaseServerC, server2);
+        try (AutoCloseable x = withExtraTranAttribute(server2, "peerTimeBeforeStale", "20")) {
+            FATUtils.startServers(_runner, longLeaseServerA, longLeaseServerB, longLeaseServerC, server2);
 
-        //  Check for key strings to see whether peer recovery has failed
-        assertNotNull("First peer recovery unexpectedly succeeded",
-                      server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0011",
-                                                   FATUtils.LOG_SEARCH_TIMEOUT));
-        assertNotNull("Second peer recovery unexpectedly succeeded",
-                      server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0012",
-                                                   FATUtils.LOG_SEARCH_TIMEOUT));
-        assertNotNull("Third peer recovery unexpectedly succeeded",
-                      server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0013",
-                                                   FATUtils.LOG_SEARCH_TIMEOUT));
+            //  Check for key strings to see whether peer recovery has failed
+            assertNotNull("First peer recovery unexpectedly succeeded",
+                          server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0011",
+                                                       FATUtils.LOG_SEARCH_TIMEOUT));
+            assertNotNull("Second peer recovery unexpectedly succeeded",
+                          server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0012",
+                                                       FATUtils.LOG_SEARCH_TIMEOUT));
+            assertNotNull("Third peer recovery unexpectedly succeeded",
+                          server2.waitForStringInTrace("WTRN0108I: Peer recovery will not be attempted, this server was unable to claim the logs of the server with recovery identity cloud0013",
+                                                       FATUtils.LOG_SEARCH_TIMEOUT));
+        }
+    }
+
+    /**
+     * Temporarily set an extra transaction attribute
+     * server should be stopped
+     */
+    private static AutoCloseable withExtraTranAttribute(LibertyServer server, String attribute, String value) throws Exception {
+        final ServerConfiguration config = server.getServerConfiguration();
+        final ServerConfiguration originalConfig = config.clone();
+        final Transaction transaction = config.getTransaction();
+        transaction.setExtraAttribute(attribute, value);
+
+        try {
+            server.updateServerConfiguration(config);
+        } catch (Exception e) {
+            try {
+                server.updateServerConfiguration(originalConfig);
+            } catch (Exception e1) {
+                e.addSuppressed(e1);
+            }
+            throw e;
+        }
+
+        return () -> {
+            server.updateServerConfiguration(originalConfig);
+        };
     }
 
     // Returns false if the server is alive, throws Exception otherwise
