@@ -28,11 +28,8 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Modified;
 
 import com.ibm.websphere.logging.hpel.LogRecordContext;
-import com.ibm.websphere.ras.Tr;
-import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.app.manager.internal.AppManagerConstants;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 @Component(service = ApplicationManager.class,
            immediate = true,
@@ -40,8 +37,6 @@ import com.ibm.ws.kernel.productinfo.ProductInfo;
            configurationPolicy = ConfigurationPolicy.REQUIRE,
            property = "service.vendor=IBM")
 public class ApplicationManager {
-
-    public static final TraceComponent tc = Tr.register(ApplicationManager.class);
 
     private boolean expandApps;
     private boolean useJandex;
@@ -143,10 +138,8 @@ public class ApplicationManager {
         setUseJandex(useJandexValue == null ? false : useJandexValue);
         //System.setProperty("com.ibm.ws.jandex.enable", useJandexValue.toString()); // Temporary -- REMOVE THIS LATER ////
 
-        if (!ProductInfo.getBetaEdition()) {
-            String annotationScanLibraryValue = getProperty(properties, "annotationScanLibrary", "");
-            setAnnotationScanLibrary(annotationScanLibraryValue);
-        }
+        String annotationScanLibraryValue = getProperty(properties, "annotationScanLibrary", "");
+        setAnnotationScanLibrary(annotationScanLibraryValue);
 
         long startTimeoutValue = getProperty(properties, "startTimeout", 30L);
         setStartTimeout(startTimeoutValue);
@@ -294,23 +287,7 @@ public class ApplicationManager {
         annotationScanLibrary = annotationScanLibraryValue;
     }
 
-    private static boolean issuedBetaMessage = false;
-
-    private void betaFenceCheck() throws UnsupportedOperationException {
-        // Not running beta edition, throw exception
-        if (!ProductInfo.getBetaEdition()) {
-            throw new UnsupportedOperationException("This method is beta and is not available.");
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class
-            if (!issuedBetaMessage) {
-                Tr.info(tc, "BETA: A beta method has been invoked for the class " + this.getClass().getName() + " for the first time.");
-                issuedBetaMessage = !issuedBetaMessage;
-            }
-        }
-    }
-
     public String getAnnotationScanLibrary() {
-        betaFenceCheck();
         return annotationScanLibrary;
     }
 

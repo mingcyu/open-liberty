@@ -23,7 +23,6 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.app.manager.ApplicationManager;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 @Trivial
 public final class ApplicationConfig {
@@ -201,23 +200,7 @@ public final class ApplicationConfig {
         return _applicationManager.getUseJandex();
     }
 
-    private static boolean issuedBetaMessage = false;
-
-    private void betaFenceCheck() throws UnsupportedOperationException {
-        // Not running beta edition, throw exception
-        if (!ProductInfo.getBetaEdition()) {
-            throw new UnsupportedOperationException("This method is beta and is not available.");
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class
-            if (!issuedBetaMessage) {
-                Tr.info(tc, "BETA: A beta method has been invoked for the class " + this.getClass().getName() + " for the first time.");
-                issuedBetaMessage = !issuedBetaMessage;
-            }
-        }
-    }
-
     public String getAnnotationScanLibrary() {
-        betaFenceCheck();
         // First try to get the value from the application configuration
         // which overrides the value on the application manager configuration.
         if (_config != null) {

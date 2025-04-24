@@ -18,12 +18,9 @@ import javax.management.NotificationBroadcasterSupport;
 
 import org.osgi.service.component.annotations.Component;
 
-import com.ibm.websphere.ras.Tr;
-import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.app.manager.internal.monitor.ApplicationMonitor;
 import com.ibm.ws.container.service.app.deploy.extended.ApplicationInfoForContainer;
 import com.ibm.ws.ffdc.FFDCFilter;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.adaptable.module.NonPersistentCache;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
@@ -37,8 +34,6 @@ import com.ibm.wsspi.kernel.service.location.WsResource;
  */
 @Component(service = { ApplicationInfoForContainer.class }, immediate = true)
 public class ApplicationInstallInfo implements ApplicationInformation<Object>, ApplicationInfoForContainer {
-    public static final TraceComponent tc = Tr.register(ApplicationInstallInfo.class);
-
     private final ApplicationConfig _config;
     private final AtomicReference<Object> _handlerInfo = new AtomicReference<Object>();
     private final AtomicReference<Container> _container = new AtomicReference<Container>();
@@ -89,25 +84,9 @@ public class ApplicationInstallInfo implements ApplicationInformation<Object>, A
         return _config.getUseJandex();
     }
 
-    private static boolean issuedBetaMessage = false;
-
-    private void betaFenceCheck() throws UnsupportedOperationException {
-        // Not running beta edition, throw exception
-        if (!ProductInfo.getBetaEdition()) {
-            throw new UnsupportedOperationException("This method is beta and is not available.");
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class
-            if (!issuedBetaMessage) {
-                Tr.info(tc, "BETA: A beta method has been invoked for the class " + this.getClass().getName() + " for the first time.");
-                issuedBetaMessage = !issuedBetaMessage;
-            }
-        }
-    }
-
     /** {@inheritDoc} */
     @Override
     public String getAnnotationScanLibrary() {
-        betaFenceCheck();
         return _config.getAnnotationScanLibrary();
     }
 
