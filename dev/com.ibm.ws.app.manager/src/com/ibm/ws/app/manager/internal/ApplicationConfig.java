@@ -210,8 +210,8 @@ public final class ApplicationConfig {
             }
         }
 
-        // If that fails, try to get the value from the application manager
-        return _applicationManager.getAnnotationScanLibrary();
+        // The application manager does not provide this property, so if we havne't found it return an empty string
+        return "";
     }
 
     public String[] getStartAfter() {

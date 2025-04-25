@@ -71,6 +71,7 @@ import com.ibm.ws.tests.anno.jandex.JandexAppTrueAppMgrTrueTest;
     MetadataIncompleteTest.class,
     FragmentOrderTest.class,
     LooseConfigTest.class,
+    AppReplaceTest.class,
 
     // BigAppTest.class
     AnnotationScanInJarTestModeAll.class,

@@ -43,7 +43,6 @@ public class ApplicationManager {
     private long startTimeout;
     private long stopTimeout;
     private String expandLocation;
-    private String annotationScanLibrary;
 
     private File extractedLog;
     private final ConcurrentMap<String, ExtractedLogData> extractsDataLog = new ConcurrentHashMap<>();
@@ -137,9 +136,6 @@ public class ApplicationManager {
         Boolean useJandexValue = getProperty(properties, "useJandex", false);
         setUseJandex(useJandexValue == null ? false : useJandexValue);
         //System.setProperty("com.ibm.ws.jandex.enable", useJandexValue.toString()); // Temporary -- REMOVE THIS LATER ////
-
-        String annotationScanLibraryValue = getProperty(properties, "annotationScanLibrary", "");
-        setAnnotationScanLibrary(annotationScanLibraryValue);
 
         long startTimeoutValue = getProperty(properties, "startTimeout", 30L);
         setStartTimeout(startTimeoutValue);
@@ -281,15 +277,6 @@ public class ApplicationManager {
 //            }
 //        }
 //    }
-
-    private void setAnnotationScanLibrary(String annotationScanLibraryValue) {
-
-        annotationScanLibrary = annotationScanLibraryValue;
-    }
-
-    public String getAnnotationScanLibrary() {
-        return annotationScanLibrary;
-    }
 
     private static class ExtractedLogData {
         private final String id;
