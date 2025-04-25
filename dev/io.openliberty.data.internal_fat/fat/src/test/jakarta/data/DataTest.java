@@ -61,8 +61,8 @@ public class DataTest extends FATServletClient {
     public static final JdbcDatabaseContainer<?> testContainer = DatabaseContainerFactory.create();
 
     @Server("io.openliberty.data.internal.fat")
-    @TestServlets({ @TestServlet(servlet = DataTestServlet.class, contextRoot = "DataTestApp"),
-                    @TestServlet(servlet = ProviderTestServlet.class, contextRoot = "DifferentAppName") })
+    @TestServlets({ @TestServlet(servlet = DataTestServlet.class, contextRoot = "DifferentAppName"),
+                    @TestServlet(servlet = ProviderTestServlet.class, contextRoot = "ProviderTestApp") })
     public static LibertyServer server;
 
     @BeforeClass
@@ -90,7 +90,7 @@ public class DataTest extends FATServletClient {
 
         //Validate apps separately due to the different app name
         server.startServerAndValidate(LibertyServer.DEFAULT_PRE_CLEAN, LibertyServer.DEFAULT_CLEANSTART, false);
-        server.validateAppLoaded("DataTestApp");
+        server.validateAppLoaded("ProviderTestApp");
         server.validateAppLoaded("DifferentAppName");
     }
 
