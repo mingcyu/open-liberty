@@ -24,10 +24,10 @@ Import-Package: \
     *
 
 Export-Package: \
-    io.smallrye.openapi.model.*;version=4.0
+    io.smallrye.openapi.model.*;version=4.1
 
 -buildpath: \
-    io.smallrye:smallrye-open-api-model;version=4.0.9,\
+    io.smallrye:smallrye-open-api-model;version=4.1.0.alpha3,\
     io.openliberty.org.eclipse.microprofile.openapi.4.1;version=latest,\
     io.openliberty.io.smallrye.jandex3;version=latest,\
     com.ibm.ws.org.jboss.logging;version=latest

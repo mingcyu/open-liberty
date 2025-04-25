@@ -41,12 +41,13 @@ IBM-API-Package: \
   io.openliberty.org.eclipse.microprofile.openapi-4.1,\
   io.openliberty.jandex.internal-3.0
 -bundles=\
-    io.openliberty.io.smallrye.openapi4.core, \
-    io.openliberty.io.smallrye.openapi4.jaxrs, \
-    io.openliberty.io.smallrye.openapi4.model, \
+    io.openliberty.io.smallrye.openapi41.core, \
+    io.openliberty.io.smallrye.openapi41.jaxrs, \
+    io.openliberty.io.smallrye.openapi41.model, \
     io.openliberty.microprofile.openapi.2.0.internal.jakarta, \
     io.openliberty.microprofile.openapi.2.0.internal.servlet.jakarta, \
-    io.openliberty.microprofile.openapi.4.0.internal.services, \
+    io.openliberty.microprofile.openapi.4.0.internal, \
+    io.openliberty.microprofile.openapi.4.1.internal.services, \
     com.ibm.ws.microprofile.openapi.ui, \
     io.openliberty.microprofile.openapi.internal.common,\
     io.openliberty.com.fasterxml.jackson, \
