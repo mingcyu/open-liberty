@@ -17,6 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.util.Set;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -78,7 +79,10 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 1,
-                                          "message": "Do this first."
+                                          "forDayOfWeek": "MONDAY",
+                                          "message": "Do this first.",
+                                          "monthDayCreated": "--04-25",
+                                          "yearCreated": 2025
                                         }""")
                         .run(JsonObject.class);
 
@@ -87,7 +91,10 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 2,
-                                          "message": "Do this second."
+                                          "forDayOfWeek": "TUESDAY",
+                                          "message": "Do this second.",
+                                          "monthDayCreated": "--12-31",
+                                          "yearCreated": 2024
                                         }""")
                         .run(JsonObject.class);
 
@@ -96,7 +103,10 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 3,
-                                          "message": "Do this third."
+                                          "forDayOfWeek": "WEDNESDAY",
+                                          "message": "Do this third.",
+                                          "monthDayCreated": "--04-25",
+                                          "yearCreated": 2025
                                         }""")
                         .run(JsonObject.class);
 
@@ -147,6 +157,18 @@ public class DataJavaGlobalTest extends FATServletClient {
         }
     }
 
+    @Test
+    public void testExtractMonthAndDayFromMonthDay() throws Exception {
+        String path = "/DataGlobalRestApp/data/reminder/created/month/4/day/25";
+        JsonArray array = new HttpRequest(server, path).run(JsonArray.class);
+
+        String found = "found: " + array;
+
+        assertEquals(found, 2, array.size());
+        assertEquals(found, "Do this first.", array.getString(0));
+        assertEquals(found, "Do this third.", array.getString(1));
+    }
+
     /**
      * Verify that an entity can be found in the database by querying on its Id.
      * The DataSource used by the repository has a java:global name and is located
@@ -160,7 +182,10 @@ public class DataJavaGlobalTest extends FATServletClient {
         String found = "found: " + json;
 
         assertEquals(found, 1, json.getInt("id"));
+        assertEquals(found, "MONDAY", json.getString("forDayOfWeek"));
         assertEquals(found, "Do this first.", json.getString("message"));
+        assertEquals(found, "--04-25", json.getString("monthDayCreated"));
+        assertEquals(found, 2025, json.getInt("yearCreated"));
     }
 
     /**

@@ -12,8 +12,12 @@
  *******************************************************************************/
 package test.jakarta.data.global.rest;
 
+import java.util.List;
+
 import jakarta.annotation.sql.DataSourceDefinition;
 import jakarta.data.repository.CrudRepository;
+import jakarta.data.repository.OrderBy;
+import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
 
 /**
@@ -28,4 +32,9 @@ import jakarta.data.repository.Repository;
                       properties = "createDatabase=create")
 @Repository(dataStore = "java:global/jdbc/RestResourceDataSource")
 public interface Reminders extends CrudRepository<Reminder, Long> {
+
+    @Query("SELECT message WHERE EXTRACT (MONTH FROM monthDayCreated) = ?1" +
+           "                 AND EXTRACT (DAY FROM monthDayCreated) = ?2")
+    @OrderBy("forDayOfWeek")
+    List<String> createdOn(int month, int day);
 }
