@@ -101,19 +101,19 @@ public class MPHealthTestFileBased extends FATServletClient {
         Log.info(getClass(), name, "Test that the expected file-based health check files are present");
 
         /*
-         * The started and live files should now have been created in the /health directory.
-         * The ready file is not created because the health check returns DOWN.
+         * We expect no files. The application reports a DOWN status with the Ready status.
+         * The File-based health checks only create files when ALL files report UP.
          *
          * Expect:
          * [X] /health dir
-         * [X] Started
+         * [ ] Started
          * [ ] Ready
-         * [X] Live
-         * Don't need to check health dir and live again. Already created from above.
+         * [ ] Live
+         *
          */
         assertTrue(HealthFileUtils.HEALTH_DIR_SHOULD_HAVE, HealthFileUtils.getHealthDirFile(serverRootDirFile).exists());
-        assertTrue(HealthFileUtils.STARTED_SHOULD_HAVE, HealthFileUtils.getStartFile(serverRootDirFile).exists());
-        assertTrue(HealthFileUtils.LIVE_SHOULD_HAVE, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
+        assertFalse(HealthFileUtils.STARTED_SHOULD_NOT_HAVE, HealthFileUtils.getStartFile(serverRootDirFile).exists());
+        assertFalse(HealthFileUtils.LIVE_SHOULD_NOT_HAVE, HealthFileUtils.getLiveFile(serverRootDirFile).exists());
         assertFalse(HealthFileUtils.READY_SHOULD_NOT_HAVE, HealthFileUtils.getReadyFile(serverRootDirFile).exists());
 
     }
@@ -123,7 +123,7 @@ public class MPHealthTestFileBased extends FATServletClient {
 
         /*
          * This is a test before a restore.
-         * We expect only the /health directory to be crated
+         * We expect only the /health directory to be created
          *
          * Expect:
          * [X] /health dir
