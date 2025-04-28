@@ -63,7 +63,7 @@ def appDefs =
     [ 'io.openliberty.springboot.fat30.war.app', '.war' ],
     [ 'io.openliberty.springboot.fat30.java.app', '.jar' ],
     [ 'io.openliberty.springboot.fat30.webanno.app', '.jar' ],
-    [ 'io.openliberty.springboot.fat30.websocket.app', '.jar' ],
+    [ 'io.openliberty.springboot.fat30.websocket.app', '.war' ],
     [ 'io.openliberty.springboot.fat30.actuator.app', '.jar' ],
     [ 'io.openliberty.springboot.fat30.webflux.app', '.jar' ],
     [ 'io.openliberty.springboot.fat30.multicontext.app', '.jar' ],
