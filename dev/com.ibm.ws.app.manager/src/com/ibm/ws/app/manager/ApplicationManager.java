@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2025 IBM Corporation and others.
+ * Copyright (c) 2015, 2023 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -259,24 +259,6 @@ public class ApplicationManager {
     public String getExpandLocation() {
         return this.expandLocation;
     }
-
-//    private void setAnnotationScanLibrary(String annotationScanLibraryValue) {
-//
-//        annotationScanLibrary.clear();
-//        String[] split = annotationScanLibraryValue.split(",");
-//
-//        for (String s : split) {
-//            if (s.trim().equals("ALL")) {
-//                annotationScanLibrary.clear();
-//                annotationScanLibrary.add(AnnotationScanLibraryValues.ALL);
-//                break;
-//            } else if (s.trim().equals("earLib")) {
-//                annotationScanLibrary.add(AnnotationScanLibraryValues.earLib);
-//            } else if (s.trim().equals("earLib")) {
-//                annotationScanLibrary.add(AnnotationScanLibraryValues.ManifestLib);
-//            }
-//        }
-//    }
 
     private static class ExtractedLogData {
         private final String id;
