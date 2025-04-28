@@ -87,7 +87,13 @@ public class ApplicationInstallInfo implements ApplicationInformation<Object>, A
     /** {@inheritDoc} */
     @Override
     public String getAnnotationScanLibrary() {
-        return _config.getAnnotationScanLibrary();
+        Object result = _config.getConfigProperty(AppManagerConstants.ANNOTATION_SCAN_LIBRARY);
+        if (result instanceof String) {
+            return (String) result;
+        }
+
+        // If we haven't found it return an empty string
+        return "";
     }
 
     public String getMBeanName() {

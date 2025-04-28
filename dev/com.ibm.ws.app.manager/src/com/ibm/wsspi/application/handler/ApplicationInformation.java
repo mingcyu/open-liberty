@@ -94,9 +94,4 @@ public interface ApplicationInformation<T> {
      * @return
      */
     public boolean getUseJandex();
-
-    /**
-     * This indicates which libraries that are not usually considered war libs should be scanned for web application annotations
-     */
-    public String getAnnotationScanLibrary();
 }
