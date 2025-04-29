@@ -233,6 +233,7 @@ public class BasicTest extends CommonTest {
         String output = null;
         Log.info(c, name.getMethodName(), "Starting the client " + Constants.NO_DEFAULT_KEY_CLIENT);
         try {
+            helpers.testSleep(10);
             ProgramOutput programOutput = commonClientSetUpWithCalcArgs(Constants.NO_DEFAULT_KEY_CLIENT, null, 30, "CWPKI0823E", "CWWKS9582E");
             output = programOutput.getStdout();
         } catch (Exception e) {
