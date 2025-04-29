@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -18,12 +18,12 @@ import org.junit.Before;
 import com.ibm.tx.jta.ut.util.LastingXAResourceImpl;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.transaction.fat.util.FATUtils;
+import com.ibm.ws.transaction.fat.util.TxFATServletClient;
 import com.ibm.ws.transaction.fat.util.TxTestContainerSuite;
 
 import componenttest.topology.impl.LibertyServer;
-import componenttest.topology.utils.FATServletClient;
 
-public class CloudTestBase extends FATServletClient {
+public class CloudTestBase extends TxFATServletClient {
 
     public static LibertyServer server1;
     public static LibertyServer server2;
