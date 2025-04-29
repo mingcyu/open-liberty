@@ -86,7 +86,7 @@ public class SemconvConstantsAccessorImpl implements SemcovConstantsAccessor {
 
     @Override
     public AttributeKey<String> exceptionStackMessage() {
-        return SemanticAttributes.EXCEPTION_STACKTRACE;
+        return SemanticAttributes.EXCEPTION_MESSAGE;
     }
 
 }

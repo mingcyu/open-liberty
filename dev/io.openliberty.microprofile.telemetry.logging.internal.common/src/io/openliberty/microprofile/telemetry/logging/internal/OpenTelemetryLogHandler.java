@@ -51,7 +51,7 @@ public class OpenTelemetryLogHandler implements SynchronousHandler {
 
     private static final TraceComponent tc = Tr.register(OpenTelemetryLogHandler.class, "TELEMETRY", "io.openliberty.microprofile.telemetry.internal.common.resources.MPTelemetry");
 
-    public static final String COMPONENT_NAME = "io.openliberty.microprofile.telemetry21.logging.internal.OpenTelemetryLogHandler";
+    public static final String COMPONENT_NAME = "io.openliberty.microprofile.telemetry.logging.internal.OpenTelemetryLogHandler";
 
     protected static volatile boolean isInit = false;
 
