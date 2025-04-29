@@ -411,6 +411,7 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
         serverCompletelyStarted.set(false);
     }
 
+    @FFDCIgnore({NettyException.class})
     @Override
     public ServerBootstrapExtended createTCPBootstrap(Map<String, Object> tcpOptions) throws NettyException {
         try{
@@ -432,18 +433,18 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
         return UDPUtils.createUDPBootstrap(this, options);
     }
 
+    
     @Override
     public BootstrapExtended createUDPBootstrapOutbound(Map<String, Object> options) throws NettyException {
         return UDPUtils.createUDPBootstrapOutbound(this, options);
     }
 
     @Override
+    @FFDCIgnore({ NettyException.class })
     public FutureTask<ChannelFuture> start(ServerBootstrapExtended bootstrap, String inetHost, int inetPort,
             ChannelFutureListener bindListener) throws NettyException {
         
         BootstrapConfiguration config = bootstrap.getConfiguration();
-        // TODO: clean this up, theoretically we should always have an externalName.
-        // Bootstrap class doesnt have a non-null default either. For now setting it to NOT_DEFINED.
         String externalName = "NOT_DEFINED";
         if(config!= null && config instanceof TCPConfigurationImpl){
             externalName = ((TCPConfigurationImpl)config).getExternalName();
