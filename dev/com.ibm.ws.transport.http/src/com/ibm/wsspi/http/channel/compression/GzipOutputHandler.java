@@ -29,21 +29,22 @@ import com.ibm.wsspi.http.channel.values.ContentEncodingValues;
  */
 public class GzipOutputHandler implements CompressionHandler {
     /** RAS variable */
-    private static final TraceComponent tc = Tr.register(GzipOutputHandler.class, HttpMessages.HTTP_TRACE_NAME, HttpMessages.HTTP_BUNDLE);
+    private static final TraceComponent tc = Tr.register(GzipOutputHandler.class, HttpMessages.HTTP_TRACE_NAME,
+            HttpMessages.HTTP_BUNDLE);
 
     /** Gzip header information */
     private final static byte[] GZIP_Header = { (byte) 0x1f, // ID1
-                                                (byte) 0x8b, // ID2
-                                                Deflater.DEFLATED, // Compression
-                                                // method (CM)
-                                                0, // FLaGs
-                                                0, // MTIME (Modification TIME)
-                                                0, // Modification time MTIME (int)
-                                                0, // Modification time MTIME (int)
-                                                0, // Modification time MTIME (int)
-                                                0, // Extra flags (XFLG)
-                                                0 // Unknown OS, java writes like
-                                                  // MSDOS
+            (byte) 0x8b, // ID2
+            Deflater.DEFLATED, // Compression
+            // method (CM)
+            0, // FLaGs
+            0, // MTIME (Modification TIME)
+            0, // Modification time MTIME (int)
+            0, // Modification time MTIME (int)
+            0, // Modification time MTIME (int)
+            0, // Extra flags (XFLG)
+            0 // Unknown OS, java writes like
+              // MSDOS
     };
 
     /** Deflater used by this handler */
@@ -61,7 +62,7 @@ public class GzipOutputHandler implements CompressionHandler {
      * Create a gzip compression method output handler.
      *
      * @param isXGzip
-     *                    - boolean flag on whether this is an x-gzip handler
+     *                - boolean flag on whether this is an x-gzip handler
      */
     public GzipOutputHandler(boolean isXGzip) {
         buf = new byte[32768];
@@ -77,7 +78,8 @@ public class GzipOutputHandler implements CompressionHandler {
         this.deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
         this.bIsXGzip = isXGzip;
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "Created " + (isXGzip ? "x-gzip" : "gzip") + " output handler; " + this + " with buffer size=" + bufferSize);
+            Tr.debug(tc, "Created " + (isXGzip ? "x-gzip" : "gzip") + " output handler; " + this + " with buffer size="
+                    + bufferSize);
         }
     }
 
@@ -176,7 +178,8 @@ public class GzipOutputHandler implements CompressionHandler {
         while (!this.deflater.needsInput()) {
             int len = this.deflater.deflate(this.buf, offset, this.buf.length - offset);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Compressed amount=" + len + " read=" + this.deflater.getBytesRead() + " written=" + this.deflater.getBytesWritten());
+                Tr.debug(tc, "Compressed amount=" + len + " read=" + this.deflater.getBytesRead() + " written="
+                        + this.deflater.getBytesWritten());
             }
             if (0 == len) {
                 break; // out of while
@@ -240,7 +243,8 @@ public class GzipOutputHandler implements CompressionHandler {
         while (!this.deflater.finished()) {
             int num = this.deflater.deflate(this.buf, 0, this.buf.length);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Compressed amount=" + num + " read=" + this.deflater.getBytesRead() + " written=" + this.deflater.getBytesWritten());
+                Tr.debug(tc, "Compressed amount=" + num + " read=" + this.deflater.getBytesRead() + " written="
+                        + this.deflater.getBytesWritten());
             }
             if (0 < num) {
                 buffer = makeBuffer(num);
@@ -269,7 +273,8 @@ public class GzipOutputHandler implements CompressionHandler {
     }
 
     /*
-     * @see com.ibm.wsspi.http.channel.compression.CompressionHandler#flush(boolean isFinal)
+     * @see com.ibm.wsspi.http.channel.compression.CompressionHandler#flush(boolean
+     * isFinal)
      */
 
     public List<WsByteBuffer> flush(boolean isFinal) {
@@ -286,12 +291,17 @@ public class GzipOutputHandler implements CompressionHandler {
         }
 
         if (isFinal) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+                Tr.debug(tc, "flush for final write called, calling finish() on the compression handler");
+            }
             // Delegate final flush to the finish() method
-            Tr.debug(tc, "flush for final write called, calling finish() on the compression handler");
             return this.finish();
         } else {
-            Tr.debug(tc,
-                    "flush for non-final write called, performing intermediate flush without finishing the compression stream");
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+                Tr.debug(tc,
+                        "flush for non-final write called, performing intermediate flush without finishing the compression stream");
+            }
+
             int offset = 0; // variable to track current position in buffer
             int len;
 

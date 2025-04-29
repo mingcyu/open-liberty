@@ -29,7 +29,8 @@ import com.ibm.wsspi.http.channel.values.ContentEncodingValues;
  */
 public class DeflateOutputHandler implements CompressionHandler {
     /** RAS variable */
-    private static final TraceComponent tc = Tr.register(DeflateOutputHandler.class, HttpMessages.HTTP_TRACE_NAME, HttpMessages.HTTP_BUNDLE);
+    private static final TraceComponent tc = Tr.register(DeflateOutputHandler.class, HttpMessages.HTTP_TRACE_NAME,
+            HttpMessages.HTTP_BUNDLE);
 
     /** Deflater used for this output stream */
     private Deflater deflater = null;
@@ -62,7 +63,7 @@ public class DeflateOutputHandler implements CompressionHandler {
      * requires that there is no deflate wrapper around the compressed bytes.
      *
      * @param useragent
-     *                      - header from request
+     *                  - header from request
      */
     public DeflateOutputHandler(byte[] useragent) {
         this.buf = new byte[32768];
@@ -192,7 +193,8 @@ public class DeflateOutputHandler implements CompressionHandler {
         while (!this.deflater.finished()) {
             int num = this.deflater.deflate(this.buf, 0, this.buf.length);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Compressed amount=" + num + " read=" + this.deflater.getBytesRead() + " written=" + this.deflater.getBytesWritten());
+                Tr.debug(tc, "Compressed amount=" + num + " read=" + this.deflater.getBytesRead() + " written="
+                        + this.deflater.getBytesWritten());
             }
 
             if (0 < num) {
@@ -207,7 +209,8 @@ public class DeflateOutputHandler implements CompressionHandler {
     }
 
     /*
-     * @see com.ibm.wsspi.http.channel.compression.CompressionHandler#flush(boolean isFinal)
+     * @see com.ibm.wsspi.http.channel.compression.CompressionHandler#flush(boolean
+     * isFinal)
      */
 
     public List<WsByteBuffer> flush(boolean isFinal) {
@@ -224,12 +227,17 @@ public class DeflateOutputHandler implements CompressionHandler {
         }
 
         if (isFinal) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+                Tr.debug(tc, "flush for final write called, calling finish() on the compression handler");
+            }
             // Delegate final flush to the finish() method
-            Tr.debug(tc, "flush for final write called, calling finish() on the compression handler");
             return this.finish();
         } else {
-            Tr.debug(tc,
-                    "flush for non-final write called, performing intermediate flush without finishing the compression stream");
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
+                Tr.debug(tc,
+                        "flush for non-final write called, performing intermediate flush without finishing the compression stream");
+            }
+
             int offset = 0; // variable to track current position in buffer
             int len;
 
@@ -304,7 +312,8 @@ public class DeflateOutputHandler implements CompressionHandler {
         while (!this.deflater.needsInput()) {
             int len = this.deflater.deflate(this.buf, offset, this.buf.length - offset);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Compressed amount=" + len + " read=" + this.deflater.getBytesRead() + " written=" + this.deflater.getBytesWritten());
+                Tr.debug(tc, "Compressed amount=" + len + " read=" + this.deflater.getBytesRead() + " written="
+                        + this.deflater.getBytesWritten());
             }
             if (0 == len) {
                 break; // out of while
