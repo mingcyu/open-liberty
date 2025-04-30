@@ -21,7 +21,6 @@ import com.ibm.websphere.logging.WsLevel;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.kernel.service.util.ServiceCaller;
 import com.ibm.ws.logging.collector.CollectorConstants;
 import com.ibm.ws.logging.collector.CollectorJsonHelpers;
@@ -62,8 +61,6 @@ public class MpTelemetryLogMappingUtils {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
-    private static boolean issuedBetaMessageAccess = false;
-
     /**
      * Get the event type from the Liberty log source.
      *
@@ -78,7 +75,7 @@ public class MpTelemetryLogMappingUtils {
             return CollectorConstants.FFDC_EVENT_TYPE;
         } else if (source.endsWith(CollectorConstants.AUDIT_LOG_SOURCE)) {
             return CollectorConstants.AUDIT_LOG_EVENT_TYPE;
-        } else if (isBetaModeCheckAccess() && source.endsWith(CollectorConstants.ACCESS_LOG_SOURCE)) {
+        } else if (source.endsWith(CollectorConstants.ACCESS_LOG_SOURCE)) {
             return CollectorConstants.ACCESS_LOG_EVENT_TYPE;
         } else
             return "";
@@ -99,7 +96,7 @@ public class MpTelemetryLogMappingUtils {
             mapFFDCToOpenTelemetry(builder, eventType, event);
         } else if (eventType.equals(CollectorConstants.AUDIT_LOG_EVENT_TYPE)) {
             mapAuditLogsToOpenTelemetry(builder, eventType, event);
-        } else if (isBetaModeCheckAccess() && eventType.equals(CollectorConstants.ACCESS_LOG_EVENT_TYPE)) {
+        } else if (eventType.equals(CollectorConstants.ACCESS_LOG_EVENT_TYPE)) {
             mapAccessToOpenTelemetry(builder, eventType, event);
         }
     }
@@ -524,25 +521,6 @@ public class MpTelemetryLogMappingUtils {
         Instant instant = Instant.from(tempAccessor);
         return instant;
     }
-
-    public static boolean isBetaModeCheckAccess() {
-        if (!ProductInfo.getBetaEdition()) {
-            if (tc.isDebugEnabled()) {
-                Tr.debug(tc, "Not running Beta Edition, the access logs will NOT be routed to OpenTelemetry.");
-            }
-            return false;
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class.
-            if (!issuedBetaMessageAccess) {
-                Tr.info(tc,
-                        "BETA: A beta method has been invoked for routing access logs to OpenTelemetry in the class "
-                            + MpTelemetryLogMappingUtils.class.getName() + " for the first time.");
-                issuedBetaMessageAccess = !issuedBetaMessageAccess;
-            }
-            return true;
-        }
-    }
-
     private static Object getPairValue(KeyValuePair value) {
         ValueTypes pairValueType = value.getType();
 
