@@ -6,9 +6,6 @@
  * http://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package com.ibm.ws.http.plugin.merge.internal;
 
@@ -83,10 +80,10 @@ public class PluginMergeToolImpl implements PluginMergeTool {
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu.MM.dd 'at' HH:mm:ss z");
 
 
-    private static boolean isXdOnly = true;
-    private static boolean debug = false;
-    private static int seqNum = 0;
-    private static final boolean failOver = true; /* 654526 */
+    private boolean isXdOnly = true;
+    private boolean debug = false;
+    private int seqNum = 0;
+    private final boolean failOver = true; /* 654526 */
     private static boolean precedence = false;
     private Element mergeConfigNode;
     private static Element mergeConfigNode2; //PI07230
@@ -256,24 +253,6 @@ public class PluginMergeToolImpl implements PluginMergeTool {
                 }
             }
         }
-
-
-   /*     Node[] vhgs = null;
-        itrSharedPlugins = sharedPlugins.iterator();
-        while (itrSharedPlugins.hasNext()) {
-            vhgs = (itrSharedPlugins.next()).getSharedVHostGrps();
-            for (int i = 0; i < vhgs.length; i++) {
-                mergeConfigNode.appendChild(mergeDoc.importNode(vhgs[i], true));
-            }
-        }
-
-        vhgs = null;
-        for (int i = 0; i < plugins.length; i++) {
-            vhgs = plugins[i].getUnsharedVHostGrp();
-            for (int j = 0; j < vhgs.length; j++)
-                mergeConfigNode.appendChild(mergeDoc.importNode(vhgs[j], true));
-        } */
-
 
         mergeConfigNode.appendChild(mergeDoc.createComment(" URI Groups "));
 
@@ -739,8 +718,7 @@ public class PluginMergeToolImpl implements PluginMergeTool {
                     break;
                 }
             }
-            if (!passFail)
-                break;
+            if (!passFail) break;
         }
         return passFail;
     }
@@ -771,6 +749,7 @@ public class PluginMergeToolImpl implements PluginMergeTool {
 
     @Override
     public void merge(String argv[]) {
+
         if (argv.length < 2)
             throw new IllegalArgumentException("Please provide at least 1 plugin-cfg.xml file to merge.");
 
@@ -779,7 +758,6 @@ public class PluginMergeToolImpl implements PluginMergeTool {
         List<String> filesList = toolInstance.loadParms(argv);
         String mergeFileName = filesList.remove(filesList.size() - 1);
         String[] fileList = filesList.toArray(new String[filesList.size()]);
-        plugins = new PluginInfo[fileList.length];
         try {
             Tr.info(traceComponent, "Merging...");
             fileList = toolInstance.sortFiles(fileList,FILEINFO_SMALL_TO_LARGE_COMPARATOR);
