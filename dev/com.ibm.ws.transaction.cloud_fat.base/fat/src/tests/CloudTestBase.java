@@ -12,6 +12,8 @@
  *******************************************************************************/
 package tests;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 
@@ -41,7 +43,7 @@ public class CloudTestBase extends TxFATServletClient {
         TxTestContainerSuite.dropTables(testRecoveryTables);
     }
 
-    protected LibertyServer[] serversToCleanup;
+    protected List<LibertyServer> serversToCleanup;
     protected String[] toleratedMsgs = new String[] { ".*" };
 
     @After
@@ -49,14 +51,8 @@ public class CloudTestBase extends TxFATServletClient {
         try {
             // If any servers have been added to the serversToCleanup array, we'll stop them now
             // test is long gone so we don't care about messages & warnings anymore
-            if (serversToCleanup != null && serversToCleanup.length > 0) {
-                final String serverNames[] = new String[serversToCleanup.length];
-                int i = 0;
-                for (LibertyServer s : serversToCleanup) {
-                    serverNames[i++] = s.getServerName();
-                }
-                Log.info(CloudTestBase.class, "cleanup", "Cleaning " + String.join(", ", serverNames));
-                FATUtils.stopServers(toleratedMsgs, serversToCleanup);
+            if (serversToCleanup != null) {
+                FATUtils.stopServers(toleratedMsgs, serversToCleanup.stream().toArray(LibertyServer[]::new));
             } else {
                 Log.info(CloudTestBase.class, "cleanup", "No servers to stop");
             }

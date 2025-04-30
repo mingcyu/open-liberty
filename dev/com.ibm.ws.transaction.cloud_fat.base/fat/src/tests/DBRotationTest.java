@@ -16,6 +16,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
@@ -173,7 +174,7 @@ public class DBRotationTest extends CloudFATServletClient {
         StringBuilder sb = null;
         String id = "001";
 
-        serversToCleanup = new LibertyServer[] { server1 };
+        serversToCleanup = Arrays.asList(server1);
 
         FATUtils.startServers(_runner, server1);
 
@@ -195,7 +196,7 @@ public class DBRotationTest extends CloudFATServletClient {
     public void testDBBaseRecovery() throws Exception {
         String id = "001";
 
-        serversToCleanup = new LibertyServer[] { server1 };
+        serversToCleanup = Arrays.asList(server1);
 
         FATUtils.startServers(_runner, server1);
         try {
@@ -235,7 +236,7 @@ public class DBRotationTest extends CloudFATServletClient {
     @AllowedFFDC(value = { "com.ibm.ws.rsadapter.exceptions.DataStoreAdapterException" })
     public void testDBRecoveryTakeover() throws Exception {
         String id = "001";
-        serversToCleanup = new LibertyServer[] { server1, server2 };
+        serversToCleanup = Arrays.asList(server1, server2);
 
         FATUtils.startServers(_runner, server1);
         try {
@@ -285,7 +286,7 @@ public class DBRotationTest extends CloudFATServletClient {
         final String method = "testDBRecoveryCompeteForLogPeerPrecedence";
         String id = "001";
 
-        serversToCleanup = new LibertyServer[] { peerPrecedenceServer1, server2 };
+        serversToCleanup = Arrays.asList(peerPrecedenceServer1, server2);
 
         FATUtils.startServers(_runner, peerPrecedenceServer1);
         try {
@@ -352,7 +353,7 @@ public class DBRotationTest extends CloudFATServletClient {
 
         String id = "001";
 
-        serversToCleanup = new LibertyServer[] { longLeaseCompeteServer1 };
+        serversToCleanup = Arrays.asList(longLeaseCompeteServer1);
 
         FATUtils.startServers(_runner, longLeaseCompeteServer1);
         try {
@@ -383,7 +384,7 @@ public class DBRotationTest extends CloudFATServletClient {
     public void testLogFailure() throws Exception {
 
         if (!TxTestContainerSuite.isDerby()) { // Embedded Derby cannot support tests with concurrent server startup
-            serversToCleanup = new LibertyServer[] { longLeaseLogFailServer1, server2nopeerlocking };
+            serversToCleanup = Arrays.asList(longLeaseLogFailServer1, server2nopeerlocking);
 
             longLeaseLogFailServer1.setFFDCChecking(false);
             server2nopeerlocking.setHttpDefaultPort(cloud2ServerPort);
@@ -412,7 +413,7 @@ public class DBRotationTest extends CloudFATServletClient {
     public void testLogFailureNoShutdown() throws Exception {
 
         if (!TxTestContainerSuite.isDerby()) { // Embedded Derby cannot support tests with concurrent server startup
-            serversToCleanup = new LibertyServer[] { noShutdownServer1, server2nopeerlocking };
+            serversToCleanup = Arrays.asList(noShutdownServer1, server2nopeerlocking);
 
             noShutdownServer1.setFFDCChecking(false);
             server2nopeerlocking.setHttpDefaultPort(cloud2ServerPort);
@@ -437,7 +438,7 @@ public class DBRotationTest extends CloudFATServletClient {
     @AllowedFFDC(value = { "com.ibm.ws.recoverylog.spi.LogsUnderlyingTablesMissingException" })
     public void testBackwardCompatibility() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { server1 };
+        serversToCleanup = Arrays.asList(server1);
 
         FATUtils.startServers(_runner, server1);
 
@@ -458,7 +459,7 @@ public class DBRotationTest extends CloudFATServletClient {
     @AllowedFFDC(value = { "javax.transaction.xa.XAException", "com.ibm.ws.recoverylog.spi.RecoveryFailedException" })
     public void testLeaseIndexBackwardCompatibility() throws Exception {
 
-        serversToCleanup = new LibertyServer[] { noRecoveryGroupServer1, shortLeaseServer1 };
+        serversToCleanup = Arrays.asList(noRecoveryGroupServer1, shortLeaseServer1);
 
         FATUtils.startServers(_runner, noRecoveryGroupServer1);
 
@@ -480,7 +481,8 @@ public class DBRotationTest extends CloudFATServletClient {
     public void testReactionToDeletedTables() throws Exception {
 
         if (!TxTestContainerSuite.isDerby()) { // Can't get a connection to drop tables on embedded Derby
-            serversToCleanup = new LibertyServer[] { server2, noRecoveryGroupServer1 };
+            serversToCleanup = Arrays.asList(server2, noRecoveryGroupServer1);
+
             server2.useSecondaryHTTPPort();
 
             FATUtils.startServers(_runner, server2, noRecoveryGroupServer1);
@@ -517,7 +519,7 @@ public class DBRotationTest extends CloudFATServletClient {
             return;
         }
 
-        serversToCleanup = new LibertyServer[] { longLeaseServerA, server2 };
+        serversToCleanup = Arrays.asList(longLeaseServerA, server2);
 
         longLeaseServerA.setFFDCChecking(false);
         server2.setHttpDefaultPort(cloud2ServerPort);
@@ -547,7 +549,7 @@ public class DBRotationTest extends CloudFATServletClient {
             return;
         }
 
-        serversToCleanup = new LibertyServer[] { longLeaseServerA, server2, longLeaseServerB, longLeaseServerC };
+        serversToCleanup = Arrays.asList(longLeaseServerA, server2, longLeaseServerB, longLeaseServerC);
 
         longLeaseServerA.setFFDCChecking(false);
         server2.setHttpDefaultPort(cloud2ServerPort);
