@@ -8,27 +8,26 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.ws.springboot.support.version20.test.data.app;
-
-import javax.persistence.EntityManagerFactory;
+package com.ibm.ws.springboot.support.version30.test.data.app;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jndi.JndiObjectFactoryBean;
 
-import com.ibm.ws.springboot.support.version20.test.data.app.employee.Employee;
+import com.ibm.ws.springboot.support.version30.test.data.app.customer.Customer;
+
+import jakarta.persistence.EntityManagerFactory;
 
 @Configuration(proxyBeanMethods = false)
-@EnableJpaRepositories(basePackageClasses = Employee.class, entityManagerFactoryRef = "employeeEntityManagerFactory")
-public class EmployeeConfiguration {
+@EnableJpaRepositories(basePackageClasses = Customer.class, entityManagerFactoryRef = "customerEntityManagerFactory")
+public class CustomerConfiguration {
 	@Bean
-	JndiObjectFactoryBean employeeEntityManagerFactory() {
+	JndiObjectFactoryBean customerEntityManagerFactory() {
 		JndiObjectFactoryBean factoryBean = new JndiObjectFactoryBean();
-		factoryBean.setJndiName("java:comp/env/persistence/employeeEMF");
+		factoryBean.setJndiName("java:comp/env/persistence/customerEMF");
 		factoryBean.setLookupOnStartup(false);
 		factoryBean.setExpectedType(EntityManagerFactory.class);
 		return factoryBean;
 	}
-
 }

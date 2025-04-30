@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.ws.springboot.support.version20.test.data.app;
-
-import javax.persistence.EntityManagerFactory;
+package com.ibm.ws.springboot.support.version30.test.data.app;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jndi.JndiObjectFactoryBean;
 
-import com.ibm.ws.springboot.support.version20.test.data.app.employee.Employee;
+import com.ibm.ws.springboot.support.version30.test.data.app.employee.Employee;
+
+import jakarta.persistence.EntityManagerFactory;
 
 @Configuration(proxyBeanMethods = false)
 @EnableJpaRepositories(basePackageClasses = Employee.class, entityManagerFactoryRef = "employeeEntityManagerFactory")
@@ -30,5 +30,4 @@ public class EmployeeConfiguration {
 		factoryBean.setExpectedType(EntityManagerFactory.class);
 		return factoryBean;
 	}
-
 }

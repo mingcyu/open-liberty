@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.ws.springboot.support.version20.test.data.app;
+package com.ibm.ws.springboot.support.version30.test.data.app;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,8 +24,8 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.Assert;
 
-import com.ibm.ws.springboot.support.version20.test.data.app.customer.Customer;
-import com.ibm.ws.springboot.support.version20.test.data.app.employee.Employee;
+import com.ibm.ws.springboot.support.version30.test.data.app.customer.Customer;
+import com.ibm.ws.springboot.support.version30.test.data.app.employee.Employee;
 
 @SpringBootApplication
 public class AccessingDataJpaApplication extends SpringBootServletInitializer {
