@@ -26,8 +26,8 @@ public class CustomerConfiguration {
 	JndiObjectFactoryBean customerEntityManagerFactory() {
 		JndiObjectFactoryBean factoryBean = new JndiObjectFactoryBean();
 		factoryBean.setJndiName("java:comp/env/persistence/customerEMF");
-		factoryBean.setLookupOnStartup(false);
-		factoryBean.setExpectedType(EntityManagerFactory.class);
+		// must force proxy of EMF to avoid class visibility issues
+		factoryBean.setProxyInterface(EntityManagerFactory.class);
 		return factoryBean;
 	}
 }
