@@ -14,8 +14,12 @@ package test.jakarta.data.global.rest;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.MonthDay;
 import java.time.Year;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
 
 import jakarta.json.bind.adapter.JsonbAdapter;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
@@ -31,6 +35,10 @@ import jakarta.persistence.Id;
  */
 @Entity
 public class Reminder {
+
+    @Column
+    @Convert(converter = ZonedDateTimeConverter.class)
+    public ZonedDateTime expiresAt;
 
     @Column(nullable = false)
     public DayOfWeek forDayOfWeek;
@@ -53,20 +61,24 @@ public class Reminder {
                               String message,
                               DayOfWeek forDayOfWeek,
                               Year yearCreated,
-                              MonthDay monthDayCreated) {
+                              MonthDay monthDayCreated,
+                              ZonedDateTime expiresAt) {
         Reminder r = new Reminder();
         r.id = id;
         r.message = message;
         r.forDayOfWeek = forDayOfWeek;
         r.yearCreated = yearCreated;
         r.monthDayCreated = monthDayCreated;
+        // limit to milliseconds precision
+        r.expiresAt = expiresAt.withNano(expiresAt.getNano() / 1000000 * 100000);
         return r;
     }
 
     @Override
     public String toString() {
         return "Reminder#" + id + ":" + message + " on " + forDayOfWeek +
-               " created " + yearCreated + " " + monthDayCreated;
+               " created " + yearCreated + " " + monthDayCreated +
+               " expires " + expiresAt;
     }
 
     /**
@@ -104,6 +116,61 @@ public class Reminder {
         @Override
         public Integer adaptToJson(Year year) {
             return year.getValue();
+        }
+    }
+
+    /**
+     * Converts ZonedDateTime to a LocalDateTime, storing the zone information
+     * as the first two characters of the key value from ZoneId.SHORT_IDS in the
+     * unused fractional microseconds.
+     * If support is ever added to Jakarta Persistence, we can remove this
+     * converter.
+     */
+    static class ZonedDateTimeConverter //
+                    implements AttributeConverter<ZonedDateTime, LocalDateTime> {
+
+        @Override
+        public LocalDateTime convertToDatabaseColumn(ZonedDateTime zoned) {
+            if (zoned == null)
+                return null;
+
+            String id = zoned.getZone().getId();
+            LocalDateTime local = zoned.toLocalDateTime();
+            int nanos = local.getNano();
+            int last6 = nanos % 1000000; // last 6 digits beyond milliseconds
+            if (last6 == 0) {
+                for (Map.Entry<String, String> entry : ZoneId.SHORT_IDS.entrySet())
+                    if (entry.getValue().equals(id)) {
+                        String shortId = entry.getKey();
+                        char c0 = shortId.charAt(0);
+                        char c1 = shortId.charAt(1);
+                        last6 = 1000 * (26 * (c0 - 'A') + (c1 - 'A'));
+                    }
+            } else {
+                throw new UnsupportedOperationException("microseconds are not allowed");
+            }
+
+            if (last6 == 0)
+                throw new UnsupportedOperationException("zone id: " + id);
+
+            local = local.withNano(nanos + last6);
+            return local;
+        }
+
+        @Override
+        public ZonedDateTime convertToEntityAttribute(LocalDateTime local) {
+            if (local == null)
+                return null;
+
+            int nanos = local.getNano();
+            int last6 = nanos % 1000000;
+            int mid3 = last6 / 1000;
+            char c0 = (char) ('A' + mid3 / 26);
+            char c1 = (char) ('A' + mid3 % 26);
+            String shortId = String.valueOf(new char[] { c0, c1, 'T' });
+            String id = ZoneId.SHORT_IDS.get(shortId);
+            local = local.withNano(nanos / 1000000 * 1000000); // keep milliseconds only
+            return ZonedDateTime.of(local, ZoneId.of(id));
         }
     }
 }
