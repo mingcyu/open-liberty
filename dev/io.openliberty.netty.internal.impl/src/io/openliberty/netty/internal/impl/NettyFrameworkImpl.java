@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2023 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -55,6 +55,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.openliberty.netty.internal.BootstrapConfiguration;
 import io.openliberty.netty.internal.BootstrapExtended;
+import io.openliberty.netty.internal.ConfigConstants;
 import io.openliberty.netty.internal.NettyFramework;
 import io.openliberty.netty.internal.ServerBootstrapExtended;
 import io.openliberty.netty.internal.exception.NettyException;
@@ -417,7 +418,7 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
         try{
             return TCPUtils.createTCPBootstrap(this, tcpOptions);
         } catch (NettyException e){
-            Tr.error(tc, "chain.initialization.error", new Object[] { tcpOptions.get("ExternalName"), e.toString() });
+            Tr.error(tc, "chain.initialization.error", new Object[] { tcpOptions.get(ConfigConstants.EXTERNAL_NAME), e.toString() });
             throw e;
         }
         
@@ -433,7 +434,6 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
         return UDPUtils.createUDPBootstrap(this, options);
     }
 
-    
     @Override
     public BootstrapExtended createUDPBootstrapOutbound(Map<String, Object> options) throws NettyException {
         return UDPUtils.createUDPBootstrapOutbound(this, options);
