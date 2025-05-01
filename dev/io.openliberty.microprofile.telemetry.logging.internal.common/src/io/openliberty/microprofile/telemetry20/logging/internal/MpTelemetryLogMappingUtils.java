@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-package io.openliberty.microprofile.telemetry.logging.internal;
+package io.openliberty.microprofile.telemetry20.logging.internal;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -35,7 +35,7 @@ import com.ibm.ws.logging.data.KeyValuePair.ValueTypes;
 import com.ibm.ws.logging.data.KeyValuePairList;
 import com.ibm.ws.logging.data.LogTraceData;
 
-import io.openliberty.microprofile.telemetry.logging.internal.semconv.SemcovConstantsAccessor;
+import io.openliberty.microprofile.telemetry20.logging.internal.semconv.SemcovConstantsAccessor;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.logs.LogRecordBuilder;

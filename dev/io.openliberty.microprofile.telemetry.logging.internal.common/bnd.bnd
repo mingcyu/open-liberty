@@ -41,14 +41,14 @@ Private-Package: \
 	io.openliberty.microprofile.telemetry.internal.common.resources
 	
 Export-Package: \
-	io.openliberty.microprofile.telemetry.logging.internal;'provide:'=true,\
-	io.openliberty.microprofile.telemetry.logging.internal.semconv
+	io.openliberty.microprofile.telemetry20.logging.internal;'provide:'=true,\
+	io.openliberty.microprofile.telemetry20.logging.internal.semconv
     
 Include-Resource: \
         OSGI-INF=resources/OSGI-INF
 
 -dsannotations: \
-        io.openliberty.microprofile.telemetry.logging.internal.OpenTelemetryLogHandler	
+        io.openliberty.microprofile.telemetry20.logging.internal.OpenTelemetryLogHandler	
 
 -buildpath: \
 	com.ibm.ws.org.osgi.annotation.versioning;version=latest,\

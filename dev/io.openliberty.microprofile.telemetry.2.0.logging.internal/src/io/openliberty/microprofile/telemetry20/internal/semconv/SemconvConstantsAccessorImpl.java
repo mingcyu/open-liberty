@@ -11,7 +11,7 @@ package io.openliberty.microprofile.telemetry20.internal.semconv;
 
 import org.osgi.service.component.annotations.Component;
 
-import io.openliberty.microprofile.telemetry.logging.internal.semconv.SemcovConstantsAccessor;
+import io.openliberty.microprofile.telemetry20.logging.internal.semconv.SemcovConstantsAccessor;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.semconv.SemanticAttributes;
 

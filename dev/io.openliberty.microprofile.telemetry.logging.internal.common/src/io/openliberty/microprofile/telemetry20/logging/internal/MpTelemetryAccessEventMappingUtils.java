@@ -7,11 +7,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-package io.openliberty.microprofile.telemetry.logging.internal;
+package io.openliberty.microprofile.telemetry20.logging.internal;
 
 import com.ibm.ws.kernel.service.util.ServiceCaller;
 
-import io.openliberty.microprofile.telemetry.logging.internal.semconv.SemcovConstantsAccessor;
+import io.openliberty.microprofile.telemetry20.logging.internal.semconv.SemcovConstantsAccessor;
 import io.opentelemetry.semconv.UserAgentAttributes;
 
 /**

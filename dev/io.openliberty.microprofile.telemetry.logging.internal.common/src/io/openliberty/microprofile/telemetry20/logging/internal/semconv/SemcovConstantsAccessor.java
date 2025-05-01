@@ -1,4 +1,4 @@
-package io.openliberty.microprofile.telemetry.logging.internal.semconv;
+package io.openliberty.microprofile.telemetry20.logging.internal.semconv;
 
 import io.opentelemetry.api.common.AttributeKey;
 

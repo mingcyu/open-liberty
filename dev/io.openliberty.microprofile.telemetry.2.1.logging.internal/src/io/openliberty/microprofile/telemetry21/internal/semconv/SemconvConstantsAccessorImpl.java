@@ -11,7 +11,7 @@ package io.openliberty.microprofile.telemetry21.internal.semconv;
 
 import org.osgi.service.component.annotations.Component;
 
-import io.openliberty.microprofile.telemetry.logging.internal.semconv.SemcovConstantsAccessor;
+import io.openliberty.microprofile.telemetry20.logging.internal.semconv.SemcovConstantsAccessor;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.semconv.ClientAttributes;
 import io.opentelemetry.semconv.ErrorAttributes;
@@ -91,7 +91,7 @@ public class SemconvConstantsAccessorImpl implements SemcovConstantsAccessor {
 
     @Override
     public AttributeKey<String> exceptionStackMessage() {
-        return ExceptionAttributes.EXCEPTION_MESSAGE;
+        return ExceptionAttributes.EXCEPTION_STACKTRACE;
     }
 
 }
