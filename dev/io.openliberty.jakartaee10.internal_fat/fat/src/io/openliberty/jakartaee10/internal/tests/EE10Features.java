@@ -269,9 +269,8 @@ public class EE10Features {
 
         //remove MP 7.0 features which would conflict with MP 7.1 features
         features.remove("microProfile-7.0");
-        //In preparation for the release of MpTelemetry 2.1 and MpOpenAPI 4.1
-        //features.remove("mpTelemetry-2.0");
         features.remove("mpOpenAPI-4.0");
+        features.remove("mpTelemetry-2.0");
 
         // remove client features
         features.remove("jakartaeeClient-10.0");
