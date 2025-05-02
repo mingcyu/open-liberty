@@ -10,11 +10,13 @@
 
 package com.ibm.ws.tests.anno.caching.extrascan;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import componenttest.annotation.MinimumJavaLevel;
+
+// Test case uses Spring 6 function which requires Java 17
+@MinimumJavaLevel(javaLevel=17)
 public class AnnotationScanInJarTestModeManifestClassPath extends AbstractAnnotationScanInJarTest {
 
 	@Override
