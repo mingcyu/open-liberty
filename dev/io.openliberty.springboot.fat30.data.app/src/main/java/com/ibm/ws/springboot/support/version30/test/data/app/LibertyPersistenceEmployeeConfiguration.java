@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.ibm.ws.springboot.support.version30.test.data.app;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -21,7 +22,8 @@ import jakarta.persistence.EntityManagerFactory;
 
 @Configuration(proxyBeanMethods = false)
 @EnableJpaRepositories(basePackageClasses = Employee.class, entityManagerFactoryRef = "employeeEntityManagerFactory")
-public class EmployeeConfiguration {
+@ConditionalOnProperty(name = "test.persistence", havingValue = "liberty")
+public class LibertyPersistenceEmployeeConfiguration {
 	@Bean
 	JndiObjectFactoryBean employeeEntityManagerFactory() {
 		JndiObjectFactoryBean factoryBean = new JndiObjectFactoryBean();

@@ -13,7 +13,9 @@ package com.ibm.ws.springboot.support.fat;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.AfterClass;
@@ -22,12 +24,11 @@ import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.config.WebApplication;
 
-import componenttest.annotation.AllowedFFDC;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.utils.HttpUtils;
 
 @RunWith(FATRunner.class)
-public class JPAAppTests30War extends JPAAppAbstractTests {
+public class JPALibertyAppTests30War extends JPAAppAbstractTests {
 
     @Override
     public void modifyAppConfiguration(WebApplication appConfig) {
@@ -38,14 +39,12 @@ public class JPAAppTests30War extends JPAAppAbstractTests {
     }
 
     @Test
-    @AllowedFFDC("javax.transaction.RollbackException")
-    public void testJPAAppRunnerWar() throws Exception {
+    public void testLibertyJPAAppRunnerWar() throws Exception {
         assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("COMMAND_LINE_RUNNER: SPRING DATA TEST: PASSED"));
     }
 
     @Test
-    @AllowedFFDC("javax.transaction.RollbackException")
-    public void testJPAWebContext() throws Exception {
+    public void testLibertyJPAWebContextWar() throws Exception {
         HttpUtils.findStringInUrl(server, "testName/testPersistence", "TESTED PERSISTENCE");
         assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("WEB_CONTEXT: SPRING DATA TEST: PASSED"));
     }
@@ -63,5 +62,10 @@ public class JPAAppTests30War extends JPAAppAbstractTests {
     @AfterClass
     public static void stopServerWithErrors() throws Exception {
         server.stopServer("CWWJP9991W", "WTRN0074E");
+    }
+
+    @Override
+    public Map<String, String> getBootStrapProperties() {
+        return Collections.singletonMap("test.persistence", "liberty");
     }
 }
