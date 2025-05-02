@@ -244,8 +244,8 @@ public class SIPTransactionStack
 		SIPClientTranaction  sipClientTransaction = null;
 		
 		//the only Exception here is an ACK sent
-		//in this state , there is no transaction to match to
-		//and no transaction is needed for an ACK to be created , 
+		//in this state there is no transaction to match to
+		//and no transaction is needed for an ACK to be created, 
 		//since there is no response expected for an ACK
 		if(  Request.ACK.equals( sipRequest.getMethod()) )
 		{
@@ -258,7 +258,7 @@ public class SIPTransactionStack
 			}
 			catch( SIPTransportException exp )
 			{
-				//no transaction associated , throw error
+				//no transaction associated, error
 				if( c_logger.isTraceDebugEnabled())
 				{
 				c_logger.traceDebug(this,"processsUASipRequest",exp.getMessage());
