@@ -144,9 +144,7 @@ public class TelemetryServletFilter extends AbstractTelemetryServletFilter imple
                 request.setAttribute(SPAN_SCOPE, scope);
 
                 SpanContext currentSpanContext = Span.current().getSpanContext();
-                ((HttpServletResponse) response)
-                                .setHeader(ACCESS_TRACE_HEADER_NAME,
-                                           currentSpanContext.getTraceId() + ":" + currentSpanContext.getSpanId());
+                setHeaderTraceIDHeader(currentSpanContext, response);
 
                 if (tc.isDebugEnabled()) {
                     Tr.debug(tc, "Span traceId=" + currentSpanContext.getTraceId() + ", spanId=" + currentSpanContext.getSpanId());
@@ -194,6 +192,12 @@ public class TelemetryServletFilter extends AbstractTelemetryServletFilter imple
             request.removeAttribute(SPAN_SCOPE);
         }
 
+    }
+
+    protected void setHeaderTraceIDHeader(SpanContext currentSpanContext, ServletResponse response) {
+        ((HttpServletResponse) response)
+                        .setHeader(ACCESS_TRACE_HEADER_NAME,
+                                   currentSpanContext.getTraceId() + ":" + currentSpanContext.getSpanId());
     }
 
     private void endSpan(ServletRequest request, ServletResponse response, Throwable throwable, Instrumenter<ServletRequest, ServletResponse> current) {
