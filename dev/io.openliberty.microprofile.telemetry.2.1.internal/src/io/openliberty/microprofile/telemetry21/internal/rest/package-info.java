@@ -11,6 +11,6 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 @TraceOptions(traceGroup = "TELEMETRY")
-package io.openliberty.microprofile.telemetry20.internal.rest;
+package io.openliberty.microprofile.telemetry21.internal.rest;
 
 import com.ibm.websphere.ras.annotation.TraceOptions;
