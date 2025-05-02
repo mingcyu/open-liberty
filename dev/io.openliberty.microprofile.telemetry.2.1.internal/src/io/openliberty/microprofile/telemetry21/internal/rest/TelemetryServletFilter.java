@@ -9,17 +9,18 @@
  *******************************************************************************/
 package io.openliberty.microprofile.telemetry21.internal.rest;
 
-import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.ext.Provider;
 
+import io.openliberty.microprofile.telemetry20.internal.rest.AbstractTelemetry20ServletFilter;
 import io.opentelemetry.api.trace.SpanContext;
 
 @Provider
-public class TelemetryServletFilter extends io.openliberty.microprofile.telemetry20.internal.rest.TelemetryServletFilter {
+public class TelemetryServletFilter extends AbstractTelemetry20ServletFilter {
 
     @Override
-    protected void setHeaderTraceIDHeader(SpanContext currentSpanContext, ServletResponse response) {
-        //No Op on Telemetry 2.1
+    protected void setHeaderTraceIDHeader(SpanContext currentSpanContext, HttpServletResponse response) {
+        //No Op
     }
 
 }
