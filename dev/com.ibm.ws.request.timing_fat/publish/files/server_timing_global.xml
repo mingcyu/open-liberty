@@ -5,6 +5,7 @@
         <feature>jsp-2.2</feature>
 		<feature>jdbc-4.0</feature>
 		<feature>requestTiming-1.0</feature>
+		<feature>servlet-4.0</feature>
     </featureManager>
 
   
