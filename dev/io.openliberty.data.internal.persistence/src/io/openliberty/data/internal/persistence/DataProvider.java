@@ -212,14 +212,13 @@ public class DataProvider implements //
                     new ConcurrentHashMap<>();
 
     /**
-     * EntityManagerBuilder futures, grouped by application, for EJB modules
-     * that are triggered to initialize on module starting rather than waiting
-     * for application start.
+     * EntityManagerBuilder futures, grouped by application, triggered to initialize
+     * on module starting rather than waiting for application start.
      * The Set values in this map are subsets of the Set values in futureEMBuilders.
      * The entries are removed on application start, which uses the values to avoid
      * duplicated initalization attempts.
      */
-    private final ConcurrentHashMap<String, Set<FutureEMBuilder>> futureEMBuildersInEJB = //
+    private final ConcurrentHashMap<String, Set<FutureEMBuilder>> processedFutureEMBuilders = //
                     new ConcurrentHashMap<>();
 
     /**
@@ -326,7 +325,7 @@ public class DataProvider implements //
         //Use deployment name but fall back to generated name
         String appName = appInfo.getDeploymentName() == null ? appInfo.getName() : appInfo.getDeploymentName();
         Set<FutureEMBuilder> futures = futureEMBuilders.get(appName);
-        Set<FutureEMBuilder> skip = futureEMBuildersInEJB.remove(appName);
+        Set<FutureEMBuilder> skip = processedFutureEMBuilders.remove(appName);
         if (futures != null) {
             for (FutureEMBuilder futureEMBuilder : futures) {
                 if (skip == null || !skip.contains(futureEMBuilder))
@@ -881,13 +880,15 @@ public class DataProvider implements //
     public void moduleStarting(ModuleInfo moduleInfo) throws StateChangeException {
         final boolean trace = TraceComponent.isAnyTracingEnabled();
 
-        String appName = moduleInfo.getApplicationInfo().getDeploymentName();
+        ApplicationInfo appInfo = moduleInfo.getApplicationInfo();
+        //Use deployment name but fall back to generated name
+        String appName = appInfo.getDeploymentName() == null ? appInfo.getName() : appInfo.getDeploymentName();
         String moduleName = moduleInfo.getName(); // does not include .jar at the end
 
         if (trace && tc.isDebugEnabled())
             Tr.debug(this, tc, "moduleStarting " + moduleInfo, appName, moduleName);
 
-        Set<FutureEMBuilder> processed = futureEMBuildersInEJB.get(appName);
+        Set<FutureEMBuilder> processed = processedFutureEMBuilders.get(appName);
 
         // TODO it would be more direct to map from appName+moduleName -> FutureEMBuilder,
         // but we would need to take into account the difference in module names
@@ -902,7 +903,7 @@ public class DataProvider implements //
 
                 if (processed == null) {
                     processed = new ConcurrentSkipListSet<>();
-                    Set<FutureEMBuilder> previous = futureEMBuildersInEJB //
+                    Set<FutureEMBuilder> previous = processedFutureEMBuilders //
                                     .putIfAbsent(appName, processed);
                     if (previous != null)
                         processed = previous;
@@ -911,6 +912,7 @@ public class DataProvider implements //
                 processed.add(futureEMBuilder);
 
             }
+
     }
 
     @Override

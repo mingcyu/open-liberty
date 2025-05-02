@@ -677,13 +677,13 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
      * Obtains the metadata identifier for the module that defines the repository
      * interface.
      *
-     * @param webModule true for a Web Module, false for an EJB Module
+     * @param isWebComponent true for a Web Module, false for an EJB Module
      *
      * @return metadata identifier as the key, and application/module/component
      *         as the value. Module and component might be null or might not be
      *         present at all.
      */
-    private String getMetadataIdentifier(boolean webModule) {
+    private String getMetadataIdentifier(boolean isWebComponent) {
 
         String mdIdentifier;
 
@@ -693,7 +693,7 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
                                                           null);
         } else {
             mdIdentifier = provider.metadataIdSvc //
-                            .getMetaDataIdentifier(webModule ? "WEB" : "EJB",
+                            .getMetaDataIdentifier(isWebComponent ? "WEB" : "EJB",
                                                    jeeName.getApplication(),
                                                    jeeName.getModule(),
                                                    null);
