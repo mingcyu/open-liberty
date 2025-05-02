@@ -1,5 +1,6 @@
 #!/bin/sh
 
+echo "Checking environment settings"
 if [ -z ${KRB5_REALM} ]; then
     echo "No KRB5_REALM Provided. Exiting ..."
     exit 1
@@ -21,7 +22,6 @@ if [ -z ${EXTERNAL_HOSTNAME} ]; then
 fi
 
 echo "Creating Krb5 Client Configuration"
-
 cat <<EOT > /etc/krb5.conf
 [libdefaults]
  dns_lookup_realm = false
@@ -38,12 +38,12 @@ cat <<EOT > /etc/krb5.conf
  }
 EOT
 
+echo "Removing existing Krb5 Database"
 rm -rf /var/lib/krb5kdc/principal*
 
 if [ ! -f "/var/lib/krb5kdc/principal" ]; then
 
     echo "No Krb5 Database Found. Creating One with provided information"
-
     if [ -z ${KRB5_PASS} ]; then
         echo "No Password for kdb provided ... Creating One"
         KRB5_PASS=`< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;`
@@ -72,11 +72,11 @@ cat <<EOT > /var/lib/krb5kdc/kdc.conf
     default = FILE:/var/log/krb5lib.log
 EOT
 
-echo "Creating Default Policy - Admin Access to */admin"
-echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
-echo "*/service@${KRB5_REALM} aci" >> /var/lib/krb5kdc/kadm5.acl
+    echo "Creating Default Policy - Admin Access to */admin"
+    echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
+    echo "*/service@${KRB5_REALM} aci" >> /var/lib/krb5kdc/kadm5.acl
 
-    echo "Creating Temp pass file"
+    echo "Creating temporary pass file"
 cat <<EOT > /etc/krb5_pass
 ${KRB5_PASS}
 ${KRB5_PASS}
@@ -124,8 +124,10 @@ EOT
     kadmin.local -q "addprinc -pw ${KRB5_PASS} pguser@${KRB5_REALM}"
     
     echo "KERB SETUP COMPLETE"
-
+else
+    echo "Existing Krb5 Database removal failed"
+    exit 1
 fi
 
-
+echo "Start monitoring service for container lifecycle"
 /usr/bin/supervisord -c /etc/supervisord.conf
