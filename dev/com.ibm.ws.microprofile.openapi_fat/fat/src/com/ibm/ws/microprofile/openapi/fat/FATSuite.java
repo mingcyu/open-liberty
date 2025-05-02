@@ -37,12 +37,7 @@ import com.ibm.ws.microprofile.openapi.fat.annotations.AnnotationProcessingTest;
 import com.ibm.ws.microprofile.openapi.fat.config.OpenAPIConfigQuickTest;
 import com.ibm.ws.microprofile.openapi.fat.config.OpenAPIConfigTest;
 import com.ibm.ws.microprofile.openapi.fat.filter.FilterConfigTest;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestFive;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestFour;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestOne;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestSix;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestThree;
-import com.ibm.ws.microprofile.openapi.validation.fat.OpenAPIValidationTestTwo;
+import com.ibm.ws.microprofile.openapi.validation.fat.ValidationSuite;
 
 import componenttest.rules.repeater.MicroProfileActions;
 import componenttest.rules.repeater.RepeatTests;
@@ -56,12 +51,7 @@ import componenttest.security.utils.SSLUtils;
     ContentTypeTest.class,
     OpenAPIConfigQuickTest.class,
     OpenAPIConfigTest.class,
-    OpenAPIValidationTestOne.class,
-    OpenAPIValidationTestTwo.class,
-    OpenAPIValidationTestThree.class,
-    OpenAPIValidationTestFour.class,
-    OpenAPIValidationTestFive.class,
-    OpenAPIValidationTestSix.class,
+    ValidationSuite.class,
     FilterConfigTest.class,
     ProxySupportTest.class,
     EndpointAvailabilityTest.class,
