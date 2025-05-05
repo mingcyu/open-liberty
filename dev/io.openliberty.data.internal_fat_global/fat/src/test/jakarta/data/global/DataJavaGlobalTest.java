@@ -79,6 +79,7 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 1,
+                                          "expiresAt": "2025-10-01T13:30:00.133-05:00[America/Chicago]",
                                           "forDayOfWeek": "MONDAY",
                                           "message": "Do this first.",
                                           "monthDayCreated": "--04-25",
@@ -91,6 +92,7 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 2,
+                                          "expiresAt": "2025-12-01T12:24:15.000-07:00[America/Los_Angeles]",
                                           "forDayOfWeek": "TUESDAY",
                                           "message": "Do this second.",
                                           "monthDayCreated": "--12-31",
@@ -103,6 +105,7 @@ public class DataJavaGlobalTest extends FATServletClient {
                         .jsonBody("""
                                         {
                                           "id": 3,
+                                          "expiresAt": "2026-12-31T15:45:59.999-06:00[America/Phoenix]",
                                           "forDayOfWeek": "WEDNESDAY",
                                           "message": "Do this third.",
                                           "monthDayCreated": "--04-25",
@@ -182,6 +185,8 @@ public class DataJavaGlobalTest extends FATServletClient {
         String found = "found: " + json;
 
         assertEquals(found, 1, json.getInt("id"));
+        assertEquals(found, "2025-10-01T13:30:00.133-05:00[America/Chicago]",
+                     json.getString("expiresAt"));
         assertEquals(found, "MONDAY", json.getString("forDayOfWeek"));
         assertEquals(found, "Do this first.", json.getString("message"));
         assertEquals(found, "--04-25", json.getString("monthDayCreated"));
