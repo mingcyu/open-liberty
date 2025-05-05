@@ -30,4 +30,21 @@ public class CustomerConfiguration {
 		factoryBean.setProxyInterface(EntityManagerFactory.class);
 		return factoryBean;
 	}
+
+//	@Bean
+//	LocalContainerEntityManagerFactoryBean customerEntityManagerFactory() {
+//		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean() {
+//			@Override
+//			protected EntityManagerFactory createNativeEntityManagerFactory() throws PersistenceException {
+//				try {
+//					return (EntityManagerFactory) new JndiTemplate().lookup("java:comp/env/persistence/customerEMF");
+//				} catch (NamingException e) {
+//					throw new PersistenceException(e);
+//				}
+//			}
+//		};
+//		factoryBean.setPersistenceUnitName("customer-unit");
+//		return factoryBean;
+//	}
+
 }

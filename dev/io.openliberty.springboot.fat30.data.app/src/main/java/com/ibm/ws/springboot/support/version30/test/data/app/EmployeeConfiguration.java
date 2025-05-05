@@ -30,4 +30,20 @@ public class EmployeeConfiguration {
 		factoryBean.setProxyInterface(EntityManagerFactory.class);
 		return factoryBean;
 	}
+
+//	@Bean
+//	LocalContainerEntityManagerFactoryBean employeeEntityManagerFactory() {
+//		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean() {
+//			@Override
+//			protected EntityManagerFactory createNativeEntityManagerFactory() throws PersistenceException {
+//				try {
+//					return (EntityManagerFactory) new JndiTemplate().lookup("java:comp/env/persistence/employeeEMF");
+//				} catch (NamingException e) {
+//					throw new PersistenceException(e);
+//				}
+//			}
+//		};
+//		factoryBean.setPersistenceUnitName("employee-unit");
+//		return factoryBean;
+//	}
 }
