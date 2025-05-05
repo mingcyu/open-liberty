@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 IBM Corporation and others.
+ * Copyright (c) 2015, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -39,6 +39,7 @@ import io.openliberty.faces.fat.selenium.util.internal.CustomDriver;
 import io.openliberty.faces.fat.selenium.util.internal.ExtendedWebDriver;
 import io.openliberty.faces.fat.selenium.util.internal.WebPage;
 
+import componenttest.annotation.CheckpointTest;
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.custom.junit.runner.Mode;
@@ -51,6 +52,7 @@ import junit.framework.Assert;
  * Tests to execute on the jsfTestServer2 that use HtmlUnit.
  */
 @Mode(TestMode.FULL)
+@CheckpointTest(alwaysRun = true)
 @RunWith(FATRunner.class)
 public class JSF22ComponentTesterTests {
     @Rule

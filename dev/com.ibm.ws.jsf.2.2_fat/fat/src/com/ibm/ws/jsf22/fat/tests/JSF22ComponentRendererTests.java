@@ -12,6 +12,7 @@ package com.ibm.ws.jsf22.fat.tests;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URL;
+import org.junit.ClassRule;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -36,10 +37,21 @@ import componenttest.rules.repeater.JakartaEEAction;
 import componenttest.topology.impl.LibertyServer;
 import junit.framework.Assert;
 
+import componenttest.annotation.Server;
+import componenttest.annotation.CheckpointTest;
+import componenttest.annotation.SkipForRepeat;
+import componenttest.custom.junit.runner.FATRunner;
+import componenttest.rules.repeater.CheckpointRule;
+import componenttest.rules.repeater.CheckpointRule.ServerMode;
+import componenttest.rules.repeater.JakartaEEAction;
+import componenttest.topology.impl.LibertyServer;
+
+import static componenttest.annotation.SkipForRepeat.CHECKPOINT_RULE;
+
 /**
  * Tests to execute on the jsfTestServer2 that use HtmlUnit.
  */
-@Mode(TestMode.FULL)
+// @Mode(TestMode.FULL)
 @RunWith(FATRunner.class)
 public class JSF22ComponentRendererTests {
     @Rule
@@ -52,8 +64,14 @@ public class JSF22ComponentRendererTests {
     @Server("jsfTestServer2")
     public static LibertyServer jsfTestServer2;
 
-    @BeforeClass
-    public static void setup() throws Exception {
+        @ClassRule
+    public static CheckpointRule checkpointRule = new CheckpointRule()
+                                                      .setConsoleLogName(JSF22ComponentRendererTests.class.getSimpleName()+ ".log")
+                                                      .setServerSetup(JSF22ComponentRendererTests::serverSetUp)
+                                                      .setServerStart(JSF22ComponentRendererTests::serverStart)
+                                                      .setServerTearDown(JSF22ComponentRendererTests::serverTearDown);
+
+    public static LibertyServer serverSetUp(ServerMode mode) throws Exception {
         boolean isEE10 = JakartaEEAction.isEE10OrLaterActive();
 
         ShrinkHelper.defaultDropinApp(jsfTestServer2, "JSF22ComponentRenderer.war",
@@ -64,12 +82,14 @@ public class JSF22ComponentRendererTests {
                                       isEE10 ? "com.ibm.ws.jsf22.fat.componentrenderer.jsf943.bean.faces40" : "com.ibm.ws.jsf22.fat.componentrenderer.jsf943.bean.jsf22",
                                       "com.ibm.ws.jsf22.fat.componentrenderer.jsf997",
                                       "com.ibm.ws.jsf22.fat.componentrenderer.myfaces4117");
+            return jsfTestServer2;
+    }
+    public static void serverStart(ServerMode mode, LibertyServer server) throws Exception {
 
         jsfTestServer2.startServer(c.getSimpleName() + ".log");
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    public static void serverTearDown(ServerMode mode, LibertyServer server) throws Exception {
         // Stop the server
         if (jsfTestServer2 != null && jsfTestServer2.isStarted()) {
             jsfTestServer2.stopServer();
