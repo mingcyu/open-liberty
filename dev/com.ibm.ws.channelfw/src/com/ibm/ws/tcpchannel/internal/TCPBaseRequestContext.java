@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2006 IBM Corporation and others.
+ * Copyright (c) 2005, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@
 package com.ibm.ws.tcpchannel.internal;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -569,6 +570,12 @@ public class TCPBaseRequestContext implements TCPRequestContext, FFDCSelfIntrosp
             rc = false;
         }
         return rc;
+    }
+
+    @Override
+    public Socket getSocket() {
+        TCPConnLink connLink = getTCPConnLink();
+        return connLink.getSocketIOChannel().getSocket();
     }
 
 }
