@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -18,7 +18,7 @@ import com.ibm.wsspi.bytebuffer.WsByteBuffer;
  * A context object encapsulating all of the data related to a TCPChannel
  * read data request. This context can be obtained via the getReadInterface
  * method on the TCPConnectionContext.
- * 
+ *
  * @ibm-spi
  */
 
@@ -26,7 +26,7 @@ public interface TCPRequestContext {
 
     /**
      * Link back to the TCPConnectionContext from whence this interface came.
-     * 
+     *
      * @return TCPConnectionContext - originating context
      */
     TCPConnectionContext getInterface();
@@ -41,16 +41,16 @@ public interface TCPRequestContext {
     /**
      * Returns the set of read buffers associated with this
      * request.
-     * 
+     *
      * @return WsByteBuffer[]
      */
     WsByteBuffer[] getBuffers();
 
     /**
      * Sets the array of read buffers associated with this request.
-     * 
+     *
      * @param bufs
-     *            - the array of WsByteBuffers to be set
+     *                 - the array of WsByteBuffers to be set
      */
     void setBuffers(WsByteBuffer[] bufs);
 
@@ -58,7 +58,7 @@ public interface TCPRequestContext {
      * Returns the first read buffer in the buffer array associated with this
      * request.
      * This is a convenience method for when only one buffer is needed.
-     * 
+     *
      * @return WsByteBuffer
      */
     WsByteBuffer getBuffer();
@@ -67,7 +67,7 @@ public interface TCPRequestContext {
      * Sets the first read buffer in the buffer array associated with this
      * request. This is
      * a convenience method for when only one buffer is needed
-     * 
+     *
      * @param buf
      */
     void setBuffer(WsByteBuffer buf);
