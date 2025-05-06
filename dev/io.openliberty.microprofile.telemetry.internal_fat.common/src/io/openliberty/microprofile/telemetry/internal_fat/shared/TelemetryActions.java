@@ -37,6 +37,12 @@ public class TelemetryActions {
 
     public static final String MP61_MPTEL20_ID = MicroProfileActions.MP61_ID + "_MPTEL20";
 
+    //Telemetry 2.1 repeats should not start with "MicroProfile_xx" as RepeatTestFilter uses startsWith() which makes them indisinguishable to mpTelemetry-1.1 in tests
+    public static final String MP14_MPTEL21_ID = EE7FeatureReplacementAction.ID + "_MPTEL21_MP14";
+    public static final String MP41_MPTEL21_ID = EE8FeatureReplacementAction.ID + "_MPTEL21_MP41";
+    public static final String MP50_MPTEL21_ID = JakartaEEAction.EE9_ACTION_ID + "_MPTEL21_MP50";
+    public static final String MP50_MPTEL21_JAVA8_ID = JakartaEEAction.EE9_ACTION_ID + "_MPTEL21_MP50_JAVA8";
+
     public static final FeatureSet MP14_MPTEL11 = MicroProfileActions.MP14
                     .addFeature("mpTelemetry-1.1")
                     .setMinJavaLevel(SEVersion.JAVA11)
@@ -79,17 +85,44 @@ public class TelemetryActions {
                     .addFeature("mpTelemetry-2.0")
                     .build(MP61_MPTEL20_ID);
 
+    public static final FeatureSet MP14_MPTEL21 = MicroProfileActions.MP14
+                    .addFeature("mpTelemetry-2.1")
+                    .setMinJavaLevel(SEVersion.JAVA11)
+                    .build(MP14_MPTEL21_ID);
+
+    public static final FeatureSet MP41_MPTEL11 = MicroProfileActions.MP41
+                    .addFeature("mpTelemetry-2.1")
+                    .setMinJavaLevel(SEVersion.JAVA11)
+                    .build(MP41_MPTEL21_ID);
+
+    public static final FeatureSet MP50_MPTEL21 = MicroProfileActions.MP50
+                    .addFeature("mpTelemetry-2.1")
+                    .addFeature("mpReactiveMessaging-3.0")
+                    .addFeature("mpReactiveStreams-3.0")
+                    .setMinJavaLevel(SEVersion.JAVA11)
+                    .build(MP50_MPTEL21_ID);
+
+    public static final FeatureSet MP50_MPTEL21_JAVA8 = MicroProfileActions.MP50
+                    .addFeature("mpTelemetry-2.1")
+                    .build(MP50_MPTEL21_JAVA8_ID);
+
     //All MicroProfile Telemetry FeatureSets - must be descending order
-    private static final FeatureSet[] ALL_MPTEL_SETS_ARRAY = { MicroProfileActions.MP70_EE11,
+    private static final FeatureSet[] ALL_MPTEL_SETS_ARRAY = { MicroProfileActions.MP71_EE11,
+                                                               MicroProfileActions.MP71_EE10,
+                                                               MicroProfileActions.MP70_EE11,
                                                                MicroProfileActions.MP70_EE10,
                                                                MicroProfileActions.MP61,
                                                                MicroProfileActions.MP60,
                                                                MP61_MPTEL20,
+                                                               MP50_MPTEL21,
                                                                MP50_MPTEL20,
+                                                               MP50_MPTEL21_JAVA8,
                                                                MP50_MPTEL20_JAVA8,
                                                                MP50_MPTEL11,
+                                                               MP41_MPTEL21,
                                                                MP41_MPTEL20,
                                                                MP41_MPTEL11,
+                                                               MP14_MPTEL21,
                                                                MP14_MPTEL20,
                                                                MP14_MPTEL11 };
 
@@ -153,6 +186,8 @@ public class TelemetryActions {
      */
     public static RepeatTests latestTelemetryRepeats(String serverName) {
         return repeat(serverName,
+                      MicroProfileActions.MP71_EE11,
+                      MicroProfileActions.MP71_EE10,
                       MicroProfileActions.MP70_EE11,
                       MicroProfileActions.MP70_EE10,
                       MicroProfileActions.MP61,
@@ -181,6 +216,11 @@ public class TelemetryActions {
 
     public static RepeatTests allMPRepeats(String serverName) {
         return repeat(serverName,
+                      MicroProfileActions.MP71_EE11,
+                      MicroProfileActions.MP71_EE10,
+                      MP14_MPTEL21,
+                      MP41_MPTEL21,
+                      MP50_MPTEL21,
                       MicroProfileActions.MP70_EE11,
                       MicroProfileActions.MP60,
                       MP61_MPTEL20,
