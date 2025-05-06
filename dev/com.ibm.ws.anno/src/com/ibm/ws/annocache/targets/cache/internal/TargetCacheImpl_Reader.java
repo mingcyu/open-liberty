@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -315,7 +316,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
         if ( logger.isLoggable(Level.FINER) ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName, "Expected table [ " + expectedTableTag + " ]");
-            logger.logp(Level.FINER, CLASS_NAME, methodName, "Accepted table version [ " + acceptedTableVersions + " ]");            
+            logger.logp(Level.FINER, CLASS_NAME, methodName, "Accepted table version [ " + Arrays.toString(acceptedTableVersions) + " ]");            
         }
 
         clearHeader();
@@ -481,9 +482,8 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
     }
 
     public class ContainerTableReader extends TargetsReader {
-        public ContainerTableReader(TargetsTableContainers containerTable, TargetCacheImpl_Reader reader) {
+        public ContainerTableReader(TargetsTableContainers containerTable) {
             this.containerTable = containerTable;
-            this.baseReader = reader;
             
             this.name = null;
             this.signature = null;
@@ -492,8 +492,6 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
         //
 
         protected final TargetsTableContainers containerTable;
-
-        protected final TargetCacheImpl_Reader baseReader;
 
         //
 
@@ -536,7 +534,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
                 didHandle = true;
 
-            } else if ( (baseReader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // Issue 30315
+            } else if ( (parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // Issue 30315
                 if ( name == null ) {
                     addParseError("Signature [ " + parsedValue + " ] does not follow [ " + NAME_TAG + " ]: Ignoring");
                 } else if ( signature != null ) {
@@ -557,7 +555,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                     
                     String useSignature;
                     
-                    if (baseReader.parsedVersionValue < VERSION_VALUE_20) {
+                    if (parsedVersionValue < VERSION_VALUE_20) {
                         useSignature = ClassSource.UNAVAILABLE_STAMP;
                     } else {
                         if ( signature == null ) {
@@ -1311,7 +1309,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
     @Override
     public List<TargetCache_ParseError> read(TargetsTableContainers containerTable) throws IOException {
-        ContainerTableReader containerReader = new ContainerTableReader(containerTable, this);
+        ContainerTableReader containerReader = new ContainerTableReader(containerTable);
         return parse(containerReader); // throws IOException
     }
 

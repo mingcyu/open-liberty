@@ -90,30 +90,11 @@ public class TargetsTableContainersImpl
             signatures.put(name, signature);
         }
     }
-    
-    @Override
-    @Deprecated
-    public void addName(String name, ScanPolicy policy) {
-        names.add(name);
-        policies.put(name, policy);
-    }
 
     @Override
     public void addName(String name, String signature, ScanPolicy policy) {
         names.add(name);
         putSignature(name, signature);
-        policies.put(name, policy);
-    }
-    
-    @Override
-    @Deprecated    
-    public void addNameAfter(String name, ScanPolicy policy, String afterName) {
-        int addOffset = names.indexOf(afterName);
-        if ( addOffset == -1 ) {
-            throw new IndexOutOfBoundsException("Name [ " + afterName + " ] is not within container table [ " + getHashText() + " ]");
-        }
-
-        names.add(addOffset + 1, name);
         policies.put(name, policy);
     }
 
@@ -126,18 +107,6 @@ public class TargetsTableContainersImpl
 
         names.add(addOffset + 1, name);
         putSignature(name, signature);        
-        policies.put(name, policy);
-    }
-    
-    @Override
-    @Deprecated    
-    public void addNameBefore(String name, ScanPolicy policy, String beforeName) {
-        int addOffset = names.indexOf(beforeName);
-        if ( addOffset == -1 ) {
-            throw new IndexOutOfBoundsException("Name [ " + beforeName + " ] is not within container table [ " + getHashText() + " ]");
-        }
-
-        names.add(addOffset, name);
         policies.put(name, policy);
     }
     
@@ -219,23 +188,47 @@ public class TargetsTableContainersImpl
 
     //
 
-    public boolean sameAs(TargetsTableContainersImpl otherTable) {
-        return ( sameAs(otherTable, !DO_DETAIL ) == null );
-    }
-
-    public static final boolean DO_DETAIL = true;
+    public static final boolean DO_SHOW_DETAILS = true;
     public static final String COARSE_CHANGE = "Changed";
 
     /**
      * Compare this table with another table.  Answer null if the tables are the
-     * same.
+     * same.  Answer a descriptive message if the tables are different.
      * 
-     * Conditionally, return a coarse message or a detail message, based on
-     * the 'describe' parameter.
+     * Tables are the same if they have the same lengths, the same container names in the same
+     * order, have the same policies for each named container, and have the same signatures
+     * for each named container.
+     * 
+     * Containers which have unrecorded or unknown signatures are compared as equal.  This
+     * makes for a validation gap: A second step of generating and comparing results for
+     * the containers with unrecorded or unknown signatures must be performed.  See
+     * {@link TargetsScannerOverallImpl.validInternalContainers()},
+     * {@link TargetsScannerOverallImpl#validInternalContainer(ClassSource, ScanPolicy)}, and        
+     * {@link TargetCacheImpl_DataCon#isValid(TargetsScannerOverallImpl, String, String)}.        
+     *
+     * Overall, the initial step of comparing the container lists accepts containers
+     * with unrecorded or unknown signatures are "the same".  Later, when validating the
+     * individual containers, containers which have unrecorded or unknown signatures are
+     * flagged as possibly having changes.  The results for each container is generated
+     * and compared against the prior results (if any is available), with the container
+     * being flagged as changed based on the comparison of the results.
+     *
+     * Note that placement of the signature in the containers list is slightly improper:
+     * A better flow would split the container signatures from the containers list, since
+     * these are categorically different types of data.  However, the containers are
+     * required to be stable while doing scans.  Retrieving the container signatures during
+     * the container lists test will use the same container signature as is used when
+     * validating individual containers.
+     *
+     * Conditionally, return a coarse message or a detail message.
+     * 
+     * @param otherTable A table to compare against.
+     * @param showDetails Control parameter: Should the comparison generate a coarse or a detail
+     *     change description.
      */
-    public String sameAs(TargetsTableContainersImpl otherTable, boolean describe) {
+    public String sameAs(TargetsTableContainersImpl otherTable, boolean showDetails) {
         if ( otherTable == null ) {
-            return ( describe ? "Prior null table" : COARSE_CHANGE );
+            return ( showDetails ? "Prior null table" : COARSE_CHANGE );
         } else if ( otherTable == this ) {
             return null;
         }
@@ -247,7 +240,7 @@ public class TargetsTableContainersImpl
         int otherCount = otherNames.size();
 
         if ( thisCount != otherCount ) {
-            if ( !describe ) {
+            if ( !showDetails ) {
                 return COARSE_CHANGE;
             } else {
                 return ( "Container count changed from [ " + otherCount + " ] to [ " + thisCount + " ]" );
@@ -258,7 +251,7 @@ public class TargetsTableContainersImpl
             String thisName = theseNames.get(nameNo);
             String otherName = otherNames.get(nameNo);
             if ( !thisName.equals(otherName) ) {
-                if ( !describe ) {
+                if ( !showDetails ) {
                     return COARSE_CHANGE;
                 } else {
                     return ( "Container number [ " + nameNo + " ]: Name changed from [ " + otherName + " ] to [ " + thisName + " ]" );
@@ -277,13 +270,13 @@ public class TargetsTableContainersImpl
             String thisSig = getSignature(thisName);
             String otherSig = otherTable.getSignature(thisName);
             if ( thisSig == null ) { // || thisSig.equals(ClassSource.UNRECORDED_STAMP) || thisSig.equals(ClassSource.UNAVAILABLE_STAMP) ) {
-                if ( !describe ) {
+                if ( !showDetails ) {
                     return COARSE_CHANGE; 
                 } else {
                     return ( "Container number [ " + nameNo + " ] named [ " + thisName + " ]: Uncomparable signature [ " + thisSig + " ]");
                 }
             } else if ( (otherSig == null) || !thisSig.equals(otherSig) ) {
-                if ( !describe ) {
+                if ( !showDetails ) {
                     return COARSE_CHANGE; 
                 } else {
                     return ( "Container number [ " + nameNo + " ] named [ " + thisName + " ]: Signature changed from [ " + otherSig + " ] to [ " + thisSig + " ]" );
@@ -293,7 +286,7 @@ public class TargetsTableContainersImpl
             ScanPolicy thisPolicy = getPolicy(thisName);
             ScanPolicy otherPolicy = otherTable.getPolicy(thisName);
             if ( thisPolicy != otherPolicy ) {
-                if ( !describe ) {
+                if ( !showDetails ) {
                     return COARSE_CHANGE; 
                 } else {
                     return ( "Container number [ " + nameNo + " ] named [ " + thisName + " ]: Policy changed from [ " + otherPolicy + " ] to [ " + thisPolicy + " ]" );

@@ -197,23 +197,6 @@ public class MethodInfoImpl extends InfoImpl implements MethodInfo {
     }
 
     @Override
-    @Deprecated
-    public List<List<? extends com.ibm.wsspi.anno.info.AnnotationInfo>> getParameterAnnotations() {
-        if ( parameterAnnotations.isEmpty() ) {
-            return Collections.emptyList();
-        } else {
-            List<List<? extends com.ibm.wsspi.anno.info.AnnotationInfo>> parmAnnotations =
-                new ArrayList<List<? extends com.ibm.wsspi.anno.info.AnnotationInfo>>(parameterAnnotations.size());
-
-            for ( List<AnnotationInfoImpl> oneParmAnnos : parameterAnnotations ) {
-                parmAnnotations.add(oneParmAnnos);
-            }
-
-            return parmAnnotations;
-        }
-    }
-
-    @Override
     public List<List<AnnotationInfoImpl>> getParmAnnotations() {
         return parameterAnnotations;
     }

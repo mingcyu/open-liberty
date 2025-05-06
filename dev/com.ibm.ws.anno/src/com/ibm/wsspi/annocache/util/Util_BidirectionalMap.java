@@ -31,17 +31,6 @@ public interface Util_BidirectionalMap extends com.ibm.wsspi.anno.util.Util_Bidi
 
     //
 
-    @Deprecated
-    boolean IS_ENABLED = true;
-
-    @Deprecated
-    boolean IS_NOT_ENABLED = false;
-
-    @Deprecated
-    boolean getEnabled();
-
-    //
-
     Util_Factory getFactory();
 
     //

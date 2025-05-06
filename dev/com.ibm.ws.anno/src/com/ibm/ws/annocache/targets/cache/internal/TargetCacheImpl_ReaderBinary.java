@@ -218,12 +218,39 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
 
     //
 
-    public void requireHeader(String tableName, String tableVersion) throws IOException {
-        requireHeader(tableName, new String[] { tableVersion }); // throws IOException
+    /**
+     * Parse a table header.
+     * 
+     * The table name and version are required to be the specified values.
+     * 
+     * @param tableName The required table name.
+     * @param tableVersion The required table version.
+     * @param tableVersionValue The value matching the table version.
+     * 
+     * @return The table version value.
+     *
+     * @throws IOException Thrown if there was a basic IO failure, or if the expected
+     *     table structure or values is not present.
+     */
+    public int requireHeader(String tableName, String tableVersion, int tableVersionValue) throws IOException {
+        return requireHeader(tableName, new String[] { tableVersion }, new int[] { tableVersionValue }); // throws IOException
     }
 
     // Issue 30315
-    public String requireHeader(String tableName, String[] tableVersions) throws IOException {
+    
+    /**
+     * Require a header consisting of a header byte, an encoding, a table name, and a version.
+     * 
+     * @param tableName The required header name.
+     * @param tableVersions The allowed table versions.
+     * @param tableVersionValues The values corresponding to the table versions.
+     * 
+     * @return The table version value which was read.
+     * 
+     * @throws IOException Thrown if there was a basic IO failure, or if the expected
+     *     table structure or values is not present.
+     */
+    public int requireHeader(String tableName, String[] tableVersions, int[] tableVersionValues) throws IOException {
         bufInput.requireByte(HEADER_BYTE);
 
         String actualEncoding = bufInput.requireField(ENCODING_BYTE, HEADER_WIDTH);
@@ -247,52 +274,52 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
                     " for [ " + getPath() + "]");
         }
 
-        String matchVersion = null;
-        for ( String tableVersion : tableVersions ) {
-            if ( actualVersion.equals(tableVersion) ) {
-                matchVersion = tableVersion;
-                break;
-            }
+        int matchOffset = -1;
+        for ( int offset = 0; (matchOffset == -1) && (offset < tableVersions.length); offset++) {
+           String nextVersion = tableVersions[offset];
+            if ( actualVersion.equals(nextVersion))
+                matchOffset = offset;
         }
-        if ( matchVersion == null ) {
+        if ( matchOffset == -1 ) {
             throw new IOException(
                 "Unexpected table version [ " + actualVersion + " ]:" +
-                " Expecting table versions [ " + tableVersions + " ]" +
+                " Expecting table versions [ " + Arrays.toString(tableVersions) + " ]" +
                 " for [ " + getPath() + "]");
         }
-        return matchVersion;
+
+        return tableVersionValues[matchOffset];
     }
 
     //
 
-    protected void requireStampHeader() throws IOException {
-        requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION);
+    protected int requireStampHeader() throws IOException {
+        return requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION, VERSION_VALUE_10);
     }
     
-    protected void requireContainerClassesHeader() throws IOException {
-        requireHeader(CLASSES_TABLE_NAME, CLASSES_TABLE_VERSION);
+    protected int requireContainerClassesHeader() throws IOException {
+        return requireHeader(CLASSES_TABLE_NAME, CLASSES_TABLE_VERSION, VERSION_VALUE_10);
     }
     
-    protected void requireTargetsHeader() throws IOException {
-        requireHeader(TARGETS_TABLE_NAME, TARGETS_TABLE_VERSION);
+    protected int requireTargetsHeader() throws IOException {
+        return requireHeader(TARGETS_TABLE_NAME, TARGETS_TABLE_VERSION, VERSION_VALUE_10);
     }
 
     //
 
-    protected String requireContainersHeader() throws IOException {
-        return requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSIONS); // Issue 30315
+    protected int requireContainersHeader() throws IOException {
+        return requireHeader(CONTAINER_TABLE_NAME, CONTAINER_TABLE_VERSIONS, CONTAINER_TABLE_VERSION_VALUES); // Issue 30315
     }
 
-    protected void requireModuleClassesHeader() throws IOException {
-        requireHeader(CLASSES_TABLE_NAME, CLASSES_TABLE_VERSION);
+    protected int requireModuleClassesHeader() throws IOException {
+        return requireHeader(CLASSES_TABLE_NAME, CLASSES_TABLE_VERSION, VERSION_VALUE_10);
     }
 
-    protected void requireResolvedRefsHeader() throws IOException {
-        requireHeader(RESOLVED_REFS_NAME, RESOLVED_REFS_VERSION);
+    protected int requireResolvedRefsHeader() throws IOException {
+        return requireHeader(RESOLVED_REFS_NAME, RESOLVED_REFS_VERSION, VERSION_VALUE_10);
     }
 
-    protected void requireUnresolvedRefsHeader() throws IOException {
-        requireHeader(UNRESOLVED_REFS_NAME, UNRESOLVED_REFS_VERSION);
+    protected int requireUnresolvedRefsHeader() throws IOException {
+        return requireHeader(UNRESOLVED_REFS_NAME, UNRESOLVED_REFS_VERSION, VERSION_VALUE_10);
     }
 
     // Cases:
@@ -346,7 +373,7 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     }
 
     protected void readFragment(TargetsTableTimeStampImpl stampTable) throws IOException {
-        requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION);
+        requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION, STAMP_TABLE_VERSION_VALUE);
 
         // Do not use the width for the name: The name cannot change.
         //
@@ -480,8 +507,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     }
 
     public void readFragment(TargetsTableContainersImpl containerTable) throws IOException {
-        String readVersion = requireContainersHeader();
-        boolean readStamps = readVersion.equals(TargetCache_BinaryConstants.CONTAINER_TABLE_VERSION_20);
+        int readVersion = requireContainersHeader();
+        boolean readStamps = ( readVersion >= VERSION_VALUE_20 ); // Issue 30315
 
         bufInput.requireByte(DATA_BYTE);
 

@@ -125,6 +125,7 @@ public class TargetsVisitorJandexConverterImpl {
 
     //
 
+    @SuppressWarnings("deprecation")
     public boolean convertClassInfo(String classSourceName, Object classInfoObj) {
         String methodName = "convertClassInfo";
 

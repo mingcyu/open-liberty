@@ -78,15 +78,6 @@ public class UtilImpl_BidirectionalMap implements Util_BidirectionalMap {
 
     //
 
-    @Deprecated
-    @Override
-    @Trivial
-    public boolean getEnabled() {
-        return true;
-    }
-
-    //
-
     protected final String holderTag;
 
     @Override

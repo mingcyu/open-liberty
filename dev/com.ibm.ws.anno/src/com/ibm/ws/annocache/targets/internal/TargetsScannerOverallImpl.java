@@ -1755,11 +1755,6 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
         } else {
             didRead = readInternalResults_Select(cachedTables);
             if ( didRead ) {
-                // for ( TargetsTableImpl cachedTable : cachedTables ) {
-                //     if ( cachedTable != null ) {
-                //         System.out.println("Read table [ " + cachedTable.getName() + " ] Stamp [ " + cachedTable.getStamp() + " ]");
-                //     }
-                // }
                 validReason = "Cache hit";
             } else {
                 validReason = "Cache miss or read failure";

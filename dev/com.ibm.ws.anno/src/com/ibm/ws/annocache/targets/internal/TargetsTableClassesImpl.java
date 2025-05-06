@@ -1009,8 +1009,11 @@ public class TargetsTableClassesImpl
             sameAsReason = "Same table";
         } else {
             sameAsReason = basicSameAs(otherTable, isCongruent);
-            if ( sameAs = (sameAsReason == null) ) {
-                sameAsReason = "Same";
+            if ( sameAsReason == null ) {
+                sameAs = true;
+                sameAsReason = "Same";                
+            } else {
+                sameAs = false;
             }
         }
 

@@ -191,9 +191,8 @@ public class MethodInfoImpl extends InfoImpl implements MethodInfo {
         return this.parameterClassInfos;
     }
 
-    /** {@inheritDoc} */
     @Override
-    public List<List<? extends AnnotationInfo>> getParameterAnnotations() {
+    public List<? extends List<? extends AnnotationInfo>> getParmAnnotations() {
         return parameterAnnotations;
     }
 

@@ -68,15 +68,6 @@ public class UtilImpl_EmptyBidirectionalMap implements Util_BidirectionalMap {
 
     //
 
-    @Deprecated
-    @Override
-    @Trivial
-    public boolean getEnabled() {
-        return true;
-    }
-
-    //
-
     protected final UtilImpl_EmptyInternMap holderInternMap;
 
     @Override

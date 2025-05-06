@@ -51,15 +51,6 @@ public class ArrayClassInfo extends ClassInfoImpl {
         }
     }
 
-    // Changed to pass in the type class name.  That centralizes
-    // the calls to obtain the name for a particular class info to
-    // the ClassInfoCache.
-
-    @Deprecated
-    public ArrayClassInfo(ClassInfoImpl elementClass) {
-        this(elementClass.getName() + "[]", elementClass);
-    }
-
     //
 
     /**

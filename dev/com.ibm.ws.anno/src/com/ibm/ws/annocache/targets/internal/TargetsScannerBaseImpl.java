@@ -73,8 +73,6 @@ public class TargetsScannerBaseImpl {
         
         this.hashText = getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
 
-        // (new Throwable(this.hashText)).printStackTrace(System.out);
-
         if ( targets == null ) {
             throw new IllegalArgumentException(getClass().getSimpleName() + ": " + this.hashText + " created with null targets");
         } else if ( rootClassSource == null ) {
