@@ -927,7 +927,11 @@ org.springframework.boot:spring-boot-autoconfigure:3.3.5
 org.springframework.boot:spring-boot:1.5.9.RELEASE
 org.springframework.boot:spring-boot:2.7.18
 org.springframework.boot:spring-boot:3.3.5
+org.springframework.data:spring-data-commons:2.7.6
 org.springframework.data:spring-data-commons:3.2.4
+org.springframework.data:spring-data-commons:3.3.0
+org.springframework.data:spring-data-jpa:2.7.6
+org.springframework.data:spring-data-jpa:3.3.0
 org.springframework.security:spring-security-config:4.2.3.RELEASE
 org.springframework.security:spring-security-config:5.7.13
 org.springframework.security:spring-security-config:6.3.4
@@ -964,6 +968,8 @@ org.springframework:spring-expression:5.3.39
 org.springframework:spring-expression:6.1.14
 org.springframework:spring-jdbc:5.3.39
 org.springframework:spring-jdbc:6.1.14
+org.springframework:spring-orm:5.3.39
+org.springframework:spring-orm:6.1.14
 org.springframework:spring-tx:5.3.39
 org.springframework:spring-tx:6.1.14
 org.springframework:spring-web:3.0.7.RELEASE
