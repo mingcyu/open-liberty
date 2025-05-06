@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.wsspi.annocache.classsource.ClassSource_Factory;
@@ -156,7 +155,7 @@ public class TargetCacheImpl_DataApps extends TargetCacheImpl_DataBase {
 
     // Application cache data storage ...
 
-    private class AppsLock {
+    protected static class AppsLock {
         // EMPTY
     }
     private final AppsLock appsLock;
@@ -266,7 +265,7 @@ public class TargetCacheImpl_DataApps extends TargetCacheImpl_DataBase {
 
     // TODO: Put the query data as weakly held data of module data.
 
-    private class QueriesLock {
+    protected static class QueriesLock {
         // EMPTY
     }
     private final QueriesLock queriesLock;

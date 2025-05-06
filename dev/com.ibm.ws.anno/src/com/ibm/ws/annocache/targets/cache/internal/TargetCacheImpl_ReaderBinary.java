@@ -265,8 +265,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
 
     //
 
-    protected void requireStampHeader() throws IOException {
-        requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION);
+    protected String requireStampHeader() throws IOException {
+        return requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSIONS); // Issue 30315
     }
     
     protected void requireContainerClassesHeader() throws IOException {
@@ -346,7 +346,8 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
     }
 
     protected void readFragment(TargetsTableTimeStampImpl stampTable) throws IOException {
-        requireHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION);
+        String readVersion = requireStampHeader();
+        boolean readEarliest = readVersion.equals(TargetCache_BinaryConstants.STAMP_TABLE_VERSION_20);
 
         // Do not use the width for the name: The name cannot change.
         //
@@ -356,9 +357,11 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
         // Do use the width for the stamp.
 
         String componentName = bufInput.requireField(NAME_BYTE);
+        String earliestStamp = ( readEarliest ? bufInput.requireField(STAMP_BYTE, HEADER_WIDTH) : null );
         String timeStamp = bufInput.requireField(STAMP_BYTE, HEADER_WIDTH);
 
         stampTable.setName(componentName);
+        stampTable.setEarliestStamp( readEarliest ? earliestStamp : timeStamp );
         stampTable.setStamp(timeStamp);
     }
 

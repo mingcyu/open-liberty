@@ -483,7 +483,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
     public class ContainerTableReader extends TargetsReader {
         public ContainerTableReader(TargetsTableContainers containerTable, TargetCacheImpl_Reader reader) {
             this.containerTable = containerTable;
-            this.reader = reader;
+            this.baseReader = reader;
             
             this.name = null;
             this.signature = null;
@@ -493,7 +493,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
         protected final TargetsTableContainers containerTable;
 
-        protected final TargetCacheImpl_Reader reader;
+        protected final TargetCacheImpl_Reader baseReader;
 
         //
 
@@ -536,7 +536,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
                 didHandle = true;
 
-            } else if ( (reader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // Issue 30315
+            } else if ( (baseReader.parsedVersionValue >= VERSION_VALUE_20) && parsedName.equals(SIGNATURE_TAG) ) { // Issue 30315
                 if ( name == null ) {
                     addParseError("Signature [ " + parsedValue + " ] does not follow [ " + NAME_TAG + " ]: Ignoring");
                 } else if ( signature != null ) {
@@ -554,10 +554,10 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                 } else {
                     String useName = name;
                     name = null;
-                    
+
                     String useSignature;
-                    
-                    if (reader.parsedVersionValue < VERSION_VALUE_20) {
+
+                    if (baseReader.parsedVersionValue < VERSION_VALUE_20) {
                         useSignature = ClassSource.UNAVAILABLE_STAMP;
                     } else {
                         if ( signature == null ) {
@@ -670,12 +670,14 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
             this.stampTable = stampTable;
 
             this.name = null;
+            this.earliestStamp = null;
             this.stamp = null;
         }
 
         protected final TargetsTableTimeStamp stampTable;
 
         private String name;
+        private String earliestStamp;
         private String stamp;
 
         //
@@ -687,8 +689,13 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
         @Override
         public String getTableVersion() {
-            return STAMP_TABLE_VERSION;
+            return STAMP_TABLE_VERSION_20;
         }
+        
+        @Override
+        public String[] getTableVersions() {
+            return STAMP_TABLE_VERSIONS;
+        }        
         
         @Override
         public boolean handleBody() {
@@ -698,15 +705,25 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                 if ( name != null ) {
                     addParseError("Multiple [ " + NAME_TAG + " ]: Replacing [ " + name + " ] with [ " + parsedValue + " ]");
                 }
-
+                name = parsedName;
                 stampTable.setName(parsedValue);
+                didHandle = true;
+
+            } else if ( parsedName.equals(EARLIEST_STAMP_TAG) ) {                
+                if ( parsedVersionValue < VERSION_VALUE_20 ) {
+                    addParseError("Unexpected [ " + EARLIEST_STAMP_TAG + " ] with [ " + parsedValue + " ]: Table version [ " + parsedVersion + " ]");
+                }
+                if ( earliestStamp != null ) {
+                    addParseError("Multiple [ " + EARLIEST_STAMP_TAG + " ]: Replacing [ " + earliestStamp + " ] with [ " + parsedValue + " ]");                    
+                }
+                earliestStamp = parsedValue;
+                stampTable.setEarliestStamp(parsedValue);
                 didHandle = true;
 
             } else if ( parsedName.equals(STAMP_TAG) ) {
                 if ( stamp != null ) {
                     addParseError("Multiple [ " + STAMP_TAG + " ]: Replacing [ " + stamp + " ] with [ " + parsedValue + " ]");
                 }
-
                 stampTable.setStamp(parsedValue);
                 didHandle = true;
 

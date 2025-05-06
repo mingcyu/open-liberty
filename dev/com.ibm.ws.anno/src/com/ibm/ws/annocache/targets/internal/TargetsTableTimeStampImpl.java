@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2024 IBM Corporation and others.
+ * Copyright (c) 2014, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -44,43 +44,37 @@ public class TargetsTableTimeStampImpl
 
     //
 
+    @Trivial
     public TargetsTableTimeStampImpl() {
-        String methodName = "<init>";
-
-        this.name = null;
-        this.stamp = null;
-
-        if (logger.isLoggable(Level.FINER)) {
-            logger.logp(Level.FINER, CLASS_NAME, methodName, "[ {0} ]", this.getHashText());
-        }
+        this(null, null, null);
     }
 
+    @Trivial    
     public TargetsTableTimeStampImpl(String name) {
-        String methodName = "<init>";
-
-        this.name = name;
-        this.stamp = null;
-
-        if (logger.isLoggable(Level.FINER)) {
-            logger.logp(Level.FINER, CLASS_NAME, methodName,
-                        "[ {0} ] [ {1} ]",
-                        new Object[] { this.getHashText(), this.name });
-        }
+        this(name, null, null);
     }
-
+    
+    @Trivial    
     public TargetsTableTimeStampImpl(String name, String stamp) {
+        this(name, stamp, stamp);
+    }    
+
+    @Trivial    
+    public TargetsTableTimeStampImpl(String name, String earliestStamp, String stamp) {
         String methodName = "<init>";
 
         this.name = name;
+
+        this.earliestStamp = earliestStamp;
         this.stamp = stamp;
 
         if (logger.isLoggable(Level.FINER)) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                         "[ {0} ] [ {1} ] [ {2} ]",
-                        new Object[] { this.getHashText(), this.name, this.stamp });
+                        new Object[] { this.getHashText(), this.name, this.earliestStamp, this.stamp });
         }
     }
-
+    
     //
 
     protected String name;
@@ -100,6 +94,22 @@ public class TargetsTableTimeStampImpl
 
     //
 
+    protected String earliestStamp; // V2.0
+
+    @Override
+    public String setEarliestStamp(String earliestStamp) {
+        String oldEarliestStamp = this.earliestStamp;
+        this.earliestStamp = earliestStamp;
+        return oldEarliestStamp;
+    }
+
+    @Override
+    @Trivial
+    public String getEarliestStamp() {
+        return earliestStamp;
+    }    
+    
+    
     protected String stamp;
 
     @Override
@@ -128,6 +138,7 @@ public class TargetsTableTimeStampImpl
 
         useLogger.logp(Level.FINER, CLASS_NAME, methodName, "Stamp Data: BEGIN");
         useLogger.logp(Level.FINER, CLASS_NAME, methodName, "  " + "Name: " + getName());
+        useLogger.logp(Level.FINER, CLASS_NAME, methodName, "  " + "Earliest Stamp: " + getEarliestStamp()); // V2.0
         useLogger.logp(Level.FINER, CLASS_NAME, methodName, "  " + "Stamp: " + getStamp());
         useLogger.logp(Level.FINER, CLASS_NAME, methodName, "Stamp Data: END");
     }

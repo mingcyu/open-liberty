@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -25,6 +25,11 @@ public interface TargetsTableTimeStamp {
     String setName(String name);
     String getName();
 
+    //
+
+    String setEarliestStamp(String earliestStamp); // V2.0
+    String getEarliestStamp(); // V2.0
+    
     String setStamp(String stamp);
     String getStamp();
 }

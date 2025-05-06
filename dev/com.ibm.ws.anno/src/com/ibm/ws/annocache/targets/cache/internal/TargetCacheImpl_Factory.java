@@ -119,7 +119,7 @@ public class TargetCacheImpl_Factory implements TargetCache_Factory, TargetCache
 
     //
 
-    private class CacheLock {
+    protected static class CacheLock {
         // EMPTY
     }
     private final CacheLock cacheLock = new CacheLock();
@@ -241,6 +241,7 @@ public class TargetCacheImpl_Factory implements TargetCache_Factory, TargetCache
      * 
      * @param appName The name of the application. This should be the application's deployment name.
      */
+    @Override
     public boolean release(String appName) {
         return getCache().release(appName);
     }

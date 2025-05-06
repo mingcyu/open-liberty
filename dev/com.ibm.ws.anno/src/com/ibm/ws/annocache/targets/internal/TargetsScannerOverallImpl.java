@@ -311,6 +311,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
         return targetsControl;
     }
 
+    @Override
     @Trivial
     public TargetsTableImpl getTargetsTable(String classSourceName) {
         synchronized ( getTargetsControl() ) {
@@ -333,7 +334,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
     public TargetsTableImpl createIsolatedTargetsTable(String classSourceName, String classSourceStamp) {
         TargetsTableImpl targetsTable =
             new TargetsTableImpl( getFactory(), classSourceName, getUseJandexFormat() );
-        targetsTable.setStamp(classSourceStamp);
+        targetsTable.resetStamp(classSourceStamp);
         return targetsTable;
     }
 
@@ -794,11 +795,15 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             }
         }
 
-        if ( isChanged ) {
-            if ( modData.shouldWrite("Containers table") ) {
-                modData.writeContainersTable(useContainerTable);
-            }
-        }
+        // This write cannot happen until after validating internal containers:
+        // Validation of internal containers can cause an update to 'unrecorded' and
+        // 'unavailable' time stamps, which causes an update to the containers tables.
+
+        // if ( isChanged ) {
+        //     if ( modData.shouldWrite("Containers table") ) {
+        //         modData.writeContainersTable(useContainerTable);
+        //     }
+        // }
 
         setContainerTable(useContainerTable, isChangedReason, isChanged);
 
@@ -885,26 +890,26 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
                 TargetsVisitorClassImpl.DONT_RECORD_UNRESOLVED,
                 newTargets);
 
-            String isValidReason;
+            String invalidReason;
             if ( !conData.hasCoreDataFile() ) {
-                isValidReason = "New data";
+                invalidReason = "New data";
             } else {
                 TargetsTableImpl priorTargets = createIsolatedTargetsTable(classSourceName, currentStamp);
                 if ( !conData.readCoreData(priorTargets) ) {
-                    isValidReason = "Read failure";
+                    invalidReason = "Read failure";
                 } else if ( !newTargets.getClassTable().sameAs( priorTargets.getClassTable(), HAVE_DIFFERENT_INTERN_MAPS ) ) {
-                    isValidReason = "Change to classes";
+                    invalidReason = "Change to classes";
                 } else if ( !newTargets.getAnnotationTable().sameAs( priorTargets.getAnnotationTable(), HAVE_DIFFERENT_INTERN_MAPS ) ) {
-                    isValidReason = "Change to annotations";
+                    invalidReason = "Change to annotations";
                 } else {
-                    isValidReason = null;
+                    invalidReason = null;
                 }
             }
 
-            boolean isValid;
+            boolean isValid; // ++++++++
 
-            if ( isValidReason == null ) {
-                isValidReason = "Only the stamp changed";
+            if ( invalidReason == null ) {
+                invalidReason = "Only the stamp changed";
                 isValid = true;
             } else {
                 isValid = false;
@@ -913,7 +918,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             if ( useHash != null ) {
                 logger.logp(Level.FINER, CLASS_NAME, methodName,
                     "[ {0} ] [ {1} ]: Is valid [ {2} ]: {3}",
-                    new Object[] { useHash, classSourceName, isValid, isValidReason });
+                    new Object[] { useHash, classSourceName, isValid, invalidReason });
             }
 
             conData.writeStamp(modData, newTargets);
@@ -925,11 +930,11 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             putTargetsTable(
                 classSourceName,
                 internTargetsTable(newTargets),
-                isValidReason, !isValid);
+                invalidReason, !isValid);
 
             if ( useHash != null ) {
                 logger.logp(Level.FINER, CLASS_NAME, methodName,
-                    newResult("Internal class source " + classSourceName, isValidReason, isValid));
+                    newResult("Internal class source " + classSourceName, invalidReason, isValid));
             }
             return isValid;
         }
@@ -1059,6 +1064,15 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             return;
         }
 
+        // The containers table is checked directly in 'validContainers',
+        // and is checked a second time when validating internal containers.
+        //
+        // A change in either step forces a write of the container table.
+        
+        if ( modData.shouldWrite("Containers table") ) {        
+            modData.writeContainersTable(containerTable);
+        }
+        
         if ( useHashText != null ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                 "[ {0} ] Changed [ {1} ] out of [ {2} ] internal containers: [ {3} ]",
@@ -1440,7 +1454,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
 
         changedAnyTargetsReason = changedReason;
         changedAnyTargets = changed;
-
+        
         //
 
         if ( !changedAnyTargets ) {
@@ -1452,6 +1466,15 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             return;
         }
 
+        // The containers table is checked directly in 'validContainers',
+        // and is checked a second time when validating internal containers.
+        //
+        // A change in either step forces a write of the container table.
+        
+        if ( modData.shouldWrite("Containers table") ) {        
+            modData.writeContainersTable(containerTable);
+        }
+            
         if ( useHashText != null ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                 "[ {0} ] Changed [ {1} ] out of [ {2} ] internal containers",

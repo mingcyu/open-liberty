@@ -183,7 +183,7 @@ public class TargetsScannerBaseImpl {
                                   scanPolicy.name(),
                                   TargetsTableImpl.DO_NOT_USE_JANDEX_FORMAT );
         // A stamp is not available for result tables.
-        resultTable.setStamp(ClassSource.UNRECORDED_STAMP);
+        resultTable.resetStamp(ClassSource.UNRECORDED_STAMP);
         return resultTable;
     }
 
@@ -211,7 +211,7 @@ public class TargetsScannerBaseImpl {
             classSource.getCanonicalName(),
             getUseJandexFormat() );
 
-        targetsTable.setStamp( classSource.getStamp() );
+        targetsTable.resetStamp( classSource.getStamp() );
 
         return targetsTable;
     }
