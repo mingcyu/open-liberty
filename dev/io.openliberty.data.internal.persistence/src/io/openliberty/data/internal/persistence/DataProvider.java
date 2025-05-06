@@ -212,13 +212,14 @@ public class DataProvider implements //
                     new ConcurrentHashMap<>();
 
     /**
-     * EntityManagerBuilder futures, grouped by application, triggered to initialize
-     * on module starting rather than waiting for application start.
+     * EntityManagerBuilder futures, grouped by application, for EJB modules
+     * that are triggered to initialize on module starting rather than waiting
+     * for application start.
      * The Set values in this map are subsets of the Set values in futureEMBuilders.
      * The entries are removed on application start, which uses the values to avoid
      * duplicated initalization attempts.
      */
-    private final ConcurrentHashMap<String, Set<FutureEMBuilder>> processedFutureEMBuilders = //
+    private final ConcurrentHashMap<String, Set<FutureEMBuilder>> futureEMBuildersInEJB = //
                     new ConcurrentHashMap<>();
 
     /**
@@ -325,7 +326,7 @@ public class DataProvider implements //
         //Use deployment name but fall back to generated name
         String appName = appInfo.getDeploymentName() == null ? appInfo.getName() : appInfo.getDeploymentName();
         Set<FutureEMBuilder> futures = futureEMBuilders.get(appName);
-        Set<FutureEMBuilder> skip = processedFutureEMBuilders.remove(appName);
+        Set<FutureEMBuilder> skip = futureEMBuildersInEJB.remove(appName);
         if (futures != null) {
             for (FutureEMBuilder futureEMBuilder : futures) {
                 if (skip == null || !skip.contains(futureEMBuilder))
@@ -409,7 +410,6 @@ public class DataProvider implements //
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
             Tr.debug(this, tc, "componentMetaDataCreated " + jeeName, metadata);
-
     }
 
     @Override
@@ -880,15 +880,15 @@ public class DataProvider implements //
     public void moduleStarting(ModuleInfo moduleInfo) throws StateChangeException {
         final boolean trace = TraceComponent.isAnyTracingEnabled();
 
-        ApplicationInfo appInfo = moduleInfo.getApplicationInfo();
-        //Use deployment name but fall back to generated name
-        String appName = appInfo.getDeploymentName() == null ? appInfo.getName() : appInfo.getDeploymentName();
+        // TODO here and elsewhere: use whichever of getDeploymentName() or getName()
+        // is guaranteed to match J2EEName
+        String appName = moduleInfo.getApplicationInfo().getName();
         String moduleName = moduleInfo.getName(); // does not include .jar at the end
 
         if (trace && tc.isDebugEnabled())
             Tr.debug(this, tc, "moduleStarting " + moduleInfo, appName, moduleName);
 
-        Set<FutureEMBuilder> processed = processedFutureEMBuilders.get(appName);
+        Set<FutureEMBuilder> processed = futureEMBuildersInEJB.get(appName);
 
         // TODO it would be more direct to map from appName+moduleName -> FutureEMBuilder,
         // but we would need to take into account the difference in module names
@@ -896,23 +896,34 @@ public class DataProvider implements //
         Set<FutureEMBuilder> futures = futureEMBuilders.get(appName);
         if (futures != null)
             for (FutureEMBuilder futureEMBuilder : futures) {
-                // This delays createEMBuilder until restore.
-                // While this works by avoiding all connections to the data source, it does make restore much slower.
-                // TODO figure out how to do more work on restore without having to make a connection to the data source
-                CheckpointPhase.onRestore(() -> futureEMBuilder.completeAsync(futureEMBuilder::createEMBuilder, executor));
+                // The JEE name includes .jar at the end of EJB modules
+                String moduleNameWithDot = futureEMBuilder.jeeName.getModule();
 
-                if (processed == null) {
-                    processed = new ConcurrentSkipListSet<>();
-                    Set<FutureEMBuilder> previous = processedFutureEMBuilders //
-                                    .putIfAbsent(appName, processed);
-                    if (previous != null)
-                        processed = previous;
+                if (!futureEMBuilder.inWebModule &&
+                    moduleNameWithDot != null &&
+                    moduleNameWithDot.length() == moduleName.length() + 4 &&
+                    moduleNameWithDot.startsWith(moduleName) &&
+                    moduleNameWithDot.endsWith(".jar")) {
+
+                    if (trace && tc.isDebugEnabled())
+                        Tr.debug(this, tc, "matched with " + futureEMBuilder.jeeName);
+
+                    // This delays createEMBuilder until restore.
+                    // While this works by avoiding all connections to the data source, it does make restore much slower.
+                    // TODO figure out how to do more work on restore without having to make a connection to the data source
+                    CheckpointPhase.onRestore(() -> futureEMBuilder.completeAsync(futureEMBuilder::createEMBuilder, executor));
+
+                    if (processed == null) {
+                        processed = new ConcurrentSkipListSet<>();
+                        Set<FutureEMBuilder> previous = futureEMBuildersInEJB //
+                                        .putIfAbsent(appName, processed);
+                        if (previous != null)
+                            processed = previous;
+                    }
+
+                    processed.add(futureEMBuilder);
                 }
-
-                processed.add(futureEMBuilder);
-
             }
-
     }
 
     @Override
