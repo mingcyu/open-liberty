@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.log.Log;
 
-import componenttest.annotation.AllowedFFDC;
+import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
@@ -54,10 +54,10 @@ public class MPHealthConflictingFeaturesTest {
     }
 
     /*
-     * Tests to see the exepcted CWWKF0033E
+     * Tests to see the expected CWWKF0033E
      */
     @Test
-    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
+    @ExpectedFFDC({ "java.lang.IllegalArgumentException" })
     public void testMPHealth40MPHealth31() throws Exception {
         final String METHOD = "testMPHealth40MPHealth31";
         server = mpHealth40And31Server;
@@ -70,7 +70,7 @@ public class MPHealthConflictingFeaturesTest {
 
         Log.info(getClass(), METHOD, "CWWKF0033E matches are: " + list.toString());
 
-        Assert.assertTrue("Expected matching count to be 1", list.size() >= 1);
+        Assert.assertTrue("Expected matching count to be 1", list.size() == 1);
 
     }
 
@@ -78,7 +78,7 @@ public class MPHealthConflictingFeaturesTest {
      * Tests to see the exepcted CWWKF0033E
      */
     @Test
-    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
+    @ExpectedFFDC({ "java.lang.IllegalArgumentException" })
     public void testMPHealth40MPHealth22() throws Exception {
         final String METHOD = "testMPHealth40MPHealth22";
         server = mpHealth40And22Server;
@@ -91,7 +91,8 @@ public class MPHealthConflictingFeaturesTest {
 
         Log.info(getClass(), METHOD, "CWWKF0033E matches are: " + list.toString());
 
-        Assert.assertTrue("Expected matching count to be 1", list.size() >= 1);
+        //Kernel issues 2 error messages with flipped sequences of mpHealth-2.2 and mpHealth-4.0 in the 2 messages
+        Assert.assertTrue("Expected matching count to be 2", list.size() == 2);
 
     }
 
@@ -99,7 +100,7 @@ public class MPHealthConflictingFeaturesTest {
      * Tests to see the exepcted CWWKF0033E
      */
     @Test
-    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
+    @ExpectedFFDC({ "java.lang.IllegalArgumentException" })
     public void testMPHealth40MPHealth10() throws Exception {
         final String METHOD = "testMPHealth40MPHealth10";
         server = mpHealth40And10Server;
@@ -112,7 +113,8 @@ public class MPHealthConflictingFeaturesTest {
 
         Log.info(getClass(), METHOD, "CWWKF0033E matches are: " + list.toString());
 
-        Assert.assertTrue("Expected matching count to be 1", list.size() >= 1);
+        //Kernel issues 2 error messages with flipped sequences of mpHealth-2.2 and mpHealth-4.0 in the 2 messages
+        Assert.assertTrue("Expected matching count to be 2", list.size() == 2);
 
     }
 
