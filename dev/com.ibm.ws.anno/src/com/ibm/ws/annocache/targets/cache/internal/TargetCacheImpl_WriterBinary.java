@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 IBM Corporation and others.
+ * Copyright (c) 2017, 2019 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -238,7 +238,7 @@ public class TargetCacheImpl_WriterBinary implements TargetCache_BinaryConstants
     }
 
     protected void writeFragment(TargetsTableTimeStampImpl stampTable) throws IOException {
-        writeHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION_20);
+        writeHeader(STAMP_TABLE_NAME, STAMP_TABLE_VERSION);
 
         // Do not use the width for the name: The name cannot change.
         //
@@ -248,7 +248,6 @@ public class TargetCacheImpl_WriterBinary implements TargetCache_BinaryConstants
         // Do use the width for the stamp.
 
         bufOutput.write(NAME_BYTE, stampTable.getName());
-        bufOutput.write(EARLIEST_STAMP_BYTE, stampTable.getEarliestStamp());
         bufOutput.write(STAMP_BYTE, stampTable.getStamp(), HEADER_WIDTH);
     }
 
@@ -542,7 +541,7 @@ public class TargetCacheImpl_WriterBinary implements TargetCache_BinaryConstants
         } else {
             numInterfaceNames = interfaceNames.length;
         }
-        vbufOutput.writeSmallInt(numInterfaceNames);
+        bufOutput.writeSmallInt(numInterfaceNames);
         if ( numInterfaceNames > 0 ) {
             for ( String interfaceName : interfaceNames ) {
                 writeCompact(INTERFACE_BYTE, interfaceName);

@@ -34,7 +34,6 @@ public interface TargetCache_BinaryConstants {
 
     // Stamp table ...
     byte NAME_BYTE      = 0x15; // "Name"
-    byte EARLIEST_STAMP_BYTE = 0x17; // "Earliest Stamp" // '17' is correct
     byte STAMP_BYTE     = 0x16; // "Stamp"
 
     // Encoding ...
@@ -43,9 +42,7 @@ public interface TargetCache_BinaryConstants {
     // Table and version ...
 
     String STAMP_TABLE_NAME = "Stamp";
-    String STAMP_TABLE_VERSION_10 = "1.0";
-    String STAMP_TABLE_VERSION_20 = "2.0";
-    String[] STAMP_TABLE_VERSIONS = { STAMP_TABLE_VERSION_10, STAMP_TABLE_VERSION_20 };
+    String STAMP_TABLE_VERSION = "1.0";
 
     String CLASSES_TABLE_NAME = "Classes";
     String CLASSES_TABLE_VERSION = "1.0";
@@ -55,6 +52,7 @@ public interface TargetCache_BinaryConstants {
 
     String CONTAINER_TABLE_VERSION_10 = "1.0";
     String CONTAINER_TABLE_VERSION_20 = "2.0";
+
     String[] CONTAINER_TABLE_VERSIONS = { CONTAINER_TABLE_VERSION_10, CONTAINER_TABLE_VERSION_20 };
 
     String CONTAINER_TABLE_NAME = "Container";

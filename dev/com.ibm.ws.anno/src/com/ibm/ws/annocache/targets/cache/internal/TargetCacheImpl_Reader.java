@@ -554,9 +554,9 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                 } else {
                     String useName = name;
                     name = null;
-
+                    
                     String useSignature;
-
+                    
                     if (baseReader.parsedVersionValue < VERSION_VALUE_20) {
                         useSignature = ClassSource.UNAVAILABLE_STAMP;
                     } else {
@@ -670,14 +670,12 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
             this.stampTable = stampTable;
 
             this.name = null;
-            this.earliestStamp = null;
             this.stamp = null;
         }
 
         protected final TargetsTableTimeStamp stampTable;
 
         private String name;
-        private String earliestStamp;
         private String stamp;
 
         //
@@ -689,13 +687,8 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
         @Override
         public String getTableVersion() {
-            return STAMP_TABLE_VERSION_20;
+            return STAMP_TABLE_VERSION;
         }
-        
-        @Override
-        public String[] getTableVersions() {
-            return STAMP_TABLE_VERSIONS;
-        }        
         
         @Override
         public boolean handleBody() {
@@ -705,25 +698,15 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
                 if ( name != null ) {
                     addParseError("Multiple [ " + NAME_TAG + " ]: Replacing [ " + name + " ] with [ " + parsedValue + " ]");
                 }
-                name = parsedName;
-                stampTable.setName(parsedValue);
-                didHandle = true;
 
-            } else if ( parsedName.equals(EARLIEST_STAMP_TAG) ) {                
-                if ( parsedVersionValue < VERSION_VALUE_20 ) {
-                    addParseError("Unexpected [ " + EARLIEST_STAMP_TAG + " ] with [ " + parsedValue + " ]: Table version [ " + parsedVersion + " ]");
-                }
-                if ( earliestStamp != null ) {
-                    addParseError("Multiple [ " + EARLIEST_STAMP_TAG + " ]: Replacing [ " + earliestStamp + " ] with [ " + parsedValue + " ]");                    
-                }
-                earliestStamp = parsedValue;
-                stampTable.setEarliestStamp(parsedValue);
+                stampTable.setName(parsedValue);
                 didHandle = true;
 
             } else if ( parsedName.equals(STAMP_TAG) ) {
                 if ( stamp != null ) {
                     addParseError("Multiple [ " + STAMP_TAG + " ]: Replacing [ " + stamp + " ] with [ " + parsedValue + " ]");
                 }
+
                 stampTable.setStamp(parsedValue);
                 didHandle = true;
 

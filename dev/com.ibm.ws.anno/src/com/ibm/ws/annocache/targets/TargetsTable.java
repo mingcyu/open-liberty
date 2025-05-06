@@ -37,31 +37,8 @@ public interface TargetsTable {
     String setName(String name);
     String getName();
 
-    String setEarliestStamp(String earliestStamp);
-    String getEarliestStamp();
-    
     String setStamp(String stamp);
     String getStamp();
-    
-    /**
-     * Continue the validation of the table stamp.
-     * 
-     * This leaves the earliest stamp unchanged, while updating
-     * the stamp.
-     * 
-     * @param stamp The new stamp.
-     */
-    void continueValid(String stamp);
-    
-    /**
-     * Discontinue validation of the table stamp.  The table 
-     * has a new value.
-     * 
-     * Set both the earliest stamp and the stamp.
-     * 
-     * @param stamp The new stamp.
-     */
-    void resetValid(String stamp);
 
     //
 

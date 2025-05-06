@@ -346,16 +346,6 @@ public class TargetsTableImpl implements TargetsTable {
     }
 
     @Override
-    public String setEarliestStamp(String earliestStamp) {
-        return getStampTable().setEarliestStamp(earliestStamp);
-    }
-    
-    @Override
-    public String getEarliestStamp() {
-        return getStampTable().getEarliestStamp();
-    }
-    
-    @Override
     public String setStamp(String stamp) {
         return getStampTable().setStamp(stamp);
     }
@@ -366,47 +356,6 @@ public class TargetsTableImpl implements TargetsTable {
         return getStampTable().getStamp();
     }
 
-    public void continueStamp(String stamp) {
-        getStampTable().setStamp(stamp);
-    }
-    
-    public void resetStamp(String stamp) {
-        TargetsTableTimeStampImpl useStampTable = getStampTable();
-        useStampTable.setEarliestStamp(stamp);
-        useStampTable.setStamp(stamp);
-    }
-
-    public static boolean isUnavailable(String stamp) {
-        return stamp.startsWith(ClassSource.UNAVAILABLE_STAMP);
-    }
-    
-    public static boolean isUnrecorded(String stamp) {
-        return stamp.startsWith(ClassSource.UNRECORDED_STAMP);
-    }
-
-    public static String updateGeneration(String stamp) {
-        int prefixLen;
-        if ( isUnavailable(stamp) ) {
-            prefixLen = ClassSource.UNAVAILABLE_STAMP.length() + 1;
-        } else if (isUnrecorded(stamp) ) {
-            prefixLen = ClassSource.UNRECORDED_STAMP.length() + 1;
-        } else {
-            throw new IllegalStateException("Non-generation stamp [ " + stamp + " ]");
-        }
-        return updateGeneration(stamp, prefixLen);
-    }
-    
-    public static String updateGeneration(String stamp, int prefixLen) {
-        String prefix = stamp.substring(0, prefixLen);
-        String gen = stamp.substring(prefixLen, stamp.length());
-
-        int genValue = Integer.parseInt(gen);
-        int nextGenValue = genValue + 1;
-        String nextGen = Integer.toString(nextGenValue);
-
-        return prefix + nextGen;
-    }
-    
     //
 
     protected final TargetsTableClassesImpl classTable;

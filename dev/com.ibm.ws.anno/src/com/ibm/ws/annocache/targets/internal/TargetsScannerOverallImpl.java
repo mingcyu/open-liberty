@@ -334,7 +334,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
     public TargetsTableImpl createIsolatedTargetsTable(String classSourceName, String classSourceStamp) {
         TargetsTableImpl targetsTable =
             new TargetsTableImpl( getFactory(), classSourceName, getUseJandexFormat() );
-        targetsTable.resetStamp(classSourceStamp);
+        targetsTable.setStamp(classSourceStamp);
         return targetsTable;
     }
 
@@ -795,15 +795,11 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             }
         }
 
-        // This write cannot happen until after validating internal containers:
-        // Validation of internal containers can cause an update to 'unrecorded' and
-        // 'unavailable' time stamps, which causes an update to the containers tables.
-
-        // if ( isChanged ) {
-        //     if ( modData.shouldWrite("Containers table") ) {
-        //         modData.writeContainersTable(useContainerTable);
-        //     }
-        // }
+        if ( isChanged ) {
+            if ( modData.shouldWrite("Containers table") ) {
+                modData.writeContainersTable(useContainerTable);
+            }
+        }
 
         setContainerTable(useContainerTable, isChangedReason, isChanged);
 
@@ -906,7 +902,7 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
                 }
             }
 
-            boolean isValid; // ++++++++
+            boolean isValid;
 
             if ( invalidReason == null ) {
                 invalidReason = "Only the stamp changed";
@@ -1064,15 +1060,6 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             return;
         }
 
-        // The containers table is checked directly in 'validContainers',
-        // and is checked a second time when validating internal containers.
-        //
-        // A change in either step forces a write of the container table.
-        
-        if ( modData.shouldWrite("Containers table") ) {        
-            modData.writeContainersTable(containerTable);
-        }
-        
         if ( useHashText != null ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                 "[ {0} ] Changed [ {1} ] out of [ {2} ] internal containers: [ {3} ]",
@@ -1466,15 +1453,6 @@ public class TargetsScannerOverallImpl extends TargetsScannerBaseImpl {
             return;
         }
 
-        // The containers table is checked directly in 'validContainers',
-        // and is checked a second time when validating internal containers.
-        //
-        // A change in either step forces a write of the container table.
-        
-        if ( modData.shouldWrite("Containers table") ) {        
-            modData.writeContainersTable(containerTable);
-        }
-            
         if ( useHashText != null ) {
             logger.logp(Level.FINER, CLASS_NAME, methodName,
                 "[ {0} ] Changed [ {1} ] out of [ {2} ] internal containers",

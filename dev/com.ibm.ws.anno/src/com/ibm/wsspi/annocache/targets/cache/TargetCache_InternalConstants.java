@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 IBM Corporation and others.
+ * Copyright (c) 2018, 2019 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -224,13 +224,8 @@ public interface TargetCache_InternalConstants {
     // Stamp table constants:
 
     String STAMP_TABLE_TAG     = "Stamp";
+    String STAMP_TABLE_VERSION = VERSION_10;
 
-    String STAMP_TABLE_VERSION_10 = VERSION_10;
-    String STAMP_TABLE_VERSION_20 = VERSION_20;
-
-    String[] STAMP_TABLE_VERSIONS = { STAMP_TABLE_VERSION_10, STAMP_TABLE_VERSION_20 };
-
-    String EARLIEST_STAMP_TAG = "Earliest Stamp"; // V2.0
     String STAMP_TAG = "Stamp";
 
     // Common constants:

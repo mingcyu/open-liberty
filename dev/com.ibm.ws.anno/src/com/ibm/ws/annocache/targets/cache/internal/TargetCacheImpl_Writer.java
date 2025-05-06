@@ -242,7 +242,7 @@ public class TargetCacheImpl_Writer implements TargetCache_InternalConstants {
     //
 
     public void write(TargetsTableTimeStampImpl stampTable) throws IOException {
-        writeHeader(STAMP_TABLE_TAG, STAMP_TABLE_VERSION_20);
+        writeHeader(STAMP_TABLE_TAG, STAMP_TABLE_VERSION);
 
         // Do not use the width for the name:
         // The name should not change.
@@ -253,7 +253,6 @@ public class TargetCacheImpl_Writer implements TargetCache_InternalConstants {
         // Do use the width for the stamp.
 
         writeValue(NAME_TAG, stampTable.getName());
-        writeValue(EARLIEST_STAMP_TAG, stampTable.getEarliestStamp(), HEADER_WIDTH); // V2.0
         writeValue(STAMP_TAG, stampTable.getStamp(), HEADER_WIDTH);
 
         writeTrailer();
