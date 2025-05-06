@@ -43,6 +43,7 @@ import componenttest.annotation.SkipForRepeat;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.rules.repeater.CheckpointRule;
 import componenttest.rules.repeater.CheckpointRule.ServerMode;
+import componenttest.rules.repeater.EmptyAction;
 import componenttest.rules.repeater.JakartaEEAction;
 import componenttest.topology.impl.LibertyServer;
 
@@ -51,7 +52,8 @@ import static componenttest.annotation.SkipForRepeat.CHECKPOINT_RULE;
 /**
  * Tests to execute on the jsfTestServer2 that use HtmlUnit.
  */
-// @Mode(TestMode.FULL)
+@CheckpointTest(alwaysRun = true)
+@Mode(TestMode.FULL)
 @RunWith(FATRunner.class)
 public class JSF22ComponentRendererTests {
     @Rule
@@ -69,7 +71,8 @@ public class JSF22ComponentRendererTests {
                                                       .setConsoleLogName(JSF22ComponentRendererTests.class.getSimpleName()+ ".log")
                                                       .setServerSetup(JSF22ComponentRendererTests::serverSetUp)
                                                       .setServerStart(JSF22ComponentRendererTests::serverStart)
-                                                      .setServerTearDown(JSF22ComponentRendererTests::serverTearDown);
+                                                      .setServerTearDown(JSF22ComponentRendererTests::serverTearDown)
+                                                      .addUnsupportedRepeatIDs(EmptyAction.ID); // CheckPoint doesn't work for JSF 2.2
 
     public static LibertyServer serverSetUp(ServerMode mode) throws Exception {
         boolean isEE10 = JakartaEEAction.isEE10OrLaterActive();
