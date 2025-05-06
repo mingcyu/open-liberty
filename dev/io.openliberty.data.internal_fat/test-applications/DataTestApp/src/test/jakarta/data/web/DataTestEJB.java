@@ -15,7 +15,6 @@ package test.jakarta.data.web;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
 
 /**
  * A singleton startup EJB that is included inside the war file.
@@ -25,11 +24,11 @@ import jakarta.inject.Inject;
 public class DataTestEJB {
 
     //TODO renable after fixing deadlock in DataProvider
-    @Inject
-    Animals animals;
+//    @Inject
+//    Animals animals;
 
     @PostConstruct
     public void init() {
-        animals.findAll();
+//        animals.findAll();
     }
 }

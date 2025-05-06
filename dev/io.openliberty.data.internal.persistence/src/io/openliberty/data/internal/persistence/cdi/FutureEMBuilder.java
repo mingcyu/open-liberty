@@ -296,7 +296,7 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
         final boolean trace = TraceComponent.isAnyTracingEnabled();
         try {
             String resourceName = dataStore;
-            String metadataIdentifier = getMetadataIdentifier(inWebModule);
+            String metadataIdentifier = getMetadataIdentifier();
 
             // metadataIdentifier examples:
             // WEB#MyApp#MyWebModule.war
@@ -335,13 +335,8 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
                         metadata = (ComponentMetaData) provider.metadataIdSvc //
                                         .getMetaData(metadataIdentifier);
                     } catch (IllegalStateException x) {
-                        try { //Check if this is an EJB in a Web Module
-                            metadata = (ComponentMetaData) provider.metadataIdSvc //
-                                            .getMetaData(getMetadataIdentifier(false));
-                        } catch (IllegalStateException y) {
-                            if (System.nanoTime() - start > TimeUnit.SECONDS.toNanos(30))
-                                throw x; //Throw exception for non-EJB check
-                        }
+                        if (System.nanoTime() - start > TimeUnit.SECONDS.toNanos(30))
+                            throw x;
                         // else retry because the deferred metadata is not available yet
                     }
                 } while (metadata == null);
@@ -677,14 +672,11 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
      * Obtains the metadata identifier for the module that defines the repository
      * interface.
      *
-     * @param isWebComponent true for a Web Module, false for an EJB Module
-     *
      * @return metadata identifier as the key, and application/module/component
      *         as the value. Module and component might be null or might not be
      *         present at all.
      */
-    private String getMetadataIdentifier(boolean isWebComponent) {
-
+    private String getMetadataIdentifier() {
         String mdIdentifier;
 
         if (jeeName.getModule() == null) {
@@ -693,7 +685,7 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
                                                           null);
         } else {
             mdIdentifier = provider.metadataIdSvc //
-                            .getMetaDataIdentifier(isWebComponent ? "WEB" : "EJB",
+                            .getMetaDataIdentifier(inWebModule ? "WEB" : "EJB",
                                                    jeeName.getApplication(),
                                                    jeeName.getModule(),
                                                    null);
