@@ -79,7 +79,7 @@ public class SlowAppStartupHealthCheckFastTest {
         log("setupClass", testName + "Starting the server.");
 
         if (!server.isStarted())
-            server.startServer(false, false);
+            server.startServer(true, false);
 
         // Read to run a smarter planet
         server.waitForStringInLogUsingMark("CWWKF0011I");
