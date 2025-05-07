@@ -592,9 +592,7 @@ public class DBRotationTest extends CloudFATServletClient {
             throw e;
         }
 
-        return () -> {
-            server.updateServerConfiguration(originalConfig);
-        };
+        return () -> server.updateServerConfiguration(originalConfig);
     }
 
     // Returns false if the server is alive, throws Exception otherwise
