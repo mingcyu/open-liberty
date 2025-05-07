@@ -7,8 +7,7 @@ singleton=true
   io.openliberty.mpCompatible-5.0,\
   io.openliberty.restfulWS-3.0, \
   io.openliberty.org.eclipse.microprofile.rest.client-3.0,\
-  com.ibm.websphere.appserver.eeCompatible-9.0,\
-  io.openliberty.noShip-1.0
+  com.ibm.websphere.appserver.eeCompatible-9.0
 -bundles=\
   com.ibm.ws.collector.jakarta, \
   com.ibm.ws.cdi.interfaces.jakarta, \
@@ -17,6 +16,6 @@ singleton=true
   io.openliberty.io.opentelemetry.internal.2.1.jakarta,\
   io.openliberty.microprofile.telemetry.internal.common.jakarta,\
   io.openliberty.microprofile.telemetry.logging.internal.common.jakarta
-kind=noship
-edition=full
+kind=beta
+edition=core
 WLP-Activation-Type: parallel 

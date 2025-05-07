@@ -5,5 +5,5 @@ singleton=true
 -features= \
     io.openliberty.internal.mpVersion-7.1, \
     io.openliberty.mpTelemetry-2.1
-kind=noship
-edition=full
+kind=beta
+edition=core
