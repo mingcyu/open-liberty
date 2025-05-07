@@ -14,6 +14,9 @@ package test.jakarta.data.global.webapp;
 
 import static org.junit.Assert.assertEquals;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
 
@@ -21,6 +24,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 
+@ApplicationScoped
 @SuppressWarnings("serial")
 @WebServlet("/webapp/*")
 public class DataGlobalWebAppServlet extends FATServlet {
@@ -29,6 +33,13 @@ public class DataGlobalWebAppServlet extends FATServlet {
 
     @Inject
     Dictionary dictionary;
+
+    /**
+     * Set up some data before tests run.
+     */
+    public void setup(@Observes Startup event) {
+        dictionary.addWord(Word.of("initialized"));
+    }
 
     /**
      * Use a repository that requires a java:global DataSource that is defined in
@@ -60,5 +71,15 @@ public class DataGlobalWebAppServlet extends FATServlet {
         assertEquals(false, alphabet.hasLetter('2'));
 
         assertEquals(1, alphabet.deleteLetter('D'));
+    }
+
+    /**
+     * Verify that a method that observes the CDI Startup event has access to a
+     * Jakarta Data repository and can use it to populate data.
+     */
+    @Test
+    public void testStartupEvent() {
+
+        assertEquals(true, dictionary.isWord("initialized"));
     }
 }
