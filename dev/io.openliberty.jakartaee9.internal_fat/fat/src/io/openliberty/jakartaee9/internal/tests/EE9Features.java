@@ -120,6 +120,7 @@ public class EE9Features {
     //
 
     public EE9Features(String installRoot) {
+        FeatureUtilities.removeTestAutoFeatures(new File(installRoot));
         this.serverFeatures_ol = getInstalledFeatures(installRoot, OPEN_LIBERTY_ONLY);
         this.versionedFeatures_ol = getVersionedFeatures(serverFeatures_ol);
 
@@ -194,9 +195,10 @@ public class EE9Features {
         features.removeAll(getMPFeatures());
         features.addAll(getCompatibleMPFeatures(EEVersion.EE9));
 
-        // mpTelemetry-1.1 and 2.0 are compatible with EE9 but not in Mp50.
+        // mpTelemetry-1.1, 2.0 and 2.1 are compatible with EE9 but not in Mp50.
         features.add("mpTelemetry-1.1");
         features.add("mpTelemetry-2.0");
+        features.add("mpTelemetry-2.1");
 
         // mpReactive features are not included on Java 8, but will resolve because Java version
         // is not included in resolution.
@@ -267,6 +269,7 @@ public class EE9Features {
         features.remove("persistenceContainer-3.0");
         features.remove("mpOpenAPI-3.1");
         features.remove("mpTelemetry-1.1");
+        features.remove("mpTelemetry-2.0");
 
         // Remove client features.
         features.remove("jakartaeeClient-9.1");

@@ -15,9 +15,9 @@ bVersion=1.0
 
 # Eclipselink version info
 eclVersion=5.0.0
-eclFullVersion=${eclVersion}.B03
+eclFullVersion=${eclVersion}.B07
 eclPackageVersion=5.0.0
-asmFullVersion=9.7.0
+asmFullVersion=9.7.1
 
 Bundle-SymbolicName: io.openliberty.persistence.3.2.thirdparty
 Bundle-Description: EclipseLink JPA
@@ -150,5 +150,6 @@ Service-Component: \
 -buildpath: \
     org.eclipse.persistence:org.eclipse.persistence.jpa;version=${eclFullVersion};strategy=exact,\
     org.eclipse.persistence:org.eclipse.persistence.jpa.jpql;version=${eclFullVersion};strategy=exact,\
+    org.eclipse.persistence:org.eclipse.persistence.core;version=${eclFullVersion};strategy=exact,\
     io.openliberty.jakarta.persistence.3.2;version=latest,\
     com.ibm.websphere.org.osgi.core

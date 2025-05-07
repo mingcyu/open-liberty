@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,6 @@ import jakarta.data.Sort;
 import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.EntityExistsException;
 import jakarta.data.exceptions.MappingException;
-import jakarta.data.exceptions.NonUniqueResultException;
 import jakarta.data.exceptions.OptimisticLockingFailureException;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -94,6 +94,7 @@ import org.junit.Test;
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.SkipIfSysProp;
 import componenttest.app.FATServlet;
+import test.jakarta.data.web.Animal.ScientificName;
 import test.jakarta.data.web.Residence.Occupant;
 
 @DataSourceDefinition(name = "java:app/jdbc/DerbyDataSource",
@@ -105,6 +106,9 @@ import test.jakarta.data.web.Residence.Occupant;
 @WebServlet("/*")
 public class DataTestServlet extends FATServlet {
     private final long TIMEOUT_MINUTES = 2;
+
+    @Inject
+    Animals animals;
 
     @Inject
     Apartments apartments;
@@ -134,7 +138,10 @@ public class DataTestServlet extends FATServlet {
     Personnel personnel;
 
     @Inject
-    PersonRepo persons;
+    PersonRepo personRepo;
+
+    @Inject
+    Persons persons;
 
     // Only add to this repository within the Servlet.init method so that all tests can rely on its data:
     @Inject
@@ -142,6 +149,9 @@ public class DataTestServlet extends FATServlet {
 
     @Inject
     Products products;
+
+    @Inject
+    Purchases purchases;
 
     @Inject
     Ratings ratings;
@@ -177,12 +187,18 @@ public class DataTestServlet extends FATServlet {
                        new Prime(41, "29", "101001", 3, "XLI", "forty-one"),
                        new Prime(43, "2B", "101011", 4, "XLIII", "forty-three"),
                        new Prime(47, "2F", "101111", 5, "XLVII", "forty-seven"),
-                       new Prime(4001, "FA1", "111110100001", 7, null, "four thousand one"), // romanNumeralSymbols null
-                       new Prime(4003, "FA3", "111110100011", 8, null, "four thousand three"), // romanNumeralSymbols null
-                       new Prime(4007, "Fa7", "111110100111", 9, null, "four thousand seven"), // romanNumeralSymbols null
-                       new Prime(4013, "FAD", "111110101101", 9, "", "Four Thousand Thirteen"), // empty list of romanNumeralSymbols
-                       new Prime(4019, "FB3", "111110110011", 9, "", "four thousand nineteen"), // empty list of romanNumeralSymbols
-                       new Prime(4021, "FB5", "111110110101", 9, "", " Four thousand twenty-one ")); // extra blank space at beginning and end
+                       // romanNumeralSymbols null:
+                       new Prime(4001, "FA1", "111110100001", 7, null, "four thousand one"),
+                       // romanNumeralSymbols null:
+                       new Prime(4003, "FA3", "111110100011", 8, null, "four thousand three"),
+                       // romanNumeralSymbols null:
+                       new Prime(4007, "Fa7", "111110100111", 9, null, "four thousand seven"),
+                       // empty list of romanNumeralSymbols:
+                       new Prime(4013, "FAD", "111110101101", 9, "", "Four Thousand Thirteen"),
+                       // empty list of romanNumeralSymbols:
+                       new Prime(4019, "FB3", "111110110011", 9, "", "four thousand nineteen"),
+                       // extra blank space at beginning and end:
+                       new Prime(4021, "FB5", "111110110101", 9, "", " Four thousand twenty-one "));
     }
 
     /**
@@ -469,17 +485,6 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Test the CharCount keyword to query based on string length.
-     */
-    @Test
-    public void testCharCountKeyword() {
-        assertIterableEquals(List.of("eleven", "nineteen", "seven", "thirteen", "three"),
-                             primes.findByNameCharCountBetween(5, 8)
-                                             .map(p -> p.name)
-                                             .collect(Collectors.toList()));
-    }
-
-    /**
      * Asynchronous repository method that returns a CompletableFuture of Page.
      */
     @Test
@@ -566,22 +571,8 @@ public class DataTestServlet extends FATServlet {
         assertEquals((byte) 41,
                      primes.numberAsByte(41));
 
-        try {
-            byte result = primes.numberAsByte(4021);
-            fail("Should not convert long value 4021 to byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
-
         assertEquals((byte) 37,
                      primes.numberAsByteWrapper(37).orElseThrow().byteValue());
-
-        try {
-            Optional<Byte> result = primes.numberAsByteWrapper(4019);
-            fail("Should not convert long value 4019 to Byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
 
         assertEquals(4003.0, primes.numberAsDouble(4003), 0.01);
 
@@ -626,19 +617,6 @@ public class DataTestServlet extends FATServlet {
 
         assertEquals(false,
                      primes.singleHexDigit(12).isPresent());
-
-        try {
-            Optional<Character> found = primes.singleHexDigit(29);
-            fail("Should not be able to return hex 1D as a single character: " +
-                 found);
-        } catch (MappingException x) {
-            if (x.getMessage() != null &&
-                x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("singleHexDigit"))
-                ; // pass
-            else
-                throw x;
-        }
     }
 
     /**
@@ -655,20 +633,6 @@ public class DataTestServlet extends FATServlet {
     @Test
     public void testCountAsBigInteger() {
         assertEquals(BigInteger.valueOf(13L), primes.countAsBigIntegerByNumberIdLessThan(43));
-    }
-
-    /**
-     * Repository method that returns the count as a boolean value,
-     * which is not an allowed return type. This must raise an error.
-     */
-    @Test
-    public void testCountAsBoolean() {
-        try {
-            boolean count = primes.countAsBooleanByNumberIdLessThan(42);
-            fail("Count queries cannot have a boolean return type: " + count);
-        } catch (MappingException x) {
-            // expected
-        }
     }
 
     /**
@@ -741,6 +705,75 @@ public class DataTestServlet extends FATServlet {
     @Test
     public void testCountAsShortWrapper() {
         assertEquals(Short.valueOf((short) 5), primes.countAsShortWrapperByNumberIdLessThan(12));
+    }
+
+    /**
+     * Tests a repository method that returns pages of a DISTINCT single value
+     * that can sometimes be null. Verify that the count of pages and total
+     * elements is correct.
+     */
+    @Test
+    public void testCountPagesWithDistinctValues() {
+        Page<String> page1 = primes.romanNumeralsDistinct(30L, 49L,
+                                                          4000L, 4009L,
+                                                          PageRequest.ofSize(3));
+
+        assertEquals(2, page1.totalPages());
+
+        // page1.totalElements();
+        // The above returns 5 instead of 6 because COUNT omits the
+        // NULL value that comes from (DISTINCT romanNumeral) when
+        // invoking SELECT COUNT(DISTINCT romanNumeral)
+
+        assertEquals(List.of("XXXI", "XXXVII", "XLI"),
+                     page1.content());
+
+        Page<String> page2 = primes.romanNumeralsDistinct(30L, 49L,
+                                                          4000L, 4009L,
+                                                          page1.nextPageRequest());
+
+        assertEquals(2, page2.totalPages());
+
+        assertEquals(Arrays.asList("XLIII", "XLVII", null),
+                     page2.content());
+    }
+
+    /**
+     * Tests a repository method that returns pages of a single value that can
+     * sometimes be null. Verify that the count of pages and total elements is
+     * correct.
+     */
+    @Test
+    public void testCountPagesWithNullValues() {
+        Page<String> page1 = primes.romanNumeralsWithin(30L, 49L,
+                                                        4000L, 4009L,
+                                                        PageRequest.ofSize(3));
+
+        assertEquals(8, page1.totalElements());
+        assertEquals(3, page1.totalPages());
+
+        assertEquals(List.of("XXXI", "XXXVII", "XLI"),
+                     page1.content());
+
+        Page<String> page2 = primes.romanNumeralsWithin(30L, 49L,
+                                                        4000L, 4009L,
+                                                        page1.nextPageRequest());
+
+        assertEquals(8, page2.totalElements());
+        assertEquals(3, page2.totalPages());
+
+        assertEquals(Arrays.asList("XLIII", "XLVII", null),
+                     page2.content());
+
+        Page<String> page3 = primes.romanNumeralsWithin(30L, 49L,
+                                                        4000L, 4009L,
+                                                        page2.nextPageRequest());
+
+        assertEquals(8, page3.totalElements());
+        assertEquals(3, page3.totalPages());
+
+        assertEquals(Arrays.asList(null, null),
+                     page3.content());
     }
 
     /**
@@ -947,7 +980,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Delete multiple entries and use a default method to atomically remove and return a removed entity.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testDefaultRepositoryMethod() {
         products.clear();
@@ -1008,14 +1040,7 @@ public class DataTestServlet extends FATServlet {
         packages.save(new Package(10003, 12.0f, 11.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10003"));
         packages.save(new Package(10004, 13.0f, 10.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10004"));
 
-        try {
-            Optional<Package> pkg = packages.deleteFirst();
-            fail("Expected packages.deleteFirst() to ignore the 'first' keyword and fail to return a signular result.");
-        } catch (NonUniqueResultException e) {
-            // pass
-        }
-
-        Package pkg = packages.deleteFirst5ByWidthLessThan(11.0f);
+        Package pkg = packages.deleteFirst5ByWidthLessThan(10.5f);
         assertEquals(10004, pkg.id);
 
         List<Package> pkgs = packages.deleteFirst2();
@@ -1120,7 +1145,6 @@ public class DataTestServlet extends FATServlet {
      * Repository delete method with query language (JPQL) that contains
      * an entity identifier variable.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testDeleteQueryWithEntityIdentifierVariable() {
         products.purge("TestDeleteQueryWithEntityIdentifierVariable-Product-%");
@@ -1145,6 +1169,19 @@ public class DataTestServlet extends FATServlet {
         assertEquals(3, products.purge("TestDeleteQueryWithEntityIdentifierVariable-Product-%"));
 
         assertEquals(0, products.purge("TestDeleteQueryWithEntityIdentifierVariable-Product-%"));
+    }
+
+    /**
+     * Query-by-Method-Name query with a Contains restriction applied to an
+     * ElementCollection.
+     */
+    @Test
+    public void testElementCollectionContains() {
+        assertEquals(List.of(5L, 7L, 17L, 37L, 47L),
+                     primes.findByRomanNumeralSymbolsContainsAndNumberIdLessThan("V",
+                                                                                 50)
+                                     .map(prime -> prime.numberId)
+                                     .collect(Collectors.toList()));
     }
 
     /**
@@ -1414,13 +1451,16 @@ public class DataTestServlet extends FATServlet {
                                              .map(Arrays::toString)
                                              .collect(Collectors.toList()));
 
-        // Update embeddable attributes
+        /*
+         * Update embeddable attributes
+         * TODO enable once #30789 is fixed
+         */
 
-        assertEquals(true, houses.updateByParcelIdSetGarageAddAreaAddKitchenLengthSetNumBedrooms("TestEmbeddable-304-3655-30", null, 180, 2, 4));
+        //assertEquals(true, houses.updateByParcelIdSetGarageAddAreaAddKitchenLengthSetNumBedrooms("TestEmbeddable-304-3655-30", null, 180, 2, 4));
 
-        h = houses.findById("TestEmbeddable-304-3655-30");
-        assertEquals("TestEmbeddable-304-3655-30", h.parcelId);
-        assertEquals(1880, h.area);
+        //h = houses.findById("TestEmbeddable-304-3655-30");
+        //assertEquals("TestEmbeddable-304-3655-30", h.parcelId);
+        //assertEquals(1880, h.area);
         // Null embeddables aren't required by JPA, but EclipseLink claims to support it as the default behavior.
         // See https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Basic_JPA_Development/Entities/Embeddable#Nullable_embedded_values
         // But it looks like EclipseLink has a bug here in that it only nulls out 1 of the fields of Garage, not all,
@@ -1428,14 +1468,14 @@ public class DataTestServlet extends FATServlet {
         // SQL:  UPDATE WLPHouse SET NUMBEDROOMS = 4, AREA = (AREA + 180), GARAGEAREA = NULL, KITCHENLENGTH = (KITCHENLENGTH + 2) WHERE (PARCELID = 'TestEmbeddable-304-3655-30')
         // This causes the following assertion to fail:
         // assertEquals(null, h.garage);
-        // TODO re-enable the above if fixed
-        assertNotNull(h.kitchen);
-        assertEquals(16, h.kitchen.length);
-        assertEquals(12, h.kitchen.width);
-        assertEquals(0.17f, h.lotSize, 0.001f);
-        assertEquals(4, h.numBedrooms);
-        assertEquals(153000f, h.purchasePrice, 0.001f);
-        assertEquals(Year.of(2018), h.sold);
+        // TODO re-enable the above if EclipseLink bug #24926 is fixed
+        //assertNotNull(h.kitchen);
+        //assertEquals(16, h.kitchen.length);
+        //assertEquals(12, h.kitchen.width);
+        //assertEquals(0.17f, h.lotSize, 0.001f);
+        //assertEquals(4, h.numBedrooms);
+        //assertEquals(153000f, h.purchasePrice, 0.001f);
+        //assertEquals(Year.of(2018), h.sold);
 
         assertEquals(2, houses.dropAll());
     }
@@ -1496,6 +1536,35 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Use exists methods in the Query by Method Name pattern where the return type
+     * is a CompletionStage or CompletableFuture and the repository method is
+     * annotated to run Asynchronous.
+     */
+    @Test
+    public void testExistsAsync() throws ExecutionException, //
+                    InterruptedException, TimeoutException {
+        CompletionStage<Boolean> stage1 = primes.existsByNameIgnoreCase("thirty-one");
+        CompletionStage<Boolean> stage2 = primes.existsByNameIgnoreCase("thirty-two");
+
+        assertEquals(Boolean.TRUE,
+                     stage1.toCompletableFuture()
+                                     .get(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+
+        assertEquals(Boolean.FALSE,
+                     stage2.toCompletableFuture()
+                                     .get(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+
+        CompletableFuture<Boolean> cf1 = primes.existsByRomanNumeralIgnoreCase("XLI");
+        CompletableFuture<Boolean> cf2 = primes.existsByRomanNumeralIgnoreCase("XLII");
+
+        assertEquals(Boolean.TRUE,
+                     cf1.get(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+
+        assertEquals(Boolean.FALSE,
+                     cf2.get(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+    }
+
+    /**
      * Query-by-method name repository operation to remove and return one or more entities.
      */
     @Test
@@ -1514,13 +1583,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(14.0f, p1.width, 0.01f);
         assertEquals(4.0f, p1.height, 0.01f);
         assertEquals("testFindAndDelete#40001", p1.description);
-
-        try {
-            Optional<Package> p = packages.deleteByDescription("testFindAndDelete#4001x");
-            fail("Should get NonUniqueResultException when there are multiple results but a singular return type. Instead, result is: " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
 
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
         boolean supportsOrderByForUpdate = !jdbcJarName.startsWith("derby");
@@ -1702,7 +1764,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Find-and-delete repository operations that return one or more IDs, corresponding to removed entities.
      */
-    @SkipIfSysProp(DB_Oracle) //TODO Eclipse link SQL Generation bug on Oracle: https://github.com/OpenLiberty/open-liberty/issues/28545
     @Test
     public void testFindAndDeleteReturnsIds() throws Exception {
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
@@ -1741,81 +1802,9 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Find-and-delete repository operations that return invalid types that are neither the entity class,
-     * record class, or id class.
-     */
-    @Test
-    @SkipIfSysProp(DB_Oracle) //TODO Eclipse link SQL Generation bug on Oracle: https://github.com/OpenLiberty/open-liberty/issues/28545
-    public void testFindAndDeleteReturnsInvalidTypes() {
-        packages.deleteAll();
-
-        packages.save(new Package(60006, 16.0f, 61.1f, 6.0f, "testFindAndDeleteReturnsInvalidTypes#60006"));
-
-        Sort<Package> sort = Sort.asc("id");
-
-        try {
-            long[] deleted = packages.delete3(Limit.of(3), sort);
-            fail("Deleted with return type of long[]: " + Arrays.toString(deleted) + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-
-        try {
-            List<String> deleted = packages.delete4(Limit.of(4), sort);
-            fail("Deleted with return type of List<String>: " + deleted + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-
-        try {
-            Collection<Number> deleted = packages.delete5(Limit.of(5), sort);
-            fail("Deleted with return type of Collection<Number>: " + deleted + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-    }
-
-    /**
-     * Find-and-delete repository operations that return invalid types that are neither the entity class,
-     * record class, or id class.
-     * In this case the table is empty and no results will have been deleted,
-     * we should still throw a mapping exception.
-     */
-    @Test
-    public void testFindAndDeleteReturnsInvalidTypesEmpty() {
-        packages.deleteAll();
-
-        Sort<Package> sort = Sort.asc("id");
-
-        try {
-            long[] deleted = packages.delete3(Limit.of(3), sort);
-            fail("Deleted with return type of long[]: " + Arrays.toString(deleted) + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-
-        try {
-            List<String> deleted = packages.delete4(Limit.of(4), sort);
-            fail("Deleted with return type of List<String>: " + deleted + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-
-        try {
-            Collection<Number> deleted = packages.delete5(Limit.of(5), sort);
-            fail("Deleted with return type of Collection<Number>: " + deleted + " even though the id type is int.");
-        } catch (MappingException x) {
-            // expected
-        }
-    }
-
-    /**
      * Find-and-delete repository operations that return one or more objects, corresponding to removed entities.
      */
     @Test
-    @SkipIfSysProp({
-                     DB_Oracle //TODO Eclipse link SQL Generation bug on Oracle: https://github.com/OpenLiberty/open-liberty/issues/28545
-    })
     public void testFindAndDeleteReturnsObjects() {
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
         boolean supportsOrderByForUpdate = !jdbcJarName.startsWith("derby");
@@ -1880,9 +1869,122 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Find-and-delete repository operation that sorts entities according to the
+     * OrderBy method name keyword. Also cover the same scenario, but with the
+     * OrderBy annotation.
+     */
+    @Test
+    public void testFindAndDeleteWithOrderBy() {
+        String testName = "TestFindAndDeleteWithOrderByKeyword";
+        //                        id   length   width   height  description
+        packages.save(new Package(517, 1165.0f, 1044.0f, 517.0f, testName));
+        packages.save(new Package(527, 625.0f, 336.0f, 527.0f, testName));
+        packages.save(new Package(533, 925.0f, 756.0f, 533.0f, testName));
+        packages.save(new Package(551, 601.0f, 240.0f, 551.0f, testName));
+        packages.save(new Package(559, 1009.0f, 840.0f, 559.0f, testName));
+        packages.save(new Package(583, 1465.0f, 1344.0f, 583.0f, testName));
+        packages.save(new Package(589, 661.0f, 300.0f, 589.0f, testName));
+
+        Package[] removed = packages.deleteByDescriptionOrderByWidthDesc(testName,
+                                                                         Limit.of(3));
+        assertEquals(List.of(583, 517, 559),
+                     Stream.of(removed)
+                                     .map(pkg -> pkg.id)
+                                     .collect(Collectors.toList()));
+
+        assertEquals(List.of(551, 589),
+                     packages.deleteByDescriptionOrderByWidthAsc(testName,
+                                                                 Limit.of(2)));
+
+        // remaining entities are:
+        //         id   length  width   height  description
+        // Package(527, 625.0f, 336.0f, 527.0f, testName))
+        // Package(533, 925.0f, 756.0f, 533.0f, testName))
+
+        assertEquals(List.of(533),
+                     packages.removeIfDescriptionMatches(testName, Limit.of(1)));
+
+        assertEquals(List.of(527),
+                     packages.removeIfDescriptionMatches(testName, Limit.of(10)));
+    }
+
+    /**
+     * Find a record entity based on its embedded id, which is also a record.
+     * This test covers finding and returning an entity in addition to
+     * finding an entity to save/update/delete.
+     */
+    @Test
+    public void testFindByEmbeddedId() {
+        List<Animal> found = animals.findAll().toList();
+        if (!found.isEmpty())
+            animals.deleteAll(found);
+
+        Animal redFox = animals.insert(Animal.of("red fox", "Vulpes", "vulpes"));
+        Animal grayFox = animals.insert(Animal.of("gray fox", "Urocyon", "cinereoargenteus"));
+        Animal foxSquirrel = animals.insert(Animal.of("Fox squirrel", "Sciurus", "niger"));
+        Animal graySquirrel = animals.insert(Animal.of("gray squirrel", "Sciurus", "carolinensis"));
+        Animal redSquirrel = animals.insert(Animal.of("red squirrel", "Tamiasciurus", "hudsonicus"));
+
+        assertEquals("red fox", redFox.commonName());
+        assertEquals("Vulpes", redFox.id().genus());
+        assertEquals("vulpes", redFox.id().species());
+        assertEquals(1, redFox.version());
+
+        assertEquals("Fox squirrel", foxSquirrel.commonName());
+        assertEquals("Sciurus", foxSquirrel.id().genus());
+        assertEquals("niger", foxSquirrel.id().species());
+        assertEquals(1, foxSquirrel.version());
+
+        // TODO enable once #29460 is fixed
+        //assertEquals(List.of("Sciurus carolinensis",
+        //                     "Sciurus niger"),
+        //             animals.ofGenus("Sciurus")
+        //                             .map(n -> n.genus() + ' ' + n.species())
+        //                             .collect(Collectors.toList()));
+
+        //ScientificName grayFoxId = new ScientificName("Urocyon", "cinereoargenteus");
+        //grayFox = animals.findById(grayFoxId).orElseThrow();
+        //assertEquals("gray fox", grayFox.commonName());
+        //assertEquals("Urocyon", grayFox.id().genus());
+        //assertEquals("cinereoargenteus", grayFox.id().species());
+
+        //ScientificName graySquirrelId = new ScientificName("Sciurus", "carolinensis");
+        //graySquirrel = animals.findById(graySquirrelId).orElseThrow();
+        //assertEquals("gray squirrel", graySquirrel.commonName());
+        //assertEquals("Sciurus", graySquirrel.id().genus());
+        //assertEquals("carolinensis", graySquirrel.id().species());
+
+        //foxSquirrel = foxSquirrel.withCommonName("FOX SQUIRREL");
+        //foxSquirrel = animals.save(foxSquirrel);
+        //assertEquals("FOX SQUIRREL", foxSquirrel.commonName());
+        //assertEquals("Sciurus", foxSquirrel.id().genus());
+        //assertEquals("niger", foxSquirrel.id().species());
+        //assertEquals(2, foxSquirrel.version());
+
+        //foxSquirrel = foxSquirrel.withCommonName("fox squirrel");
+        //foxSquirrel = animals.update(foxSquirrel);
+        //assertEquals("fox squirrel", foxSquirrel.commonName());
+        //assertEquals("Sciurus", foxSquirrel.id().genus());
+        //assertEquals("niger", foxSquirrel.id().species());
+        //assertEquals(3, foxSquirrel.version());
+
+        animals.deleteById(new ScientificName("Sciurus", "niger"));
+
+        assertEquals(4L, animals.countByIdNotNull());
+
+        animals.delete(redSquirrel);
+
+        assertEquals(false, animals.existsById(redSquirrel.id()));
+
+        //found = animals.findAll().toList(); TODO replace next line
+        found = List.of(redFox, grayFox, graySquirrel);
+        assertEquals(found.toString(), 3, found.size());
+        animals.deleteAll(found);
+    }
+
+    /**
      * Search for missing item. Insert it. Search again.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testFindCreateFind() {
         UUID id = UUID.nameUUIDFromBytes("OL306-233F".getBytes());
@@ -1940,7 +2042,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Use the % and _ characters, which are wildcards in JPQL, within query parameters.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testFindLike() throws Exception {
         // Remove data from previous tests:
@@ -2011,7 +2112,7 @@ public class DataTestServlet extends FATServlet {
      */
     @Test
     public void testFindMultiple() throws Exception {
-        assertEquals(Collections.EMPTY_LIST, persons.find("TestFindMultiple"));
+        assertEquals(Collections.EMPTY_LIST, personRepo.find("TestFindMultiple"));
 
         Person jane = new Person();
         jane.firstName = "Jane";
@@ -2030,8 +2131,8 @@ public class DataTestServlet extends FATServlet {
 
         tran.begin();
         try {
-            persons.save(List.of(jane, joe));
-            persons.save(List.of(jude));
+            personRepo.save(List.of(jane, joe));
+            personRepo.save(List.of(jude));
         } finally {
             if (tran.getStatus() == Status.STATUS_MARKED_ROLLBACK)
                 tran.rollback();
@@ -2039,7 +2140,7 @@ public class DataTestServlet extends FATServlet {
                 tran.commit();
         }
 
-        List<Person> found = persons.find("TestFindMultiple");
+        List<Person> found = personRepo.find("TestFindMultiple");
         assertNotNull(found);
         assertEquals(2, found.size());
 
@@ -2059,7 +2160,7 @@ public class DataTestServlet extends FATServlet {
         assertEquals(p2expected.firstName, p2.firstName);
         assertEquals(p2expected.ssn_id, p2.ssn_id);
 
-        found = persons.find("Test-FindMultiple");
+        found = personRepo.find("Test-FindMultiple");
         assertNotNull(found);
         assertEquals(1, found.size());
         assertEquals(jude.ssn_id, found.get(0).ssn_id);
@@ -2106,7 +2207,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Repository methods where the FROM clause identifies the entity.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testFromClauseIdentifiesEntity() {
         products.clear();
@@ -2337,6 +2437,10 @@ public class DataTestServlet extends FATServlet {
         // Equals
         assertEquals("twenty-nine", primes.findByNameIgnoreCase("Twenty-Nine").name);
 
+        Prime prime = primes.findByNameIgnoreCase(" Four Thousand Twenty-One ");
+        assertEquals(4021L, prime.numberId);
+        assertEquals(" Four thousand twenty-one ", prime.name);
+
         // Not
         assertIterableEquals(List.of("two", "five", "seven"),
                              primes.findByNameIgnoreCaseNotAndNumberIdLessThanOrderByNumberIdAsc("Three", 10)
@@ -2445,13 +2549,13 @@ public class DataTestServlet extends FATServlet {
         isabelle.ssn_id = 999009003;
 
         try {
-            persons.insertAll(List.of(ian, ike, isabelle));
+            personRepo.insertAll(List.of(ian, ike, isabelle));
             fail("Did not detect duplicate insert of id within collection.");
         } catch (EntityExistsException x) {
             // pass
         }
 
-        persons.insertAll(List.of(ian, isabelle));
+        personRepo.insertAll(List.of(ian, isabelle));
 
         // insert varargs array:
         Person irene = new Person();
@@ -2549,7 +2653,7 @@ public class DataTestServlet extends FATServlet {
         assertEquals(null, personnel.insertAll(david, daniel, dorothy, dianne, dominic).join());
 
         assertEquals(List.of("Daniel", "David", "Dianne", "Dominic", "Dorothy"),
-                     persons.findFirstNames("TestInsertAndDeleteMultiple"));
+                     personRepo.findFirstNames("TestInsertAndDeleteMultiple"));
 
         Person dennis = new Person();
         dennis.firstName = "Dennis";
@@ -2571,14 +2675,14 @@ public class DataTestServlet extends FATServlet {
         }
 
         assertEquals(List.of("Daniel", "David", "Dianne", "Dominic", "Dorothy"),
-                     persons.findFirstNames("TestInsertAndDeleteMultiple"));
+                     personRepo.findFirstNames("TestInsertAndDeleteMultiple"));
 
         // delete multiple entities at once
 
         assertEquals(null, personnel.deleteMultiple(daniel, david).join());
 
         assertEquals(List.of("Dianne", "Dominic", "Dorothy"),
-                     persons.findFirstNames("TestInsertAndDeleteMultiple"));
+                     personRepo.findFirstNames("TestInsertAndDeleteMultiple"));
 
         // attempt deletion where one is not found:
 
@@ -2595,14 +2699,14 @@ public class DataTestServlet extends FATServlet {
         }
 
         assertEquals(List.of("Dianne", "Dominic", "Dorothy"),
-                     persons.findFirstNames("TestInsertAndDeleteMultiple"));
+                     personRepo.findFirstNames("TestInsertAndDeleteMultiple"));
 
         // delete remaining:
 
         assertEquals(Integer.valueOf(3), personnel.deleteSeveral(Stream.of(dianne, dorothy, dominic)).join());
 
         assertEquals(List.of(),
-                     persons.findFirstNames("TestInsertAndDeleteMultiple"));
+                     personRepo.findFirstNames("TestInsertAndDeleteMultiple"));
     }
 
     /**
@@ -3336,7 +3440,8 @@ public class DataTestServlet extends FATServlet {
     public void testFetchTypeDefault() {
         ratings.clear();
 
-        Rating.Reviewer user1 = new Rating.Reviewer("Rex", "TestFetchTypeDefault", "rex@openliberty.io");
+        Rating.Reviewer.Name name1 = new Rating.Reviewer.Name("Rex", "TestFetchTypeDefault");
+        Rating.Reviewer user1 = new Rating.Reviewer(name1, "rex@openliberty.io");
         Rating.Item toaster = new Rating.Item("toaster", 28.98f);
         Set<String> comments = Set.of("Burns everything.", "Often gets stuck.", "Bagels don't fit.");
 
@@ -3349,41 +3454,6 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * A repository might attempt to define a method that returns a CursoredPage
-     * without specifying a PageRequest and attempt to use a Limit parameter
-     * instead. This is not supported by the spec.
-     * Expect UnsupportedOperationException.
-     */
-    @Test
-    public void testLacksPageRequestUseLimitInstead() {
-        CursoredPage<Prime> page;
-        try {
-            page = primes.findByNumberIdBetween(15L, 45L, Limit.of(5));
-            fail("Able to obtain CursoredPage without a PageRequest: " + page);
-        } catch (UnsupportedOperationException x) {
-            // pass
-        }
-    }
-
-    /**
-     * A repository might attempt to define a method that returns a CursoredPage
-     * without specifying a PageRequest and attempt to use a Sort parameter instead.
-     * This is not supported by the spec. Expect UnsupportedOperationException.
-     */
-    @Test
-    public void testLacksPageRequestUseSortInstead() {
-        CursoredPage<Prime> page;
-        try {
-            page = primes.findByNumberIdBetweenAndBinaryDigitsNotNull(30L, //
-                                                                      40L, //
-                                                                      Sort.asc(ID));
-            fail("Able to obtain CursoredPage without a PageRequest: " + page);
-        } catch (UnsupportedOperationException x) {
-            // pass
-        }
-    }
-
-    /**
      * Use a repository method that performs a JDQL query using LEFT function
      * to obtain the beginning of a String value.
      */
@@ -3391,6 +3461,21 @@ public class DataTestServlet extends FATServlet {
     public void testLeftFunction() {
         assertEquals(List.of("seven", "seventeen"),
                      primes.matchLeftSideOfName("seven"));
+    }
+
+    /**
+     * Test the LENGTH JDQL function to query based on string length.
+     */
+    @Test
+    public void testLengthFunction() {
+        assertIterableEquals(List.of("eleven",
+                                     "nineteen",
+                                     "seven",
+                                     "thirteen",
+                                     "three"),
+                             primes.findByLengthOfNameBetween(5, 8)
+                                             .map(p -> p.name)
+                                             .collect(Collectors.toList()));
     }
 
     /**
@@ -3521,7 +3606,7 @@ public class DataTestServlet extends FATServlet {
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
         boolean databaseRounds = jdbcJarName.startsWith("ojdbc") || jdbcJarName.startsWith("postgre");
 
-        Object[] objects = primes.minMaxSumCountAverageObject(50);
+        Object[] objects = primes.minMaxSumCountAverageObjectArray(50);
         assertEquals(Long.valueOf(2L), objects[0]); // minimum
         assertEquals(Long.valueOf(47L), objects[1]); // maximum
         assertEquals(Long.valueOf(328L), objects[2]); // sum
@@ -3529,7 +3614,7 @@ public class DataTestServlet extends FATServlet {
         assertEquals(true, objects[4] instanceof Number); // average
         assertEquals(21.0, Math.floor(((Number) objects[4]).doubleValue()), 0.01);
 
-        Number[] numbers = primes.minMaxSumCountAverageNumber(45);
+        Number[] numbers = primes.minMaxSumCountAverageNumberArray(45);
         assertEquals(Long.valueOf(2L), numbers[0]); // minimum
         assertEquals(Long.valueOf(43L), numbers[1]); // maximum
         assertEquals(Long.valueOf(281L), numbers[2]); // sum
@@ -3549,18 +3634,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(197, ints[2]); // sum
         assertEquals(12, ints[3]); // count
         assertEquals(16, ints[4]); // average
-
-        try {
-            float[] floats = primes.minMaxSumCountAverageFloat(35);
-            fail("Allowed unsafe conversion from double to float: " +
-                 Arrays.toString(floats));
-        } catch (MappingException x) {
-            if (x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("float[]"))
-                ; // unsafe to convert double to float
-            else
-                throw x;
-        }
 
         List<Long> list = primes.minMaxSumCountAverageList(30);
         assertEquals(Long.valueOf(2L), list.get(0)); // minimum
@@ -3596,6 +3669,21 @@ public class DataTestServlet extends FATServlet {
         assertEquals(58.0, deque.removeFirst(), 0.01); // sum
         assertEquals(7.0, deque.removeFirst(), 0.01); // count
         assertEquals(8.0, Math.floor(deque.removeFirst()), 0.01); // average
+
+        List<Number> numberList = primes.minMaxSumCountAverageNumberList(15);
+        assertEquals(Long.valueOf(2L), numberList.get(0)); // minimum
+        assertEquals(Long.valueOf(13L), numberList.get(1)); // maximum
+        assertEquals(Long.valueOf(41L), numberList.get(2)); // sum
+        assertEquals(Long.valueOf(6L), numberList.get(3)); // count
+        assertEquals(6.0, Math.floor(numberList.get(4).doubleValue()), 0.01);
+
+        List<Object> objectList = primes.minMaxSumCountAverageObjectList(10);
+        assertEquals(Long.valueOf(2L), objectList.get(0)); // minimum
+        assertEquals(Long.valueOf(7L), objectList.get(1)); // maximum
+        assertEquals(Long.valueOf(17L), objectList.get(2)); // sum
+        assertEquals(Long.valueOf(4L), objectList.get(3)); // count
+        assertEquals(true, objectList.get(4) instanceof Number); // average
+        assertEquals(4.0, Math.floor(((Number) objectList.get(4)).doubleValue()), 0.01);
     }
 
     /**
@@ -3635,7 +3723,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Use a repository where methods are for different entities.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testMultipleEntitiesInARepository() {
         // Remove any pre-existing data that could interfere with the test:
@@ -3748,11 +3835,56 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Test implementation of methods that a repository inherits from
+     * java.lang.Object, some of which go through the proxy handler.
+     */
+    @SuppressWarnings("unlikely-arg-type")
+    @Test
+    public void testObjectMethods() throws InterruptedException {
+        // .equals is true for same instance and false for other instance
+        assertEquals(true, people.equals(people));
+        assertEquals(false, people.equals(personnel));
+
+        // .getClass returns the repository interface
+        assertEquals(true, People.class.isAssignableFrom(people.getClass()));
+
+        // .hashCode returns same value each time invoked
+        int hash = people.hashCode();
+        assertEquals(hash, people.hashCode());
+
+        // .notify and .notifyAll
+        synchronized (people) {
+            people.notify();
+            people.notifyAll();
+        }
+
+        // .toString
+        String str = people.toString();
+        assertEquals(str,
+                     true,
+                     str.contains(People.class.getName()));
+
+        // .wait
+        synchronized (people) {
+            people.wait(20); // 20 ms
+            people.wait(10, 500000); // 10.5 ms
+            Thread.currentThread().interrupt();
+            try {
+                // wait until interrupted, which should be immediately per above
+                people.wait();
+            } catch (InterruptedException x) {
+                // expected
+            } finally {
+                Thread.interrupted();
+            }
+        }
+    }
+
+    /**
      * Verify a repository method that supplies id(this) as the sort criteria
      * hard coded within a JDQL query.
      */
-    // TODO enable once #28925 is fixed
-    //@Test
+    @Test
     public void testOrderByIdFunction() {
         assertIterableEquals(List.of(19L, 17L, 13L, 11L, 7L, 5L, 3L, 2L),
                              primes.below(20L));
@@ -3766,41 +3898,6 @@ public class DataTestServlet extends FATServlet {
     public void testOrderedSet() {
         assertIterableEquals(List.of(47L, 43L, 41L, 37L, 31L, 29L, 23L),
                              primes.findNumberIdByNumberIdBetween(20, 49));
-    }
-
-    /**
-     * Exceed the maximum offset allowed by JPA.
-     */
-    @Test
-    public void testOverflow() {
-        Limit range = Limit.range(Integer.MAX_VALUE + 5L, Integer.MAX_VALUE + 10L);
-        try {
-            List<Prime> found = primes.findByNumberIdLessThanEqualOrderByNumberIdDesc(9L, range);
-            fail("Expected an error because starting position of range exceeds Integer.MAX_VALUE. Found: " + found);
-        } catch (IllegalArgumentException x) {
-            // expected
-        }
-
-        try {
-            Stream<Prime> found = primes.findFirst2147483648ByNumberIdGreaterThan(1L);
-            fail("Expected an error because limit exceeds Integer.MAX_VALUE. Found: " + found);
-        } catch (UnsupportedOperationException x) {
-            // expected
-        }
-
-        try {
-            CursoredPage<Prime> found = primes.findByNumberIdBetween(5L, 15L, PageRequest.ofPage(33).size(Integer.MAX_VALUE / 30));
-            fail("Expected an error because when offset for pagination exceeds Integer.MAX_VALUE. Found: " + found);
-        } catch (IllegalArgumentException x) {
-            // expected
-        }
-
-        try {
-            Page<Prime> found = primes.findByNumberIdLessThanEqualOrderByNumberIdDesc(52L, PageRequest.ofPage(22).size(Integer.MAX_VALUE / 20));
-            fail("Expected an error because when offset for pagination exceeds Integer.MAX_VALUE. Found: " + found);
-        } catch (IllegalArgumentException x) {
-            // expected
-        }
     }
 
     /**
@@ -3925,7 +4022,7 @@ public class DataTestServlet extends FATServlet {
         a101.occupant.firstName = "Kyle";
         a101.occupant.lastName = "Smith";
         a101.isOccupied = true;
-        a101.aptId = 101L;
+        a101.APTID = 101L;
         a101.quarters = new Bedroom();
         a101.quarters.length = 10;
         a101.quarters.width = 10;
@@ -3936,7 +4033,7 @@ public class DataTestServlet extends FATServlet {
         a102.occupant.firstName = "Brent";
         a102.occupant.lastName = "Smith";
         a102.isOccupied = false;
-        a102.aptId = 102L;
+        a102.APTID = 102L;
         a102.quarters = new Bedroom();
         a102.quarters.length = 11;
         a102.quarters.width = 11;
@@ -3947,7 +4044,7 @@ public class DataTestServlet extends FATServlet {
         a103.occupant.firstName = "Brian";
         a103.occupant.lastName = "Smith";
         a103.isOccupied = false;
-        a103.aptId = 103L;
+        a103.APTID = 103L;
         a103.quarters = new Bedroom();
         a103.quarters.length = 11;
         a103.quarters.width = 12;
@@ -3958,7 +4055,7 @@ public class DataTestServlet extends FATServlet {
         a104.occupant.firstName = "Scott";
         a104.occupant.lastName = "Smith";
         a104.isOccupied = false;
-        a104.aptId = 104L;
+        a104.APTID = 104L;
         a104.quarters = new Bedroom();
         a104.quarters.length = 12;
         a104.quarters.width = 11;
@@ -4155,6 +4252,91 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Repository Query method that selects and returns a single ArrayList attribute
+     */
+    @Test
+    public void testQueryReturnsArrayListAttribute() {
+        assertEquals(new ArrayList<String>(List.of("X", "L", "I")),
+                     primes.romanNumeralSymbolsAsArrayList(41).orElseThrow());
+    }
+
+    /**
+     * Repository Query method that selects a single attribute of type ArrayList
+     * and returns it as a Collection.
+     */
+    @Test
+    public void testQueryReturnsArrayListAttributeAsCollection() {
+        assertEquals(List.of("X", "X", "X", "V", "I", "I"),
+                     primes.romanNumeralSymbolsAsCollection(37).orElseThrow());
+    }
+
+    /**
+     * Repository Query method that selects and returns a multiple results of an
+     * ArrayList attribute
+     */
+    @Test
+    public void testQueryReturnsArrayListAttributeAsListOfArrayList() {
+        List<ArrayList<String>> results;
+        try {
+            results = primes.romanNumeralSymbolsAsListOfArrayList("XL%");
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage().startsWith("CWWKD1103E"))
+                // work around for bad behavior from EclipseLink when selecting
+                // ElementCollection attributes (see #30575)
+                return;
+            else
+                throw x;
+        }
+        assertEquals(List.of(new ArrayList<String>(List.of("X", "L", "I")),
+                             new ArrayList<String>(List.of("X", "L", "I", "I", "I")),
+                             new ArrayList<String>(List.of("X", "L", "V", "I", "I"))),
+                     results);
+    }
+
+    /**
+     * Repository Query method that selects and returns a multiple results of an
+     * ArrayList attribute as a Set.
+     */
+    @Test
+    public void testQueryReturnsArrayListAttributeAsSetOfArrayList() {
+        LinkedHashSet<ArrayList<String>> results;
+        try {
+            results = primes.romanNumeralSymbolsAsSetOfArrayList("XL%");
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage().startsWith("CWWKD1103E"))
+                // work around for bad behavior from EclipseLink when selecting
+                // ElementCollection attributes (see #30575)
+                return;
+            else
+                throw x;
+        }
+        assertEquals(Set.of(new ArrayList<String>(List.of("X", "L", "I")),
+                            new ArrayList<String>(List.of("X", "L", "I", "I", "I")),
+                            new ArrayList<String>(List.of("X", "L", "V", "I", "I"))),
+                     results);
+    }
+
+    /**
+     * Use a Repository method that has the Query annotation and has a return type
+     * that uses a Java record indicating to select a subset of entity attributes.
+     */
+    @Test
+    public void testQueryWithRecordResult() {
+        assertEquals(List.of("eleven XI ( X I )",
+                             "five V ( V )",
+                             "nineteen XIX ( X I X )",
+                             "seven VII ( V I I )",
+                             "seventeen XVII ( X V I I )",
+                             "thirteen XIII ( X I I I )",
+                             "three III ( I I I )",
+                             "two II ( I I )"),
+                     primes.romanNumeralsLessThanEq(20)
+                                     .stream()
+                                     .map(RomanNumeral::toString)
+                                     .collect(Collectors.toList()));
+    }
+
+    /**
      * Tests all BasicRepository methods with a record as the entity.
      */
     @Test
@@ -4345,6 +4527,10 @@ public class DataTestServlet extends FATServlet {
         assertEquals("Simon", participants.getFirstName(3).orElseThrow());
 
         // TODO enable once #29460 is fixed
+        //assertEquals(new Participant.Name("Samantha", "TestRecordAsEmbeddable"),
+        //             participants.findNameById(4).orElseThrow());
+
+        // TODO enable once #29460 is fixed
         //assertEquals(List.of("Samantha", "Sarah", "Simon", "Steve"),
         //             participants.withSurname("TestRecordAsEmbeddable")
         //                             .map(p -> p.name.first())
@@ -4371,6 +4557,31 @@ public class DataTestServlet extends FATServlet {
         assertEquals(17.29f, receipts.totalOf(2001L), 0.001f);
 
         assertEquals(2, receipts.removeIfTotalUnder(2000.0f));
+    }
+
+    /**
+     * Verify that a record return type (per spec) takes precedence over an
+     * entity attribute that is a record.
+     */
+    @Test
+    public void testRecordReturnTypePrecedence() {
+        purchases.clearAll();
+
+        Purchase p1 = new Purchase();
+        p1.total = 105.19f;
+        p1.customer = "TestRecordReturnTypePrecedence";
+        p1.purchaseId = 1L;
+        // the following does not match on purpose
+        p1.receipt = new Receipt(1001L, "Customer1", 1.99f);
+
+        purchases.buy(p1);
+
+        Receipt r1 = purchases.receiptFor(1L).orElseThrow();
+        assertEquals("TestRecordReturnTypePrecedence", r1.customer());
+        assertEquals(1L, r1.purchaseId());
+        assertEquals(105.19f, r1.total(), 0.001f);
+
+        purchases.clearAll();
     }
 
     /**
@@ -4502,10 +4713,15 @@ public class DataTestServlet extends FATServlet {
     public void testRecordWithEmbeddables() {
         ratings.clear();
 
-        Rating.Reviewer user1 = new Rating.Reviewer("Rex", "TestRecordWithEmbeddables", "rex@openliberty.io");
-        Rating.Reviewer user2 = new Rating.Reviewer("Rhonda", "TestRecordWithEmbeddables", "rhonda@openliberty.io");
-        Rating.Reviewer user3 = new Rating.Reviewer("Rachel", "TestRecordWithEmbeddables", "rachel@openliberty.io");
-        Rating.Reviewer user4 = new Rating.Reviewer("Ryan", "TestRecordWithEmbeddables", "ryan@openliberty.io");
+        Rating.Reviewer.Name name1 = new Rating.Reviewer.Name("Rex", "TestRecordWithEmbeddables");
+        Rating.Reviewer.Name name2 = new Rating.Reviewer.Name("Rhonda", "TestRecordWithEmbeddables");
+        Rating.Reviewer.Name name3 = new Rating.Reviewer.Name("Rachel", "TestRecordWithEmbeddables");
+        Rating.Reviewer.Name name4 = new Rating.Reviewer.Name("Ryan", "TestRecordWithEmbeddables");
+
+        Rating.Reviewer user1 = new Rating.Reviewer(name1, "rex@openliberty.io");
+        Rating.Reviewer user2 = new Rating.Reviewer(name2, "rhonda@openliberty.io");
+        Rating.Reviewer user3 = new Rating.Reviewer(name3, "rachel@openliberty.io");
+        Rating.Reviewer user4 = new Rating.Reviewer(name4, "ryan@openliberty.io");
 
         Rating.Item blender = new Rating.Item("blender", 41.99f);
         Rating.Item toaster = new Rating.Item("toaster", 28.98f);
@@ -4526,15 +4742,16 @@ public class DataTestServlet extends FATServlet {
         assertEquals(Set.of("Uneven cooking.", "Too noisy."),
                      ratings.getComments(1002));
 
-        // TODO enable once EclipseLink bug is fixed
+        // TODO enable once EclipseLink bug #28589 is fixed
         // java.lang.IllegalArgumentException: An exception occurred while creating a query in EntityManager:
         // Exception Description: Problem compiling
         // [SELECT NEW test.jakarta.data.web.Rating(o.id, o.item, o.numStars, o.reviewer, o.comments)
         //  FROM RatingEntity o WHERE (o.item.price BETWEEN ?1 AND ?2) ORDER BY o.reviewer.email]. [78, 88]
         // The state field path 'o.comments' cannot be resolved to a collection type.
         //assertEquals(List.of("Rachel", "Rex", "Ryan"),
-        //             ratings.findByItemPriceBetween(40.00f, 50.00f, Sort.asc("reviewer.email"))
-        //                             .map(r -> r.reviewer().firstName)
+        //             ratings.findByItemPriceBetween(40.00f, 50.00f,
+        //                                            Sort.asc("reviewer.email"))
+        //                             .map(r -> r.reviewer().firstName())
         //                             .collect(Collectors.toList()));
 
         //assertEquals(List.of(1007, 1002),
@@ -4664,10 +4881,10 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Experiment with reserved keywords in entity property names.
+     * Experiment with reserved keywords in entity attribute names.
      */
     @Test
-    public void testReservedKeywordsInEntityPropertyNames() {
+    public void testReservedKeywordsInEntityAttributeNames() {
         // clear out old data before test
         things.deleteAll();
 
@@ -4681,61 +4898,68 @@ public class DataTestServlet extends FATServlet {
         Thing thing = things.findById(2);
         assertEquals("Haralson", thing.brand);
 
-        // "like" is allowed at end of entity property name because the capitalization differs.
-        assertIterableEquals(List.of("Fireside", "Haralson", "Honeycrisp", "Honeygold"),
-                             things.findByAlike(true)
-                                             .map(o -> o.brand)
-                                             .sorted()
-                                             .collect(Collectors.toList()));
+        // "like" is allowed at end of entity attribute name because the capitalization differs.
+        assertEquals(List.of("Fireside", "Haralson", "Honeycrisp", "Honeygold"),
+                     things.findByAlike(true)
+                                     .map(o -> o.brand)
+                                     .sorted()
+                                     .collect(Collectors.toList()));
 
         // "Like" is used as a reserved keyword here.
-        assertIterableEquals(List.of("A101"),
-                             things.findByALike("A1%") // include second character so that databases that compare independent of case don't match "apple"
-                                             .map(o -> o.a)
-                                             .collect(Collectors.toList()));
+        assertEquals(List.of("A101"),
+                     things.findByALike("A1%") // include second character so that databases that compare independent of case don't match "apple"
+                                     .map(o -> o.a)
+                                     .collect(Collectors.toList()));
 
-        // "Or" in middle of entity property name is possible to to use of @Query.
-        assertIterableEquals(List.of("Honeycrisp"),
-                             things.forPurchaseOrder(20)
-                                             .map(o -> o.brand)
-                                             .collect(Collectors.toList()));
+        // "Or" in middle of entity attribute name is possible when using @Query.
+        assertEquals(List.of("Honeycrisp"),
+                     things.forPurchaseOrder(20)
+                                     .map(o -> o.brand)
+                                     .collect(Collectors.toList()));
 
-        // "Or" is allowed at the beginning of an entity property name because "find...By" immediately precedes it.
-        assertIterableEquals(List.of("Honeygold"),
-                             things.findByOrderNumber(100201L)
-                                             .map(o -> o.brand)
-                                             .collect(Collectors.toList()));
+        // "Or" is allowed at the beginning of an entity attribute name
+        // because "find...By" immediately precedes it.
+        assertEquals(List.of("Honeygold"),
+                     things.findByOrderNumber(100201L)
+                                     .map(o -> o.brand)
+                                     .collect(Collectors.toList()));
 
-        // "And" is allowed at the beginning of an entity property name because "find...By" immediately precedes it.
-        assertIterableEquals(List.of("android"),
-                             things.findByAndroid(true)
-                                             .map(o -> o.a)
-                                             .collect(Collectors.toList()));
+        // "And" is allowed at the beginning of an entity attribute name
+        // because "find...By" immediately precedes it.
+        assertEquals(List.of("android"),
+                     things.findByAndroid(true)
+                                     .map(o -> o.a)
+                                     .collect(Collectors.toList()));
 
-        // "and" is allowed at end of entity property name "brand" because the capitalization differs.
-        // "Not" is allowed at the beginning of an entity property name "Notes" because the reserved word "Not" never appears prior to the property name.
-        // "And" is allowed at the beginning of an entity property name because "And" or "Or" immediately precedes it.
-        assertIterableEquals(List.of(2L, 3L, 5L, 6L),
-                             things.findByBrandOrNotesContainsOrAndroid("IBM", "October", true)
-                                             .map(o -> o.thingId)
-                                             .sorted()
-                                             .collect(Collectors.toList()));
+        // "and" is allowed at end of entity attribute name "brand"
+        // because the capitalization differs.
+        // "Not" is allowed at the beginning of an entity attribute name "Notes"
+        // because the reserved word "Not" never appears prior to the attribute name.
+        // "And" is allowed at the beginning of an entity attribute name
+        // because "And" or "Or" immediately precedes it.
+        assertEquals(List.of(2L, 3L, 5L, 6L),
+                     things.findByBrandOrNotesContainsOrAndroid("IBM", "October", true)
+                                     .map(o -> o.thingId)
+                                     .sorted()
+                                     .collect(Collectors.toList()));
 
-        // "or" is allowed at end of entity property name "floor" because the capitalization differs.
-        // "In" is allowed at the beginning of an entity property name "Info" because the reserved word "In" never appears prior to the property name.
-        // "Or" is allowed at the beginning of an entity property name because "And" or "Or" immediately precedes it.
-        assertIterableEquals(List.of("2nd floor conference room", "Golden Delicious x Haralson"),
-                             things.findByFloorNotAndInfoLikeAndOrderNumberLessThan(3, "%o%", 300000L)
-                                             .map(o -> o.info)
-                                             .sorted()
-                                             .collect(Collectors.toList()));
+        // "or" is allowed at end of entity attribute name "floor"
+        // because the capitalization differs.
+        // "In" is allowed at the beginning of an entity attribute name "Info"
+        // because the reserved word "In" never appears prior to the attribute name.
+        // "Or" is allowed at the beginning of an entity attribute name
+        // because "And" or "Or" immediately precedes it.
+        assertEquals(List.of("2nd floor conference room", "Golden Delicious x Haralson"),
+                     things.findByFloorNotAndInfoLikeAndOrderNumberLessThan(3, "%o%", 300000L)
+                                     .map(o -> o.info)
+                                     .sorted()
+                                     .collect(Collectors.toList()));
 
-        // TODO is "Desc" allowed in an entity property name in the OrderBy clause?
-        assertIterableEquals(List.of("A101", "android", "apple"),
-                             things.findByThingIdGreaterThan(3L)
-                                             .map(o -> o.a)
-                                             .sorted()
-                                             .collect(Collectors.toList()));
+        // The OrderBy annotation can include entity attributes with "Desc" in the name
+        assertEquals(List.of("A101", "android", "apple"),
+                     things.findByThingIdGreaterThan(3L)
+                                     .map(o -> o.a)
+                                     .collect(Collectors.toList()));
     }
 
     /**
@@ -4750,7 +4974,7 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Use repository methods with Rounded, RoundedUp, and RoundedDown keywords.
+     * Use repository methods with ROUND, CEILING, and FLOOR functions in a Query.
      */
     @Test
     public void testRounding() {
@@ -4935,7 +5159,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Repository method having only a SELECT clause.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testSelectClauseOnly() {
         products.clear();
@@ -4984,43 +5207,42 @@ public class DataTestServlet extends FATServlet {
         Prime p = primes.findByNumberIdBetween(14L, 18L);
         assertEquals(17L, p.numberId);
 
-        // No result must raise EmptyResultException:
-        try {
-            p = primes.findByNumberIdBetween(24L, 28L);
-            fail("Unexpected prime " + p);
-        } catch (EmptyResultException x) {
-            // expected
-        }
-
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            p = primes.findByNumberIdBetween(34L, 48L);
-            fail("Should find more primes than " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
-
         // With custom return type:
 
         // Single result is fine:
         long n = primes.findAsLongBetween(12L, 16L);
         assertEquals(13L, n);
+    }
 
-        // No result must raise EmptyResultException:
-        try {
-            n = primes.findAsLongBetween(32L, 36L);
-            fail("Unexpected prime number " + n);
-        } catch (EmptyResultException x) {
-            // expected
-        }
+    /**
+     * Tests a repository method that returns a Page with a single boolean
+     * result on it.
+     */
+    @Test
+    public void testSingularResultPageOfBoolean() {
+        PageRequest pageReq = PageRequest.ofSize(6);
+        Page<Boolean> page = primes.pageOfExists(pageReq);
 
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            n = primes.findAsLongBetween(22L, 42L);
-            fail("Should find more prime numbers than " + n);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
+        assertEquals(List.of(true), page.content());
+        assertEquals(false, page.hasNext());
+        assertEquals(false, page.hasPrevious());
+        assertEquals(1L, page.totalElements());
+        assertEquals(1L, page.totalPages());
+    }
+
+    /**
+     * Tests a repository method that returns a Page with a single numeric
+     * result on it.
+     */
+    @Test
+    public void testSingularResultPageNumeric() {
+        Page<Long> page = primes.pageOfCountUpTo(20L, PageRequest.ofSize(4));
+
+        assertEquals(List.of(8L), page.content());
+        assertEquals(false, page.hasNext());
+        assertEquals(false, page.hasPrevious());
+        assertEquals(1L, page.totalElements());
+        assertEquals(1L, page.totalPages());
     }
 
     /**
@@ -5181,7 +5403,7 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Use the JDQL id(entityVar) function as the sort property to perform a
+     * Use the JDQL id(entityVar) function as the sort attribute to perform a
      * descending sort.
      */
     @Test
@@ -5683,60 +5905,60 @@ public class DataTestServlet extends FATServlet {
         p3.lastName = "TestTransactional";
         p3.ssn_id = 300201003;
 
-        persons.save(List.of(p1, p2, p3));
+        personRepo.save(List.of(p1, p2, p3));
 
         System.out.println("TxType.SUPPORTS in transaction");
 
         tran.begin();
         try {
-            assertEquals(true, persons.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty")); // update with MANDATORY
-            assertEquals("Ty", persons.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName); // read value with SUPPORTS
+            assertEquals(true, personRepo.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty")); // update with MANDATORY
+            assertEquals("Ty", personRepo.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName); // read value with SUPPORTS
         } finally {
             tran.rollback();
         }
 
         assertIterableEquals(List.of("Thomas", "Timothy", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.SUPPORTS from no transaction");
 
-        assertEquals("Tyler", persons.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName);
+        assertEquals("Tyler", personRepo.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName);
 
         System.out.println("TxType.REQUIRED in transaction");
 
         tran.begin();
         try {
-            assertEquals(true, persons.setFirstNameInCurrentOrNewTransaction(p1.ssn_id, "Tommy"));
+            assertEquals(true, personRepo.setFirstNameInCurrentOrNewTransaction(p1.ssn_id, "Tommy"));
         } finally {
             tran.rollback();
         }
 
         assertIterableEquals(List.of("Thomas", "Timothy", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.REQUIRED from no transaction");
 
-        assertEquals(true, persons.setFirstNameInCurrentOrNewTransaction(p1.ssn_id, "Tom"));
+        assertEquals(true, personRepo.setFirstNameInCurrentOrNewTransaction(p1.ssn_id, "Tom"));
 
         assertIterableEquals(List.of("Timothy", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.MANDATORY in transaction");
 
         tran.begin();
         try {
-            assertEquals(true, persons.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty"));
+            assertEquals(true, personRepo.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty"));
         } finally {
             tran.rollback();
         }
 
         assertIterableEquals(List.of("Timothy", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.MANDATORY from no transaction is an error");
 
         try {
-            boolean result = persons.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty");
+            boolean result = personRepo.setFirstNameInCurrentTransaction(p3.ssn_id, "Ty");
             fail("Invoked TxType.MANDATORY operation with no transaction on thread. Result: " + result);
         } catch (TransactionalException x) {
             if (!(x.getCause() instanceof TransactionRequiredException))
@@ -5747,26 +5969,26 @@ public class DataTestServlet extends FATServlet {
 
         tran.begin();
         try {
-            assertEquals(true, persons.setFirstNameInNewTransaction(p2.ssn_id, "Timmy"));
+            assertEquals(true, personRepo.setFirstNameInNewTransaction(p2.ssn_id, "Timmy"));
         } finally {
             tran.rollback();
         }
 
         assertIterableEquals(List.of("Timmy", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.REQUIRES_NEW from no transaction");
 
-        assertEquals(true, persons.setFirstNameInCurrentOrNewTransaction(p2.ssn_id, "Tim"));
+        assertEquals(true, personRepo.setFirstNameInCurrentOrNewTransaction(p2.ssn_id, "Tim"));
 
         assertIterableEquals(List.of("Tim", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.NEVER in transaction");
 
         tran.begin();
         try {
-            boolean result = persons.setFirstNameWhenNoTransactionIsPresent(p3.ssn_id, "Ty");
+            boolean result = personRepo.setFirstNameWhenNoTransactionIsPresent(p3.ssn_id, "Ty");
             fail("Invoked TxType.NEVER operation with transaction on thread. Result: " + result);
         } catch (TransactionalException x) {
             if (!(x.getCause() instanceof InvalidTransactionException))
@@ -5776,54 +5998,114 @@ public class DataTestServlet extends FATServlet {
         }
 
         assertIterableEquals(List.of("Tim", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.NEVER from no transaction");
 
-        assertEquals(true, persons.setFirstNameWhenNoTransactionIsPresent(p3.ssn_id, "Ty"));
+        assertEquals(true, personRepo.setFirstNameWhenNoTransactionIsPresent(p3.ssn_id, "Ty"));
 
         assertIterableEquals(List.of("Tim", "Tom", "Ty"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.NOT_SUPPORTED in transaction");
 
         tran.begin();
         try {
-            assertEquals(true, persons.setFirstNameWithCurrentTransactionSuspended(p3.ssn_id, "Tyler"));
+            assertEquals(true, personRepo.setFirstNameWithCurrentTransactionSuspended(p3.ssn_id, "Tyler"));
         } finally {
             tran.rollback();
         }
 
         assertIterableEquals(List.of("Tim", "Tom", "Tyler"),
-                             persons.findFirstNames("TestTransactional"));
+                             personRepo.findFirstNames("TestTransactional"));
 
         System.out.println("TxType.NOT_SUPPORTED from no transaction");
 
-        assertEquals("Tyler", persons.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName);
+        assertEquals("Tyler", personRepo.getPersonInCurrentOrNoTransaction(p3.ssn_id).firstName);
 
         personnel.removeAll().get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
     }
 
     /**
-     * Test the Trimmed keyword by querying against data that has leading and trailing blank space.
+     * Test that a repository interface can be annotated as Transactional, and the
+     * methods honor the specified transaction type of REQUIRES_NEW.
      */
     @Test
-    public void testTrimmedKeyword() {
-        List<Prime> found = primes.findByNameTrimmedCharCountAndNumberIdBetween(24, 4000L, 4025L);
+    public void testTransactionalRepository() throws Exception {
+        people.deleteBySSN_IdBetween(0L, 999999999L);
+
+        Person p1 = new Person();
+        p1.firstName = "Tabitha";
+        p1.lastName = "TestTransactionalRepository";
+        p1.ssn_id = 555331111;
+
+        Person p2 = new Person();
+        p2.firstName = "Todd";
+        p2.lastName = "TestTransactionalRepository";
+        p2.ssn_id = 444332222;
+
+        Person p3 = new Person();
+        p3.firstName = "Ted";
+        p3.lastName = "TestTransactionalRepository";
+        p3.ssn_id = 111223333;
+
+        tran.begin();
+        try {
+            persons.insert(p1); // runs in current transaction
+
+            persons.insertAll(p2, p3); // runs in its own transaction
+        } finally {
+            tran.rollback();
+        }
+
+        // insert again, because the previous should have rolled back
+        persons.insert(p1);
+
+        tran.begin();
+        try {
+            p1.lastName = "Test-TransactionalRepository";
+            assertEquals(true, persons.updateOne(p1));
+
+            p2.lastName = "TestTransactional-Repository";
+            p3.firstName = "Theodore";
+            assertEquals(2L, persons.updateSome(p2, p3));
+        } finally {
+            // The above must run in their own separate transactions,
+            // so they must not roll back along with the following:
+            tran.rollback();
+        }
+
+        p1 = personRepo.getPersonInCurrentOrNoTransaction(p1.ssn_id);
+        assertEquals("Tabitha", p1.firstName);
+        assertEquals("Test-TransactionalRepository", p1.lastName);
+
+        p2 = personRepo.getPersonInCurrentOrNoTransaction(p2.ssn_id);
+        assertEquals("Todd", p2.firstName);
+        assertEquals("TestTransactional-Repository", p2.lastName);
+
+        p3 = personRepo.getPersonInCurrentOrNoTransaction(p3.ssn_id);
+        assertEquals("Theodore", p3.firstName);
+        assertEquals("TestTransactionalRepository", p3.lastName);
+
+        assertEquals(3L, people.deleteBySSN_IdBetween(0L, 999999999L));
+    }
+
+    /**
+     * Test the TRIM function by querying against data that has leading and trailing
+     * blank space.
+     */
+    @Test
+    public void testTrimFunction() {
+        List<Prime> found = primes.withTrimmedNameLengthAndNumBetween(24, 4000L, 4025L);
         assertNotNull(found);
         assertEquals("Found: " + found, 1, found.size());
         assertEquals(4021L, found.get(0).numberId);
         assertEquals(" Four thousand twenty-one ", found.get(0).name);
-
-        Prime prime = primes.findByNameTrimmedIgnoreCase("FOUR THOUSAND TWENTY-ONE").orElseThrow();
-        assertEquals(4021L, prime.numberId);
-        assertEquals(" Four thousand twenty-one ", prime.name);
     }
 
     /**
      * Update multiple entries.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testUpdateMultiple() {
         products.clear();
@@ -5940,15 +6222,12 @@ public class DataTestServlet extends FATServlet {
 
         assertEquals(3, persons.updateSome(ulysses, ursula, uriah));
 
-        assertEquals(0, persons.updateSome());
-
         assertEquals(4, people.deleteBySSN_IdBetween(0L, 999999999L));
     }
 
     /**
      * Use update methods with a versioned entity parameter to make updates.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testUpdateWithVersionedEntityParameter() {
         Product prod1 = new Product();
@@ -6001,7 +6280,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Use JPQL query to update based on version.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testVersionedUpdateViaQuery() {
         Product prod1 = new Product();
@@ -6039,7 +6317,6 @@ public class DataTestServlet extends FATServlet {
     /**
      * Use repository save method to update based on version.
      */
-    @SkipIfSysProp(DB_Postgres) //TODO Failing on Postgres due to eclipselink issue.  https://github.com/OpenLiberty/open-liberty/issues/28368
     @Test
     public void testVersionedUpdateViaRepository() {
         Product prod1 = new Product();

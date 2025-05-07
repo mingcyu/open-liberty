@@ -1,5 +1,5 @@
-/*******************************************************************************
- * Copyright (c) 2014, 2023 IBM Corporation and others.
+/* =============================================================================
+ * Copyright (c) 2014, 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -9,7 +9,8 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ * =============================================================================
+ */
 package com.ibm.ws.messaging.jms20.deliverydelay.fat;
 
 import static org.junit.Assert.assertNotNull;
@@ -224,10 +225,10 @@ public class DelayFullTest {
         runInServlet("testDeliveryDelayForDifferentDelaysClassicApi");
 
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : QueueBindingsMessage2-ClassicApi");
+            "Message received on mdb : QueueBindingsMessage-ClassicApi2");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : QueueBindingsMessage1-ClassicApi");
+            "Message received on mdb : QueueBindingsMessage-ClassicApi1");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         
         
@@ -246,10 +247,10 @@ public class DelayFullTest {
         runInServlet("testDeliveryDelayForDifferentDelaysClassicApi_Tcp");
 
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : QueueTCPMessage2-ClassicApi");
+            "Message received on mdb : QueueTCPMessage-ClassicApi2");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : QueueTCPMessage1-ClassicApi");
+            "Message received on mdb : QueueTCPMessage-ClassicApi1");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         
         
@@ -281,10 +282,10 @@ public class DelayFullTest {
         runInServlet("testDeliveryDelayForDifferentDelaysTopicClassicApi");
 
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : TopicBindingsMessage2-ClassicApi");
+            "Message received on mdb : TopicBindingsMessage-ClassicApi2");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : TopicBindingsMessage1-ClassicApi");
+            "Message received on mdb : TopicBindingsMessage-ClassicApi1");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         
     	// Configure server to use MDB receiving from "remote" Topic
@@ -301,53 +302,61 @@ public class DelayFullTest {
         // Run test using domain-specific API
         runInServlet("testDeliveryDelayForDifferentDelaysTopicClassicApi_Tcp");
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : TopicTCPMessage2-ClassicApi");
+            "Message received on mdb : TopicTCPMessage-ClassicApi2");
         assertNotNull("Could not find the upload message in the trace.log", msg);
         msg = clientServer.waitForStringInLogUsingLastOffset(
-            "Message received on mdb : TopicTCPMessage1-ClassicApi");
+            "Message received on mdb : TopicTCPMessage-ClassicApi1");
         assertNotNull("Could not find the upload message in the trace.log", msg);
 
         restartServers();
     }
 
+    // Tests that test the persistence of delivery delay messages over a server restart
+    // Each test calls a sender method in the servlet that sends 2 message, 1 persistent and 1 nonpersistent.
+    // Then the servers are restarted and the servlet is called to attempt to receive the messages.
+    // Where possible, these are amalgamated to call multiple sender and the associated receiver methods around a single server restart to reduce the number of restarts that are needed.
+    // Note: for now the ptp messages are checked first, and if a failure is detected, the test fails at this point before the pub/sub results are checked. This could be improved later to check all the results and potentially give a richer response.
+
+    // Simplified API tests
     @Test
     public void testPersistentMessageStore_B() throws Exception {
+    	
+    	// Send PtP messages
         runInServlet("testPersistentMessage");
-
-        restartServers();
-
-        boolean testResult = runInServlet("testPersistentMessageReceive");
-        assertTrue("testPersistentMessageStore_B failed", testResult);
-    }
-
-    @Test
-    public void testPersistentMessageStore_Tcp() throws Exception {
-        runInServlet("testPersistentMessage_Tcp");
-
-        restartServers();
-
-        boolean testResult = runInServlet("testPersistentMessageReceive_Tcp");
-        assertTrue("testPersistentMessageStore_Tcp failed", testResult);
-    }
-
-    @Test
-    public void testPersistentMessageStoreTopic_B() throws Exception {
+        
+        // Send pub/sub messages
         runInServlet("testPersistentMessageTopic");
 
         restartServers();
 
-        boolean testResult = runInServlet("testPersistentMessageReceiveTopic");
-        assertTrue("testPersistentMessageStoreTopic_B failed", testResult);
+        // Receive ptp messages
+        boolean ptpTestResult = runInServlet("testPersistentMessageReceive");
+        assertTrue("testPersistentMessageStore_B failed", ptpTestResult);
+        
+        // Receive pubsub messages
+        boolean pubsubTestResult = runInServlet("testPersistentMessageReceiveTopic");
+        assertTrue("testPersistentMessageStoreTopic_B failed", pubsubTestResult);
     }
 
+
     @Test
-    public void testPersistentMessageStoreTopic_Tcp() throws Exception {
+    public void testPersistentMessageStore_Tcp() throws Exception {
+    	
+    	// Send PtP messages
+        runInServlet("testPersistentMessage_Tcp");
+
+        // Send pub/sub messages
         runInServlet("testPersistentMessageTopic_Tcp");
 
         restartServers();
 
-        boolean testResult = runInServlet("testPersistentMessageReceiveTopic_Tcp");
-        assertTrue("testPersistentMessageStoreTopic_B failed", testResult);
+        // Receive ptp messages
+        boolean ptpTestResult = runInServlet("testPersistentMessageReceive_Tcp");
+        assertTrue("testPersistentMessageStore_Tcp failed", ptpTestResult);
+        
+        // Receive pubsub messages
+        boolean pubsubTestResult = runInServlet("testPersistentMessageReceiveTopic_Tcp");
+        assertTrue("testPersistentMessageStoreTopic_B failed", pubsubTestResult);
     }
 
 

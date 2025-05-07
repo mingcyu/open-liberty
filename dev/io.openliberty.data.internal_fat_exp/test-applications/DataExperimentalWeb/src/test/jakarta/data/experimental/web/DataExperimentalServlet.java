@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -52,6 +52,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 import junit.framework.AssertionFailedError;
+import test.jakarta.data.experimental.web.Shipment.Instructions;
 
 @SuppressWarnings("serial")
 @WebServlet("/*")
@@ -264,8 +265,9 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
-     * Test the ElementCount keyword by querying against a collection attribute with different sizes.
-     * Also covers WithMinute and WithSecond.
+     * Test the ElementCount function by querying for a collection attribute of
+     * different sizes. Also covers EXTRACT MINUTE and EXTRACT SECOND in a JPQL
+     * query.
      */
     @Test
     public void testElementCountAndExtract() throws Exception {
@@ -311,37 +313,37 @@ public class DataExperimentalServlet extends FATServlet {
 
         reservations.saveAll(List.of(r1, r2, r3, r4));
 
-        // ElementCount keyword
+        // ElementCount Function
 
         assertEquals(List.of("host1@openliberty.io", "host4@openliberty.io"),
-                     reservations.findByInviteesElementCount(2)
+                     reservations.withInviteeCount(2)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
         assertEquals(Collections.EMPTY_LIST,
-                     reservations.findByInviteesElementCount(0)
+                     reservations.withInviteeCount(0)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
-
-        // ElementCount Function
 
         assertEquals(List.of("host3@openliberty.io"),
                      reservations.withInviteeCount(3)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
-        // WithHour, WithMinute. We cannot compare the hour without knowing which time zone the database stores it in.
+        // EXTRACT HOUR, EXTRACT MINUTE.
+        // We cannot compare the hour without knowing which time zone the database
+        // stores it in. The range of 0 to 23 includes all hours.
 
         assertEquals(List.of(113001L, 213002L),
-                     reservations.findMeetingIdByStartWithHourBetweenAndStartWithMinute(0, 23, 15));
+                     reservations.startingWithin(0, 23, 15));
 
         assertEquals(List.of(313003L),
                      reservations.startsWithinHoursWithMinute(0, 23, 35));
 
-        // WithSecond
+        // EXTRACT SECOND
 
         assertEquals(List.of(313003L),
-                     reservations.findMeetingIdByStopWithSecond(30));
+                     reservations.findMeetingIdStoppingAtSecond(30));
 
         assertEquals(List.of(113001L, 213002L, 413004L),
                      reservations.endsAtSecond(0));
@@ -524,23 +526,6 @@ public class DataExperimentalServlet extends FATServlet {
 
     /**
      * Repository method performing a parameter-based query on a compound entity Id which is an IdClass,
-     * where the method parameter is annotated with By.
-     */
-    // TODO enable once #29893 is fixed. EclipseLink rejects LOWER(id(o)) with:
-    // The encapsulated expression is not a valid expression.
-    //@Test
-    public void testIdClassFindByAnnotatedParameter() {
-
-        assertEquals(List.of("Springfield Massachusetts",
-                             "Rochester Minnesota",
-                             "Kansas City Missouri"),
-                     towns.largerThan(100000, TownId.of("springfield", "missouri"), "M%s")
-                                     .map(c -> c.name + ' ' + c.stateName)
-                                     .collect(Collectors.toList()));
-    }
-
-    /**
-     * Repository method performing a parameter-based query on a compound entity Id which is an IdClass,
      * without annotating the method parameter.
      */
     // TODO enable once #29073 is fixed
@@ -572,7 +557,6 @@ public class DataExperimentalServlet extends FATServlet {
                                      .map(c -> c.name + ' ' + c.stateName)
                                      .collect(Collectors.toList()));
 
-        // TODO enable once LOWER(id(o)) is working in EclipseLink
         assertEquals(List.of("Kansas City Missouri",
                              "Rochester Minnesota",
                              "Springfield Illinois"),
@@ -585,11 +569,10 @@ public class DataExperimentalServlet extends FATServlet {
 
     /**
      * Use cursor-based pagination with the OrderBy annotation on a composite id
-     * that is defined by an IdClass attribute. Also use named parameters, which
-     * means the cursor portion of the query will also need to use named parameters.
+     * that is defined by an IdClass attribute.
      */
     @Test
-    public void testIdClassOrderByAnnotationWithCursorPaginationAndNamedParameters() {
+    public void testIdClassOrderByAnnotationWithCursorPaginations() {
         PageRequest pagination = PageRequest.ofSize(2);
 
         CursoredPage<Town> page1 = towns.sizedWithin(100000, 1000000, pagination);
@@ -725,6 +708,20 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Test the NotIgnoreCase enumerated value for a parameter that is
+     * annotated with the By annotation.
+     */
+    @Test
+    public void testNotIgnoreCase() {
+
+        assertEquals(List.of("Rochester Minnesota",
+                             "Kansas City Missouri"),
+                     towns.largerThan(100000, "springfield", "M%s")
+                                     .map(c -> c.name + ' ' + c.stateName)
+                                     .collect(Collectors.toList()));
+    }
+
+    /**
      * Test the Or annotation on a parameter-based query.
      */
     @Test
@@ -827,6 +824,15 @@ public class DataExperimentalServlet extends FATServlet {
                      primes.lessThanWithSuffixOrBetweenWithSuffix(40L, "even", 30L, 50L, "one")
                                      .map(p -> p.numberId)
                                      .collect(Collectors.toList()));
+    }
+
+    /**
+     * Query method that selects multiple entity attributes and returns a record.
+     */
+    @Test
+    public void testQuerySelectsRecord() {
+        assertEquals(new Hexadecimal("2F", 47L),
+                     primes.toHexadecimal(47L).orElseThrow());
     }
 
     /**
@@ -1382,6 +1388,44 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Find operation that returns an entity attribute that is a record.
+     */
+    @Test
+    public void testReturnRecordAttribute() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.006349, -92.4665299");
+        s1.setId(10);
+        s1.setInstructions(new Instructions(//
+                        "Handle with care", //
+                        "Leave at door, send text alert", //
+                        false));
+        s1.setOrderedAt(OffsetDateTime.now());
+        s1.setStatus("SHIPPED");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.006349,-92.4665299");
+        s2.setId(20);
+        s2.setOrderedAt(OffsetDateTime.now());
+        s2.setStatus("ORDER_RECEIVED");
+        shipments.save(s2);
+
+        // TODO enable once #29460 is fixed
+        //Instructions inst1 = shipments.getInstructions(10).orElseThrow();
+        //assertEquals("Handle with care", inst1.handlingRequirements());
+        //assertEquals("Leave at door, send text alert", inst1.deliveryRequirements());
+        //assertEquals(false, inst1.needsSignature());
+
+        //assertEquals(false, shipments.getInstructions(20).isPresent());
+
+        shipments.removeEverything();
+    }
+
+    /**
      * Use repository methods with annotations for rounding.
      */
     @Test
@@ -1533,14 +1577,16 @@ public class DataExperimentalServlet extends FATServlet {
         assertEquals(40.0f, item.price, 0.01f);
         assertEquals("Item 2 halved", item.description);
 
-        // subtract from price and append to description via Update method with property names inferred from parameters
+        // subtract from price and append to description via Update method
+        // with entity attribute names inferred from parameters
         assertEquals(true, items.shorten(item2.pk, 1.0f, " and reduced $1"));
 
         item = items.get(item2.pk);
         assertEquals(39.0f, item.price, 0.01f);
         assertEquals("Item 2 halved and reduced $1", item.description);
 
-        // subtract from price and append to description via Update method with annotatively specified property names
+        // subtract from price and append to description via Update method
+        // with annotatively specified entity attribute names
         items.shortenBy(2, " and then another $2", item2.pk);
 
         item = items.get(item2.pk);

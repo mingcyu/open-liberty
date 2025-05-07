@@ -37,7 +37,7 @@ IBM-API-Package: \
 -features=io.openliberty.mpConfig-3.1, \
   io.openliberty.webBundle.internal-1.0,\
   io.openliberty.restfulWS-3.1; ibm.tolerates:="4.0", \
-  io.openliberty.mpCompatible-7.0, \
+  io.openliberty.mpCompatible-7.0,\
   io.openliberty.org.eclipse.microprofile.openapi-4.0,\
   io.openliberty.jandex.internal-3.0
 -bundles=\
@@ -46,12 +46,13 @@ IBM-API-Package: \
     io.openliberty.io.smallrye.openapi4.model, \
     io.openliberty.microprofile.openapi.2.0.internal.jakarta, \
     io.openliberty.microprofile.openapi.2.0.internal.servlet.jakarta, \
+    io.openliberty.microprofile.openapi.4.0.internal, \
     io.openliberty.microprofile.openapi.4.0.internal.services, \
     com.ibm.ws.microprofile.openapi.ui, \
     io.openliberty.microprofile.openapi.internal.common,\
     io.openliberty.com.fasterxml.jackson, \
     com.ibm.ws.org.jboss.logging
-kind=beta
+kind=ga
 edition=core
 WLP-Activation-Type: parallel
 WLP-InstantOn-Enabled: true

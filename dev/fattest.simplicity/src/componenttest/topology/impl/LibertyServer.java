@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -36,6 +36,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
@@ -62,6 +64,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
@@ -134,6 +137,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /** How frequently we poll the logs when waiting for something to happen */
     protected static final int WAIT_INCREMENT = 300;
+    private static final String SPECIAL_CHARS = "\\`$\"'!&|;()<>*?[]{} ";
 
     boolean runAsAWindowService = false;
 
@@ -665,7 +669,7 @@ public class LibertyServer implements LogMonitorClient {
          */
         private boolean criuRestoreDisableRecovery = true;
 
-        private Properties checkpointEnv = null;
+        private Properties checkpointEnv = new Properties();
 
         /**
          * Set of regular expressions to match against lines to ignore in the post checkpoint log files. Error / Warning messages found
@@ -1711,25 +1715,22 @@ public class LibertyServer implements LogMonitorClient {
 
             startedWithJavaSecurity = bootstrapHasJava2SecProps;
             if (bootstrapHasJava2SecProps) {
-                if (info.majorVersion() >= 18) {
-                    // If we are running on Java 18+, then we need to explicitly enable the security manager
+                if (info.majorVersion() >= 18 && info.majorVersion() <= 23) {
+                    // If we are running on Java 18 through 23, then we need to explicitly enable the security manager
                     Log.info(c, "startServerWithArgs", "Java 18 + Java2Sec requested, setting -Djava.security.manager=allow");
                     JVM_ARGS += " -Djava.security.manager=allow";
+                } else if (info.majorVersion() >= 24) {
+                    // Security manager not available in Java 24+
+                    LOG.severe("The server is configured to run with Java 2 security enabled, but the security manager is permanently disabled in Java versions 24 and later.  The security manager cannot be set!");
+                    throw new RuntimeException("The security manager is permanently disabled in Java versions 24 and later.  When running FATs, use @MaximumJavaLevel(javaLevel = 23) or disable Java 2 security to prevent this server from failing to start when running in Java 24 or later.");
                 }
             }
         }
 
         //FIPS 140-3
         // if we have FIPS 140-3 enabled, and the matched java/platform, add JVM Arg
-        if (isFIPS140_3EnabledAndSupported()) {
-            Log.info(c, "startServerWithArgs", "Liberty server is running JDK version: " + info.majorVersion() + " and vendor: " + info.VENDOR);
-            Log.info(c, "startServerWithArgs", "FIPS 140-3 global build properties is set for server " + getServerName()
-                                               + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
-
-            JVM_ARGS += " -Xenablefips140-3";
-            JVM_ARGS += " -Dcom.ibm.jsse2.usefipsprovider=true";
-            JVM_ARGS += " -Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS";
-            // JVM_ARGS += " -Djavax.net.debug=all";  // Uncomment as needed for additional debugging
+        if (isFIPS140_3EnabledAndSupported(info)) {
+            JVM_ARGS += getJvmArgString(this.getFipsJvmOptions(info, false));
         }
 
         Properties bootstrapProperties = getBootstrapProperties();
@@ -1805,6 +1806,8 @@ public class LibertyServer implements LogMonitorClient {
         Log.info(c, method, "Using additional env props: " + useEnvVars);
 
         Log.finer(c, method, "Starting Server with command: " + cmd);
+
+        configureLTPAKeys(info);
 
         // Create a marker file to indicate that we're trying to start a server
         createServerMarkerFile();
@@ -1977,6 +1980,23 @@ public class LibertyServer implements LogMonitorClient {
 
         Log.exiting(c, method);
         return output;
+    }
+
+    /**
+     * @param  fipsOpts, a Map containing jvm argument name/value pairs
+     * @return           A string that starts with a space and contains key/value pairs represented by 'key=value' and separated by spaces
+     */
+    private String getJvmArgString(Map<String, String> fipsOpts) {
+        StringJoiner joiner = new StringJoiner(" ", " ", "");
+        for (String key : fipsOpts.keySet()) {
+            String value = fipsOpts.get(key);
+            if (value != null && !value.isEmpty()) {
+                joiner.add(String.format("%s=%s", key, value));
+            } else {
+                joiner.add(key);
+            }
+        }
+        return joiner.toString();
     }
 
     private String[] checkpointAdjustParams(List<String> parametersList) {
@@ -3068,7 +3088,7 @@ public class LibertyServer implements LogMonitorClient {
                 useEnvVars.setProperty("WLP_USER_DIR", userDir);
             Log.finer(c, method, "Using additional env props: " + useEnvVars);
 
-            final ProgramOutput output = machine.execute(cmd, parameters, useEnvVars);
+            final ProgramOutput output = machine.execute(cmd, parameters, machine.getWorkDir(), useEnvVars, 300);
 
             String stdout = output.getStdout();
             Log.info(c, method, "Dump Server Response: " + stdout);
@@ -3140,12 +3160,12 @@ public class LibertyServer implements LogMonitorClient {
 
     public ProgramOutput stopServer(boolean postStopServerArchive, boolean forceStop, boolean skipArchives,
                                     List<String> failuresRegExps, String... ignoredFailuresRegExps) throws Exception {
-        return stopServer(!IGNORE_STOPPED, postStopServerArchive, forceStop, skipArchives,
+        return stopServer(!IGNORE_STOPPED, postStopServerArchive, forceStop, skipArchives, !SKIP_FEATURE_CHECK,
                           failuresRegExps, ignoredFailuresRegExps);
     }
 
     public ProgramOutput stopServerAlways(String... ignoredFailures) throws Exception {
-        return stopServer(IGNORE_STOPPED, POST_ARCHIVES, FORCE_STOP, SKIP_ARCHIVES,
+        return stopServer(IGNORE_STOPPED, POST_ARCHIVES, FORCE_STOP, SKIP_ARCHIVES, !SKIP_FEATURE_CHECK,
                           Collections.emptyList(), ignoredFailures);
     }
 
@@ -3153,6 +3173,7 @@ public class LibertyServer implements LogMonitorClient {
     public static final boolean FORCE_STOP = true;
     public static final boolean POST_ARCHIVES = true;
     public static final boolean SKIP_ARCHIVES = true;
+    public static final boolean SKIP_FEATURE_CHECK = true;
 
     /**
      * Stops the server and checks for any warnings or errors that appeared in logs.
@@ -3164,6 +3185,7 @@ public class LibertyServer implements LogMonitorClient {
      * @param  forceStop              Force the server to stop, skipping the quiesce (default/usual value should be false)
      * @param  skipArchives           Skip postStopServer collection of archives (WARs, EARs, JARs, etc.)
      *                                    Only used if postStopServerArchive is true
+     * @param  skipFeatureCheck       Skip repeat feature set checking
      * @param  ignoredFailuresRegExps A list of reg expressions corresponding to warnings or errors that should be ignored.
      *                                    If ignoredFailuresRegExps is null, logs will not be checked for warnings/errors
      * @param  failuresRegExps        A list of reg expressions corresponding to warnings or errors that should be treated
@@ -3172,7 +3194,7 @@ public class LibertyServer implements LogMonitorClient {
      * @throws Exception              if the stop operation fails or there are warnings/errors found in server
      *                                    logs that were not in the list of ignored warnings/errors.
      */
-    public ProgramOutput stopServer(boolean ignoreStopped, boolean postStopServerArchive, boolean forceStop, boolean skipArchives,
+    public ProgramOutput stopServer(boolean ignoreStopped, boolean postStopServerArchive, boolean forceStop, boolean skipArchives, boolean skipFeatureCheck,
                                     List<String> failuresRegExps, String... ignoredFailuresRegExps) throws Exception {
         final String method = "stopServer";
         Log.info(c, method, "<<< STOPPING SERVER: " + getServerName());
@@ -3298,7 +3320,9 @@ public class LibertyServer implements LogMonitorClient {
 
             isTidy = true;
 
-            checkServerRepeatFeatures();
+            if (!skipFeatureCheck) {
+                checkServerRepeatFeatures();
+            }
             checkLogsForErrorsAndWarnings(failuresRegExps, ignoredFailuresRegExps);
 
             if (doCheckpoint() && checkpointInfo.isAssertNoAppRestartOnRestore() &&
@@ -3487,24 +3511,11 @@ public class LibertyServer implements LogMonitorClient {
             throw ex;
     }
 
-    //servers which are exempt from checking repeat features
-    //this list should eventually be removed once the tests are fixed
+    //servers which are exempt from checking repeat features in automated builds
+    //the vast majority of servers should eventually be removed once the tests are fixed
+    //the test will still fail when run locally
     private static final String[] EXEMPT_SERVERS = {
                                                      "cdi20EEServer", //com.ibm.ws.cdi.1.0_fat_EE
-
-                                                     "cdi12EJBServer", //com.ibm.ws.cdi.visibility_fat
-
-                                                     "com.ibm.ws.concurrent.mp.fat.1.3.ee10", //com.ibm.ws.concurrent.mp_fat_jakarta
-
-                                                     "com.ibm.ws.security.authorization.jacc.dynamic_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.inwar", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mc", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.bindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-
-                                                     "com.ibm.ws.jaxrs.fat.exceptionMappingWithOT", //com.ibm.ws.jaxrs.2.0_fat
 
                                                      "EclipseLinkServer", //com.ibm.ws.jpa.tests.eclipselink_jpa_2.1_fat
 
@@ -3516,25 +3527,6 @@ public class LibertyServer implements LogMonitorClient {
                                                      "com.ibm.ws.jpa.fat.emlocking", //com.ibm.ws.jpa.tests.jpa_fat
                                                      "ConcurrentEnhancementVerification", //com.ibm.ws.jpa.tests.jpa_fat
                                                      "com.ibm.ws.jpa.fat.ejbpassivation", //com.ibm.ws.jpa.tests.jpa_fat
-
-                                                     "jsp23jsp22Server", //com.ibm.ws.jsp.2.3_fat
-
-                                                     "Config13TCKServer", //com.ibm.ws.microprofile.config.1.3_fat_tck
-
-                                                     "mpGraphQL10.basicQuery", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.defaultvalue", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.graphQLInterface", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.iface", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.ignore", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.inputFields", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.jarInWar", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.outputFields", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.rolesAuth", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.types", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.ui", //com.ibm.ws.microprofile.graphql.1.0_fat
-                                                     "mpGraphQL10.voidQuery", //com.ibm.ws.microprofile.graphql.1.0_fat
-
-                                                     "MetricsMonitorServer", //io.openliberty.microprofile.metrics.internal.5.x.monitor_fat
 
                                                      "ApplicationProcessorServer", //io.openliberty.microprofile.openapi.2.0.internal_fat
                                                      "OpenAPITestServer", //io.openliberty.microprofile.openapi.2.0.internal_fat
@@ -3565,9 +3557,7 @@ public class LibertyServer implements LogMonitorClient {
                                                      "opentracingFATServer3", //com.ibm.ws.opentracing.1.x_fat
                                                      "opentracingFATServer4", //com.ibm.ws.opentracing.1.x_fat
 
-                                                     "RequestTimingServer", //com.ibm.ws.request.timing_fat
                                                      "HungRequestTimingServer", //com.ibm.ws.request.timing.hung_fat
-                                                     "RequestTimingFeatureWithMetrics", //com.ibm.ws.request.timing.monitor_fat
 
                                                      "com.ibm.ws.rest.handler.config.fat", //com.ibm.ws.rest.handler.config_fat
                                                      "com.ibm.ws.rest.handler.config.openapi.fat", //com.ibm.ws.rest.handler.config_fat
@@ -3585,11 +3575,7 @@ public class LibertyServer implements LogMonitorClient {
 
                                                      "com.ibm.ws.ui.fat", //com.ibm.ws.ui_rest_fat
 
-                                                     "com.ibm.ws.webcontainer.security.fat.basicauth.audit", //com.ibm.ws.webcontainer.security.jacc.1.5_fat
-
                                                      "com.ibm.ws.jaxrs.fat.exceptionMappingWithOT", //com.ibm.ws.jaxrs.2.0_fat
-
-                                                     "RequestTimingServer", //com.ibm.ws.request.timing_fat
 
                                                      "MPServer41", //io.openliberty.microprofile41.internal_fat
                                                      "MPServer", //io.openliberty.microprofile.internal_fat
@@ -3641,10 +3627,12 @@ public class LibertyServer implements LogMonitorClient {
                             if (FAT_TEST_LOCALRUN) {
                                 message = message + "\nYou should also ensure that the test server has been removed from LibertyServer.EXEMPT_SERVERS.";
                                 throw new Exception(message);
-                            } else if (!EXEMPT_SERVERS_SET.contains(serverName)) {
-                                throw new Exception(message);
                             } else {
-                                Log.info(c, method, message);
+                                if (!EXEMPT_SERVERS_SET.contains(serverName)) {
+                                    throw new Exception(message);
+                                } else {
+                                    Log.info(c, method, message);
+                                }
                             }
                         } else {
                             Log.info(c, method, message);
@@ -5744,11 +5732,21 @@ public class LibertyServer implements LogMonitorClient {
     public RemoteFile getDefaultLogFile() throws Exception {
         //Set path to server log assuming the default setting.
         // ALWAYS RETURN messages.log -- tests assume they can look for INFO+ messages.
-        RemoteFile file = LibertyFileManager.getLibertyFile(machine, messageAbsPath);
-        if (file == null) {
-            throw new IllegalStateException("Unable to find default log file, path=" + messageAbsPath);
+        try {
+            RemoteFile file = LibertyFileManager.getLibertyFile(machine, messageAbsPath);
+            if (file == null) {
+                throw new IllegalStateException("Unable to find default log file, path=" + messageAbsPath);
+            }
+            return file;
+        } catch (FileNotFoundException e) {
+            if (isStarted) {
+                String msg = e.getMessage() + " and the server was started. Has it been left running from a previous repeat?";
+                Exception e2 = new FileNotFoundException(msg);
+                e2.initCause(e);
+                throw e2;
+            }
+            throw e;
         }
-        return file;
     }
 
     public boolean defaultTraceFileExists() throws Exception {
@@ -7456,7 +7454,7 @@ public class LibertyServer implements LogMonitorClient {
             useEnvVars.setProperty("WLP_USER_DIR", userDir);
         Log.info(c, method, "Using additional env props: " + useEnvVars);
 
-        ProgramOutput output = machine.execute(cmd, parms, useEnvVars);
+        ProgramOutput output = machine.execute(cmd, parms, machine.getWorkDir(), useEnvVars, 300);
         String stdout = output.getStdout();
         Log.info(c, method, "Server dump output: " + stdout);
         Log.info(c, method, "Return code from dump is: " + output.getReturnCode());
@@ -7810,22 +7808,34 @@ public class LibertyServer implements LogMonitorClient {
         return false;
     }
 
-    //FIPS 140-3
-    public boolean isFIPS140_3EnabledAndSupported() throws Exception {
+    // FIPS 140-3
+    public boolean isFIPS140_3EnabledAndSupported(JavaInfo serverJavaInfo, boolean logOutput) throws IOException {
         String methodName = "isFIPS140_3EnabledAndSupported";
-        JavaInfo serverJavaInfo = JavaInfo.forServer(this);
         boolean isIBMJVM8 = (serverJavaInfo.majorVersion() == 8) && (serverJavaInfo.VENDOR == Vendor.IBM);
-        if (GLOBAL_FIPS_140_3) {
-            Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion() + " and vendor: " + serverJavaInfo.VENDOR);
+        boolean isIBMJVM17 = (serverJavaInfo.majorVersion() == 17) && (serverJavaInfo.VENDOR == Vendor.IBM);
+        if (logOutput && GLOBAL_FIPS_140_3) {
+            Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion()
+                                    + " and vendor: " + serverJavaInfo.VENDOR);
             if (isIBMJVM8) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
                                         " and IBM java 8 is available to run with FIPS 140-3 enabled.");
+            } else if (isIBMJVM17) {
+                Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
+                                        " and IBM java 17 is available to run with FIPS 140-3 enabled.");
             } else {
                 Log.info(c, methodName, "The global build properties FIPS_140_3 is set for server " + getServerName() +
-                                        ",  but no IBM java 8 on liberty server to run with FIPS 140-3 enabled.");
+                                        ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
             }
         }
-        return GLOBAL_FIPS_140_3 && isIBMJVM8;
+        return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVM17);
+    }
+
+    public boolean isFIPS140_3EnabledAndSupported() throws IOException {
+        return isFIPS140_3EnabledAndSupported(JavaInfo.forServer(this), true);
+    }
+
+    public boolean isFIPS140_3EnabledAndSupported(JavaInfo info) throws IOException {
+        return isFIPS140_3EnabledAndSupported(info, true);
     }
 
     /**
@@ -8022,5 +8032,84 @@ public class LibertyServer implements LogMonitorClient {
 
     public String getEnvVar(String var) {
         return envVars.get(var);
+    }
+
+    public void configureLTPAKeys(JavaInfo info) throws IOException, InterruptedException {
+
+        if (isFIPS140_3EnabledAndSupported(info)) {
+            String serverSecurityDir = serverRoot + File.separator + "resources" + File.separator + "security";
+            File ltpaFIPSKeys = new File(serverSecurityDir, "ltpaFIPS.keys");
+            File ltpaKeys = new File(serverSecurityDir, "ltpa.keys");
+            String serverName = getServerName();
+            boolean fipsKeyExists = ltpaFIPSKeys.exists();
+
+            if (!ltpaKeys.exists() && !fipsKeyExists) {
+                Log.info(this.getClass(), "configureLTPAKeys",
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", but neither ltpa.keys nor ltpaFIPS.keys is found in " + serverSecurityDir);
+            } else {
+                Log.info(this.getClass(), "configureLTPAKeys",
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", swapping ltpaFIPS.keys into ltpa.keys");
+            }
+
+            if (fipsKeyExists) {
+                Files.move(ltpaFIPSKeys.toPath(), ltpaKeys.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                // Log.info(this.getClass(), "configureLTPAKeys",
+                //         "Waiting for 2 seconds after updating ltpa.keys ...");
+                // Thread.sleep(2000);
+            }
+            if (ltpaKeys.exists()) {
+                // Log the content of ltpa.keys
+                String content = FileUtils.readFile(ltpaKeys.getAbsolutePath());
+                Log.info(this.getClass(), "configureLTPAKeys", "Content of ltpa.keys: " + content);
+            }
+        }
+    }
+
+    public void configureLTPAKeys() throws IOException, InterruptedException {
+        configureLTPAKeys(JavaInfo.forServer(this));
+    }
+
+    private Map<String, String> getFipsJvmOptions(JavaInfo info, boolean includeGlobalArgs) throws Exception, IOException {
+        Map<String, String> opts = new HashMap<>();
+        if (isFIPS140_3EnabledAndSupported(info, false)) {
+            if (info.majorVersion() == 17) {
+                Log.info(c, "getFipsJvmOptions",
+                         "FIPS 140-3 global build properties is set for server " + getServerName()
+                                                 + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
+                opts.put("-Dsemeru.fips", "true");
+                opts.put("-Dsemeru.customprofile", "OpenJCEPlusFIPS.FIPS140-3-withPKCS12");
+                opts.put("-Dcom.ibm.fips.mode", "140-3");
+            } else if (info.majorVersion() == 8) {
+                Log.info(c, "getFipsJvmOptions", "FIPS 140-3 global build properties is set for server "
+                                                 + getServerName()
+                                                 + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
+                opts.put("-Xenablefips140-3", null);
+                opts.put("-Dcom.ibm.jsse2.usefipsprovider", "true");
+                opts.put("-Dcom.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
+                opts.put("-Dcom.ibm.fips.mode", "140-3");
+
+            }
+            if (includeGlobalArgs) {
+                opts.put("-Dglobal.fips_140-3", "true");
+            }
+        }
+        return opts;
+    }
+
+    public void setKeysAndJVMOptsForFips() throws Exception {
+        // Enable FIPS on members via jvm.options file. This way when the controller starts / joins members
+        // the appropriate FIPS jvm arguments will be configured.
+        JavaInfo info = JavaInfo.forServer(this);
+        if (isFIPS140_3EnabledAndSupported(info)) {
+            this.configureLTPAKeys(info);
+            Map<String, String> jvm_opts = this.getJvmOptionsAsMap();
+            Map<String, String> combined = new HashMap(jvm_opts);
+            combined.putAll(this.getFipsJvmOptions(info, true));
+            if (!combined.isEmpty() && !combined.equals(jvm_opts)) {
+                this.setJvmOptions(combined);
+            }
+        }
     }
 }

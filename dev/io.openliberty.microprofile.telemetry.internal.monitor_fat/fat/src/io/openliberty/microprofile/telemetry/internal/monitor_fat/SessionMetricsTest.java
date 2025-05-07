@@ -47,6 +47,8 @@ public class SessionMetricsTest extends BaseTestClass {
     @ClassRule
     public static RepeatTests rt = FATSuite.testRepeatMPTel20(SERVER_NAME);
 	
+    //TODO switch to use ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.117.0
+    //TODO remove withDockerfileFromBuilder and instead create a dockerfile
 	@ClassRule
 	public static GenericContainer<?> container = new GenericContainer<>(new ImageFromDockerfile()
 			.withDockerfileFromBuilder(builder -> builder.from(IMAGE_NAME).copy("/etc/otelcol-contrib/config.yaml",
@@ -97,9 +99,7 @@ public class SessionMetricsTest extends BaseTestClass {
         Log.info(c, testName, "------- session metrics should be available ------");
 
 		// Allow time for the collector to receive and expose metrics
-		TimeUnit.SECONDS.sleep(4);
-
-		matchStrings(getContainerCollectorMetrics(container),
+		matchStringsWithRetries(() -> getContainerCollectorMetrics(container),
                 new String[] { "io_openliberty_session_created_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_app_name=\"default_host/testSessionApp\",job=\"unknown_service\"\\}.*",
                         "io_openliberty_session_live\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_app_name=\"default_host/testSessionApp\",job=\"unknown_service\"\\}.*",
                         "io_openliberty_session_active\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_app_name=\"default_host/testSessionApp\",job=\"unknown_service\"\\}.*",

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,11 +13,13 @@
 package io.openliberty.data.internal.v1_1;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -31,7 +33,6 @@ import io.openliberty.data.repository.Count;
 import io.openliberty.data.repository.Exists;
 import io.openliberty.data.repository.Is;
 import io.openliberty.data.repository.Or;
-import io.openliberty.data.repository.Select;
 import io.openliberty.data.repository.function.AbsoluteValue;
 import io.openliberty.data.repository.function.CharCount;
 import io.openliberty.data.repository.function.ElementCount;
@@ -43,7 +44,13 @@ import io.openliberty.data.repository.update.Assign;
 import io.openliberty.data.repository.update.Divide;
 import io.openliberty.data.repository.update.Multiply;
 import io.openliberty.data.repository.update.SubtractFrom;
+import jakarta.data.Limit;
+import jakarta.data.Order;
+import jakarta.data.Sort;
 import jakarta.data.exceptions.MappingException;
+import jakarta.data.page.PageRequest;
+import jakarta.data.repository.Find;
+import jakarta.data.repository.Select;
 
 /**
  * Capability that is specific to the version of Jakarta Data.
@@ -74,6 +81,12 @@ public class Data_1_1 implements DataVersionCompatibility {
         FUNCTION_CALLS.put(Extract.Field.WEEK.name(), "EXTRACT (WEEK FROM ");
         FUNCTION_CALLS.put(Extract.Field.YEAR.name(), "EXTRACT (YEAR FROM ");
     }
+
+    private static final Set<Class<?>> SPECIAL_PARAM_TYPES = //
+                    Set.of(Limit.class, Order.class,
+                           Sort.class, Sort[].class,
+                           PageRequest.class // TODO , Restriction.class
+                    );
 
     @Override
     @Trivial
@@ -127,9 +140,9 @@ public class Data_1_1 implements DataVersionCompatibility {
             if (ignoreCase ||
                 baseOp != Is.Op.Equal) // TODO also have an operation for collection containing?
                 throw new UnsupportedOperationException("The " + comparison.name() +
-                                                        " comparison that is applied to entity property " +
+                                                        " comparison that is applied to entity attribute " +
                                                         attrName +
-                                                        " is not supported for collection properties."); // TODO NLS (future)
+                                                        " is not supported for collection attributes."); // TODO NLS (future)
 
         switch (baseOp) {
             case Equal:
@@ -264,8 +277,20 @@ public class Data_1_1 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public boolean atLeast(int major, int minor) {
+        return major == 1 && minor <= 1;
+    }
+
+    @Override
+    @Trivial
     public Annotation getCountAnnotation(Method method) {
         return method.getAnnotation(Count.class);
+    }
+
+    @Override
+    @Trivial
+    public Class<?> getEntityClass(Find find) {
+        return find.value();
     }
 
     @Override
@@ -276,9 +301,14 @@ public class Data_1_1 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public String[] getSelections(Method method) {
-        Annotation select = method.getAnnotation(Select.class);
-        return select == null ? null : ((Select) select).value();
+    public String[] getSelections(AnnotatedElement element) {
+        Select[] selects = element.getAnnotationsByType(Select.class);
+        if (selects.length == 0)
+            return NO_SELECTIONS;
+        String[] values = new String[selects.length];
+        for (int i = 0; i < selects.length; i++)
+            values[i] = selects[i].value();
+        return values;
     }
 
     @Override
@@ -321,5 +351,23 @@ public class Data_1_1 implements DataVersionCompatibility {
             if (anno instanceof Or)
                 return true;
         return false;
+    }
+
+    @Override
+    @Trivial
+    public String specialParamsForFind() {
+        return "Limit, Order, Sort, Sort[], PageRequest, Restriction";
+    }
+
+    @Override
+    @Trivial
+    public String specialParamsForFindAndDelete() {
+        return "Limit, Order, Sort, Sort[], Restriction";
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<?>> specialParamTypes() {
+        return SPECIAL_PARAM_TYPES;
     }
 }

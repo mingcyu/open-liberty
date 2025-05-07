@@ -49,6 +49,8 @@ public class ConnectionPoolMetricsTest extends BaseTestClass {
     @ClassRule
     public static RepeatTests rt = FATSuite.testRepeatMPTel20(SERVER_NAME);
 	
+    //TODO switch to use ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.117.0
+    //TODO remove withDockerfileFromBuilder and instead create a dockerfile
 	@ClassRule
 	public static GenericContainer<?> container = new GenericContainer<>(new ImageFromDockerfile()
 			.withDockerfileFromBuilder(builder -> builder.from(IMAGE_NAME).copy("/etc/otelcol-contrib/config.yaml",
@@ -94,11 +96,9 @@ public class ConnectionPoolMetricsTest extends BaseTestClass {
         checkStrings(requestHttpServlet("/testJDBCApp/testJDBCServlet?operation=create", server),
                 new String[] { "sql: create table cities" });
         Log.info(c, testName, "------- connectionpool metrics should be available ------");
-        
+
 		// Allow time for the collector to receive and expose metrics
-		TimeUnit.SECONDS.sleep(4);
-        
-		matchStrings(getContainerCollectorMetrics(container), 
+		matchStringsWithRetries(() -> getContainerCollectorMetrics(container),
                 new String[] { "io_openliberty_connection_pool_handle_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
                         "io_openliberty_connection_pool_connection_free\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
                         "io_openliberty_connection_pool_connection_destroyed_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",

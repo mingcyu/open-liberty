@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* =============================================================================
  * Copyright (c) 2014, 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -9,7 +9,8 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ * =============================================================================
+ */
 package deliverydelay.web;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.Date;
 import java.util.Enumeration;
 
 import javax.jms.BytesMessage;
+import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -139,11 +141,11 @@ public class DeliveryDelayServlet extends HttpServlet {
         return topic;
     }
 
-    public void emptyQueue(QueueConnectionFactory qcf, Queue q) 
+    public void emptyQueue(ConnectionFactory cf, Queue q) 
         throws TestException {
        
         long messagesReceived = 0; 
-        try (JMSContext jmsContext = qcf.createContext(JMSContext.SESSION_TRANSACTED)) {
+        try (JMSContext jmsContext = cf.createContext(JMSContext.SESSION_TRANSACTED)) {
             JMSConsumer jmsConsumer = jmsContext.createConsumer(q);
             while ( jmsConsumer.receiveNoWait() != null) {messagesReceived++;}
             jmsContext.commit();
@@ -164,7 +166,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         return numMsgs;
     }
 
-    private static final long deliveryDelay = 10000;
+    private static final long defaultTestDeliveryDelay = 10000;
     
     
     /**
@@ -174,7 +176,7 @@ public class DeliveryDelayServlet extends HttpServlet {
      * @param producer
      * @param dest
      * @param send_msg
-     * @return the value of System.currentTimeMillis() from after the send call completed. This can be used as a basis for later checks for delay times.
+     * @return the value of System.currentTimeMillis() from when the send call is called. This can be used as a basis for later checks for delay times.
      * @throws JMSException
      */
     private long sendAndCheckDeliveryTime(
@@ -196,14 +198,14 @@ public class DeliveryDelayServlet extends HttpServlet {
 
         long sendDuration = afterSend - beforeSend;
 
-        if ( sendDuration >= deliveryDelay ) {
+        if ( sendDuration >= defaultTestDeliveryDelay ) {
             System.out.println(
                 "WARNING : The time taken to send the message was : " + sendDuration +
-                ", which more than delivery delay " + deliveryDelay + "."+
+                ", which more than delivery delay " + defaultTestDeliveryDelay + "."+
                 " This is too slow to meaningfully test the delivery delay. Please analyse the send time.");
         }
         
-        return afterSend;
+        return beforeSend;
     }
 
     //
@@ -381,13 +383,13 @@ public class DeliveryDelayServlet extends HttpServlet {
         	}
 
             JMSProducer jmsProducer = jmsContext.createProducer();
-            jmsProducer.setDeliveryDelay(deliveryDelay);
+            jmsProducer.setDeliveryDelay(defaultTestDeliveryDelay);
 
             TextMessage sentMessage = jmsContext.createTextMessage(methodName() + " at " + timeStamp());
 
-            long afterSend = this.sendAndCheckDeliveryTime(jmsProducer, destination, sentMessage);
+            long beforeSend = this.sendAndCheckDeliveryTime(jmsProducer, destination, sentMessage);
 
-            TextMessage receivedMessage = (TextMessage) jmsConsumer.receive(deliveryDelay * 2 );
+            TextMessage receivedMessage = (TextMessage) jmsConsumer.receive(defaultTestDeliveryDelay * 2 );
             long afterReceive = System.currentTimeMillis();
 
             // If necessary, unsubscribe the durable subscriber before we check the results. Just print a warning if this fails.
@@ -408,9 +410,9 @@ public class DeliveryDelayServlet extends HttpServlet {
                 throw new TestException("No message received, sentMessage:" + sentMessage);
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
                 throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if(afterReceive - afterSend < deliveryDelay )
-                throw new TestException("Message received to soon, afterSend:" + afterSend + " afterReceive" + afterReceive + " deliveryDelay:" + deliveryDelay
-                        + "\nreceivedMessage:" + receivedMessage);            
+            if(afterReceive - beforeSend < defaultTestDeliveryDelay )
+                throw new TestException("Message received too soon, beforeSend: " + beforeSend + " afterReceive: " + afterReceive + " deliveryDelay: " + defaultTestDeliveryDelay
+                        + "\nreceivedMessage:\n" + receivedMessage);            
 
             
             
@@ -457,22 +459,22 @@ public class DeliveryDelayServlet extends HttpServlet {
             QueueReceiver receiver = session.createReceiver(queue);
 
             QueueSender sender = session.createSender(queue);
-            sender.setDeliveryDelay(deliveryDelay);
+            sender.setDeliveryDelay(defaultTestDeliveryDelay);
 
             TextMessage sentMessage = session.createTextMessage(methodName() + " at " + timeStamp());
         	
-            long afterSend = sendAndCheckDeliveryTime(sender, queue, sentMessage);
+            long beforeSend = sendAndCheckDeliveryTime(sender, queue, sentMessage);
             
-            TextMessage receivedMessage = (TextMessage) receiver.receive(deliveryDelay * 2);
+            TextMessage receivedMessage = (TextMessage) receiver.receive(defaultTestDeliveryDelay * 2);
             long afterReceive = System.currentTimeMillis();
 
             if (receivedMessage == null)
                 throw new TestException("No message received, sentMessage:" + sentMessage);
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
                 throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if(afterReceive - afterSend < deliveryDelay )
-                throw new TestException("Message received to soon, afterSend:" + afterSend + " afterReceive" + afterReceive + " deliveryDelay:" + deliveryDelay
-                        + "\nreceivedMessage:" + receivedMessage);            
+            if(afterReceive - beforeSend < defaultTestDeliveryDelay )
+                throw new TestException("Message received to soon, beforeSend: " + beforeSend + " afterReceive: " + afterReceive + " deliveryDelay: " + defaultTestDeliveryDelay
+                        + "\nreceivedMessage:\n" + receivedMessage);            
     		
     	}
     	
@@ -538,13 +540,13 @@ public class DeliveryDelayServlet extends HttpServlet {
             }
 
             TopicPublisher publisher = session.createPublisher(topic);
-            publisher.setDeliveryDelay(deliveryDelay);
+            publisher.setDeliveryDelay(defaultTestDeliveryDelay);
 
             TextMessage sentMessage = session.createTextMessage(methodName() + " at " + timeStamp());
-            long afterSend = sendAndCheckDeliveryTime(publisher, topic, sentMessage);
+            long beforeSend = sendAndCheckDeliveryTime(publisher, topic, sentMessage);
             
             
-            TextMessage receivedMessage = (TextMessage) subscriber.receive(deliveryDelay * 2);
+            TextMessage receivedMessage = (TextMessage) subscriber.receive(defaultTestDeliveryDelay * 2);
             long afterReceive = System.currentTimeMillis();
 
             // If necessary, unsubscribe the durable subscriber before we check the results. Just print a warning if this fails.
@@ -568,9 +570,9 @@ public class DeliveryDelayServlet extends HttpServlet {
             	throw new TestException("No message received, sentMessage:" + sentMessage);
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
             	throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if(afterReceive - afterSend < deliveryDelay )
-            	throw new TestException("Message received to soon, afterSend:" + afterSend + " afterReceive" + afterReceive + " deliveryDelay:" + deliveryDelay
-                        + "\nreceivedMessage:" + receivedMessage);            
+            if(afterReceive - beforeSend < defaultTestDeliveryDelay )
+            	throw new TestException("Message received to soon, beforeSend: " + beforeSend + " afterReceive: " + afterReceive + " deliveryDelay: " + defaultTestDeliveryDelay
+                        + "\nreceivedMessage:\n" + receivedMessage);            
 
     	}
     	
@@ -578,119 +580,185 @@ public class DeliveryDelayServlet extends HttpServlet {
     	
      }
     
+	// ------------------------------------------------------------------------
 
+    // Methods to send messages with different DeliveryDelay values
+
+	/**
+	 * Internal method to send 2 message with different deliveryDelay values to a
+	 * destination. The second message will have a shorter deliveryDelay than the
+	 * first.
+	 *
+	 * @param connectionFactory
+	 * @param destination
+	 * @param messageTextStem   the base text to put into the sent messages. The
+	 *                          number of each message will be appended to this to
+	 *                          differentiate them
+	 * @param useSimplifiedAPI
+	 */
+	private void sendMessagesWithDifferentDeliveryDelays(ConnectionFactory connectionFactory,
+			Destination destination, String messageTextStem, boolean useSimplifiedAPI) throws Exception {
+
+		String expectedDeliveryTime_PropertyName = "ExpectedDeliveryTime";
+		long delay = Message.DEFAULT_DELIVERY_DELAY;
+
+		if (destination instanceof Queue)
+			emptyQueue(connectionFactory, (Queue) destination);
+		if (useSimplifiedAPI) {
+
+			try (JMSContext jmsContext = connectionFactory.createContext()) {
+				JMSProducer jmsProducer = jmsContext.createProducer();
+
+				delay = defaultTestDeliveryDelay * 2;
+				jmsProducer.setDeliveryDelay(delay);
+				jmsProducer.setProperty(expectedDeliveryTime_PropertyName,
+						(Calendar.getInstance().getTimeInMillis() + delay));
+				jmsProducer.send(destination, messageTextStem + "1");
+
+				delay = defaultTestDeliveryDelay;
+				jmsProducer.setDeliveryDelay(delay);
+				jmsProducer.setProperty(expectedDeliveryTime_PropertyName,
+						(Calendar.getInstance().getTimeInMillis() + delay));
+				jmsProducer.send(destination, messageTextStem + "2");
+
+			}
+
+		} else {
+
+			// Previously the classic API test used the older, domain-specific APIs.
+			// Here, we will use the JMS1.1 unified domain API as it means we can remove
+			// duplication.
+			// For completeness, we could return later to make this part use either type and
+			// test all the combinations.
+
+			try (Connection connection = connectionFactory.createConnection();
+					Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
+
+				connection.start();
+
+				MessageProducer messageProducer = session.createProducer(destination);
+				TextMessage sendMessage = session.createTextMessage();
+
+				delay = defaultTestDeliveryDelay * 2;
+				messageProducer.setDeliveryDelay(delay);
+				sendMessage.setText(messageTextStem + "1");
+				sendMessage.setLongProperty(expectedDeliveryTime_PropertyName,
+						(Calendar.getInstance().getTimeInMillis() + delay));
+				messageProducer.send(sendMessage);
+
+				delay = defaultTestDeliveryDelay;
+				messageProducer.setDeliveryDelay(delay);
+				sendMessage.setText(messageTextStem + "2");
+				sendMessage.setLongProperty(expectedDeliveryTime_PropertyName,
+						(Calendar.getInstance().getTimeInMillis() + delay));
+				messageProducer.send(sendMessage);
+
+			}
+
+		}
+
+		return;
+	}
+    
+	// Externally visible variants oftestDeliveryDelayForDifferentDelays()
+	
+	// Simplified API variants
+	
     public void testDeliveryDelayForDifferentDelays(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        JMSContext jmsContext = jmsQCFBindings.createContext();
-
+    	
         Queue queue = (Queue) new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
-        emptyQueue(jmsQCFBindings, queue);
-
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        jmsProducer.setDeliveryDelay(5000);
-        jmsProducer.send(queue, "QueueBindingsMessage1");
-
-        jmsProducer.setDeliveryDelay(1000);
-        jmsProducer.send(queue, "QueueBindingsMessage2");
+    	sendMessagesWithDifferentDeliveryDelays(jmsQCFBindings, queue, "QueueBindingsMessage", true);
 
         Thread.sleep(8000);
-
-        jmsContext.close();
+        
+        return;
     }
 
     public void testDeliveryDelayForDifferentDelays_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsQCFTCP.createContext();
-
+    	
         Queue queue = (Queue) new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
-        emptyQueue(jmsQCFTCP, queue);
-
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        jmsProducer.setDeliveryDelay(5000);
-        jmsProducer.send(queue, "QueueTCPMessage1");
-
-        jmsProducer.setDeliveryDelay(1000);
-        jmsProducer.send(queue, "QueueTCPMessage2");
+    	sendMessagesWithDifferentDeliveryDelays(jmsQCFTCP, queue, "QueueTCPMessage", true);
 
         Thread.sleep(8000);
-
-        jmsContext.close();
+        
+        return;
     }
 
     public void testDeliveryDelayForDifferentDelaysTopic(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsTCFBindings.createContext();
-
+    	
         Topic topic = (Topic) new InitialContext().lookup("java:comp/env/eis/topic");
-
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        int delay = 14700;
-        jmsProducer.setDeliveryDelay(delay);
-
-        StreamMessage sm = jmsContext.createStreamMessage();
-        String msgText = "TopicBindingsMessage1";
-        sm.writeString(msgText);
-        sm.writeLong( Calendar.getInstance().getTimeInMillis() + delay );
-        jmsProducer.send(topic,sm);
-
-        delay = 10100;
-        jmsProducer.setDeliveryDelay(delay);
-
-        sm = jmsContext.createStreamMessage();
-        msgText = "TopicBindingsMessage2";
-        sm.writeString(msgText);
-        sm.writeLong( Calendar.getInstance().getTimeInMillis() + delay );
-        jmsProducer.send(topic,sm);
+    	sendMessagesWithDifferentDeliveryDelays(jmsTCFBindings, topic, "TopicBindingsMessage", true);
 
         Thread.sleep(20000);
 
-        jmsContext.close();
+    	return;
     }
 
     public void testDeliveryDelayForDifferentDelaysTopic_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsTCFTCP.createContext();
-
         Topic topic = (Topic) new InitialContext().lookup("java:comp/env/eis/topic");
+    	sendMessagesWithDifferentDeliveryDelays(jmsTCFTCP, topic, "TopicTCPMessage", true);
+    	
+        Thread.sleep(20000);
 
-        JMSProducer jmsProducer = jmsContext.createProducer();
+    	return;
+    }
+    
+    // Classic API variants
+    
+    public void testDeliveryDelayForDifferentDelaysClassicApi(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        int delay = 15500;
-        jmsProducer.setDeliveryDelay(delay);
+        Queue queue = (Queue) new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
 
-        StreamMessage sm = jmsContext.createStreamMessage();
-        String msgText = "TopicTCPMessage1";
-        sm.writeString(msgText);
-        sm.writeLong( Calendar.getInstance().getTimeInMillis() + delay );
-        jmsProducer.send(topic,sm);
+    	sendMessagesWithDifferentDeliveryDelays(jmsQCFBindings, queue, "QueueBindingsMessage-ClassicApi", false);
 
-        delay = 11100;
-        jmsProducer.setDeliveryDelay(delay);
+        Thread.sleep(8000);
+          
+        return;
+    }
 
-        sm = jmsContext.createStreamMessage();
-        msgText = "TopicTCPMessage2";
-        sm.writeString(msgText);
-        sm.writeLong( Calendar.getInstance().getTimeInMillis() + delay );
-        jmsProducer.send(topic,sm);
+    public void testDeliveryDelayForDifferentDelaysClassicApi_Tcp(
+        HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	
+        Queue queue = (Queue) new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
+    	sendMessagesWithDifferentDeliveryDelays(jmsQCFTCP, queue, "QueueTCPMessage-ClassicApi", false);
+
+        Thread.sleep(8000);
+        
+        return;
+    }
+
+    public void testDeliveryDelayForDifferentDelaysTopicClassicApi(
+        HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	
+        Topic topic = (Topic) new InitialContext().lookup("java:comp/env/eis/topic");
+    	sendMessagesWithDifferentDeliveryDelays(jmsTCFBindings, topic, "TopicBindingsMessage-ClassicApi", false);
+
 
         Thread.sleep(20000);
 
-        jmsContext.close();
+        return;
     }
 
+    public void testDeliveryDelayForDifferentDelaysTopicClassicApi_Tcp(
+        HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	
+        Topic topic = (Topic) new InitialContext().lookup("java:comp/env/eis/topic");
+    	sendMessagesWithDifferentDeliveryDelays(jmsTCFTCP, topic, "TopicTCPMessage-ClassicApi", false);
+
+        Thread.sleep(20000);
+        
+        return;
+    }
+    
+	// ------------------------------------------------------------------------
+
+    
     public void testDeliveryMultipleMsgs(
             HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
         emptyQueue(jmsQCFBindings, jmsQueue);
@@ -724,7 +792,7 @@ public class DeliveryDelayServlet extends HttpServlet {
                 jmsConsumers[i] = jmsContext.createConsumer(destinations[i]);
 
             JMSProducer jmsProducer = jmsContext.createProducer();
-            jmsProducer.setDeliveryDelay(deliveryDelay);
+            jmsProducer.setDeliveryDelay(defaultTestDeliveryDelay);
 
             TextMessage[] sentMessages = new TextMessage[destinations.length];
             long beforeSend = System.currentTimeMillis();
@@ -733,8 +801,8 @@ public class DeliveryDelayServlet extends HttpServlet {
                 jmsProducer.send(destinations[i], sentMessages[i]);
             }
             long afterSend = System.currentTimeMillis();
-            if (afterSend - beforeSend > deliveryDelay)
-                throw new TestException("Test Infrastructure running too slowly to meangfully test delivery delay beforeSend:"+beforeSend+" afterSend:"+afterSend+" deliveryDelay:"+deliveryDelay);
+            if (afterSend - beforeSend > defaultTestDeliveryDelay)
+                throw new TestException("Test Infrastructure running too slowly to meangfully test delivery delay beforeSend:"+beforeSend+" afterSend:"+afterSend+" deliveryDelay:"+defaultTestDeliveryDelay);
 
             for (int i = 0; i < destinations.length; i++) {
                 TextMessage receivedMessage = (TextMessage) jmsConsumers[i].receive(30000);
@@ -743,8 +811,8 @@ public class DeliveryDelayServlet extends HttpServlet {
                     throw new TestException("No message received("+i+"), sentMessage:" + sentMessages[i]); 
                 if (!receivedMessage.getText().equals(sentMessages[i].getBody(String.class)))
                     throw new TestException("Wrong message ("+i+") received:" + receivedMessage + " sent:" + sentMessages[i]);
-                if(afterReceive - beforeSend < deliveryDelay )
-                    throw new TestException("Message received to soon, afterSend:"+afterSend+" afterReceive"+afterReceive+" deliveryDelay:"+deliveryDelay
+                if(afterReceive - beforeSend < defaultTestDeliveryDelay )
+                    throw new TestException("Message received to soon, afterSend:"+afterSend+" afterReceive"+afterReceive+" deliveryDelay:"+defaultTestDeliveryDelay
                             +"\nreceivedMessage:" + receivedMessage);
             } 
         }
@@ -849,6 +917,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         }
     }
 
+    // TODO: Why do we have this when we could be using the deliveryDelay variable instead? Remove this later.
     private static final int DELIVERY_DELAY = 2000;
 
     public void testTransactedSend_B(HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException, InterruptedException {
@@ -881,15 +950,15 @@ public class DeliveryDelayServlet extends HttpServlet {
             JMSConsumer jmsConsumer = jmsContext.createConsumer(destination);
 
             JMSProducer jmsProducer = jmsContext.createProducer();
-            jmsProducer.setDeliveryDelay(deliveryDelay);
+            jmsProducer.setDeliveryDelay(defaultTestDeliveryDelay);
 
             TextMessage sentMessage = jmsContext.createTextMessage(methodName() + " at " + timeStamp());
             long beforeSend = System.currentTimeMillis();
             jmsProducer.send(destination, sentMessage);
             long afterSend = System.currentTimeMillis();
-            if (afterSend - beforeSend > deliveryDelay)
+            if (afterSend - beforeSend > defaultTestDeliveryDelay)
                 throw new TestException("Test Infrastructure running too slowly to meangfully test delivery delay beforeSend:" + beforeSend + " afterSend:" + afterSend
-                        + " deliveryDelay:" + deliveryDelay);
+                        + " deliveryDelay:" + defaultTestDeliveryDelay);
             
             final long commitDelay = 1000;
             Thread.sleep(commitDelay);
@@ -914,8 +983,8 @@ public class DeliveryDelayServlet extends HttpServlet {
             
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
                 throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if (afterReceive - beforeSend < deliveryDelay)
-                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforeSend:" + beforeSend + " deliveryDelay:" + deliveryDelay
+            if (afterReceive - beforeSend < defaultTestDeliveryDelay)
+                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforeSend:" + beforeSend + " deliveryDelay:" + defaultTestDeliveryDelay
                         + "\nreceivedMessage:" + receivedMessage);
             
         }
@@ -1191,210 +1260,412 @@ public class DeliveryDelayServlet extends HttpServlet {
         }
     }
 
+    
+    // Tests for delayed message persistence over server restart.
+    // These tests are each in two parts; a sender part that sends 2 messages, and a receiver part that attempts to receive the messages.
+    // The methods are driven from the Test class, which calls the sender method, restarts the server, and then calls the receiver method.
+    
+    
     // new tests for simplified API
+    
+    // New consolidated simplified API persistent test sender method
+    private void testPersistentMessageSimplifiedAPI_send(ConnectionFactory cf,
+    													Destination persistentMessageDestination,
+    													Destination nonpersistentMessageDestination,
+    													String identifier)
+    													throws Exception {
+    	
+    	boolean pubSub = persistentMessageDestination instanceof Topic;
+    	JMSConsumer jmsConsumer1 = null, jmsConsumer2 = null;
+    	
+    	try (JMSContext jmsContext = cf.createContext()) {
+
+    		  JMSProducer jmsProducer = jmsContext.createProducer();
+
+    		  // If we are sending messages to Topic destinations then there needs to be subscriptions to receive the messages
+    		  if (pubSub) {
+    		    jmsConsumer1 = jmsContext.createDurableConsumer((Topic) persistentMessageDestination, "durPersMsg1_" + identifier);
+    		    jmsConsumer2 = jmsContext.createDurableConsumer((Topic) nonpersistentMessageDestination, "durPersMsg2_" + identifier);
+    		  }
+    		  else {
+    			  // empty the message queue before sending the new messages.
+    			  // This is replicating previous behaviour, but will probably need to be removed if we re-work the tests to run concurrently.
+    			  emptyQueue(cf, (Queue)persistentMessageDestination);
+    			  emptyQueue(cf, (Queue)nonpersistentMessageDestination);
+    		  }
+    		  
+    		  // Send the messages
+    		  jmsProducer.setDeliveryDelay(defaultTestDeliveryDelay).setDeliveryMode(DeliveryMode.PERSISTENT)
+    	      .send(persistentMessageDestination, "PersistentMessage_" + identifier);
+
+    		  jmsProducer.setDeliveryDelay(defaultTestDeliveryDelay).setDeliveryMode(DeliveryMode.NON_PERSISTENT)
+    		  .send(nonpersistentMessageDestination, "NonPersistentMessage_" + identifier);
+
+    	  // If we're running in the pub/sub domain then close the subscribers (the subscriptions will remain open
+    	  if (pubSub) {
+    	    jmsConsumer1.close();
+    	    jmsConsumer2.close();
+    	  }
+
+    	}
+    	
+    	return;
+    }
+    
+    // New consolidated simplified API persistent test receiver method
+    private boolean testPersistentMessageSimplifiedAPI_receive(ConnectionFactory cf,
+			Destination persistentMessageDestination,
+			Destination nonpersistentMessageDestination,
+			String identifier)
+			throws Exception {
+    	
+    	boolean pubSub = persistentMessageDestination instanceof Topic;
+    	boolean testPassed = true;
+    	
+        String subscriber1Name = "durPersMsg1_" + identifier;
+        String subscriber2Name = "durPersMsg2_" + identifier;
+    	
+    	JMSConsumer jmsConsumer1 = null, jmsConsumer2 = null;
+    	
+    	try (JMSContext jmsContext = cf.createContext()) {
+    		
+    		if (pubSub) {
+    		    jmsConsumer1 = jmsContext.createDurableConsumer((Topic) persistentMessageDestination, subscriber1Name);
+    		    jmsConsumer2 = jmsContext.createDurableConsumer((Topic) nonpersistentMessageDestination, subscriber2Name);
+    		}
+    		else {
+    	        jmsConsumer1 = jmsContext.createConsumer(persistentMessageDestination);
+    	        jmsConsumer2 = jmsContext.createConsumer(nonpersistentMessageDestination);
+    		}
+    		
+    		// Try to receive a message from each destination. Wait for twice the default deliveryDelay time if required
+    		// Only the persistentMessageDestination should receive something
+    		
+            TextMessage recMsg1 = (TextMessage) jmsConsumer1.receive(defaultTestDeliveryDelay * 2);
+            TextMessage recMsg2 = (TextMessage) jmsConsumer2.receive(defaultTestDeliveryDelay * 2);
+
+            // and check whether we got the expected results
+            if ( ((recMsg1 == null) || // If we failed to get a persistent message
+                    (recMsg1.getText() == null) || // or the message had no payload...
+                    !recMsg1.getText().equals("PersistentMessage_" + identifier)) || // ...or the payload wasn't what we expected (implying it's a message from some other test or something)
+                   (recMsg2 != null) ) { // or we received a message from the nonpersistentMessageDestination (as the message there should not have persisted over the server restart)
+                  testPassed = false; // ...then we need to mark the test as failed.
+              }
+            
+            // tidy up
+            jmsConsumer1.close();
+            jmsConsumer2.close();
+            
+            if (pubSub) {
+                jmsContext.unsubscribe(subscriber1Name);
+                jmsContext.unsubscribe(subscriber2Name);
+            }
+
+    	}
+    	
+        return testPassed;
+    }
+    
+    
+    
+    private String testPersistentQueueMessageIdentifier = "testPersistentQueueMessage";
 
     public void testPersistentMessage(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsQCFBindings.createContext();
-        JMSConsumer jmsConsumer = jmsContext.createConsumer(jmsQueue);
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        emptyQueue(jmsQCFBindings, jmsQueue);
-        emptyQueue(jmsQCFBindings, jmsQueue1);
-
-        jmsProducer.setDeliveryMode(DeliveryMode.PERSISTENT).setDeliveryDelay(1000);
-
-        jmsProducer.send(jmsQueue, "testPersistentMessage_PersistentMsg");
-
-        jmsProducer.setDeliveryDelay(1000).setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        jmsProducer.send(jmsQueue1, "testPersistentMessage_NonPersistentMsg");
-
-        jmsConsumer.close();
-        jmsContext.close();
+    	// Originally used message text "testPersistentMessage_PersistentMsg" "testPersistentMessage_NonPersistentMsg"
+    	// jmsQCFBindings, jmsQueue, jmsQueue1
+    	
+    	testPersistentMessageSimplifiedAPI_send(jmsQCFBindings, jmsQueue, jmsQueue1, testPersistentQueueMessageIdentifier);
+    	
+    	return;
+    	
     }
 
     public void testPersistentMessageReceive(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        boolean testFailed = false;
+    	boolean testPassed = testPersistentMessageSimplifiedAPI_receive(jmsQCFBindings, jmsQueue, jmsQueue1, testPersistentQueueMessageIdentifier);
 
-        JMSContext jmsContext = jmsQCFBindings.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createConsumer(jmsQueue);
-        JMSConsumer jmsConsumer2 = jmsContext.createConsumer(jmsQueue1);
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        TextMessage recMsg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage recMsg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((recMsg1 == null) ||
-              (recMsg1.getText() == null) ||
-              !recMsg1.getText().equals("testPersistentMessage_PersistentMsg")) ||
-             (recMsg2 != null) ) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-        jmsContext.close();
-
-        if ( testFailed ) {
+        if ( !testPassed ) {
             throw new Exception("testPersistentMessageReceive failed");
         }
+        
+        return;
     }
+
+    private String testPersistentQueueMessageTcpIdentifier = "testPersistentQueueMessageTcp";
 
     public void testPersistentMessage_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	// Originally used message text "testPersistentMessage_PersistentMsgTcp" "testPersistentMessage_NonPersistentMsgTcp"
+    	// jmsQCFTCP, jmsQueue, jmsQueue1
+    	
+    	testPersistentMessageSimplifiedAPI_send(jmsQCFTCP, jmsQueue, jmsQueue1, testPersistentQueueMessageTcpIdentifier);
 
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsQCFTCP.createContext();
-        JMSConsumer jmsConsumer = jmsContext.createConsumer(jmsQueue);
-        JMSProducer jmsProducer = jmsContext.createProducer();
-        emptyQueue(jmsQCFTCP, jmsQueue);
-        emptyQueue(jmsQCFTCP, jmsQueue1);
-
-        jmsProducer.setDeliveryMode(DeliveryMode.PERSISTENT).setDeliveryDelay(1000);
-        jmsProducer.send(jmsQueue, "testPersistentMessage_PersistentMsgTcp");
-
-        jmsProducer.setDeliveryDelay(1000).setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        jmsProducer.send(jmsQueue1, "testPersistentMessage_NonPersistentMsgTcp");
-
-        jmsConsumer.close();
-        jmsContext.close();
+    	return;
     }
 
     public void testPersistentMessageReceive_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        boolean testFailed = false;
+    	boolean testPassed = testPersistentMessageSimplifiedAPI_receive(jmsQCFTCP, jmsQueue, jmsQueue1, testPersistentQueueMessageTcpIdentifier);
 
-        JMSContext jmsContext = jmsQCFTCP.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createConsumer(jmsQueue);
-        JMSConsumer jmsConsumer2 = jmsContext.createConsumer(jmsQueue1);
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        TextMessage recMsg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage recMsg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((recMsg1 == null) ||
-              (recMsg1.getText() == null) || 
-              !recMsg1.getText().equals("testPersistentMessage_PersistentMsgTcp")) ||
-             (recMsg2 != null) ) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-        jmsContext.close();
-
-        if ( testFailed ) {
+        if ( !testPassed ) {
             throw new Exception("testPersistentMessageReceive_Tcp failed");
         }
+        
+        return;
     }
 
+    private String testPersistentTopicMessageIdentifier = "testPersistentTopicMessage";
+    
     public void testPersistentMessageTopic(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	// Originally used message text "testPersistentMessage_PersistentMsgTopic" "testPersistentMessage_NonPersistentMsgTopic"
+    	// jmsTCFBindings, jmsTopic, jmsTopic1
 
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsTCFBindings.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createDurableConsumer(jmsTopic, "durPersMsg1");
-        JMSConsumer jmsConsumer2 = jmsContext.createDurableConsumer(jmsTopic1, "durPersMsg2");
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        jmsProducer.setDeliveryMode(DeliveryMode.PERSISTENT) .setDeliveryDelay(1000);
-        jmsProducer.send(jmsTopic, "testPersistentMessage_PersistentMsgTopic");
-
-        jmsProducer.setDeliveryDelay(1000).setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        jmsProducer.send(jmsTopic1, "testPersistentMessage_NonPersistentMsgTopic");
-
-        // First half of test .. verification in the second half.
+    	testPersistentMessageSimplifiedAPI_send(jmsTCFBindings, jmsTopic, jmsTopic1, testPersistentTopicMessageIdentifier);
+    	
+    	return;
     }
 
     public void testPersistentMessageReceiveTopic(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        boolean testFailed = false;
+    	boolean testPassed = testPersistentMessageSimplifiedAPI_receive(jmsTCFBindings, jmsTopic, jmsTopic1, testPersistentTopicMessageIdentifier);
 
-        JMSContext jmsContext = jmsTCFBindings.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createDurableConsumer(jmsTopic, "durPersMsg1");
-        JMSConsumer jmsConsumer2 = jmsContext.createDurableConsumer(jmsTopic1, "durPersMsg2");
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        TextMessage recMsg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage recMsg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((recMsg1 == null) ||
-              (recMsg1.getText() == null) ||
-              !recMsg1.getText().equals("testPersistentMessage_PersistentMsgTopic")) ||
-             (recMsg2 != null)) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-        jmsContext.unsubscribe("durPersMsg1");
-        jmsContext.unsubscribe("durPersMsg2");
-        jmsContext.close();
-
-        if ( testFailed ) {
+        if ( !testPassed ) {
             throw new Exception("testPersistentMessageReceiveTopic failed");
         }
+        
+        return;
     }
 
+    private String testPersistentTopicMessageTcpIdentifier = "testPersistentTopicMessageTcp";
+    
     public void testPersistentMessageTopic_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        JMSContext jmsContext = jmsTCFTCP.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createDurableConsumer(jmsTopic, "durPersMsgTcp1");
-        JMSConsumer jmsConsumer2 = jmsContext.createDurableConsumer(jmsTopic1, "durPersMsgTcp2");
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        jmsProducer.setDeliveryMode(DeliveryMode.PERSISTENT).setDeliveryDelay(1000);
-        jmsProducer.send(jmsTopic, "testPersistentMessage_PersistentMsgTopicTcp");
-
-        jmsProducer.setDeliveryDelay(1000).setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        jmsProducer.send(jmsTopic1, "testPersistentMessage_NonPersistentMsgTopicTcp");
-
-        // First half of test .. verification in the second half.
+    	// Originally used message text "testPersistentMessage_PersistentMsgTopicTcp" "testPersistentMessage_NonPersistentMsgTopicTcp"
+    	// jmsTCFTCP, jmsTopic, jmsTopic1
+    	
+    	testPersistentMessageSimplifiedAPI_send(jmsTCFTCP, jmsTopic, jmsTopic1, testPersistentTopicMessageTcpIdentifier);
+    	
+    	return;
     }
 
     public void testPersistentMessageReceiveTopic_Tcp(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        boolean testFailed = false;
+    	boolean testPassed = testPersistentMessageSimplifiedAPI_receive(jmsTCFTCP, jmsTopic, jmsTopic1, testPersistentTopicMessageTcpIdentifier);
 
-        JMSContext jmsContext = jmsTCFTCP.createContext();
-        JMSConsumer jmsConsumer1 = jmsContext.createDurableConsumer(jmsTopic, "durPersMsgTcp1");
-        JMSConsumer jmsConsumer2 = jmsContext.createDurableConsumer(jmsTopic1, "durPersMsgTcp2");
-        JMSProducer jmsProducer = jmsContext.createProducer();
-
-        TextMessage recMsg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage recMsg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((recMsg1 == null) ||
-              (recMsg1.getText() == null) ||
-              !recMsg1.getText().equals("testPersistentMessage_PersistentMsgTopicTcp")) ||
-             (recMsg2 != null) ) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-        jmsContext.unsubscribe("durPersMsgTcp1");
-        jmsContext.unsubscribe("durPersMsgTcp2");
-        jmsContext.close();
-
-        if ( testFailed ) {
+        if ( !testPassed ) {
             throw new Exception("testPersistentMessageStoreReceiveTopic_Tcp failed");
         }
+        
+        return;
     }
 
+
+    // Old tests for classic API
+    // The new consolidated versions use the JMS1.1 unified domain objects instead of the older JMS1.02 domain-specific objects.
+    
+    
+    // New consolidated classic API persistent test sender method
+    private boolean testPersistentMessageClassicAPI_send(ConnectionFactory cf,
+			Destination persistentMessageDestination,
+			Destination nonpersistentMessageDestination,
+			String identifier)
+			throws Exception {
+    	
+    	// If we are sending pub/sub messages then we need to ensure there are durable subscribers that can receive the messages.
+    	MessageConsumer consumer1 = null, consumer2 = null;
+
+    	boolean pubSub = persistentMessageDestination instanceof Topic;
+    	boolean testPassed = true;
+    	
+        String subscriber1Name = "durPersMsg1_" + identifier;
+        String subscriber2Name = "durPersMsg2_" + identifier;
+
+        Connection connection = cf.createConnection();
+        connection.start();
+        
+        Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+        
+        MessageProducer producer1 = session.createProducer(persistentMessageDestination);
+        MessageProducer producer2 = session.createProducer(nonpersistentMessageDestination);
+
+        if (pubSub) {
+        	consumer1 = session.createDurableConsumer((Topic)persistentMessageDestination, subscriber1Name);
+           	consumer2 = session.createDurableConsumer((Topic)nonpersistentMessageDestination, subscriber2Name);
+        }
+        else {
+        	emptyQueue(cf, (Queue)persistentMessageDestination);
+        	emptyQueue(cf, (Queue)nonpersistentMessageDestination);
+        }
+
+        producer1.setDeliveryMode(DeliveryMode.PERSISTENT);
+        producer1.setDeliveryDelay(defaultTestDeliveryDelay);
+        TextMessage msg1 = session.createTextMessage("PersistentMessage_" + identifier);
+        producer1.send(msg1);
+
+        producer2.setDeliveryDelay(defaultTestDeliveryDelay);
+        producer2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        TextMessage msg2 = session.createTextMessage("NonPersistentMessage_" + identifier);
+        producer2.send(msg2);
+
+
+        // If we're running in the pub/sub domain then close the subscribers (the subscriptions will remain open
+        if (pubSub) {
+        	consumer1.close();
+        	consumer2.close();
+        }
+        
+        session.close();
+        connection.close();
+        
+        return testPassed;
+    }
+    
+    // New consolidated classic API persistent test receiver method
+    private boolean testPersistentMessageClassicAPI_receive(ConnectionFactory cf,
+			Destination persistentMessageDestination,
+			Destination nonpersistentMessageDestination,
+			String identifier)
+			throws Exception {
+    	
+    	boolean pubSub = persistentMessageDestination instanceof Topic;
+    	boolean testPassed = true;
+    	
+        String subscriber1Name = "durPersMsg1_" + identifier;
+        String subscriber2Name = "durPersMsg2_" + identifier;
+        
+        MessageConsumer consumer1 = null, consumer2 = null;
+        
+        
+        Connection connection = cf.createConnection();
+        connection.start();
+        
+        Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+        
+        if (pubSub) {
+		    consumer1 = session.createDurableConsumer((Topic) persistentMessageDestination, subscriber1Name);
+		    consumer2 = session.createDurableConsumer((Topic) nonpersistentMessageDestination, subscriber2Name);
+		}
+		else {
+			consumer1 = session.createConsumer(persistentMessageDestination);
+			consumer2 = session.createConsumer(nonpersistentMessageDestination);
+		}
+        
+		// Try to receive a message from each destination. Wait for twice the default deliveryDelay time if required
+		// Only the persistentMessageDestination should receive something
+		
+        TextMessage recMsg1 = (TextMessage) consumer1.receive(defaultTestDeliveryDelay * 2);
+        TextMessage recMsg2 = (TextMessage) consumer2.receive(defaultTestDeliveryDelay * 2);
+        
+        // and check whether we got the expected results
+        if ( ((recMsg1 == null) || // If we failed to get a persistent message
+                (recMsg1.getText() == null) || // or the message had no payload...
+                !recMsg1.getText().equals("PersistentMessage_" + identifier)) || // ...or the payload wasn't what we expected (implying it's a message from some other test or something)
+               (recMsg2 != null) ) { // or we received a message from the nonpersistentMessageDestination (as the message there should not have persisted over the server restart)
+              testPassed = false; // ...then we need to mark the test as failed.
+          }
+
+        // Tidy up
+        consumer1.close();
+        consumer2.close();
+        
+        if (pubSub) {
+        	session.unsubscribe(subscriber1Name);
+        	session.unsubscribe(subscriber2Name);
+        }
+        
+        return testPassed;
+    }
+    
+    
+    private String testPersistentQueueMessageClassicIdentifier = "testPersistentQueueMessageClassic";
+
+    public void testPersistentMessageClassicApi(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+    	
+    	testPersistentMessageClassicAPI_send(jmsQCFBindings, jmsQueue, jmsQueue1, testPersistentQueueMessageClassicIdentifier);
+    	
+    	return;
+        }
+
+        public void testPersistentMessageReceiveClassicApi(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	boolean testPassed = testPersistentMessageClassicAPI_receive(jmsQCFBindings, jmsQueue, jmsQueue1, testPersistentQueueMessageClassicIdentifier);
+
+            if ( !testPassed ) {
+                throw new Exception("testPersistentMessageReceiveClassicApi failed");
+            }
+        }
+        
+
+        private String testPersistentQueueMessageClassicTcpIdentifier = "testPersistentQueueMessageClassicTcp";
+
+        public void testPersistentMessageClassicApi_Tcp(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	testPersistentMessageClassicAPI_send(jmsQCFTCP, jmsQueue, jmsQueue1, testPersistentQueueMessageClassicTcpIdentifier);
+        	
+        	return;
+        }
+
+        public void testPersistentMessageReceiveClassicApi_Tcp(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	boolean testPassed = testPersistentMessageClassicAPI_receive(jmsQCFTCP, jmsQueue, jmsQueue1, testPersistentQueueMessageClassicTcpIdentifier);
+
+            if ( !testPassed ) {
+                throw new Exception("testPersistentMessageReceiveClassicApi failed");
+            }
+        }
+
+        
+        private String testPersistentTopicMessageClassicIdentifier = "testPersistentTopicMessageClassic";
+
+        public void testPersistentMessageTopicClassicApi(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	testPersistentMessageClassicAPI_send(jmsTCFBindings, jmsTopic, jmsTopic1, testPersistentTopicMessageClassicIdentifier);
+        	
+        	return;
+        }
+
+        public void testPersistentMessageReceiveTopicClassicApi(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	boolean testPassed = testPersistentMessageClassicAPI_receive(jmsTCFBindings, jmsTopic, jmsTopic1, testPersistentTopicMessageClassicIdentifier);
+
+            if ( !testPassed ) {
+                throw new Exception("testPersistentMessageReceiveTopicClassicApi failed");
+            }
+        }
+
+        private String testPersistentTopicMessageClassicTcpIdentifier = "testPersistentTopicMessageClassicTcp";
+
+        public void testPersistentMessageTopicClassicApi_Tcp(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	testPersistentMessageClassicAPI_send(jmsTCFTCP, jmsTopic, jmsTopic1, testPersistentTopicMessageClassicTcpIdentifier);
+        	
+        	return;
+        }
+
+        public void testPersistentMessageReceiveTopicClassicApi_Tcp(
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        	boolean testPassed = testPersistentMessageClassicAPI_receive(jmsTCFTCP, jmsTopic, jmsTopic1, testPersistentTopicMessageClassicTcpIdentifier);
+
+            if ( !testPassed ) {
+                throw new Exception("testPersistentMessageStoreReceiveTopicClassicApi_Tcp failed");
+            }
+        }
+    
+    
     public void testTimeToLiveWithDeliveryDelay(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -2680,124 +2951,6 @@ public class DeliveryDelayServlet extends HttpServlet {
     }
 
 
-    public void testDeliveryDelayForDifferentDelaysClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        QueueConnection con = jmsQCFBindings.createQueueConnection();
-        con.start();
-
-        Queue queue = (Queue)
-            new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
-        emptyQueue(jmsQCFBindings, queue);
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        QueueSender send = sessionSender.createSender(queue);
-        send.setDeliveryDelay(5000);
-        send.send( sessionSender.createTextMessage("QueueBindingsMessage1-ClassicApi") );
-        send.setDeliveryDelay(1000);
-        send.send( sessionSender.createTextMessage("QueueBindingsMessage2-ClassicApi") );
-
-        Thread.sleep(8000);
-
-        send.close();
-        con.close();
-    }
-
-    public void testDeliveryDelayForDifferentDelaysClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        QueueConnection con = jmsQCFTCP.createQueueConnection();
-        con.start();
-
-        Queue queue = (Queue)
-            new InitialContext().lookup("java:comp/env/jndi_INPUT_Q");
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        emptyQueue(jmsQCFTCP, queue);
-
-        QueueSender send = sessionSender.createSender(queue);
-        send.setDeliveryDelay(5000);
-        send.send( sessionSender.createTextMessage("QueueTCPMessage1-ClassicApi") );
-        send.setDeliveryDelay(1000);
-        send.send( sessionSender.createTextMessage("QueueTCPMessage2-ClassicApi") );
-
-        Thread.sleep(8000);
-
-        send.close();
-        con.close();
-    }
-
-    public void testDeliveryDelayForDifferentDelaysTopicClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        TopicConnection con = jmsTCFBindings.createTopicConnection();
-        con.start();
-
-        Topic topic = (Topic)
-            new InitialContext().lookup("java:comp/env/eis/topic");
-
-        TopicSession session = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicPublisher publisher = session.createPublisher(topic);
-
-        int delay = 15100;
-        publisher.setDeliveryDelay(delay);
-
-        StreamMessage sm = session.createStreamMessage();
-        String msgText = "TopicBindingsMessage1-ClassicApi";
-        sm.writeString(msgText);
-        sm.writeLong( Calendar.getInstance().getTimeInMillis() + delay );
-        publisher.publish(sm);
-
-        delay = 11200;
-        publisher.setDeliveryDelay(delay);
-
-        sm = session.createStreamMessage();
-        msgText = "TopicBindingsMessage2-ClassicApi";
-        sm.writeString(msgText);
-        sm.writeLong(Calendar.getInstance().getTimeInMillis()+delay);
-        publisher.publish(sm);
-
-        Thread.sleep(20000);
-
-        con.close();
-    }
-
-    public void testDeliveryDelayForDifferentDelaysTopicClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        TopicConnection con = jmsTCFTCP.createTopicConnection();
-        con.start();
-
-        Topic topic = (Topic) new InitialContext().lookup("java:comp/env/eis/topic");
-
-        TopicSession session = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicPublisher publisher = session.createPublisher(topic);
-
-        int delay = 15900;
-        publisher.setDeliveryDelay(delay);
-
-        StreamMessage sm = session.createStreamMessage();
-        String msgText = "TopicTCPMessage1-ClassicApi";
-        sm.writeString(msgText);
-        sm.writeLong(Calendar.getInstance().getTimeInMillis() + delay);
-        publisher.publish(sm);
-
-        delay = 10400;
-        publisher.setDeliveryDelay(delay);
-
-        sm = session.createStreamMessage();
-        msgText = "TopicTCPMessage2-ClassicApi";
-        sm.writeString(msgText);
-        sm.writeLong(Calendar.getInstance().getTimeInMillis() + delay);
-        publisher.publish(sm);
-
-        Thread.sleep(20000);
-
-        con.close();
-    }
 
     public void testDeliveryMultipleMsgsClassicApi(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -2818,7 +2971,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         // In classic API we can create sender for a single queue.
 
         QueueSender send = sessionSender.createSender(jmsQueue1);
-        send.setDeliveryDelay(deliveryDelay);
+        send.setDeliveryDelay(defaultTestDeliveryDelay);
 
         TextMessage sendMsg1 =
             sessionSender.createTextMessage("testDeliveryMultipleMsgsClassicApi1");
@@ -2873,7 +3026,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         // In classic API we can create sender for a single queue.
 
         QueueSender send = sessionSender.createSender(jmsQueue1);
-        send.setDeliveryDelay(deliveryDelay);
+        send.setDeliveryDelay(defaultTestDeliveryDelay);
 
         TextMessage sendMsg1 =
             sessionSender.createTextMessage("testDeliveryMultipleMsgsClassicApi_Tcp1");
@@ -2922,7 +3075,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         TopicSubscriber sub = sessionSender.createSubscriber(jmsTopic);
 
         TopicPublisher send = sessionSender.createPublisher(jmsTopic);
-        send.setDeliveryDelay(deliveryDelay);
+        send.setDeliveryDelay(defaultTestDeliveryDelay);
 
         TextMessage sendMsg1 =
             sessionSender.createTextMessage("testDeliveryMultipleMsgsTopicClassicApi1");
@@ -2972,7 +3125,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         TopicSubscriber sub = sessionSender.createSubscriber(jmsTopic);
 
         TopicPublisher send = sessionSender.createPublisher(jmsTopic);
-        send.setDeliveryDelay(deliveryDelay);
+        send.setDeliveryDelay(defaultTestDeliveryDelay);
 
         TextMessage sendMsg1 =
             sessionSender.createTextMessage("testDeliveryMultipleMsgsTopicClassicApi_Tcp1");
@@ -3329,15 +3482,15 @@ public class DeliveryDelayServlet extends HttpServlet {
             
             QueueReceiver queueReceiver = queueSession.createReceiver(jmsQueue1);
             QueueSender queueSender = queueSession.createSender(jmsQueue1);
-            queueSender.setDeliveryDelay(deliveryDelay);
+            queueSender.setDeliveryDelay(defaultTestDeliveryDelay);
             
             TextMessage sentMessage = queueSession.createTextMessage(methodName() + " at " + timeStamp());
             long beforeSend = System.currentTimeMillis();
             queueSender.send(sentMessage);
             long afterSend = System.currentTimeMillis();
-            if (afterSend - beforeSend > deliveryDelay)
+            if (afterSend - beforeSend > defaultTestDeliveryDelay)
                 throw new TestException("Test Infrastructure running too slowly to meangfully test delivery delay beforeSend:" + beforeSend + " afterSend:" + afterSend
-                        + " deliveryDelay:" + deliveryDelay);
+                        + " deliveryDelay:" + defaultTestDeliveryDelay);
             
             final long commitDelay = 1000;
             Thread.sleep(commitDelay);
@@ -3356,8 +3509,8 @@ public class DeliveryDelayServlet extends HttpServlet {
             
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
                 throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if (afterReceive - beforeSend < deliveryDelay)
-                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforeSend:" + beforeSend + " deliveryDelay:" + deliveryDelay
+            if (afterReceive - beforeSend < defaultTestDeliveryDelay)
+                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforeSend:" + beforeSend + " deliveryDelay:" + defaultTestDeliveryDelay
                         + "\nreceivedMessage:" + receivedMessage);
             
         }
@@ -3385,15 +3538,15 @@ public class DeliveryDelayServlet extends HttpServlet {
 
             TopicSubscriber topicSubscriber = topicSession.createSubscriber(jmsTopic);
             TopicPublisher topicPublisher = topicSession.createPublisher(jmsTopic);
-            topicPublisher.setDeliveryDelay(deliveryDelay);
+            topicPublisher.setDeliveryDelay(defaultTestDeliveryDelay);
             
             TextMessage sentMessage = topicSession.createTextMessage(methodName() + " at " + timeStamp());
             long beforePublish = System.currentTimeMillis();
             topicPublisher.publish(sentMessage);
             long afterPublish = System.currentTimeMillis();
-            if (afterPublish - beforePublish > deliveryDelay)
+            if (afterPublish - beforePublish > defaultTestDeliveryDelay)
                 throw new TestException("Test Infrastructure running too slowly to meangfully test delivery delay beforePublish:" + beforePublish + " afterPublish:" + afterPublish
-                        + " deliveryDelay:" + deliveryDelay);
+                        + " deliveryDelay:" + defaultTestDeliveryDelay);
             
             final long commitDelay = 1000;
             Thread.sleep(commitDelay);
@@ -3418,8 +3571,8 @@ public class DeliveryDelayServlet extends HttpServlet {
             
             if (!receivedMessage.getText().equals(sentMessage.getBody(String.class)))
                 throw new TestException("Wrong message received:" + receivedMessage + " sent:" + sentMessage);
-            if (afterReceive - beforePublish < deliveryDelay)
-                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforePublish:" + beforePublish + " deliveryDelay:" + deliveryDelay
+            if (afterReceive - beforePublish < defaultTestDeliveryDelay)
+                throw new TestException("Message received to soon, afterReceive:" + afterReceive + " beforePublish:" + beforePublish + " deliveryDelay:" + defaultTestDeliveryDelay
                         + "\nreceivedMessage:" + receivedMessage);
         }
     }
@@ -3746,261 +3899,6 @@ public class DeliveryDelayServlet extends HttpServlet {
         }
     }
 
-    public void testPersistentMessageClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        QueueConnection con = jmsQCFBindings.createQueueConnection();
-        con.start();
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        QueueSender producer1 = sessionSender.createSender(jmsQueue);
-        emptyQueue(jmsQCFBindings, jmsQueue);
-
-        QueueSender producer2 = sessionSender.createSender(jmsQueue1);
-        emptyQueue(jmsQCFBindings, jmsQueue1);
-
-        producer1.setDeliveryMode(DeliveryMode.PERSISTENT);
-        producer1.setDeliveryDelay(1000);
-        TextMessage msg1 = sessionSender.createTextMessage("testPersistentMessage_PersistentMsgClassicApi");
-        producer1.send(msg1);
-
-        producer2.setDeliveryDelay(1000);
-        producer2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        TextMessage msg2 = sessionSender.createTextMessage("testPersistentMessage_NonPersistentMsgClassicApi");
-        producer2.send(msg2);
-
-        sessionSender.close();
-        con.close();
-    }
-
-    public void testPersistentMessageReceiveClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        QueueConnection con = jmsQCFBindings.createQueueConnection();
-        con.start();
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        QueueReceiver jmsConsumer1 = sessionSender.createReceiver(jmsQueue);
-        QueueReceiver jmsConsumer2 = sessionSender.createReceiver(jmsQueue);
-
-        QueueSender producer = sessionSender.createSender(jmsQueue1);
-
-        TextMessage msg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage msg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((msg1 == null) ||
-              (msg1.getText() == null) ||
-              !msg1.getText().equals("testPersistentMessage_PersistentMsgClassicApi")) ||
-             (msg2 != null) ) {
-            testFailed = true;
-        }
-
-        sessionSender.close();
-        con.close();
-
-        if ( testFailed ) {
-            throw new Exception("testPersistentMessageReceiveClassicApi failed");
-        }
-    }
-
-    public void testPersistentMessageClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        QueueConnection con = jmsQCFTCP.createQueueConnection();
-        con.start();
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        QueueSender producer1 = sessionSender.createSender(jmsQueue);
-        emptyQueue(jmsQCFBindings, jmsQueue);
-
-        QueueSender producer2 = sessionSender.createSender(jmsQueue1);
-        emptyQueue(jmsQCFBindings, jmsQueue1);
-
-        producer1.setDeliveryMode(DeliveryMode.PERSISTENT);
-        producer1.setDeliveryDelay(1000);
-        TextMessage msg1 = sessionSender.createTextMessage("testPersistentMessage_PersistentMsgClassicApi");
-        producer1.send(msg1);
-
-        producer2.setDeliveryDelay(1000);
-        producer2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        TextMessage msg2 = sessionSender.createTextMessage("testPersistentMessage_NonPersistentMsgClassicApi");
-        producer2.send(msg2);
-
-        sessionSender.close();
-        con.close();
-    }
-
-    public void testPersistentMessageReceiveClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        QueueConnection con = jmsQCFTCP.createQueueConnection();
-        con.start();
-
-        QueueSession sessionSender = con.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        MessageConsumer jmsConsumer1 = sessionSender.createConsumer(jmsQueue);
-        MessageConsumer jmsConsumer2 = sessionSender.createConsumer(jmsQueue);
-
-        QueueSender producer = sessionSender.createSender(jmsQueue1);
-
-        TextMessage msg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage msg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((msg1 == null) ||
-              (msg1.getText() == null) ||
-              !msg1.getText().equals("testPersistentMessage_PersistentMsgClassicApi")) ||
-             (msg2 != null) ) {
-            testFailed = true;
-        }
-
-        sessionSender.close();
-        con.close();
-
-        if ( testFailed ) {
-            throw new Exception("testPersistentMessageReceiveClassicApi failed");
-        }
-    }
-
-    public void testPersistentMessageTopicClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        TopicConnection con = jmsTCFBindings.createTopicConnection();
-        con.start();
-
-        TopicSession sessionSender = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicSubscriber jmsConsumer1 = sessionSender.createDurableSubscriber(jmsTopic, "durPersMsgCA1");
-        TopicSubscriber jmsConsumer2 = sessionSender.createDurableSubscriber(jmsTopic1, "durPersMsgCA2");
-
-        TopicPublisher jmsProducer1 = sessionSender.createPublisher(jmsTopic);
-        TopicPublisher jmsProducer2 = sessionSender.createPublisher(jmsTopic1);
-
-        jmsProducer1.setDeliveryMode(DeliveryMode.PERSISTENT);
-        jmsProducer1.setDeliveryDelay(1000);
-        TextMessage msg1 = sessionSender.createTextMessage("testPersistentMessage_PersistentMsgTopicClassicApi");
-        jmsProducer1.send(msg1);
-
-        jmsProducer2.setDeliveryDelay(1000);
-        jmsProducer2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        TextMessage msg2 = sessionSender.createTextMessage("testPersistentMessage_NonPersistentMsgTopicClassicApi");
-        jmsProducer2.send(msg2);
-
-        con.close();
-    }
-
-    public void testPersistentMessageReceiveTopicClassicApi(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        TopicConnection con = jmsTCFBindings.createTopicConnection();
-        con.start();
-
-        TopicSession sessionSender = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicSubscriber jmsConsumer1 = sessionSender.createDurableSubscriber(jmsTopic, "durPersMsgCA1");
-        TopicSubscriber jmsConsumer2 = sessionSender.createDurableSubscriber(jmsTopic1, "durPersMsgCA2");
-
-        TopicPublisher jmsProducer = sessionSender.createPublisher(jmsTopic);
-
-        TextMessage msg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage msg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((msg1 == null) ||
-              (msg1.getText() == null) ||
-              !msg1.getText().equals("testPersistentMessage_PersistentMsgTopicClassicApi")) ||
-             (msg2 != null) ) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-
-        sessionSender.unsubscribe("durPersMsgCA1");
-        sessionSender.unsubscribe("durPersMsgCA2");
-        sessionSender.close();
-
-        con.close();
-
-        if ( testFailed ) {
-            throw new Exception("testPersistentMessageReceiveTopicClassicApi failed");
-        }
-    }
-
-    public void testPersistentMessageTopicClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        TopicConnection con = jmsTCFTCP.createTopicConnection();
-        con.start();
-
-        TopicSession sessionSender = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicSubscriber jmsConsumer1 = sessionSender.createDurableSubscriber(jmsTopic, "durPersMsgCATcp1");
-        TopicSubscriber jmsConsumer2 = sessionSender.createDurableSubscriber(jmsTopic1, "durPersMsgCATcp2");
-
-        TopicPublisher jmsProducer1 = sessionSender.createPublisher(jmsTopic);
-        TopicPublisher jmsProducer2 = sessionSender.createPublisher(jmsTopic1);
-
-        jmsProducer1.setDeliveryMode(DeliveryMode.PERSISTENT);
-        jmsProducer1.setDeliveryDelay(1000);
-        TextMessage msg1 = sessionSender.createTextMessage("testPersistentMessage_PersistentMsgTopicClassicApiTcp");
-        jmsProducer1.send(msg1);
-
-        jmsProducer2.setDeliveryDelay(1000);
-        jmsProducer2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        TextMessage msg2 = sessionSender.createTextMessage("testPersistentMessage_NonPersistentMsgTopicClassicApiTcp");
-        jmsProducer2.send(msg2);
-
-        con.close();
-    }
-
-    public void testPersistentMessageReceiveTopicClassicApi_Tcp(
-        HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        boolean testFailed = false;
-
-        TopicConnection con = jmsTCFTCP.createTopicConnection();
-        con.start();
-
-        TopicSession sessionSender = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        TopicSubscriber jmsConsumer1 = sessionSender.createDurableSubscriber(jmsTopic, "durPersMsgCATcp1");
-        TopicSubscriber jmsConsumer2 = sessionSender.createDurableSubscriber(jmsTopic1, "durPersMsgCATcp2");
-
-        TopicPublisher jmsProducer = sessionSender.createPublisher(jmsTopic);
-
-        TextMessage msg1 = (TextMessage) jmsConsumer1.receive(30000);
-        TextMessage msg2 = (TextMessage) jmsConsumer2.receive(30000);
-
-        if ( ((msg1 == null) ||
-              (msg1.getText() == null) ||
-              !msg1.getText().equals("testPersistentMessage_PersistentMsgTopicClassicApiTcp")) ||
-             (msg2 != null) ) {
-            testFailed = true;
-        }
-
-        jmsConsumer1.close();
-        jmsConsumer2.close();
-
-        sessionSender.unsubscribe("durPersMsgCATcp1");
-        sessionSender.unsubscribe("durPersMsgCATcp2");
-        sessionSender.close();
-
-        con.close();
-
-        if ( testFailed ) {
-            throw new Exception("testPersistentMessageStoreReceiveTopicClassicApi_Tcp failed");
-        }
-    }
 
     public void testJSAD_Send_Message_P2PTest(
         HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -4339,7 +4237,7 @@ public class DeliveryDelayServlet extends HttpServlet {
             emptyQueue(queueConnectionFactory, jmsQueue);
             JMSProducer jmsProducer = jmsContext.createProducer();
 
-            long delayMilliseconds = deliveryDelay * 12;
+            long delayMilliseconds = defaultTestDeliveryDelay * 12;
             jmsProducer.setDeliveryDelay(delayMilliseconds);
             TextMessage sendMsg = jmsContext.createTextMessage(this.getClass().getName()+".testSendMessage() deliveryDelay="+delayMilliseconds+" milliseconds, sentAt:"+timeStamp());
             sendMsg.setLongProperty("MustArriveAfter",System.currentTimeMillis()+delayMilliseconds);
@@ -4363,7 +4261,7 @@ public class DeliveryDelayServlet extends HttpServlet {
         try (JMSContext jmsContext = queueConnectionFactory.createContext()) {
             JMSConsumer jmsConsumer = jmsContext.createConsumer(jmsQueue);
 
-            TextMessage receivedMessage = (TextMessage) jmsConsumer.receive(deliveryDelay*12);
+            TextMessage receivedMessage = (TextMessage) jmsConsumer.receive(defaultTestDeliveryDelay*12);
             if (receivedMessage == null)
                 throw new Exception("No message received");
             if ( !receivedMessage.getText().startsWith(this.getClass().getName()+".testSendMessage() "))

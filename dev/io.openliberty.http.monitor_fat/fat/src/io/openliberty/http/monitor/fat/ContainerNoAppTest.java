@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,6 @@ package io.openliberty.http.monitor.fat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -48,6 +47,8 @@ public class ContainerNoAppTest extends BaseTestClass {
     @ClassRule
     public static RepeatTests rt = FATSuite.allMPRepeatsWithMPTel20OrLater(SERVER_NAME);
 
+    //TODO switch to use ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.117.0
+    //TODO remove withDockerfileFromBuilder and instead create a dockerfile
     @ClassRule
     public static GenericContainer<?> container = new GenericContainer<>(new ImageFromDockerfile()
                     .withDockerfileFromBuilder(builder -> builder.from(IMAGE_NAME)
@@ -86,8 +87,33 @@ public class ContainerNoAppTest extends BaseTestClass {
 
         String res = requestHttpServlet(route, server, requestMethod);
         //Allow time for the collector to receive and expose metrics
-        TimeUnit.SECONDS.sleep(4);
-        assertTrue(validateMpTelemetryHttp(Constants.OTEL_SERVICE_NOT_SET, getContainerCollectorMetrics(container), route, responseStatus, requestMethod));
+        assertTrueRetryWithTimeout(() -> validateMpTelemetryHttp(Constants.OTEL_SERVICE_NOT_SET, getContainerCollectorMetrics(container), route, responseStatus, requestMethod));
+
+    }
+
+    @Test
+    public void c_noApp_nonExistent() throws Exception {
+
+        assertTrue(server.isStarted());
+
+        String route = "/madeThisUp";
+        String requestMethod = HttpMethod.GET;
+        String responseStatus = "404";
+        String expectedRoute = "/";
+
+        String res = requestHttpServlet(route, server, requestMethod);
+
+        //Allow time for the collector to receive and expose metrics
+        assertTrueRetryWithTimeout(() -> validateMpTelemetryHttp(Constants.OTEL_SERVICE_NOT_SET, getContainerCollectorMetrics(container), expectedRoute, responseStatus,
+                                                                 requestMethod));
+
+        String route2 = "/anotherMadeThisUp";
+        String res2 = requestHttpServlet(route, server, requestMethod);
+
+        //Allow time for the collector to receive and expose metrics
+        assertTrueRetryWithTimeout(() -> validateMpTelemetryHttp(Constants.OTEL_SERVICE_NOT_SET, getContainerCollectorMetrics(container), expectedRoute, responseStatus,
+                                                                 requestMethod, null,
+                                                                 ">1", null));
 
     }
 

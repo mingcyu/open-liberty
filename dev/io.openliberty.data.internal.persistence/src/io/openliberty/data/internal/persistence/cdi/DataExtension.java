@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -48,6 +48,7 @@ import com.ibm.ws.threadContext.ComponentMetaDataAccessorImpl;
 
 import io.openliberty.data.internal.persistence.DataProvider;
 import io.openliberty.data.internal.persistence.QueryInfo;
+import io.openliberty.data.internal.persistence.Util;
 import jakarta.data.exceptions.DataException;
 import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.EntityExistsException;
@@ -56,6 +57,7 @@ import jakarta.data.exceptions.OptimisticLockingFailureException;
 import jakarta.data.repository.By;
 import jakarta.data.repository.DataRepository;
 import jakarta.data.repository.Delete;
+import jakarta.data.repository.Find;
 import jakarta.data.repository.Insert;
 import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
@@ -147,16 +149,20 @@ public class DataExtension implements Extension {
 
             Class<?>[] primaryEntityClassReturnValue = new Class<?>[1];
             Map<Class<?>, List<QueryInfo>> queriesPerEntityClass = new HashMap<>();
-            if (discoverEntityClasses(repositoryType, queriesPerEntityClass, primaryEntityClassReturnValue)) {
-                FutureEMBuilder previous = entityGroups.putIfAbsent(futureEMBuilder, futureEMBuilder);
+            if (discoverEntityClasses(repositoryType,
+                                      queriesPerEntityClass,
+                                      primaryEntityClassReturnValue,
+                                      provider)) {
 
+                FutureEMBuilder previous = entityGroups.putIfAbsent(futureEMBuilder,
+                                                                    futureEMBuilder);
                 if (previous != null) {
                     futureEMBuilder = previous;
                     futureEMBuilder.addRepositoryInterface(repositoryInterface);
                 }
 
                 for (Class<?> entityClass : queriesPerEntityClass.keySet())
-                    if (!Query.class.equals(entityClass))
+                    if (!QueryInfo.ENTITY_TBD.equals(entityClass))
                         futureEMBuilder.addEntity(entityClass);
 
                 RepositoryProducer<Object> producer = new RepositoryProducer<>( //
@@ -170,7 +176,8 @@ public class DataExtension implements Extension {
 
         String appName = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor() //
                         .getComponentMetaData().getJ2EEName().getApplication();
-        provider.onAppStarted(appName, entityGroups.values());
+
+        provider.onStart(appName, entityGroups.keySet());
     }
 
     /**
@@ -183,11 +190,13 @@ public class DataExtension implements Extension {
      * @param repositoryType                the repository interface as an annotated type.
      * @param queriesPerEntity              initially empty map to populate with partially completed query information per entity.
      * @param primaryEntityClassReturnValue initially empty size 1 array for returning the primary entity class, if any.
+     * @param provider                      OSGi service that provides the CDI extension.
      * @return whether all entity types that appear on the repository interface are supported.
      */
     private boolean discoverEntityClasses(AnnotatedType<?> repositoryType,
                                           Map<Class<?>, List<QueryInfo>> queriesPerEntity,
-                                          Class<?>[] primaryEntityClassReturnValue) {
+                                          Class<?>[] primaryEntityClassReturnValue,
+                                          DataProvider provider) {
         Class<?> repositoryInterface = repositoryType.getJavaClass();
         Class<?> primaryEntityClass = getPrimaryEntityType(repositoryInterface);
         Set<Class<?>> lifecycleMethodEntityClasses = new HashSet<>();
@@ -216,6 +225,10 @@ public class DataExtension implements Extension {
                 continue;
             }
 
+            Find find = method.getAnnotation(Find.class);
+            Class<?> entityClass = find == null //
+                            ? void.class //
+                            : provider.compat.getEntityClass(find);
             Class<?> returnArrayComponentType = null;
             List<Class<?>> returnTypeAtDepth = new ArrayList<>(5);
             Type type = method.getGenericReturnType();
@@ -249,10 +262,11 @@ public class DataExtension implements Extension {
                     // for the Entity class and Key/Id class, and of these only uses
                     // the Entity class in return types, not the key.
                     // Custom repository interfaces are not allowed to use generics.
-                    Class<?> arrayComponentType = //
-                                    requirePrimaryEntity(primaryEntityClass,
-                                                         repositoryInterface,
-                                                         method);
+                    Class<?> arrayComponentType = entityClass == void.class //
+                                    ? requirePrimaryEntity(primaryEntityClass,
+                                                           repositoryInterface,
+                                                           method) //
+                                    : entityClass;
                     returnTypeAtDepth.add(arrayComponentType.arrayType());
                     if (returnArrayComponentType == null) {
                         returnArrayComponentType = arrayComponentType;
@@ -261,15 +275,18 @@ public class DataExtension implements Extension {
                     }
                     type = null;
                 } else {
-                    returnTypeAtDepth.add(requirePrimaryEntity(primaryEntityClass,
-                                                               repositoryInterface,
-                                                               method));
+                    Class<?> ec = entityClass == void.class //
+                                    ? requirePrimaryEntity(primaryEntityClass,
+                                                           repositoryInterface,
+                                                           method) //
+                                    : entityClass;
+                    returnTypeAtDepth.add(ec);
                     type = null;
                 }
             }
 
-            // Possible entity class based on the return type:
-            Class<?> entityClass = returnTypeAtDepth.get(returnTypeAtDepth.size() - 1);
+            if (entityClass == void.class)
+                entityClass = returnTypeAtDepth.get(returnTypeAtDepth.size() - 1);
 
             Class<?> entityParamType = null;
 
@@ -334,7 +351,7 @@ public class DataExtension implements Extension {
 
             // For efficiency, detect some obvious non-entity types.
             // Other non-entity types will be detected later.
-            if (QueryInfo.cannotBeEntity(entityClass)) {
+            if (Util.cannotBeEntity(entityClass)) {
                 queries = hasQueryAnno //
                                 ? queriesWithQueryAnno //
                                 : additionalQueriesForPrimaryEntity;

@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -27,7 +28,6 @@ import org.osgi.service.component.annotations.Modified;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 import io.openliberty.microprofile.openapi.internal.common.services.OpenAPIAppConfigProvider;
 import io.openliberty.microprofile.openapi.internal.common.services.OpenAPIServerXMLConfig;
@@ -49,73 +49,51 @@ public class OpenAPIAppConfigProviderImpl implements OpenAPIAppConfigProvider {
 
     private volatile MpConfigServerConfigObject config = null;
 
-    private boolean issuedBetaMessage;
-
     @Activate
     protected void activate(BundleContext context, Map<String, Object> properties) {
-        if (ProductInfo.getBetaEdition()) {
-            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
-                Tr.event(this, tc, "Initial processing of server.xml");
-            }
-
-            MpConfigServerConfigObject newConfig = new MpConfigServerConfigObject(properties);
-            config = newConfig;
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Initial processing of server.xml");
         }
+
+        MpConfigServerConfigObject newConfig = new MpConfigServerConfigObject(properties);
+        config = newConfig;
     }
 
     @Modified
     protected void modified(Map<String, Object> properties) {
-        if (ProductInfo.getBetaEdition()) {
-            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
-                Tr.event(this, tc, "Processing update to server.xml");
-            }
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Processing update to server.xml");
+        }
 
-            MpConfigServerConfigObject newConfig = new MpConfigServerConfigObject(properties);
+        MpConfigServerConfigObject newConfig = new MpConfigServerConfigObject(properties);
 
-            if (config.equals(newConfig)) {
-                Tr.event(this, tc, "After update there is no need to rebuild the openAPI document");
-            } else {
-                Tr.event(this, tc, "Clearing out the outdated openAPI document");
+        if (config.equals(newConfig)) {
+            Tr.event(this, tc, "After update there is no need to rebuild the openAPI document");
+        } else {
+            Tr.event(this, tc, "Clearing out the outdated openAPI document");
 
-                config = newConfig;
-                openAPIAppConfigListeners.sort((OpenAPIAppConfigListener o1, OpenAPIAppConfigListener o2) -> Integer.compare(o1.getConfigListenerPriority(),
-                                                                                                                             o2.getConfigListenerPriority()));
+            config = newConfig;
+            openAPIAppConfigListeners.sort((OpenAPIAppConfigListener o1, OpenAPIAppConfigListener o2) -> Integer.compare(o1.getConfigListenerPriority(),
+                                                                                                                         o2.getConfigListenerPriority()));
 
-                for (OpenAPIAppConfigListener listener : openAPIAppConfigListeners) {
-                    listener.processConfigUpdate();
-                }
+            for (OpenAPIAppConfigListener listener : openAPIAppConfigListeners) {
+                listener.processConfigUpdate();
             }
         }
     }
 
     @Deactivate
     protected void deactivate() {
-        if (ProductInfo.getBetaEdition()) {
-            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
-                Tr.event(this, tc, "Deactivating OpenAPIAppConfigProviderImpl");
-            }
-            config = null;
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Deactivating OpenAPIAppConfigProviderImpl");
         }
-    }
-
-    private void betaFenceCheck() throws UnsupportedOperationException {
-        // Not running beta edition, throw exception
-        if (!ProductInfo.getBetaEdition()) {
-            throw new UnsupportedOperationException("This method is beta and is not available.");
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class
-            if (!issuedBetaMessage) {
-                Tr.info(tc, "BETA: A beta method has been invoked for the class " + this.getClass().getName() + " for the first time.");
-                issuedBetaMessage = !issuedBetaMessage;
-            }
-        }
+        config = null;
     }
 
     /** {@inheritDoc} */
     @Override
     @Deprecated
     public MpConfigServerConfigObject getConfiguration() {
-        betaFenceCheck();
         return (config);
     }
 
@@ -226,10 +204,15 @@ public class OpenAPIAppConfigProviderImpl implements OpenAPIAppConfigProvider {
             MpConfigServerConfigObject otherConfig = (MpConfigServerConfigObject) other;
 
             return (includedApps.equals(otherConfig.includedApps)
-                    && excludedApps.equals(otherConfig.excludedModules)
+                    && excludedApps.equals(otherConfig.excludedApps)
                     && includedModules.equals(otherConfig.includedModules)
                     && excludedModules.equals(otherConfig.excludedModules)
                     && configMode.equals(otherConfig.configMode));
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(configMode, excludedApps, excludedModules, includedApps, includedModules);
         }
 
         @Override
@@ -258,6 +241,25 @@ public class OpenAPIAppConfigProviderImpl implements OpenAPIAppConfigProvider {
                     || includedModules.size() > 0
                     || excludedModules.size() > 0
                     || configMode.isPresent());
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("MpConfigServerConfigObject [includedApps=");
+            builder.append(includedApps);
+            builder.append(", excludedApps=");
+            builder.append(excludedApps);
+            builder.append(", includedModules=");
+            builder.append(includedModules);
+            builder.append(", excludedModules=");
+            builder.append(excludedModules);
+            builder.append(", configMode=");
+            builder.append(configMode);
+            builder.append(", wasAnyConfigFound()=");
+            builder.append(wasAnyConfigFound());
+            builder.append("]");
+            return builder.toString();
         }
     }
 

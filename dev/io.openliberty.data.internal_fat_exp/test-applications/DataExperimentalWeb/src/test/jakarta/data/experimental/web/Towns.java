@@ -85,7 +85,7 @@ public interface Towns {
     @OrderBy("stateName")
     @OrderBy("name")
     Stream<Town> largerThan(@By("population") @Is(GreaterThan) int minPopulation,
-                            @By(ID) @Is(NotIgnoreCase) TownId exceptFor,
+                            @By("name") @Is(NotIgnoreCase) String cityToExclude,
                             @By("stateName") @Is(Prefixed) String statePattern);
 
     @Update

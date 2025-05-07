@@ -125,6 +125,11 @@ public class ClassPathEarLoaderServletTest2 extends FATServlet{
     }
 
     @Test
+    public void testLoadLibrary10Class() {
+        runTest(success_fromEARLoader);
+    }
+
+    @Test
     public void testLoadLibrary11Class() {
         runTest(failure);
     }

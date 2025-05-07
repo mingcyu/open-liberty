@@ -131,6 +131,12 @@ public interface Cities {
     @Save
     City save(City c);
 
+    @Query("WHERE population < :maxPopulation OR name <> :nameToExclude")
+    @OrderBy(ID)
+    CursoredPage<City> smallerThanOrNotNamed(int maxPopulation,
+                                             String nameToExclude,
+                                             PageRequest pageReq);
+
     @Find
     @OrderBy("stateName")
     Stream<City> withNameOf(String name);

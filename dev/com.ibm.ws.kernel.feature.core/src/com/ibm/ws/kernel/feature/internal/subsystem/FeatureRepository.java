@@ -490,7 +490,7 @@ public final class FeatureRepository implements FeatureResolver.Repository {
             for (FeatureResource versionedFeature : feature.getConstituents(null)) {
                 //Find the right public feature (should only be one) - set the result
                 ProvisioningFeatureDefinition versionedFeatureDef = getFeature(versionedFeature.getSymbolicName());
-                if (versionedFeatureDef.getVisibility() != Visibility.PUBLIC) {
+                if (versionedFeatureDef == null || versionedFeatureDef.getVisibility() != Visibility.PUBLIC) {
                     continue;
                 }
                 result = versionedFeatureDef;
@@ -986,7 +986,9 @@ public final class FeatureRepository implements FeatureResolver.Repository {
             publicFeatureNameToSymbolicName.put(lowerFeature(attr.symbolicName), attr.symbolicName);
         } else if (def.getVisibility() == Visibility.PRIVATE) {
             if ((attr.platforms != null) && !attr.platforms.isEmpty()) {
-                putCompatibilityFeature(def.getPlatformName(), def);
+                for(String plat : def.getPlatformNames()){
+                    putCompatibilityFeature(plat, def);
+                }
             }
         }
 

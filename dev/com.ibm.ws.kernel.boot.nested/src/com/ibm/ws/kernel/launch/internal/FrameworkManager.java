@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2024 IBM Corporation and others.
+ * Copyright (c) 2010, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@
  *******************************************************************************/
 package com.ibm.ws.kernel.launch.internal;
 
+import static com.ibm.ws.kernel.LibertyProcess.CONDITION_LIBERTY_PROCESS_ACTIVE;
 import static io.openliberty.checkpoint.spi.CheckpointPhase.CHECKPOINT_PROPERTY;
 import static io.openliberty.checkpoint.spi.CheckpointPhase.CHECKPOINT_RESTORED_PROPERTY;
 import static io.openliberty.checkpoint.spi.CheckpointPhase.CONDITION_PROCESS_RUNNING_ID;
@@ -30,6 +31,7 @@ import java.io.Writer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
@@ -51,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
@@ -58,6 +61,7 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 import org.osgi.service.condition.Condition;
@@ -686,6 +690,7 @@ public class FrameworkManager {
                 // not an active checkpoint launch; register the running condition now
                 registerRunningCondition(fwk);
             }
+            registerLibertyActiveCondition(fwk);
             return fwk;
         } catch (BundleException ex) {
             throw ex;
@@ -729,6 +734,25 @@ public class FrameworkManager {
         BundleContext bc = framework.getBundleContext();
         bc.registerService(Condition.class, Condition.INSTANCE,
                            asDictionary(singletonMap(CONDITION_ID, CONDITION_PROCESS_RUNNING_ID)));
+    }
+
+    private static void registerLibertyActiveCondition(Framework framework) {
+        BundleContext bc = framework.getBundleContext();
+
+        final ServiceRegistration<Condition> reg = bc.registerService(Condition.class, Condition.INSTANCE,
+                                                                      asDictionary(singletonMap(CONDITION_ID, CONDITION_LIBERTY_PROCESS_ACTIVE)));
+        // unregister when server is stopping
+        bc.addBundleListener(new SynchronousBundleListener() {
+            @Override
+            public void bundleChanged(BundleEvent event) {
+                Bundle b = event.getBundle();
+                if (b.getBundleId() == 0) {
+                    if (b.getState() == Bundle.STOPPING) {
+                        reg.unregister();
+                    }
+                }
+            }
+        });
     }
 
     private static final String MANAGER_DIR_NAME = ".manager";
@@ -1331,7 +1355,7 @@ public class FrameworkManager {
             PrintWriter pw = null;
             try {
                 out = new FileOutputStream(introspectionFile);
-                pw = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
+                pw = new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
 
                 // write header
                 if (introspectionDesc != null && !introspectionDesc.isEmpty()) {
@@ -1380,7 +1404,7 @@ public class FrameworkManager {
 
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(new FileOutputStream(statusFile), "UTF-8");
+            writer = new OutputStreamWriter(new FileOutputStream(statusFile), StandardCharsets.UTF_8);
             for (JavaDumpAction javaDumpAction : javaDumpActions) {
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                     Tr.debug(tc, "Start javadump action " + javaDumpAction);

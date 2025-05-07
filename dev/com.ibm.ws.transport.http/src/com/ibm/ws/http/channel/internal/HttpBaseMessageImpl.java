@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2024 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -61,7 +61,6 @@ import com.ibm.wsspi.http.channel.values.ExpectValues;
 import com.ibm.wsspi.http.channel.values.HttpHeaderKeys;
 import com.ibm.wsspi.http.channel.values.TransferEncodingValues;
 import com.ibm.wsspi.http.channel.values.VersionValues;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 /**
  * Class representing all of the common data to every HTTP message. This
@@ -87,7 +86,7 @@ public abstract class HttpBaseMessageImpl extends GenericMessageImpl implements 
     /** Static representation of a quote symbol */
     private static final byte QUOTE = '"';
     /** Default charset for ISO-8859-1 */
-    private static Charset DEF_CHARSET = null;
+    private static final Charset DEF_CHARSET = StandardCharsets.ISO_8859_1;
     /** Delimiters used while parsing cookies */
     private static final byte[] COOKIE_DELIMS = { COMMA, SEMICOLON };
 
@@ -1890,10 +1889,6 @@ public abstract class HttpBaseMessageImpl extends GenericMessageImpl implements 
                 // continue below and return the default
             }
         }
-        if (null == DEF_CHARSET) {
-            // lazily instantiate the default charset if need be
-            DEF_CHARSET = StandardCharsets.ISO_8859_1;
-        }
         return DEF_CHARSET;
     }
 
@@ -2969,8 +2964,8 @@ public abstract class HttpBaseMessageImpl extends GenericMessageImpl implements 
                 }
             }
 
-            // Must be in beta to check for SameSite=None Incompatible clients
-            if (ProductInfo.getBetaEdition() && cookie.getAttribute("samesite") != null && cookie.getAttribute("samesite").equals(HttpConfigConstants.SameSite.NONE.getName())) {
+            // Check for SameSite=None Incompatible clients
+            if (cookie.getAttribute("samesite") != null && cookie.getAttribute("samesite").equals(HttpConfigConstants.SameSite.NONE.getName())) {
                 String userAgent = getServiceContext().getRequest().getHeader(HttpHeaderKeys.HDR_USER_AGENT).asString();
                 if (userAgent != null && SameSiteCookieUtils.isSameSiteNoneIncompatible(userAgent)) {
                     //TODO: do we remove Secure, probably should be retained.

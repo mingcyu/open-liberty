@@ -42,6 +42,8 @@ public class LibertyMetricsTest extends BaseTestClass {
     @ClassRule
     public static RepeatTests rt = FATSuite.testRepeatMPTel20(SERVER_NAME);
 	
+    //TODO switch to use ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.117.0
+    //TODO remove withDockerfileFromBuilder and instead create a dockerfile
 	@ClassRule
 	public static GenericContainer<?> container = new GenericContainer<>(new ImageFromDockerfile()
 			.withDockerfileFromBuilder(builder -> builder.from(IMAGE_NAME).copy("/etc/otelcol-contrib/config.yaml",
@@ -81,9 +83,7 @@ public class LibertyMetricsTest extends BaseTestClass {
 		assertTrue(server.isStarted());
 
 		// Allow time for the collector to receive and expose metrics
-		TimeUnit.SECONDS.sleep(4);
-
-		matchStrings(getContainerCollectorMetrics(container), new String[] {
+		matchStringsWithRetries(() -> getContainerCollectorMetrics(container), new String[] {
 				"io_openliberty_threadpool_active_threads\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_threadpool_name=\"Default Executor\",job=\"unknown_service\"\\}.*",
 				"io_openliberty_threadpool_size\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_threadpool_name=\"Default Executor\",job=\"unknown_service\"\\}.*",
 				"io_openliberty_request_timing_active.*",

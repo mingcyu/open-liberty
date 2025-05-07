@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@
  *******************************************************************************/
 package test.jakarta.data.experimental.web;
 
+import static io.openliberty.data.repository.Is.Op.Equal;
 import static io.openliberty.data.repository.Is.Op.GreaterThanEqual;
 import static io.openliberty.data.repository.Is.Op.In;
 import static io.openliberty.data.repository.Is.Op.LessThanEqual;
@@ -53,10 +54,10 @@ import jakarta.data.repository.OrderBy;
 import jakarta.data.repository.Param;
 import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
+import jakarta.data.repository.Select;
 
 import io.openliberty.data.repository.Is;
 import io.openliberty.data.repository.Or;
-import io.openliberty.data.repository.Select;
 import io.openliberty.data.repository.function.ElementCount;
 import io.openliberty.data.repository.function.Extract;
 
@@ -98,9 +99,6 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
     Boolean existsByMeetingId(long meetingID);
 
     Iterable<Reservation> findByHost(String host);
-
-    @OrderBy(ID)
-    Stream<Reservation> findByInviteesElementCount(int size);
 
     Collection<Reservation> findByLocationContainsOrderByMeetingID(String locationSubstring);
 
@@ -147,7 +145,8 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
 
     // Use a stream of record as the return type
     @Find
-    @Select({ "start", "stop" })
+    @Select("start")
+    @Select("stop")
     Stream<ReservedTimeSlot> findByStoppingAtAnyOf(@By("stop") OffsetDateTime stop1,
                                                    @Or @By("stop") OffsetDateTime stop2,
                                                    @Or @By("stop") OffsetDateTime stop3);
@@ -158,14 +157,14 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
 
     HashSet<Reservation> findByLocationAndInviteesNotContains(String location, String noninvitee);
 
-    @OrderBy("host")
-    List<Long> findMeetingIdByStartWithHourBetweenAndStartWithMinute(int minHour, int maxHour, int minute);
-
-    List<Long> findMeetingIdByStopWithSecond(int second);
+    @Find
+    @Select("meetingId")
+    List<Long> findMeetingIdStoppingAtSecond(@By("stop") @Extract(SECOND) int second);
 
     // Use a record as the return type
     @Find
-    @Select({ "start", "stop" })
+    @Select("start")
+    @Select("stop")
     @OrderBy("start")
     ReservedTimeSlot[] findTimeSlotWithin(String location,
                                           @By("start") @Is(GreaterThanEqual) OffsetDateTime startAfter,
@@ -185,6 +184,13 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
     List<String> locationsThatStartWith(@By("location") @Is(Prefixed) String beginningOfLocationName);
 
     int removeByHostNotIn(Collection<String> hosts);
+
+    @Find
+    @Select("meetingId")
+    @OrderBy("host")
+    List<Long> startingWithin(@By("start") @Extract(HOUR) @Is(GreaterThanEqual) int minHour,
+                              @By("start") @Extract(HOUR) @Is(LessThanEqual) int maxHour,
+                              @By("start") @Extract(MINUTE) @Is(Equal) int minute);
 
     @Find
     @Select("meetingID")

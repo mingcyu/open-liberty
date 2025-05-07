@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,7 +13,9 @@
 package io.openliberty.data.internal.v1_0;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -21,6 +23,11 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import com.ibm.websphere.ras.annotation.Trivial;
 
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import jakarta.data.Limit;
+import jakarta.data.Order;
+import jakarta.data.Sort;
+import jakarta.data.page.PageRequest;
+import jakarta.data.repository.Find;
 
 /**
  * Capability that is specific to the version of Jakarta Data.
@@ -29,6 +36,11 @@ import io.openliberty.data.internal.version.DataVersionCompatibility;
            configurationPolicy = ConfigurationPolicy.IGNORE,
            service = DataVersionCompatibility.class)
 public class Data_1_0 implements DataVersionCompatibility {
+
+    private static final Set<Class<?>> SPECIAL_PARAM_TYPES = //
+                    Set.of(Limit.class, Order.class, PageRequest.class,
+                           Sort.class, Sort[].class);
+
     @Override
     @Trivial
     public StringBuilder appendCondition(StringBuilder q, int qp,
@@ -63,8 +75,20 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public boolean atLeast(int major, int minor) {
+        return major == 1 && minor == 0;
+    }
+
+    @Override
+    @Trivial
     public Annotation getCountAnnotation(Method method) {
         return null;
+    }
+
+    @Override
+    @Trivial
+    public Class<?> getEntityClass(Find find) {
+        return void.class;
     }
 
     @Override
@@ -75,19 +99,37 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public String[] getSelections(Method method) {
-        return null;
+    public String[] getSelections(AnnotatedElement element) {
+        return NO_SELECTIONS;
     }
 
     @Override
     @Trivial
     public String[] getUpdateAttributeAndOperation(Annotation[] annos) {
-        throw new UnsupportedOperationException(); // unreachable
+        return null; // let the caller raise an appropriate error
     }
 
     @Override
     @Trivial
     public boolean hasOrAnnotation(Annotation[] annos) {
         return false;
+    }
+
+    @Override
+    @Trivial
+    public String specialParamsForFind() {
+        return "Limit, PageRequest, Order, Sort, Sort[]";
+    }
+
+    @Override
+    @Trivial
+    public String specialParamsForFindAndDelete() {
+        return "Limit, Order, Sort, Sort[]";
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<?>> specialParamTypes() {
+        return SPECIAL_PARAM_TYPES;
     }
 }

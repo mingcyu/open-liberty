@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -47,15 +47,53 @@ import jakarta.persistence.TypedQuery;
 public class CursoredPageImpl<T> implements CursoredPage<T> {
     private static final TraceComponent tc = Tr.register(CursoredPageImpl.class);
 
+    /**
+     * Values that are supplied when invoking the repository method that
+     * requests the cursored page.
+     */
     private final Object[] args;
+
+    /**
+     * Indicates the direction of pagination relative to a cursor.
+     * In the case of a first page requested with offset pagination,
+     * where there is no cursor, the direction is forward.
+     */
     private final boolean isForward;
+
+    /**
+     * The request for this page.
+     */
     private final PageRequest pageRequest;
+
+    /**
+     * Query information.
+     */
     private final QueryInfo queryInfo;
+
+    /**
+     * Results of the query for this page.
+     */
     private final List<T> results;
+
+    /**
+     * Total number of elements across all pages. This value is computed lazily,
+     * with -1 indicating it has not been computed yet.
+     */
     private long totalElements = -1;
 
+    /**
+     * Construct a new CursoredPage.
+     *
+     * @param queryInfo   query information.
+     * @param pageRequest the request for this page.
+     * @param args        values that are supplied to the repository method.
+     */
     @FFDCIgnore(Exception.class)
+    @Trivial // avoid tracing customer data
     CursoredPageImpl(QueryInfo queryInfo, PageRequest pageRequest, Object[] args) {
+        final boolean trace = TraceComponent.isAnyTracingEnabled();
+        if (trace && tc.isEntryEnabled())
+            Tr.entry(tc, "<init>", queryInfo, pageRequest, queryInfo.loggable(args));
 
         if (pageRequest == null)
             queryInfo.missingPageRequest();
@@ -98,10 +136,13 @@ public class CursoredPageImpl<T> implements CursoredPage<T> {
                 for (int size = results.size(), i = 0, j = size - (size > maxPageSize ? 2 : 1); i < j; i++, j--)
                     Collections.swap(results, i, j);
         } catch (Exception x) {
-            throw RepositoryImpl.failure(x);
+            throw RepositoryImpl.failure(x, queryInfo.entityInfo.builder);
         } finally {
             em.close();
         }
+
+        if (trace && tc.isEntryEnabled())
+            Tr.exit(this, tc, "<init>");
     }
 
     /**
@@ -128,27 +169,34 @@ public class CursoredPageImpl<T> implements CursoredPage<T> {
 
             return query.getSingleResult();
         } catch (Exception x) {
-            throw RepositoryImpl.failure(x);
+            throw RepositoryImpl.failure(x, queryInfo.entityInfo.builder);
         } finally {
             em.close();
         }
     }
 
     @Override
+    @Trivial
     public List<T> content() {
         int size = results.size();
         int max = pageRequest.size();
-        return size > max ? new ResultList(max) : results;
+        List<T> content = size > max ? new ResultList(max) : results;
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+            Tr.debug(this, tc, "content", queryInfo.loggable(content));
+        return content;
     }
 
     @Override
     public PageRequest.Cursor cursor(int index) {
+        final boolean trace = TraceComponent.isAnyTracingEnabled();
+
         if (index < 0 || index >= pageRequest.size())
             throw new IllegalArgumentException("index: " + index);
 
         T entity = results.get(index);
 
-        final Object[] keyValues = new Object[queryInfo.sorts.size()];
+        final Object[] keyElements = new Object[queryInfo.sorts.size()];
         int k = 0;
         for (Sort<?> keyInfo : queryInfo.sorts)
             try {
@@ -159,12 +207,16 @@ public class CursoredPageImpl<T> implements CursoredPage<T> {
                         value = ((Method) accessor).invoke(value);
                     else
                         value = ((Field) accessor).get(value);
-                keyValues[k++] = value;
+                keyElements[k++] = value;
+
+                if (trace && tc.isDebugEnabled())
+                    Tr.debug(this, tc, "key element " + k + ": " +
+                                       queryInfo.loggable(value));
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException x) {
                 throw new DataException(x.getCause());
             }
 
-        return Cursor.forKey(keyValues);
+        return Cursor.forKey(keyElements);
     }
 
     @Override
@@ -224,16 +276,17 @@ public class CursoredPageImpl<T> implements CursoredPage<T> {
         s.append(isForward ? ", CURSOR_NEXT(" : " CURSOR_PREVIOUS(");
 
         boolean firstSort = true;
-        for (Sort<?> sort : queryInfo.sorts) {
-            if (firstSort)
-                firstSort = false;
-            else
-                s.append(", ");
-            s.append(sort.property()); //
-            s.append(sort.isAscending() //
-                            ? sort.ignoreCase() ? " ASC IgnoreCase" : " ASC" //
-                            : sort.ignoreCase() ? " DESC IgnoreCase" : " DESC");
-        }
+        if (queryInfo.sorts != null)
+            for (Sort<?> sort : queryInfo.sorts) {
+                if (firstSort)
+                    firstSort = false;
+                else
+                    s.append(", ");
+                s.append(sort.property()); //
+                s.append(sort.isAscending() //
+                                ? sort.ignoreCase() ? " ASC IgnoreCase" : " ASC" //
+                                : sort.ignoreCase() ? " DESC IgnoreCase" : " DESC");
+            }
 
         s.append(") @").append(Integer.toHexString(hashCode()));
         return s.toString();

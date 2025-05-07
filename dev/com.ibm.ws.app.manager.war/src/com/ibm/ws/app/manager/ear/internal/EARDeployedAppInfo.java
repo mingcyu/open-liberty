@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
 import org.osgi.framework.ServiceRegistration;
 
@@ -57,7 +56,6 @@ import com.ibm.ws.javaee.dd.app.Application;
 import com.ibm.ws.javaee.dd.app.Module;
 import com.ibm.ws.javaee.ddmodel.DDParser;
 import com.ibm.ws.javaee.version.JavaEEVersion;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.wsspi.adaptable.module.Container;
 import com.ibm.wsspi.adaptable.module.DefaultNotification;
 import com.ibm.wsspi.adaptable.module.Entry;
@@ -84,20 +82,10 @@ public class EARDeployedAppInfo extends DeployedAppInfoBase {
         WAR,
         EAR;
 
-        private static boolean issuedBetaMessage = false;
-
         public static ClassPathLoader convert(Object config) {
             if (!(config instanceof String)) {
                 // handles null case; default to WAR
                 return WAR;
-            }
-            if (!ProductInfo.getBetaEdition()) {
-                throw new UnsupportedOperationException("BETA: The config attribute 'addWebModuleClassPathTo' is beta and is not available.");
-            } else {
-                if (!issuedBetaMessage) {
-                    Tr.info(_tc, "BETA: The beta config attribute 'addWebModuleClassPathTo' has been used.");
-                    issuedBetaMessage = true;
-                }
             }
             try {
                 return valueOf(((String) config).toUpperCase());
@@ -1083,11 +1071,20 @@ public class EARDeployedAppInfo extends DeployedAppInfoBase {
             if (classPathInfos.isEmpty()) {
                 return;
             }
-            Set<String> shouldAdd = containerInfos.stream() //
-                            .map((c) -> c.getName()) // map to the container name
-                            .map((n) -> n.startsWith("/") ? n : "/" + n) // add leading slash
-                            .collect(Collectors.toCollection(LinkedHashSet::new)); // using toCollection to ensure mutability
-            classPathInfos.stream().filter((c) -> shouldAdd.add(c.getName())).forEach(containerInfos::add);
+            Set<String> shouldAdd = new LinkedHashSet<>();
+            for (ContainerInfo c : containerInfos) {
+                String name = c.getName();
+                if (!name.startsWith("/")) {
+                    name = "/" + name; // add leading slash
+                }
+                shouldAdd.add(name);
+            }
+
+            for (ContainerInfo c : classPathInfos) {
+                if (shouldAdd.add(c.getName())) {
+                    containerInfos.add(c);
+                }
+            }
         }
 
         boolean contains(ContainerInfo manifestClassPath) {
@@ -1118,10 +1115,12 @@ public class EARDeployedAppInfo extends DeployedAppInfoBase {
 
     private void addEARLibContainerInfos(List<ContainerInfo> classpathContainerInfos) {
         if (this.appLibsInfo != null) {
-            this.appLibsInfo.getLibsInfos().stream(). //
-            // filter if already on the ear loader from manifestClassPathInfos
-                            filter((c) -> !manifestClassPathInfos.contains(c)). //
-                            forEach(classpathContainerInfos::add);
+            for (ContainerInfo c : appLibsInfo.getLibsInfos()) {
+                // filter if already on the ear loader from manifestClassPathInfos
+                if (!manifestClassPathInfos.contains(c)) {
+                    classpathContainerInfos.add(c);
+                }
+            }
         }
     }
 
@@ -1159,10 +1158,12 @@ public class EARDeployedAppInfo extends DeployedAppInfoBase {
         try {
             for (ModuleContainerInfoBase modInfo : moduleContainerInfos) {
                 if (type.isInstance(modInfo)) {
-                    modInfo.getClassesContainerInfo().stream(). //
-                    // filter if already on the ear loader from manifestClassPathInfos
-                                    filter((c) -> !manifestClassPathInfos.contains(c)). //
-                                    forEach(classpathContainerInfos::add);
+                    for (ContainerInfo c : modInfo.getClassesContainerInfo()) {
+                        // filter if already on the ear loader from manifestClassPathInfos
+                        if (!manifestClassPathInfos.contains(c)) {
+                            classpathContainerInfos.add(c);
+                        }
+                    }
                 }
             }
         } catch (Throwable th) {

@@ -20,16 +20,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.info.Info;
 import org.eclipse.microprofile.openapi.models.servers.Server;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 import io.openliberty.microprofile.openapi20.internal.services.ApplicationRegistry;
 import io.openliberty.microprofile.openapi20.internal.services.OpenAPIInfoConfig;
@@ -115,21 +112,9 @@ public class ApplicationServlet extends OpenAPIServletBase {
                     model.setServers(servers);
                 }
 
-                Info configuredInfo;
-                if (ProductInfo.getBetaEdition()) {
-                    configuredInfo = infoConfigTracker.getService().getInfo()
-                                                      .orElseGet(() -> OpenAPIUtils.getConfiguredInfo(ConfigProvider.getConfig()));
-                } else {
-                    configuredInfo = OpenAPIUtils.getConfiguredInfo(ConfigProvider.getConfig());
-                }
+                infoConfigTracker.getService().getInfo().ifPresent(model::setInfo);
 
-                if (configuredInfo != null) {
-                    model.setInfo(configuredInfo);
-                }
-
-                if (ProductInfo.getBetaEdition()) {
-                    versionConfigTracker.getService().applyConfig(model);
-                }
+                versionConfigTracker.getService().applyConfig(model);
 
                 document = OpenAPIUtils.getOpenAPIDocument(model, responseFormat);
             } else {

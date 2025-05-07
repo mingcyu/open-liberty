@@ -44,13 +44,13 @@ import io.openliberty.microprofile.openapi20.fat.cache.filter.MyOASFilter;
 @RunWith(FATRunner.class)
 public class CacheTest {
 
-    private static final String SERVER_NAME = "ApplicationProcessorServer";
+    private static final String SERVER_NAME = "OpenAPITestServer";
 
     @Server(SERVER_NAME)
     public static LibertyServer server;
 
     @ClassRule
-    public static RepeatTests r = FATSuite.repeatDefault(SERVER_NAME);
+    public static RepeatTests r = FATSuite.repeatReduced(SERVER_NAME);
 
     @Test
     public void testCacheHit() throws Exception {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2024 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -27,6 +27,7 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -263,7 +264,7 @@ public class ArtifactDownloaderUtils {
             } else if (repoResponseCode == 401 || repoResponseCode == 403) {
                 throw ExceptionUtils.createByKey("ERROR_INVALID_MAVEN_CREDENTIALS", repo);
             } else {
-                throw ExceptionUtils.createByKey("ERROR_FAILED_TO_CONNECT_MAVEN"); //503
+                throw ExceptionUtils.createByKey("ERROR_FAILED_TO_CONNECT_MAVEN", repo); //503
             }
         }
     }
@@ -300,11 +301,7 @@ public class ArtifactDownloaderUtils {
     }
 
     private static String base64Encode(String userInfo) {
-        try {
-            return Base64.getEncoder().encodeToString(userInfo.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException encodingException) {
-            throw new RuntimeException("Failed to get bytes for user info using UTF-8.", encodingException);
-        }
+        return Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8));
     }
 
     private static class SystemPropertiesProxyAuthenticator extends Authenticator {

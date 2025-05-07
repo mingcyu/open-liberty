@@ -12,7 +12,6 @@ package io.openliberty.microprofile.telemetry.internal_fat;
 import static com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions.SERVER_ONLY;
 
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -66,9 +65,8 @@ public class TelemetryUserFeatureAppScopedTest extends FATServletClient {
     @Server(SERVER_NAME)
     public static LibertyServer server;
 
-    //Telemetry 20 because we're only testing runtime mode
     @ClassRule
-    public static RepeatTests r = TelemetryActions.telemetry20Repeats(SERVER_NAME);
+    public static RepeatTests r = TelemetryActions.latestTelemetryRepeats(SERVER_NAME);
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -103,8 +101,6 @@ public class TelemetryUserFeatureAppScopedTest extends FATServletClient {
                         .addAsResource(appConfig, "META-INF/microprofile-config.properties");
 
         ShrinkHelper.exportAppToServer(server, app, SERVER_ONLY);
-
-        server.setJvmOptions(Arrays.asList("-Dcom.ibm.ws.beta.edition=true"));
 
         server.startServer();
     }

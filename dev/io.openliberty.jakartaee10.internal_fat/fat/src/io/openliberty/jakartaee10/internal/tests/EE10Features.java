@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2024 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -117,6 +117,7 @@ public class EE10Features {
     //
 
     public EE10Features(String installRoot) throws Exception {
+        FeatureUtilities.removeTestAutoFeatures(new File(installRoot));
         this.serverFeatures_ol = getInstalledFeatures(installRoot, OPEN_LIBERTY_ONLY);
         this.versionedFeatures_ol = getVersionedFeatures(serverFeatures_ol);
 
@@ -265,6 +266,11 @@ public class EE10Features {
         //remove MP 6.1 features which would conflict with MP 7.0 features
         features.remove("microProfile-6.1");
         features.remove("mpTelemetry-1.1");
+
+        //remove MP 7.0 features which would conflict with MP 7.1 features
+        features.remove("microProfile-7.0");
+        features.remove("mpOpenAPI-4.0");
+        features.remove("mpTelemetry-2.0");
 
         // remove client features
         features.remove("jakartaeeClient-10.0");

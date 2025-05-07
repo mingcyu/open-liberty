@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -26,7 +26,6 @@ import componenttest.annotation.Server;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.database.container.DatabaseContainerFactory;
-import componenttest.topology.database.container.DatabaseContainerType;
 import componenttest.topology.database.container.DatabaseContainerUtil;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
@@ -42,7 +41,6 @@ public class DataJPATest extends FATServletClient {
      */
     static final String[] EXPECTED_ERROR_MESSAGES = //
                     new String[] {
-                                   "CWWKD1010E.*countBySurgePriceGreaterThanEqual",
                                    "CWWKD1026E.*allSorted",
                                    "CWWKD1046E.*publicDebtAsByte",
                                    "CWWKD1046E.*publicDebtAsDouble",
@@ -53,8 +51,13 @@ public class DataJPATest extends FATServletClient {
                                    "CWWKD1046E.*numFullTimeWorkersAsDouble",
                                    "CWWKD1046E.*numFullTimeWorkersAsFloat",
                                    "CWWKD1046E.*numFullTimeWorkersAsShort",
+                                   "CWWKD1054E.*findByIsControlTrueAndNumericValueBetween",
                                    "CWWKD1075E.*Apartment2",
-                                   "CWWKD1075E.*Apartment3"
+                                   "CWWKD1075E.*Apartment3",
+                                   "CWWKD1091E.*countBySurgePriceGreaterThanEqual",
+                                   // work around to prevent bad behavior from EclipseLink (see #30575)
+                                   "CWWKD1103E.*findBankAccountsByFilingStatus"
+
                     };
 
     @ClassRule
@@ -66,12 +69,7 @@ public class DataJPATest extends FATServletClient {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        // Get driver type
-        DatabaseContainerType type = DatabaseContainerType.valueOf(testContainer);
-        server.addEnvVar("DB_DRIVER", type.getDriverName());
-
-        // Set up server DataSource properties
-        DatabaseContainerUtil.setupDataSourceDatabaseProperties(server, testContainer);
+        DatabaseContainerUtil.build(server, testContainer).withDriverVariable().withDatabaseProperties().modify();
 
         WebArchive war = ShrinkHelper.buildDefaultApp("DataJPATestApp", "test.jakarta.data.jpa.web");
         ShrinkHelper.exportAppToServer(server, war);

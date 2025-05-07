@@ -122,35 +122,33 @@
 				<and> <equals arg1="17" arg2="${fat.minimum.java.level}"/> <equals arg1="11"  arg2="${java.specification.version}"/> </and>
 				<and> <equals arg1="21" arg2="${fat.minimum.java.level}"/> <equals arg1="11"  arg2="${java.specification.version}"/> </and>
 				<and> <equals arg1="21" arg2="${fat.minimum.java.level}"/> <equals arg1="17"  arg2="${java.specification.version}"/> </and>
-				<and> <equals arg1="21" arg2="${fat.minimum.java.level}"/> <equals arg1="20"  arg2="${java.specification.version}"/> </and>
 		    </or>
 		</condition>
-		
+
 		<!-- Output java level info -->
 		<echo message="fat.minimum.java.level=${fat.minimum.java.level}" />
 		<echo message="java.specification.version=${java.specification.version}" />
 		<echo message="micro.version=${micro.version}" />
-		
+
 		<iff>
 			<istrue value="${skip.java.level}" />
 			<then>
-				<var name="test.bucket.class" unset="true" />
-				<var name="test.bucket.name" unset="true" />
-				
-				<property name="test.bucket.class" value="componenttest.custom.junit.runner.AlwaysPassesTest" />
-				<property name="test.bucket.name" value="${test.bucket.class}" />
+				<property name="test.bucket.class.to.run" value="componenttest.custom.junit.runner.AlwaysPassesTest" />
+				<property name="test.bucket.name.to.run" value="${test.bucket.class.to.run}" />
 
 				<echo message="FAT bucket WILL NOT run tests, due to the following properties:" />
 				<echo message="     This bucket uses java level:         ${fat.minimum.java.level}" />
 			</then>
 		</iff>
-		
+
+		<property name="test.bucket.class.to.run" value="${test.bucket.class}" />
+		<property name="test.bucket.name.to.run" value="${test.bucket.name}" />
+
 		<!-- What will our entry point be? -->
-		<echo message="FAT entry point will be: ${test.bucket.class}" />
-		
+		<echo message="FAT entry point will be: ${test.bucket.class.to.run}" />
 	</target>
 
-	<!-- Properties used: test.bucket.name, dir.log, dir.log.xml, dir.log.tmp, local.properties, logging.properties, acute.properties, test.bucket.path, test.bucket.class -->
+	<!-- Properties used: test.bucket.name.to.run, dir.log, dir.log.xml, dir.log.tmp, local.properties, logging.properties, acute.properties, test.bucket.path, test.bucket.class.to.run -->
 	<target name="runTests" depends="initProperties">
 		<condition property="do.debug">
 			<isset property="FAT_DEBUGGING" />
@@ -179,11 +177,24 @@
 		</condition>
 
 		<!-- boolean for Java15+.  The assumption is that at this point forward (Java 15), we will only be building using LTS 
-		     or interium versions of Java -->
+		     or interim versions of Java -->
 		<condition property="is.java15.orHigher" value="true">
 			<not>
 				<or>
 					<equals arg1="11" arg2="${java.specification.version}"/>
+					<equals arg1="1.8" arg2="${java.specification.version}"/>
+				</or>
+		    </not>
+		</condition>
+		
+		<!-- boolean for Java24+.  The assumption is that at this point forward (Java 24), we will only be building using LTS 
+		     or interim versions of Java -->
+		<condition property="is.java24.orHigher" value="true">
+			<not>
+				<or>
+					<equals arg1="21"  arg2="${java.specification.version}"/>
+					<equals arg1="17"  arg2="${java.specification.version}"/>
+					<equals arg1="11"  arg2="${java.specification.version}"/>
 					<equals arg1="1.8" arg2="${java.specification.version}"/>
 				</or>
 		    </not>
@@ -199,12 +210,14 @@
 		<property name="illegal.access.permit.fat" value=""/>
 		
 		<!-- Java 17 began the security manager's deprecation process (https://openjdk.java.net/jeps/411).
-			     In Java 18, the `java.security.manager` system property's default changed from `allow` to `disallow`, which causes our build process to fail.  
-				 Setting up a gated property (use.java.security.manager) so that any builds that take place on Java 15+ use the JVM override 
-				 -Djava.security.manager=allow which is needed for our build process, but older versions will be skipped --> 
+             In Java 18, the `java.security.manager` system property's default changed from `allow` to `disallow`, which causes our build process to fail.  
+             Setting up a gated property (use.java.security.manager) so that any builds that take place on Java 15+ use the JVM override 
+             -Djava.security.manager=allow which is needed for our build process, but older versions will be skipped. 
+             In Java 24, they are permanently disabling the security manager (https://openjdk.org/jeps/486) and trying to specify `-Djava.security.manager=allow` throws an exception.  So not allowing that parameter to be set if Java 24 or higher. --> 
 		<condition property="use.java.security.manager" value="-Djava.security.manager=allow">
 			<and>
 				<istrue value="${is.java15.orHigher}"/>
+				<not><istrue value="${is.java24.orHigher}"/></not>
 				<not><istrue value="${supports.framework.java}"/></not>
 			</and>
 		</condition>
@@ -342,7 +355,7 @@
 		<mkdir dir="${dir.log.xml}" />
 		<mkdir dir="${dir.log.tmp}" />
 		<copy file="${logging.properties}" tofile="${gen.logging.properties}" />
-		<propertyfile file="${gen.logging.properties}" comment="Logging file used by ${test.bucket.name}">
+		<propertyfile file="${gen.logging.properties}" comment="Logging file used by ${test.bucket.name.to.run}">
 			<entry key="java.util.logging.FileHandler.pattern" value="${dir.log}/output.txt" />
 		</propertyfile>
 
@@ -350,6 +363,8 @@
 
 		<!-- Load all env vars into env.* properties -->
 		<property environment="env" />
+		
+        <!-- Artifactory Registry Properties -->
 		
         <condition property="fat.test.artifactory.download.server"
                    value="${artifactory.download.server}"
@@ -380,6 +395,26 @@
                    else="${env.ARTIFACTORY_FORCE_EXTERNAL_REPO}">
           <isset property="artifactory.force.external.repo" />
         </condition>
+		
+        <!-- Internal Registry Properties -->
+		
+        <condition property="fat.test.docker.registry.server"
+                   value="${docker_registry.server}"
+                   else="${env.DOCKER_REGISTRY_SERVER}">
+          <isset property="docker_registry.server" />
+        </condition>
+		
+        <condition property="fat.test.docker.registry.user"
+                   value="${docker_registry.user}"
+                   else="${env.DOCKER_REGISTRY_USER}">
+          <isset property="docker_registry.user" />
+        </condition>
+        	
+        <condition property="fat.test.docker.registry.password"
+                   value="${docker_registry.password}"
+                   else="${env.DOCKER_REGISTRY_PASSWORD}">
+          <isset property="docker_registry.password" />
+        </condition>
 
 		<tstamp>
 			<format property="today.day" pattern="EEEE" />
@@ -395,7 +430,7 @@
 			</and>
 		</condition>
 
-		<echo>Running ${test.bucket.name}</echo>
+		<echo>Running ${test.bucket.name.to.run}</echo>
 		<echo>Timeout: ${fattest.timeout}</echo>
 		<iff if="env.debug.framework">
 			<then>
@@ -550,7 +585,7 @@
 					<!-- report will be generated as xml -->
 					<formatter type="xml" />
 					<!-- Invoke JUnit TestSuite -->
-					<test todir="${dir.log.xml}" name="${test.bucket.class}" />
+					<test todir="${dir.log.xml}" name="${test.bucket.class.to.run}" />
 					<!-- need the file.encoding for running on z/os -->
 					<jvmarg value="-Dfile.encoding=${ascii.file.encoding}" />
 					<!-- conditional JVM args and properties follow
@@ -586,7 +621,7 @@
 				<!-- Obtain the set of mark files again, in case any servers stopped during above wait -->
 				<fileset dir="${basedir}/output" includes="*.mrk" id="markfiles" />
 				<foreach param="serverFile" in="markfiles">
-					<echo>Failure running ${test.bucket.name}, attempting to stop servers that did not stop properly : ${serverFile}</echo>
+					<echo>Failure running ${test.bucket.name.to.run}, attempting to stop servers that did not stop properly : ${serverFile}</echo>
 					<local name="serverDir" />
 					<basename property="serverDir" file="${serverFile}" suffix=".mrk" />
 					<condition property="script.exec" value="cmd" else="sh">
@@ -603,7 +638,7 @@
 						<arg line="${serverDir}" />
 					</exec>
 
-					<echo>Failure running ${test.bucket.name}, attempting to copy logs from servers that did not stop properly : ${serverFile}</echo>
+					<echo>Failure running ${test.bucket.name.to.run}, attempting to copy logs from servers that did not stop properly : ${serverFile}</echo>
 					<tstamp>
 						<format property="copyTime" pattern="dd-MM-yyyy-HH-mm-ss" />
 					</tstamp>
@@ -618,7 +653,7 @@
 
 			</finally>
 		</try>
-		<echo>Finished running ${test.bucket.name}</echo>
+		<echo>Finished running ${test.bucket.name.to.run}</echo>
 		<echo>XML report is available at ${dir.log.xml}</echo>
 		<iff if="is.running.automated.build">
 			<then>
@@ -710,6 +745,10 @@
 			<arg value="-Dbasedir=${basedir}" />
 			<arg value="-Ddir.log.html=${dir.log.html}" />
 			<arg value="-Ddir.log.xml=${dir.log.xml}" />
+			<!-- In Java 24, the default for 'jdk.xml.enableExtensionFunctions' was changed to false
+				 This broke our JUnit XML to HTML transformations for FAT output in junit.html
+				 Forcing value back to true - https://bugs.openjdk.org/browse/JDK-8343024 -->
+			<jvmarg line="-Djdk.xml.enableExtensionFunctions=true" />
 		</java>
 
 		<iff>

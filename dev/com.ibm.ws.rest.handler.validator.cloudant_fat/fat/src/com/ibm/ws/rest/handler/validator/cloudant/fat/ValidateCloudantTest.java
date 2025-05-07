@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2024 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -38,11 +38,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.utility.DockerImageName;
 
 import com.ibm.websphere.simplicity.log.Log;
 
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.Server;
+import componenttest.containers.ImageBuilder;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
@@ -62,8 +64,10 @@ public class ValidateCloudantTest extends FATServletClient {
     private static String CLOUDANT_URL;
     private static String databaseURI;
 
+    private static final DockerImageName CLOUDANT_DEV = ImageBuilder.build("cloudant-dev:2.0.1").getDockerImageName();
+
     @ClassRule //FIXME the cloudant-developer image is deprecated consider using CouchDB
-    public static GenericContainer<?> cloudant = new GenericContainer<>("kyleaure/cloudant-developer:1.0")
+    public static GenericContainer<?> cloudant = new GenericContainer<>(CLOUDANT_DEV)
                     .withExposedPorts(5984)
                     .withLogConsumer(ValidateCloudantTest::log);
 
@@ -86,7 +90,6 @@ public class ValidateCloudantTest extends FATServletClient {
         List<String> messages = new ArrayList<>();
         messages.add("CWWKS0008I"); // CWWKS0008I: The security service is ready.
         messages.add("CWWKS4105I"); // CWWKS4105I: LTPA configuration is ready after # seconds.
-        messages.add("CWPKI0803A"); // CWPKI0803A: SSL certificate created in # seconds. SSL key file: ...
         messages.add("CWWKO0219I: .* defaultHttpEndpoint-ssl"); // CWWKO0219I: TCP Channel defaultHttpEndpoint-ssl has been started and is now listening for requests on host *  (IPv6) port 8020.
         messages.add("CWWKT0016I"); // CWWKT0016I: Web application available (default_host): http://9.10.111.222:8010/ibm/api/
         server.waitForStringsInLogUsingMark(messages);

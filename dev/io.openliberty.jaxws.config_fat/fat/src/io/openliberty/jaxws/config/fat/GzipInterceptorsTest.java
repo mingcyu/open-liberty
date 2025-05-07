@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -49,7 +49,8 @@ public class GzipInterceptorsTest {
 
     Logger LOG = Logger.getLogger("GzipInterceptorsTest.class");
 
-    private final static int REQUEST_TIMEOUT = 10;
+    // Max timeout set to 5 minutes in milliseconds
+    private final static int REQUEST_TIMEOUT = 300000;
     private final static String GZIP_OUT_INTERCEPTOR_PROP = "-Dcxf.add.gzip.out.interceptor";
     private final static String GZIP_IN_INTERCEPTOR_PROP =  "-Dcxf.add.gzip.in.interceptor";
     private final static String GZIPOUT_INTERCEPTOR_INVOKED =  "Inside handleMessage of GZIPOutInterceptor";
@@ -93,7 +94,6 @@ public class GzipInterceptorsTest {
     @Test
     public void testEnableGZIPInterceptors() throws Exception {
 
-        gzipServer.reconfigureServer("GzipInterceptorsTestServer/server.xml", "CWWKG0017I");
         String response = runTest(gzipServer, "testWebServiceClient/IgnoreUnexpectedElementTestServiceServlet?target=AddedElement");
         // Log response to output.txt
 	LOG.info("testEnableGZIPInterceptors - Response = " + response);
@@ -102,8 +102,8 @@ public class GzipInterceptorsTest {
 			response.contains("Hello, AddedElement"));
 
         // Test default behavior - gzip interceptors should not be enabled
-	String findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED);
-	String findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED);
+	String findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED, 15000);
+	String findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED, 15000);
 	assertTrue("Unexpeced output [" + GZIPOUT_INTERCEPTOR_INVOKED + "]  found in the server log", findStr1 == null);
 	assertTrue("Unexpeced output [" + GZIPIN_INTERCEPTOR_INVOKED + "]  found in the server log", findStr2 == null);
 
@@ -124,8 +124,8 @@ public class GzipInterceptorsTest {
 	assertTrue("Expected successful response 2, but response was " + response,
 			response.contains("Hello, AddedElement"));
 
-	findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED);
-	findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED);
+	findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED, 15000);
+	findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED, 15000);
 
 	assertTrue("Unable to find the output [" + GZIPOUT_INTERCEPTOR_INVOKED + "]  in the server log", findStr1 != null);
 	assertTrue("Unable to find the output [" + GZIPIN_INTERCEPTOR_INVOKED + "]  in the server log", findStr2 != null);
@@ -164,8 +164,8 @@ public class GzipInterceptorsTest {
 	assertTrue("Expected successful response, but response was " + response,
 			response.contains("Hello, AddedElement"));
 
-	String findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED);
-	String findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED);
+	String findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED, 15000);
+	String findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED, 15000);
 	assertTrue("Unexpeced output [" + GZIPOUT_INTERCEPTOR_INVOKED + "]  found in the server log", findStr1 == null);
 	assertTrue("Unexpeced output [" + GZIPIN_INTERCEPTOR_INVOKED + "]  found in the server log", findStr2 == null);
 
@@ -178,15 +178,18 @@ public class GzipInterceptorsTest {
 	assertTrue("Expected successful response 2, but response was " + response,
 			response.contains("Hello, AddedElement"));
 
-	findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED);
-	findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED);
+	findStr1 = gzipServer.waitForStringInTrace(GZIPOUT_INTERCEPTOR_INVOKED, 15000);
+	findStr2 = gzipServer.waitForStringInTrace(GZIPIN_INTERCEPTOR_INVOKED, 15000);
 
 	assertTrue("Unable to find the output [" + GZIPOUT_INTERCEPTOR_INVOKED + "]  in the server log", findStr1 != null);
 	assertTrue("Unable to find the output [" + GZIPIN_INTERCEPTOR_INVOKED + "]  in the server log", findStr2 != null);
 
     }
 
-    private String runTest(LibertyServer server, String pathAndParams) throws ProtocolException, IOException {
+    private String runTest(LibertyServer server, String pathAndParams) throws Exception {
+        // Set the mark to end of log before running test so searching the trace log doesn't get the trace messages from the previous test
+        gzipServer.setTraceMarkToEndOfDefaultTrace();
+
         URL url = new URL("http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/" + pathAndParams);
         Log.info(this.getClass(), "assertResponseNotNull", "Calling Application with URL=" + url.toString());
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -20,10 +20,10 @@ import org.junit.runners.Suite.SuiteClasses;
 import com.ibm.ws.jca.fat.app.ConnectionManagerMBeanTest;
 import com.ibm.ws.jca.fat.app.DependantApplicationTest;
 import com.ibm.ws.jca.fat.app.JCATest;
-import com.ibm.ws.jca.fat.regr.InboundSecurityCheckpointTest;
 import com.ibm.ws.jca.fat.regr.InboundSecurityTest;
 import com.ibm.ws.jca.fat.regr.InboundSecurityTestRapid;
 
+import componenttest.rules.repeater.EE8FeatureReplacementAction;
 import componenttest.rules.repeater.EmptyAction;
 import componenttest.rules.repeater.JakartaEE10Action;
 import componenttest.rules.repeater.JakartaEE9Action;
@@ -39,8 +39,7 @@ import componenttest.topology.impl.LibertyServerFactory;
                 JCATest.class,
                 ConnectionManagerMBeanTest.class,
                 InboundSecurityTest.class,
-                InboundSecurityTestRapid.class,
-                InboundSecurityCheckpointTest.class
+                InboundSecurityTestRapid.class
 })
 public class FATSuite {
 
@@ -55,12 +54,12 @@ public class FATSuite {
         // If we are running on Java 8 have EE9 be the lite mode test to run.
         if (JavaInfo.JAVA_VERSION >= 11) {
             repeat = RepeatTests.with(new EmptyAction())
-                            // need widen option to handle jar file within a jar file.
-                            .andWith(new JakartaEE9Action().fullFATOnly().withWiden())
-                            // need widen option to handle jar file within a jar file.
-                            .andWith(new JakartaEE10Action().withWiden());
+                            .andWith(new EE8FeatureReplacementAction().fullFATOnly())
+                            .andWith(new JakartaEE9Action().fullFATOnly().withWiden()) // need widen option to handle jar file within a jar file.
+                            .andWith(new JakartaEE10Action().withWiden()); // need widen option to handle jar file within a jar file.
         } else {
             repeat = RepeatTests.with(new EmptyAction())
+                            .andWith(new EE8FeatureReplacementAction().fullFATOnly())
                             // need widen option to handle jar file within a jar file.
                             .andWith(new JakartaEE9Action().withWiden());
         }

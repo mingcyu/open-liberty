@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 IBM Corporation and others.
+ * Copyright (c) 2020, 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -72,8 +72,8 @@ public class LPSTest {
 
 	@Before
 	public void beforeTest() throws Exception {
+		WSATTest.deleteStateFiles(server1, server2);
 		FATUtils.startServers(server1, server2);
-		WSATTest.callClearResourcesServlet("recoveryServer", server1, server2);
 	}
 	
 	@After
@@ -262,5 +262,6 @@ public class LPSTest {
         assertNotNull(s.getServerName() + " did not crash", s.waitForStringInTrace(XAResourceImpl.DUMP_STATE));
         s.resetStarted();
 		FATUtils.startServers(s);
+		s.resetLogMarks();
 	}
 }

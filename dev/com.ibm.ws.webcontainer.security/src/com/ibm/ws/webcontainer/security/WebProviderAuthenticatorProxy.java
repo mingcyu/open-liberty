@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2023 IBM Corporation and others.
+ * Copyright (c) 2013, 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -83,6 +83,7 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
     private WebProviderAuthenticatorHelper authHelper;
     private ReferrerURLCookieHandler referrerURLCookieHandler = null;
     private WebAppSecurityConfig webAppSecurityConfig = null;
+    public static ThreadLocal<String> threadOidcProvider = new ThreadLocal<String>();
 
     protected final ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef;
 
@@ -510,10 +511,7 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
      * @return
      */
     private AuthenticationResult handleAccessToken(WebRequest webRequest) {
-        HttpServletRequest req = webRequest.getHttpServletRequest();
-        HttpServletResponse res = webRequest.getHttpServletResponse();
-
-        AuthenticationResult authResult = handleOAuth(req, res);
+        AuthenticationResult authResult = handleOAuth(webRequest);
         if (authResult.getStatus() != AuthResult.CONTINUE) {
             authResult.setAuditCredType(AuditEvent.CRED_TYPE_OAUTH_TOKEN);
         }
@@ -605,11 +603,14 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
         if (provider == null) {
             return new AuthenticationResult(AuthResult.CONTINUE, "not an OpenID Connect client request, skipping OpenID Connect client...");
         }
+
         ProviderAuthenticationResult oidcResult = oidcClient.authenticate(req, res, provider, referrerURLCookieHandler, firstCall);
 
         if (oidcResult.getStatus() == AuthResult.CONTINUE) {
             return OIDC_CLIENT_CONT;
         }
+
+        setThreadOidcProvider(provider);
 
         if (oidcResult.getStatus() == AuthResult.REDIRECT_TO_PROVIDER) {
             return new AuthenticationResult(AuthResult.REDIRECT, oidcResult.getRedirectUrl());
@@ -756,12 +757,18 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
      * @param webRequest
      * @return
      */
-    private AuthenticationResult handleOAuth(HttpServletRequest req, HttpServletResponse res) {
+    private AuthenticationResult handleOAuth(WebRequest webRequest) {
+        HttpServletRequest req = webRequest.getHttpServletRequest();
+        HttpServletResponse res = webRequest.getHttpServletResponse();
+
         AuthenticationResult authResult = OAUTH_CONT;
         if (oauthServiceRef != null) {
             OAuth20Service oauthService = oauthServiceRef.getService();
             if (oauthService == null) {
                 return new AuthenticationResult(AuthResult.CONTINUE, "OAuth service is not available, skipping OAuth...");
+            }
+            else if (webRequest.isUnprotectedURI() && !webRequest.hasAuthenticationData()){
+                return new AuthenticationResult(AuthResult.CONTINUE, "OAuth service is  available, but resource is unprotected, skipping OAuth...");
             }
 
             ProviderAuthenticationResult oauthResult = oauthService.authenticate(req, res);
@@ -820,5 +827,13 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
             cookieHelper = new SSOCookieHelperImpl(webAppSecurityConfig);
         }
         return new SSOAuthenticator(securityService.getAuthenticationService(), securityMetadata, webAppSecurityConfig, cookieHelper, ssoAuthFilterRef);
+    }
+
+    private void setThreadOidcProvider(String oidcProvider) {
+        threadOidcProvider.set(oidcProvider);
+    }
+
+    public static String getThreadOidcProvider() {
+        return threadOidcProvider.get();
     }
 }

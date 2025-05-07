@@ -15,12 +15,20 @@ package io.openliberty.microprofile.telemetry.internal_fat.apps.jaxrspropagation
 import static io.openliberty.microprofile.telemetry.internal_fat.common.SpanDataMatcher.isSpan;
 import static io.opentelemetry.api.trace.SpanKind.CLIENT;
 import static io.opentelemetry.api.trace.SpanKind.SERVER;
+import static io.opentelemetry.semconv.SemanticAttributes.HTTP_REQUEST_METHOD;
+import static io.opentelemetry.semconv.SemanticAttributes.HTTP_RESPONSE_STATUS_CODE;
+import static io.opentelemetry.semconv.SemanticAttributes.SERVER_ADDRESS;
+import static io.opentelemetry.semconv.SemanticAttributes.SERVER_PORT;
+import static io.opentelemetry.semconv.SemanticAttributes.URL_FULL;
+import static io.opentelemetry.semconv.SemanticAttributes.URL_SCHEME;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.util.List;
@@ -39,8 +47,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -49,21 +60,17 @@ import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import io.openliberty.microprofile.telemetry.internal_fat.common.spanexporter.InMemorySpanExporter;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.TraceState;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapSetter;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
-
-// In MpTelemetry-2.0 SemanticAttributes was moved to a new package, so we use import static to allow both versions to coexist
-import static io.opentelemetry.semconv.SemanticAttributes.HTTP_ROUTE;
-import static io.opentelemetry.semconv.SemanticAttributes.HTTP_RESPONSE_STATUS_CODE;
-import static io.opentelemetry.semconv.SemanticAttributes.HTTP_REQUEST_METHOD;
-import static io.opentelemetry.semconv.SemanticAttributes.URL_FULL;
-import static io.opentelemetry.semconv.SemanticAttributes.URL_SCHEME;
-import static io.opentelemetry.semconv.SemanticAttributes.SERVER_ADDRESS;
-import static io.opentelemetry.semconv.SemanticAttributes.SERVER_PORT;
 
 /**
  * Tests MP Telemetry integration with restfulWS and mpRestClient.
@@ -114,7 +121,6 @@ public class JaxRsEndpoints extends Application {
     private static final Logger LOGGER = Logger.getLogger(JaxRsEndpoints.class.getName());
 
     public static final String TEST_PASSED = "Test Passed";
-
     @Inject
     private InMemorySpanExporter spanExporter;
 
@@ -123,6 +129,12 @@ public class JaxRsEndpoints extends Application {
 
     @Inject
     private InjectableBean injectableBean;
+
+    @Inject
+    private OpenTelemetry openTelemetry;
+
+    @Inject
+    private Tracer tracer;
 
     private Client client;
 
@@ -328,6 +340,83 @@ public class JaxRsEndpoints extends Application {
         } finally {
             LOGGER.info("<<< getJax");
         }
+        return Response.ok(Span.current().getSpanContext().getTraceId()).build();
+    }
+
+    @GET
+    @Path("/checkTraceState")
+    public Response checkTraceState(@Context HttpHeaders headers) throws Exception {
+        for (String h : headers.getRequestHeaders().keySet()) {
+            if (h.equals("tracestate")) {
+                TraceState traceState = Span.current().getSpanContext().getTraceState();
+                if (traceState.get("key_1").equals("value.1")) {
+                    return Response.ok("Tracestate found").build();
+                }
+                return Response.ok("Tracestate found in HttpHeaders but not set in span").build();
+            }
+        }
+        return Response.ok("Tracestate not found").build();
+    }
+
+    //Test the tracestate we created is propagated on an outgoing request.
+    @GET
+    @Path("/traceState")
+    public Response testTraceState(@Context UriInfo uriInfo) throws Exception {
+        //Manually creates a span with tracestate=[key_1=value.1] and sets it as the current span.
+        Span parentSpan = Span.current();
+        TraceState parentTraceState = TraceState.builder().put("key_1", "value.1").build();
+        parentSpan = Span.wrap(SpanContext.create(parentSpan.getSpanContext().getTraceId(),
+                                                  parentSpan.getSpanContext().getSpanId(),
+                                                  parentSpan.getSpanContext().getTraceFlags(),
+                                                  parentTraceState));
+        //Child spans are expected to have the given parentTraceState.
+        try (Scope scope = parentSpan.makeCurrent()) {
+            String url = new String(uriInfo.getAbsolutePath().toString());
+            url = url.replace("traceState", "checkTraceState"); //The jaxrsclient will use the URL as given so it needs the final part to be provided.
+            Client client = ClientBuilder.newClient();
+            WebTarget resourceTarget = client.target(url);
+            Invocation.Builder builder = resourceTarget.request();
+
+            assertEquals("Tracestate found", builder.get(String.class));
+        } finally {
+            LOGGER.info("Tracestate found");
+        }
+        return Response.ok(Span.current().getSpanContext().getTraceId()).build();
+    }
+
+    //Test that the tracestate is correctly set in the current Span from the request headers
+    @GET
+    @Path("/traceStateFromHeaders")
+    public Response testTraceStateFromHeaders(@Context UriInfo uriInfo) throws Exception {
+        TraceState traceState = Span.current().getSpanContext().getTraceState();
+        assertFalse(traceState.isEmpty());
+        assertEquals(traceState.get("key_1"), "value.1");
+        //Test the tracestate that was received is propagated to an outgoing request
+        String url = new String(uriInfo.getAbsolutePath().toString());
+        url = url.replace("traceStateFromHeaders", "checkTraceState"); //The jaxrsclient will use the URL as given so it needs the final part to be provided.
+        Client client = ClientBuilder.newClient();
+        WebTarget resourceTarget = client.target(url);
+        Invocation.Builder builder = resourceTarget.request();
+
+        assertEquals("Tracestate found", builder.get(String.class));
+        return Response.ok(Span.current().getSpanContext().getTraceId()).build();
+
+    }
+
+    //Test that when we don't send a tracestate and the receiving side can see that it's missing
+    @GET
+    @Path("/emptyTraceState")
+    public Response testEmptyTraceState(@Context UriInfo uriInfo) throws Exception {
+        TraceState traceState = Span.current().getSpanContext().getTraceState();
+        assertTrue(traceState.isEmpty());
+
+        String url = new String(uriInfo.getAbsolutePath().toString());
+        url = url.replace("emptyTraceState", "checkTraceState"); //The jaxrsclient will use the URL as given so it needs the final part to be provided.
+        Client client = ClientBuilder.newClient();
+        WebTarget resourceTarget = client.target(url);
+        Invocation.Builder builder = resourceTarget.request();
+
+        assertEquals("Tracestate not found", builder.get(String.class));
         return Response.ok(Span.current().getSpanContext().getTraceId()).build();
     }
 

@@ -57,7 +57,7 @@ public class ClassPathDefaultLoaderServletTest3 extends FATServlet{
         // TEST_EJB2 is on the classpath twice!
         List<String> expectedOrder = Arrays.asList(TEST_EJB1, //
                                                    TEST_LIB14, //
-                                                   TEST_EJB2, // Note this is duplcated later
+                                                   TEST_EJB2, // Note this is duplicated later
                                                    TEST_LIB4, //
                                                    TEST_LIB6, //
                                                    TEST_RAR1, //
