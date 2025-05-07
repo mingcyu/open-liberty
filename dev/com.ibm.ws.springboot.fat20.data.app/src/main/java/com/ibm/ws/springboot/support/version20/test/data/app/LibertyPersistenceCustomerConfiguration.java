@@ -10,8 +10,7 @@
  *******************************************************************************/
 package com.ibm.ws.springboot.support.version20.test.data.app;
 
-import javax.persistence.EntityManagerFactory;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -19,9 +18,12 @@ import org.springframework.jndi.JndiObjectFactoryBean;
 
 import com.ibm.ws.springboot.support.version20.test.data.app.customer.Customer;
 
+import javax.persistence.EntityManagerFactory;
+
 @Configuration(proxyBeanMethods = false)
 @EnableJpaRepositories(basePackageClasses = Customer.class, entityManagerFactoryRef = "customerEntityManagerFactory")
-public class CustomerConfiguration {
+@ConditionalOnProperty(name = "test.persistence", havingValue = "liberty")
+public class LibertyPersistenceCustomerConfiguration {
 	@Bean
 	JndiObjectFactoryBean customerEntityManagerFactory() {
 		JndiObjectFactoryBean factoryBean = new JndiObjectFactoryBean();
