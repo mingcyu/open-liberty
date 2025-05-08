@@ -51,6 +51,9 @@ public class PostgresKerberosContainer extends PostgreSQLContainer<PostgresKerbe
         });
         if (!options.containsKey("fsync"))
             withConfigOption("fsync", "off");
+
+        withConfigOption("krb_server_keyfile", "/etc/krb5.keytab");
+
         List<String> command = new ArrayList<>();
         for (Entry<String, String> e : options.entrySet()) {
             command.add("-c");
