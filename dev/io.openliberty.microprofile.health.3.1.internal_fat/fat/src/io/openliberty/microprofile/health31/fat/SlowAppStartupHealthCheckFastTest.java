@@ -206,7 +206,9 @@ public class SlowAppStartupHealthCheckFastTest {
 
                             log("testStartupEndpointOnServerStart", message + " At this point the test will be re-run. Number of current attempts ---> " + num_of_attempts);
                             startServerThread.join();
-                            cleanUp();
+                            log("testStartupEndpointOnServerStart", " - Stopping the server, to re-run the test...");
+                            if ((server1 != null) && (server1.isStarted()))
+                                server1.stopServer(EXPECTED_FAILURES);
                             break; // We repeat the test case
                         }
                     } else {
