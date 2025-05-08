@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,7 +48,8 @@ public class ErrorPathTest extends FATServletClient {
     @Server("com.ibm.ws.jdbc.fat.krb5")
     public static LibertyServer server;
 
-    private static final DB2KerberosContainer db2 = DB2KerberosTest.db2;
+    @ClassRule
+    public static final DB2KerberosContainer db2 = DB2KerberosTest.db2;
 
     private static final String APP_NAME = DB2KerberosTest.APP_NAME;
 
@@ -61,8 +63,6 @@ public class ErrorPathTest extends FATServletClient {
         //TODO switch
         Path krbKeytabPath = Paths.get("publish", "servers", "com.ibm.ws.jdbc.fat.krb5", "security", "krb5.keytab");
 //        krbKeytabPath = Paths.get(server.getServerRoot(), "security", "krb5.keytab");
-
-        db2.start();
 
         ShrinkHelper.defaultDropinApp(server, APP_NAME, "jdbc.krb5.db2.web");
 
@@ -87,24 +87,7 @@ public class ErrorPathTest extends FATServletClient {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        Exception firstError = null;
-
-        try {
-            server.stopServer("CWWKS4345E: .*bogus.conf"); // expected by testConfigFileInvalid
-        } catch (Exception e) {
-            firstError = e;
-            Log.error(c, "tearDown", e);
-        }
-        try {
-            db2.stop();
-        } catch (Exception e) {
-            if (firstError == null)
-                firstError = e;
-            Log.error(c, "tearDown", e);
-        }
-
-        if (firstError != null)
-            throw firstError;
+        server.stopServer("CWWKS4345E: .*bogus.conf"); // expected by testConfigFileInvalid
     }
 
     /**

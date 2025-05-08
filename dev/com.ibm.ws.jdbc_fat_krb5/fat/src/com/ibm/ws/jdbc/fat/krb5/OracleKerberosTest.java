@@ -22,6 +22,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
@@ -53,38 +54,25 @@ public class OracleKerberosTest extends FATServletClient {
 
     public static final String APP_NAME = "krb5-oracle-app";
 
-    public static final OracleKerberosContainer oracle = new OracleKerberosContainer(FATSuite.network);
-
     @Server("com.ibm.ws.jdbc.fat.krb5.oracle")
     @TestServlet(servlet = OracleKerberosTestServlet.class, contextRoot = APP_NAME)
     public static LibertyServer server;
 
-    @ClassRule
     public static IBMJava8Rule skipOnIBMJava8 = new IBMJava8Rule();
+
+    public static OracleKerberosContainer oracle = new OracleKerberosContainer(FATSuite.network);
+
+    @ClassRule
+    public static RuleChain chain = RuleChain.outerRule(skipOnIBMJava8).around(oracle);
 
     @BeforeClass
     public static void setUp() throws Exception {
         Path krbConfPath = Paths.get(server.getServerRoot(), "security", "krb5.conf");
         FATSuite.krb5.generateConf(krbConfPath);
 
-        oracle.start();
-
         ShrinkHelper.defaultDropinApp(server, APP_NAME, "jdbc.krb5.oracle.web");
 
-        if (JavaInfo.JAVA_VERSION >= 1.8 && JavaInfo.JAVA_VERSION < 11) {
-            server.addEnvVar("ORACLE_DRIVER", "ojdbc8.jar");
-        }
-
-        if (JavaInfo.JAVA_VERSION >= 11 && JavaInfo.JAVA_VERSION < 21) {
-            server.addEnvVar("ORACLE_DRIVER", "ojdbc11.jar");
-        }
-
-        // TODO update to next ojdbc version that supports Java 23
-        // for now use ojdbc11.jar as a place holder for local testing.
-        if (JavaInfo.JAVA_VERSION >= 21) {
-            server.addEnvVar("ORACLE_DRIVER", "ojdbc11.jar");
-        }
-
+        server.addEnvVar("ORACLE_DRIVER", getDriverName());
         server.addEnvVar("ORACLE_DBNAME", oracle.getDatabaseName());
         server.addEnvVar("ORACLE_HOSTNAME", oracle.getHost());
         server.addEnvVar("ORACLE_PORT", "" + oracle.getMappedPort(1521));
@@ -104,24 +92,26 @@ public class OracleKerberosTest extends FATServletClient {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        Exception firstError = null;
+        server.stopServer("CWWKS4345E: .*BOGUS_KEYTAB"); // expected by testKerberosUsingPassword);
+    }
 
-        try {
-            server.stopServer("CWWKS4345E: .*BOGUS_KEYTAB"); // expected by testKerberosUsingPassword);
-        } catch (Exception e) {
-            firstError = e;
-            Log.error(c, "tearDown", e);
-        }
-        try {
-            oracle.stop();
-        } catch (Exception e) {
-            if (firstError == null)
-                firstError = e;
-            Log.error(c, "tearDown", e);
+    /**
+     * Get driver name based on the Java version
+     *
+     * @return name of JDBC driver
+     */
+    private static String getDriverName() {
+        if (JavaInfo.JAVA_VERSION >= 1.8 && JavaInfo.JAVA_VERSION < 11) {
+            return "ojdbc8.jar";
         }
 
-        if (firstError != null)
-            throw firstError;
+        if (JavaInfo.JAVA_VERSION >= 11 && JavaInfo.JAVA_VERSION < 21) {
+            return "ojdbc11.jar";
+        }
+
+        // TODO update to next ojdbc version that supports Java 23
+        // for now use ojdbc11.jar as a place holder for local testing.
+        return "ojdbc11.jar";
     }
 
     /**
