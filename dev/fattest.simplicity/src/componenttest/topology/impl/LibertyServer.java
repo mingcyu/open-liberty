@@ -7824,8 +7824,8 @@ public class LibertyServer implements LogMonitorClient {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
                                         " and IBM java 17 is available to run with FIPS 140-3 enabled.");
             } else {
-                Log.info(c, methodName, "The global build properties FIPS_140_3 is set for server " + getServerName() +
-                                        ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
+                throw new RuntimeException("The global build properties FIPS_140_3 is set for server " + getServerName() +
+                                           ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
             }
         }
         return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVM17);
@@ -7849,8 +7849,8 @@ public class LibertyServer implements LogMonitorClient {
                 Log.info(c, methodName, "global build properties FIPS_140_2 is set for server " + getServerName() +
                                         " and IBM java 8 is available to run with FIPS 140-2 enabled.");
             } else {
-                Log.info(c, methodName, "The global build properties FIPS_140_2 is set for server " + getServerName() +
-                                        ",  but no IBM java 8 on liberty server to run with FIPS 140-2 enabled.");
+                throw new RuntimeException("The global build properties FIPS_140_2 is set for server " + getServerName() +
+                                           ",  but no IBM java 8 on liberty server to run with FIPS 140-2 enabled.");
             }
         }
         return GLOBAL_FIPS_140_2 && (isIBMJVM8);
