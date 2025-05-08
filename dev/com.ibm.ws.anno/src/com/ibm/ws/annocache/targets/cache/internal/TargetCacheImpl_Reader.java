@@ -276,7 +276,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
             }
         }
         if ( !matched ) {
-            addParseError("Value [ " + parsedValue + " ] does not match [ " + allowedValues + " ] for class [ " + getClass().getName() + " ]");
+            addParseError("Value [ " + parsedValue + " ] does not match [ " + Arrays.toString(allowedValues) + " ] for class [ " + getClass().getName() + " ]");
             return true;
         } else {
             return false;
