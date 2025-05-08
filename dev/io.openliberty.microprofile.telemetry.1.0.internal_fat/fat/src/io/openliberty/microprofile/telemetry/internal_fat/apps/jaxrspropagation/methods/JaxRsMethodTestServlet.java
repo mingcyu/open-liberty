@@ -101,7 +101,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
@@ -154,7 +154,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HTTP_REQUEST_METHOD, "POST")
                             .withAttribute(HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.1")){
+        } else if(featureVersion.equals("2.1")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "POST")
@@ -207,7 +207,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "PUT")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "PUT")
@@ -260,7 +260,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "HEAD")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 204L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "HEAD")
@@ -317,7 +317,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
             
             System.out.println("Finished 2.1 in method");
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             System.out.println("featureVersion 2.0 in method");
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
@@ -373,7 +373,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "PATCH")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "PATCH")
@@ -432,7 +432,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "OPTIONS")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "OPTIONS")
@@ -488,7 +488,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "OPTIONS")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "OPTIONS")

@@ -95,7 +95,7 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                             .withAttribute(HttpAttributes.HTTP_ROUTE, getPath() + "/getWithId/{id}")
                             .withAttribute(UrlAttributes.URL_PATH, getPath() + "/getWithId/myIdForTesting"));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
@@ -123,7 +123,7 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(SemanticAttributes.HTTP_TARGET, getPath() + "/getWithId/myIdForTesting"));
 
         }
-        if (featureVersion.equals("1.1") || featureVersion.equals("2.0")) {
+        if (featureVersion.equals("1.1") || featureVersion.equals("2.0") || featureVersion.equals("2.1")) {
             assertThat(serverSpan, hasName("GET " + getPath() + "/getWithId/{id}"));
         } else {
             assertThat(serverSpan, hasName(getPath() + "/getWithId/{id}"));
@@ -162,8 +162,8 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                             .withAttribute(HttpAttributes.HTTP_ROUTE, getPath() + "/getWithQueryParam")
-                            .withAttribute(UrlAttributes.URL_PATH, getPath() + "id=myIdForTesting"));
-        } if(featureVersion.equals("2.0")){
+                            .withAttribute(UrlAttributes.URL_QUERY, "id=myIdForTesting"));
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
@@ -191,7 +191,7 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(SemanticAttributes.HTTP_TARGET, getPath() + "/getWithQueryParam?id=myIdForTesting"));
         
         }
-        if (featureVersion.equals("1.1") || featureVersion.equals("2.0")) {
+        if (featureVersion.equals("1.1") || featureVersion.equals("2.0") || featureVersion.equals("2.1")) {
             assertThat(serverSpan, hasName("GET " + getPath() + "/getWithQueryParam"));
         } else {
             assertThat(serverSpan, hasName(getPath() + "/getWithQueryParam"));
@@ -231,7 +231,7 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                             .withAttribute(HttpAttributes.HTTP_ROUTE, request.getContextPath())
                             .withAttribute(UrlAttributes.URL_PATH, getPath() + "/getSubResourceWithPathParam/myIdForTesting/details"));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
@@ -296,7 +296,7 @@ public class JaxRsRouteTestServlet extends FATServlet {
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                             .withAttribute(HttpAttributes.HTTP_ROUTE, request.getContextPath()));
                             //.withAttribute(UrlAttributes.URL_PATH, getPath() + "/getSubResourceWithPathParam/myIdForTesting/details"));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")

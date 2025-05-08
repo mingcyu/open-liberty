@@ -145,7 +145,7 @@ public class JaxRsResponseCodeTestServlet extends FATServlet {
                             .withParentSpanId(redirectClient.getSpanContext().getSpanId())
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){
             if (spans.get(2).getAttributes().get(HTTP_RESPONSE_STATUS_CODE) == 307L) {
                 redirectServer = spans.get(2);
                 targetServer = spans.get(3);
@@ -233,7 +233,7 @@ public class JaxRsResponseCodeTestServlet extends FATServlet {
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HTTP_RESPONSE_STATUS_CODE, 404L)
                             .withAttribute(URL_PATH, testUri.getPath()));
-        } if(featureVersion.equals("2.1")){
+        } else if(featureVersion.equals("2.1")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
@@ -287,7 +287,7 @@ public class JaxRsResponseCodeTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HTTP_RESPONSE_STATUS_CODE, (long) statusCode));
-        } if(featureVersion.equals("2.1")){
+        } else if(featureVersion.equals("2.1")){
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
