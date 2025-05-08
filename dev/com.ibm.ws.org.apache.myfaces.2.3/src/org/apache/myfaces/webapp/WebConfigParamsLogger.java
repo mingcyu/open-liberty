@@ -1839,12 +1839,12 @@ public class WebConfigParamsLogger
             paramValue = facesContext.getExternalContext().getInitParameter("org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE");
             if (paramValue == null)
             {
-                log.info("No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'false'.");
+                log.info("No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'true'.");
             }
             else
             {
                 boolean found = false;
-                String[] expectedValues = StringUtils.trim(StringUtils.splitShortString("true, false",','));
+                String[] expectedValues = StringUtils.trim(StringUtils.splitShortString("true, false, one-time-code",','));
                 for (int i = 0; i < expectedValues.length; i++)
                 {
                     if (paramValue.equals(expectedValues[i]))
@@ -1857,7 +1857,7 @@ public class WebConfigParamsLogger
                 {
                     if (log.isLoggable(Level.WARNING))
                     { 
-                        log.warning("Wrong value in context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' (='" + paramValue + "'), using default value 'false'");
+                        log.warning("Wrong value in context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' (='" + paramValue + "'), using default value 'true'");
                     }
                 }
             }
