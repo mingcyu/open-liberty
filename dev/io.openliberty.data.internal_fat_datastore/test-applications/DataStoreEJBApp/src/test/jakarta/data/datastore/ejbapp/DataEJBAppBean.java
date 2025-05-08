@@ -17,14 +17,15 @@ import static org.junit.Assert.assertEquals;
 import java.util.function.Consumer;
 
 import jakarta.ejb.Singleton;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 
-import org.junit.Test;
-
-import test.jakarta.data.datastore.lib.ServerDSEntity;
-
 @Singleton
-public class DataEJBAppBean implements Consumer<String> {
+public class DataEJBAppBean implements Consumer<String>, DataEJBAppBeanInterface {
+    private static final String TEST_OBSERVES_STARTUP = //
+                    "testStartupEventObserverInEJBApplicationUsesRepository";
+
     @Inject
     EJBAppDSRefRepo ejbAppRepo;
 
@@ -32,15 +33,29 @@ public class DataEJBAppBean implements Consumer<String> {
     public void accept(String testName) {
         System.out.println("DataEJBAppBean is running " + testName);
 
-        assertEquals(false, ejbAppRepo.lookFor(testName).isPresent());
+        if (TEST_OBSERVES_STARTUP.equals(testName)) {
+            // Database must already be populated by the startup method
+        } else {
+            assertEquals(false, ejbAppRepo.lookFor(testName).isPresent());
 
-        EJBAppEntity e = EJBAppEntity.of(testName);
-        e = ejbAppRepo.persist(e);
+            EJBAppEntity e = EJBAppEntity.of(testName);
+            e = ejbAppRepo.persist(e);
+            assertEquals(testName, e.testName);
+            assertEquals(testName.length(), e.nameLength);
+        }
+
+        EJBAppEntity e = ejbAppRepo.lookFor(testName).orElseThrow();
         assertEquals(testName, e.testName);
         assertEquals(testName.length(), e.nameLength);
+    }
 
-        e = ejbAppRepo.lookFor(testName).orElseThrow();
-        assertEquals(testName, e.testName);
-        assertEquals(testName.length(), e.nameLength);
+    /**
+     * Add some data on startup.
+     */
+    @Override
+    public void startup(@Observes Startup event) {
+        System.out.println("DataEJBAppBean observed Startup");
+
+        ejbAppRepo.persist(EJBAppEntity.of(TEST_OBSERVES_STARTUP));
     }
 }
