@@ -85,8 +85,6 @@ public class PostgresKerberosTest extends FATServletClient {
 
         server.setJvmOptions(jvmOpts);
 
-//        Thread.sleep(Duration.ofMinutes(10).toMillis());
-
         server.startServer();
     }
 

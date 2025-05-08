@@ -41,18 +41,54 @@ public class PostgresKerberosContainer extends PostgreSQLContainer<PostgresKerbe
 
     private final Map<String, String> options = new HashMap<>();
 
+    private static final String KEYTAB_FILE = "/etc/krb5.keytab";
+    private static final String KERBEROS_TRACE = "/dev/stdout";
+    private static final String AUTH_METHOD = "gss";
+
     public PostgresKerberosContainer(Network network) {
         super(POSTGRES_KRB5);
-        withNetwork(network);
 
+        // Network
+        withNetwork(network);
         withNetworkAliases("postgresql");
         withCreateContainerCmdModifier(cmd -> {
             cmd.withHostName("postgresql");
         });
-        if (!options.containsKey("fsync"))
-            withConfigOption("fsync", "off");
+        withExposedPorts(PG_PORT);
 
-        withConfigOption("krb_server_keyfile", "/etc/krb5.keytab");
+        // Authentication
+        withUsername("nonkrbuser");
+        withPassword("password");
+
+        // Database
+        withDatabaseName("pg");
+
+        // Environment
+        withEnv("POSTGRES_HOST_AUTH_METHOD", AUTH_METHOD);
+        withEnv("KRB5_KTNAME", KEYTAB_FILE);
+        withEnv("KRB5_TRACE", KERBEROS_TRACE);
+
+        // Logging
+        withLogConsumer(new SimpleLogConsumer(c, "postgre-krb5"));
+
+        // Configuration
+
+        /**
+         * Performance improvement
+         */
+        withConfigOption("fsync", "off");
+
+        /**
+         * Since PostgreSQL 13 - krb_server_keyfile is set to a default location of
+         * FILE:/usr/local/pgsql/etc/krb5.keytab
+         * instead of using the kerberos environment variable KRB5_KTNAME.
+         */
+        withConfigOption("krb_server_keyfile", KEYTAB_FILE);
+    }
+
+    @Override
+    public void configure() {
+        super.configure();
 
         List<String> command = new ArrayList<>();
         for (Entry<String, String> e : options.entrySet()) {
@@ -60,16 +96,6 @@ public class PostgresKerberosContainer extends PostgreSQLContainer<PostgresKerbe
             command.add(e.getKey() + '=' + e.getValue());
         }
         setCommand(command.toArray(new String[command.size()]));
-        withUsername("nonkrbuser");
-        withPassword("password");
-        withDatabaseName("pg");
-
-        withEnv("POSTGRES_HOST_AUTH_METHOD", "gss");
-        withEnv("KRB5_KTNAME", "/etc/krb5.keytab");
-        withEnv("KRB5_TRACE", "/dev/stdout");
-
-        withExposedPorts(PG_PORT);
-        withLogConsumer(new SimpleLogConsumer(c, "postgre-krb5"));
     }
 
     @Override
