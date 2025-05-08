@@ -542,7 +542,6 @@ public final class MCWrapper implements com.ibm.ws.j2c.MCWrapper, JCAPMIHelper {
 
     @Override
     public Object getUnSharedPoolCoordinator() {
-        // TODO Auto-generated method stub
         return unSharedPoolCoordinator;
     }
 
@@ -1767,7 +1766,10 @@ public final class MCWrapper implements com.ibm.ws.j2c.MCWrapper, JCAPMIHelper {
             if (cm != null) {
                 pmiName = gConfigProps.cfName;
             }
-            if (stale || do_not_reuse_mcw) {
+            if (!stale && !do_not_reuse_mcw) {
+                Tr.debug(this, tc, "ResourceException caught trying to destroy managed connection during pool maintenance, { mc, e, pmiName} is: ",
+                         new Object[] { mc, e, pmiName });
+            } else {
                 if (isTracingEnabled && tc.isDebugEnabled()) {
                     Tr.debug(this, tc, "got a SCE when doing destroy on the mc, { mc, e, pmiName}; is:", new Object[] { mc, e, pmiName });
                 }
