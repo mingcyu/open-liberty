@@ -276,16 +276,21 @@ public class JSFSimpleHtmlUnit {
 
             // Make a request to a dummy page to ensure that MyFaces initializes if it has not done so already
             URL url = JSFUtils.createHttpUrl(jsfTestServer1, APP_NAME, "dummy.jsf");
-            webClient.getPage(url);
+            HtmlPage page = webClient.getPage(url);
 
             String msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'true'";
+            String autocompleteValue = "autocomplete=\"off\"";
             if(JakartaEEAction.isEE11OrLaterActive()) {
                 msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'false'";
+                autocompleteValue = "autocomplete=\"one-time-code\"";
             } 
+            assertTrue("The expected autocomplete attribute was not found!: " + autocompleteValue, page.asXml().contains(autocompleteValue));
+
             // Check the trace.log
             // There should be a match so fail if there is not.
             assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
             Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
+
         }
     }
 
