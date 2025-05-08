@@ -90,7 +90,7 @@ public class SecFVT_Servlet30_Inherit_war_Test extends AnnotationTest_BaseClass 
                     new PrintWriter(System.out, true));
     }
 
-    public static final String SERVLET_SECURITY_CLASS_NAME = "com.ibm.ws.anno.test.cases.ServletSecurity";
+    public static final String SERVLET_SECURITY_CLASS_NAME = "javax.servlet.annotation.ServletSecurity";
 
     @Override
     protected void verifyInfoStore(PrintWriter writer,
