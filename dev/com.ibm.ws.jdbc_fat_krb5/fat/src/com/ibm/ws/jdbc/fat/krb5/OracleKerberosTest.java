@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2024 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -48,7 +48,7 @@ import jdbc.krb5.oracle.web.OracleKerberosTestServlet;
 
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
-//TODO The current Oracle JDBC driver (ojdbc8.jar v23.4.0.24.05) only supports Java 11-21
+//TODO The current Oracle JDBC driver (ojdbc11.jar v23.4.0.24.05) only supports Java 11-21
 //modify/remove this line once it or another driver release supports 23+
 @MaximumJavaLevel(javaLevel = 21)
 public class OracleKerberosTest extends FATServletClient {
