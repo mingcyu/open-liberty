@@ -264,13 +264,12 @@ public class JSFSimpleHtmlUnit {
 
     /**
      * Create a testcase 169346: Port MYFACES-3949, javax.faces.ViewState autocomplete
-     * 
-     * AUTOCOMPLETE_OFF_VIEW_STATE changed to false (2.3.11, 3.0,3, 4.0.3, and 4.1.0) -- see MYFACES-4659 
-     *
+     * Updated to include one-time-code via MYFACES-4721 (which also reverts MYFACES-4659 [removed autocomplete])
+     * See the JIRA for more info.
      * @throws Exception
      */
     @Test
-    @SkipForRepeat(SkipForRepeat.EE8_OR_LATER_FEATURES) // parameter change in 2.3.11
+    @SkipForRepeat(SkipForRepeat.EE11_FEATURES)
     public void check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE() throws Exception {
         try (WebClient webClient = new WebClient()) {
 
@@ -280,7 +279,7 @@ public class JSFSimpleHtmlUnit {
 
             String msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'true'";
             String autocompleteValue = "autocomplete=\"off\"";
-            if(JakartaEEAction.isEE11OrLaterActive()) {
+            if(JakartaEEAction.isEE11OrLaterActive()) { // default in 4.1.2 (but backported to 4.1.1 in OL)
                 msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'false'";
                 autocompleteValue = "autocomplete=\"one-time-code\"";
             } 
