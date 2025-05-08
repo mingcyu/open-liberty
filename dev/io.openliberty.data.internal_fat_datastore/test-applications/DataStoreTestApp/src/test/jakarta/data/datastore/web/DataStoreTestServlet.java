@@ -418,6 +418,24 @@ public class DataStoreTestServlet extends FATServlet {
     }
 
     /**
+     * Verify that code in an EJB application can access a Jakarta Data repository
+     * from a CDI Startup event.
+     */
+    @Test
+    public void testStartupEventObserverInEJBApplicationUsesRepository() {
+        ejbApp.accept("testStartupEventObserverInEJBApplicationUsesRepository");
+    }
+
+    /**
+     * Verify that code in an EJB module can access a Jakarta Data repository from
+     * a CDI Startup event.
+     */
+    @Test
+    public void testStartupEventObserverInEJBModuleUsesRepository() {
+        testEJB.testStartupEventObserverInEJBModuleUsesRepository();
+    }
+
+    /**
      * Verify that ServletContextListener can inject a Jakarta Data repository
      * and use it to initialize data.
      */
