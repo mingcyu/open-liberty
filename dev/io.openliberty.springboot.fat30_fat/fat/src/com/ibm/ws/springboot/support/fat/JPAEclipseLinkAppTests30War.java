@@ -32,43 +32,39 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.RemoteFile;
+import com.ibm.websphere.simplicity.config.ClassloaderElement;
+import com.ibm.websphere.simplicity.config.WebApplication;
 
-import componenttest.annotation.AllowedFFDC;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.utils.HttpUtils;
 
 @RunWith(FATRunner.class)
-public class JPAHibernateAppTests20War extends JPAAppAbstractTests {
+public class JPAEclipseLinkAppTests30War extends JPAAppAbstractTests {
 
     @BeforeClass
     public static void modifyTestApp() {
         // modify the app to include hibernate in the WEB-INF/lib folder from the WEB-INF/lib-provided folder
         try {
-            RemoteFile rFile = server.getFileFromLibertyServerRoot("apps/" + SPRING_BOOT_20_APP_DATA);
+            RemoteFile rFile = server.getFileFromLibertyServerRoot("apps/" + SPRING_BOOT_30_APP_DATA);
             File f = new File(rFile.getAbsolutePath());
-            moveHibernateToLib(f);
+            removePersistenceXML(f);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static String hibernateAppName() {
-        return "hibernate." + SPRING_BOOT_20_APP_DATA;
+    private static String eclipseLinkAppName() {
+        return "eclipseLink." + SPRING_BOOT_30_APP_DATA;
     }
 
-    private static void moveHibernateToLib(File f) throws IOException {
+    private static void removePersistenceXML(File f) throws IOException {
         try (JarFile jarFile = new JarFile(f);
-                        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(new File(f.getParentFile(), hibernateAppName())))) {
+                        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(new File(f.getParentFile(), eclipseLinkAppName())))) {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 JarEntry originalEntry = entries.nextElement();
                 JarEntry newEntry = originalEntry;
                 String entryName = originalEntry.getName();
-                if (entryName.startsWith("WEB-INF/lib-provided/") && !entryName.endsWith("/")) {
-                    if (!tomcatStarter(entryName)) {
-                        newEntry = new JarEntry(entryName.replace("lib-provided", "lib"));
-                    }
-                }
                 if (entryName.equals("WEB-INF/classes/META-INF/persistence.xml")) {
                     // Remove the default persistence.xml processed by Liberty
                     continue;
@@ -85,41 +81,28 @@ public class JPAHibernateAppTests20War extends JPAAppAbstractTests {
         }
     }
 
-    private static boolean tomcatStarter(String entryName) {
-        if (entryName.contains("spring-boot-starter-tomcat")) {
-            return true;
-        }
-        if (entryName.contains("jakarta.annotation-api")) {
-            return true;
-        }
-        if (entryName.contains("tomcat-embed-websocket")) {
-            return true;
-        }
-        if (entryName.contains("tomcat-embed-core")) {
-            return true;
-        }
-        if (entryName.contains("tomcat-embed-el")) {
-            return true;
-        }
-        return false;
+    @Override
+    public void modifyAppConfiguration(WebApplication appConfig) {
+        // Using Spring class EclipseLinkJpaVendorAdapter directly requires thrid-party API access
+        ClassloaderElement classloader = new ClassloaderElement();
+        classloader.setApiTypeVisibility("+third-party");
+        appConfig.getClassloaders().add(classloader);
     }
 
     @Test
-    @AllowedFFDC("javax.transaction.RollbackException")
-    public void testHibernateJPAAppRunnerWar() throws Exception {
+    public void testEclipseLinkJPAAppRunnerWar() throws Exception {
         assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("COMMAND_LINE_RUNNER: SPRING DATA TEST: PASSED"));
     }
 
     @Test
-    @AllowedFFDC("javax.transaction.RollbackException")
-    public void testHibernateJPAWebContextWar() throws Exception {
+    public void testEclipseLinkJPAWebContextWar() throws Exception {
         HttpUtils.findStringInUrl(server, "testName/testPersistence", "TESTED PERSISTENCE");
         assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("WEB_CONTEXT: SPRING DATA TEST: PASSED"));
     }
 
     @Override
     public Set<String> getFeatures() {
-        return new HashSet<>(Arrays.asList("servlet-4.0", "jca-1.7", "jdbc-4.2", "jndi-1.0", "componenttest-1.0"));
+        return new HashSet<>(Arrays.asList("servlet-6.0", "jdbc-4.2", "jndi-1.0", "componenttest-2.0", "persistence-3.1"));
     }
 
     @Override
@@ -134,11 +117,11 @@ public class JPAHibernateAppTests20War extends JPAAppAbstractTests {
 
     @Override
     public Map<String, String> getBootStrapProperties() {
-        return Collections.singletonMap("test.persistence", "hibernate");
+        return Collections.singletonMap("test.persistence", "eclipselink");
     }
 
     @Override
     public String getApplication() {
-        return hibernateAppName();
+        return eclipseLinkAppName();
     }
 }
