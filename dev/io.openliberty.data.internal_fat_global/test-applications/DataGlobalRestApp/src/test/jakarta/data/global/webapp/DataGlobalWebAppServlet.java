@@ -15,6 +15,7 @@ package test.jakarta.data.global.webapp;
 import static org.junit.Assert.assertEquals;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
@@ -35,10 +36,17 @@ public class DataGlobalWebAppServlet extends FATServlet {
     Dictionary dictionary;
 
     /**
+     * Set up some data during application initialization
+     */
+    public void initialize(@Observes @Initialized(ApplicationScoped.class) Object init) {
+        dictionary.addWord(Word.of("initialized"));
+    }
+
+    /**
      * Set up some data before tests run.
      */
     public void setup(@Observes Startup event) {
-        dictionary.addWord(Word.of("initialized"));
+        dictionary.addWord(Word.of("startup"));
     }
 
     /**
@@ -74,12 +82,21 @@ public class DataGlobalWebAppServlet extends FATServlet {
     }
 
     /**
+     * Verify that a method that observes an event with qualifier @Initialized(ApplicationScoped.class)
+     * has access to a Jakarta Data repository and can use it to populate data.
+     */
+    @Test
+    public void testObservesInitialized() {
+        assertEquals(true, dictionary.isWord("initialized"));
+    }
+
+    /**
      * Verify that a method that observes the CDI Startup event has access to a
      * Jakarta Data repository and can use it to populate data.
      */
     @Test
     public void testStartupEvent() {
 
-        assertEquals(true, dictionary.isWord("initialized"));
+        assertEquals(true, dictionary.isWord("startup"));
     }
 }
