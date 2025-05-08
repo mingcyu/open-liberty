@@ -192,6 +192,12 @@ public class MethodInfoImpl extends InfoImpl implements MethodInfo {
     }
 
     @Override
+    @Deprecated
+    public List<List<? extends AnnotationInfo>> getParameterAnnotations() {
+        return parameterAnnotations;
+    }
+    
+    @Override
     public List<? extends List<? extends AnnotationInfo>> getParmAnnotations() {
         return parameterAnnotations;
     }

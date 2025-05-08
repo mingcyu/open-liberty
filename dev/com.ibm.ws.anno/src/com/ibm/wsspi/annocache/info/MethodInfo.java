@@ -137,6 +137,16 @@ public interface MethodInfo extends Info, com.ibm.wsspi.anno.info.MethodInfo {
     /**
      * <p>Answer the in-order parameter annotation collections of
      * parameters of this method.</p>
+     * 
+     * @return The in-order parameter annotation collections of parameters
+     *         of this method.
+     */
+    @Deprecated
+    public List<List<? extends com.ibm.wsspi.anno.info.AnnotationInfo>> getParameterAnnotations();
+    
+    /**
+     * <p>Answer the in-order parameter annotation collections of
+     * parameters of this method.</p>
      *
      * @return The in-order parameter annotation collections of parameters
      *         of this method.

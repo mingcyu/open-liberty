@@ -133,6 +133,16 @@ public interface MethodInfo extends Info {
     /**
      * <p>Answer the in-order parameter annotation collections of
      * parameters of this method.</p>
+     * 
+     * @return The in-order parameter annotation collections of parameters
+     *         of this method.
+     */
+    @Deprecated
+    public List<List<? extends AnnotationInfo>> getParameterAnnotations();
+    
+    /**
+     * <p>Answer the in-order parameter annotation collections of
+     * parameters of this method.</p>
      *
      * @return The in-order parameter annotation collections of parameters
      *         of this method.
