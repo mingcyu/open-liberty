@@ -45,10 +45,11 @@ import com.ibm.websphere.simplicity.config.SpringBootApplication;
 import com.ibm.websphere.simplicity.config.VirtualHost;
 import com.ibm.websphere.simplicity.config.WebApplication;
 
+import componenttest.containers.TestContainerSuite;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
 
-public abstract class AbstractSpringTests {
+public abstract class AbstractSpringTests extends TestContainerSuite {
 
     // All current FAT application names.
 
@@ -63,6 +64,7 @@ public abstract class AbstractSpringTests {
     public static final String SPRING_BOOT_30_APP_SECURITY = "io.openliberty.springboot.fat30.security.app-0.0.1-SNAPSHOT.jar";
     public static final String SPRING_BOOT_30_APP_TRANSACTIONS = "io.openliberty.springboot.fat30.transactions.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_30_APP_DATA = "io.openliberty.springboot.fat30.data.app-0.0.1-SNAPSHOT.war";
+    public static final String SPRING_BOOT_30_APP_JMS = "io.openliberty.springboot.fat30.jms.app-0.0.1-SNAPSHOT.war";
 
     // Various spring configuration property fragments.
 
@@ -474,6 +476,7 @@ public abstract class AbstractSpringTests {
     public static void stopServer(boolean cleanupApps, String... expectedErrors) throws Exception {
         clearExtraArgs();
         clearBootStrapProperties();
+        clearEnvVariables();
 
         boolean isActive = serverStarted.getAndSet(false);
 
@@ -506,6 +509,19 @@ public abstract class AbstractSpringTests {
         if (exception != null) {
             throw exception;
         }
+    }
+
+    public static void configureEnvVariable(LibertyServer server, Map<String, String> newEnv) throws Exception {
+        Properties serverEnvProperties = new Properties();
+        serverEnvProperties.putAll(newEnv);
+        File serverEnvFile = new File(server.getFileFromLibertyServerRoot("server.env").getAbsolutePath());
+        try (OutputStream out = new FileOutputStream(serverEnvFile)) {
+            serverEnvProperties.store(out, "");
+        }
+    }
+
+    private static void clearEnvVariables() throws Exception {
+        configureEnvVariable(server, Map.of());
     }
 
     @FunctionalInterface

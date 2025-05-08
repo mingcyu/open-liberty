@@ -972,6 +972,7 @@ org.springframework:spring-expression:5.3.39
 org.springframework:spring-expression:6.1.14
 org.springframework:spring-jdbc:5.3.39
 org.springframework:spring-jdbc:6.1.14
+org.springframework:spring-jms:6.1.14
 org.springframework:spring-orm:5.3.39
 org.springframework:spring-orm:6.1.14
 org.springframework:spring-tx:5.3.39
