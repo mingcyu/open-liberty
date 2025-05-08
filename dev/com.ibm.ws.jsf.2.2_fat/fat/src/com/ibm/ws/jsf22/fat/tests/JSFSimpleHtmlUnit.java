@@ -9,14 +9,14 @@
  *******************************************************************************/
 package com.ibm.ws.jsf22.fat.tests;
 
+import static componenttest.annotation.SkipForRepeat.CHECKPOINT_RULE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URL;
 import java.util.List;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -31,18 +31,22 @@ import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jsf22.fat.JSFUtils;
 
+import componenttest.annotation.CheckpointTest;
 import componenttest.annotation.Server;
 import componenttest.annotation.SkipForRepeat;
 import componenttest.custom.junit.runner.FATRunner;
+import componenttest.rules.repeater.CheckpointRule;
+import componenttest.rules.repeater.CheckpointRule.ServerMode;
+import componenttest.rules.repeater.EmptyAction;
 import componenttest.rules.repeater.JakartaEEAction;
 import componenttest.topology.impl.LibertyServer;
-
 /**
  * Tests to execute on the jsfTestServer1 that use HtmlUnit.
  * This particular class executes the tests found in the TestJSF2.2 application.
  * These tests are relatively standalone.
  */
 @RunWith(FATRunner.class)
+@CheckpointTest(alwaysRun = true)
 public class JSFSimpleHtmlUnit {
     @Rule
     public TestName name = new TestName();
@@ -53,21 +57,31 @@ public class JSFSimpleHtmlUnit {
     @Server("jsfTestServer1")
     public static LibertyServer jsfTestServer1;
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        boolean isEE10 = JakartaEEAction.isEE10OrLaterActive();
+    @ClassRule
+    public static CheckpointRule checkpointRule = new CheckpointRule()
+                                                      .setConsoleLogName(JSFSimpleHtmlUnit.class.getSimpleName()+ ".log")
+                                                      .setServerSetup(JSFSimpleHtmlUnit::serverSetUp)
+                                                      .setServerStart(JSFSimpleHtmlUnit::serverStart)
+                                                      .setServerTearDown(JSFSimpleHtmlUnit::serverTearDown)
+                                                      .addUnsupportedRepeatIDs(EmptyAction.ID); // CheckPoint doesn't work for JSF 2.2
+
+    public static LibertyServer serverSetUp(ServerMode mode) throws Exception {
+                boolean isEE10 = JakartaEEAction.isEE10OrLaterActive();
 
         ShrinkHelper.defaultDropinApp(jsfTestServer1, APP_NAME + ".war",
                                       isEE10 ? "com.ibm.ws.jsf22.fat.simple.bean.faces40" : "com.ibm.ws.jsf22.fat.simple.bean.jsf22",
                                       "com.ibm.ws.jsf22.fat.simple.cforeach",
                                       isEE10 ? "com.ibm.ws.jsf22.fat.simple.cforeach.faces40" : "com.ibm.ws.jsf22.fat.simple.cforeach.jsf22",
                                       isEE10 ? "com.ibm.ws.jsf22.fat.simple.externalContext.faces40" : "com.ibm.ws.jsf22.fat.simple.externalContext.jsf22");
+        return jsfTestServer1;
+    }
+
+    public static void serverStart(ServerMode mode, LibertyServer server) throws Exception {
 
         jsfTestServer1.startServer(c.getSimpleName() + ".log");
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    public static void serverTearDown(ServerMode mode, LibertyServer server) throws Exception {
         // Stop the server
         if (jsfTestServer1 != null && jsfTestServer1.isStarted()) {
             jsfTestServer1.stopServer();
@@ -232,6 +246,7 @@ public class JSFSimpleHtmlUnit {
      * @throws Exception
      */
     @Test
+    @SkipForRepeat(CHECKPOINT_RULE) // Message is not logged during checkpoint (checkpoint is taken before app starts), so this test fails. 
     public void check_default_FACELETS_BUFFER_SIZE() throws Exception {
         try (WebClient webClient = new WebClient()) {
 
