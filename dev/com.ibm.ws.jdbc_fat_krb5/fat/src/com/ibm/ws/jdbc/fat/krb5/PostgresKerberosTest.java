@@ -14,6 +14,7 @@ package com.ibm.ws.jdbc.fat.krb5;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,6 +85,8 @@ public class PostgresKerberosTest extends FATServletClient {
         jvmOpts.add("-Dcom.ibm.security.krb5.krb5Debug=true"); // IBM JDK
 
         server.setJvmOptions(jvmOpts);
+
+        Thread.sleep(Duration.ofMinutes(10).toMillis());
 
         server.startServer();
     }

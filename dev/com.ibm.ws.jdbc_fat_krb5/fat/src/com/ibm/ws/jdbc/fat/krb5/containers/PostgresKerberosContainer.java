@@ -25,21 +25,16 @@ import org.testcontainers.utility.DockerImageName;
 
 import com.ibm.websphere.simplicity.log.Log;
 
+import componenttest.containers.ImageBuilder;
 import componenttest.containers.SimpleLogConsumer;
 
 public class PostgresKerberosContainer extends PostgreSQLContainer<PostgresKerberosContainer> {
 
     private static final Class<?> c = PostgresKerberosContainer.class;
 
-    //TODO Start using ImageBuilder
-//    private static final DockerImageName POSTGRES_KRB5 = ImageBuilder
-//                    .build("postgres-krb5:17.0")
-//                    .getDockerImageName()
-//                    .asCompatibleSubstituteFor("postgres");
-
-    // NOTE: If this is ever updated, don't forget to push to docker hub, but DO NOT overwrite existing versions
-    private static final String IMAGE = "kyleaure/postgres-krb5:1.0";
-    private static final DockerImageName POSTGRES_KRB5 = DockerImageName.parse(IMAGE)
+    private static final DockerImageName POSTGRES_KRB5 = ImageBuilder
+                    .build("postgres-krb5:17.0.0.1")
+                    .getDockerImageName()
                     .asCompatibleSubstituteFor("postgres");
 
     public static final int PG_PORT = 5432;

@@ -13,14 +13,12 @@ RUN set -ex; \
     printf '\n' | apt-get install -y --no-install-recommends \
         krb5-user \
         libpam-krb5 \
-        libpam-ccreds \
-        vim \
-        inetutils-ping;
-
+        libpam-ccreds;
+        
 ENV KRB5_REALM=EXAMPLE.COM
 ENV KRB5_KDC=kerberos
-
-ADD files/krb5.conf /etc/krb5.conf
+    
+COPY files/krb5.conf /etc/krb5.conf
 
 # Initialize static keytab entries. We also have 1 dynamic keytab entry for postgres/<hostname>@EXAMPLE.com
 # which needs to be initialized at runtime via db_setup.sh
@@ -28,5 +26,5 @@ RUN printf 'add_entry -password -p postgres/postgresql@EXAMPLE.COM -k 1 -e aes25
 RUN printf 'add_entry -password -p pguser@EXAMPLE.COM -k 1 -e aes256-cts\npassword\nwkt /etc/krb5.keytab' | ktutil
 RUN chmod 777 /etc/krb5.keytab
 
-ADD startup/db_setup.sh /docker-entrypoint-initdb.d/db_setup.sh
+COPY startup/db_setup.sh /docker-entrypoint-initdb.d/db_setup.sh
 RUN chmod 777 /docker-entrypoint-initdb.d/db_setup.sh

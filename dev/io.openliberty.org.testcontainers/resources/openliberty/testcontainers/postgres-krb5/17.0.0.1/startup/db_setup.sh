@@ -13,10 +13,12 @@ kinit -k -t /etc/krb5.keytab pguser@EXAMPLE.COM
 echo "List principles in key table: "
 klist -k -t /etc/krb5.keytab
 
+echo "List credential cache: "
+klist -e -f -a 
+
 echo "Creating kerberos role"
 psql --user=nonkrbuser --dbname=pg -c 'CREATE ROLE "pguser@EXAMPLE.COM" SUPERUSER LOGIN'
 
 # To manually test a local connection from on the PostgreSQL container, you can do:
-# exec -it <pg-container-id> bash
-# su postgres
-# psql -U "pguser@EXAMPLE.COM" -h postgresql pg
+# docker exec -it --user postgres <pg-container-id> /bin/bash
+# > psql -U "pguser@EXAMPLE.COM" -h postgresql pg
