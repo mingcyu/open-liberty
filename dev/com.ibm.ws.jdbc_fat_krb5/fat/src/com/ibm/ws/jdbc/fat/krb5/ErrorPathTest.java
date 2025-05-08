@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,7 +29,6 @@ import com.ibm.websphere.simplicity.config.Kerberos;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jdbc.fat.krb5.containers.DB2KerberosContainer;
-import com.ibm.ws.jdbc.fat.krb5.containers.KerberosPlatformRule;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
@@ -52,9 +50,6 @@ public class ErrorPathTest extends FATServletClient {
     private static final DB2KerberosContainer db2 = DB2KerberosTest.db2;
 
     private static final String APP_NAME = DB2KerberosTest.APP_NAME;
-
-    @ClassRule
-    public static KerberosPlatformRule skipRule = new KerberosPlatformRule();
 
     private static ServerConfiguration originalConfig;
 

@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,7 +35,6 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jdbc.fat.krb5.containers.DB2KerberosContainer;
 import com.ibm.ws.jdbc.fat.krb5.containers.KerberosContainer;
-import com.ibm.ws.jdbc.fat.krb5.containers.KerberosPlatformRule;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
@@ -66,9 +64,6 @@ public class DB2KerberosTest extends FATServletClient {
 
     private static Path krbConfPath;
     private static Path krbKeytabPath;
-
-    @ClassRule
-    public static KerberosPlatformRule skipRule = new KerberosPlatformRule();
 
     @BeforeClass
     public static void setUp() throws Exception {

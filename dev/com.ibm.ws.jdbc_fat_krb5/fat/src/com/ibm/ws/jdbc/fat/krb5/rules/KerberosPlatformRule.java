@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2020 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package com.ibm.ws.jdbc.fat.krb5.containers;
+package com.ibm.ws.jdbc.fat.krb5.rules;
 
 import java.io.File;
 
@@ -24,6 +24,7 @@ import org.junit.runners.model.Statement;
 
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jdbc.fat.krb5.DB2KerberosTest;
+import com.ibm.ws.jdbc.fat.krb5.containers.KerberosContainer;
 
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.JavaInfo;
@@ -34,6 +35,11 @@ import componenttest.topology.impl.JavaInfo.Vendor;
  * support Kerberos
  */
 public class KerberosPlatformRule implements TestRule {
+
+    static {
+        // Needed for IBM JDK 8 support.
+        java.lang.System.setProperty("com.ibm.jsse2.overrideDefaultTLS", "true");
+    }
 
     @Override
     public Statement apply(Statement stmt, Description desc) {

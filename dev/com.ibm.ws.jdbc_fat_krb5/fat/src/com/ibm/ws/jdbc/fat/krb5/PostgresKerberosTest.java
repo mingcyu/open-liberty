@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -24,7 +24,6 @@ import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.log.Log;
-import com.ibm.ws.jdbc.fat.krb5.containers.KerberosPlatformRule;
 import com.ibm.ws.jdbc.fat.krb5.containers.PostgresKerberosContainer;
 
 import componenttest.annotation.Server;
@@ -58,9 +57,6 @@ public class PostgresKerberosTest extends FATServletClient {
                     .andWith(new JakartaEE10Action()
                                     .forServers("com.ibm.ws.jdbc.fat.krb5.postgresql")
                                     .fullFATOnly());
-
-    @ClassRule
-    public static KerberosPlatformRule skipRule = new KerberosPlatformRule();
 
     @BeforeClass
     public static void setUp() throws Exception {
