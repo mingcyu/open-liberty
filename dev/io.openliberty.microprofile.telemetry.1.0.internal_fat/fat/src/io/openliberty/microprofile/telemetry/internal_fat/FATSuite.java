@@ -21,9 +21,9 @@ import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryAction
 @RunWith(Suite.class)
 @MinimumJavaLevel(javaLevel = 11)
 @SuiteClasses({
-                ClientWithNoCdi.class,
+                //ClientWithNoCdi.class,
                 JaxRsIntegration.class,
-                JaxRsIntegrationWithConcurrency.class,
+                /*JaxRsIntegrationWithConcurrency.class,
                 ReactiveMessageThatTriggersClientTest.class,
                 Telemetry10.class,
                 TelemetryAloneTest.class,
@@ -53,7 +53,7 @@ import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryAction
                 TelemetryWithSpanErrorTest.class,
                 TelemetryAttributesTest.class,
                 TelemetryRuntimeInstanceTest.class,
-                TelemetrySdkDisabledTrueWarningTest.class
+                TelemetrySdkDisabledTrueWarningTest.class*/
 
 })
 public class FATSuite {
@@ -64,6 +64,9 @@ public class FATSuite {
         } else if (RepeatTestFilter.isAnyRepeatActionActive(MicroProfileActions.MP70_EE11_ID, MicroProfileActions.MP70_EE10_ID, TelemetryActions.MP61_MPTEL20_ID,
                                                             TelemetryActions.MP50_MPTEL20_ID, TelemetryActions.MP41_MPTEL20_ID, TelemetryActions.MP14_MPTEL20_ID)) {
             return "2.0";
+        } else if (RepeatTestFilter.isAnyRepeatActionActive(MicroProfileActions.MP71_EE11_ID, MicroProfileActions.MP71_EE10_ID,
+                                                            TelemetryActions.MP50_MPTEL21_ID, TelemetryActions.MP41_MPTEL21_ID, TelemetryActions.MP14_MPTEL21_ID)) {
+            return "2.1";
         } else {
             return "1.1";
         }

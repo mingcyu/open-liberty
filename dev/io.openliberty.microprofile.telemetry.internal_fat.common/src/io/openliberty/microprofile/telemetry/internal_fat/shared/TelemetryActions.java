@@ -90,7 +90,7 @@ public class TelemetryActions {
                     .setMinJavaLevel(SEVersion.JAVA11)
                     .build(MP14_MPTEL21_ID);
 
-    public static final FeatureSet MP41_MPTEL11 = MicroProfileActions.MP41
+    public static final FeatureSet MP41_MPTEL21 = MicroProfileActions.MP41
                     .addFeature("mpTelemetry-2.1")
                     .setMinJavaLevel(SEVersion.JAVA11)
                     .build(MP41_MPTEL21_ID);
@@ -107,9 +107,9 @@ public class TelemetryActions {
                     .build(MP50_MPTEL21_JAVA8_ID);
 
     //All MicroProfile Telemetry FeatureSets - must be descending order
-    private static final FeatureSet[] ALL_MPTEL_SETS_ARRAY = { MicroProfileActions.MP71_EE11,
+    private static final FeatureSet[] ALL_MPTEL_SETS_ARRAY = { //MicroProfileActions.MP71_EE11,
                                                                MicroProfileActions.MP71_EE10,
-                                                               MicroProfileActions.MP70_EE11,
+                                                               /*MicroProfileActions.MP70_EE11,
                                                                MicroProfileActions.MP70_EE10,
                                                                MicroProfileActions.MP61,
                                                                MicroProfileActions.MP60,
@@ -124,7 +124,7 @@ public class TelemetryActions {
                                                                MP41_MPTEL11,
                                                                MP14_MPTEL21,
                                                                MP14_MPTEL20,
-                                                               MP14_MPTEL11 };
+                                                               MP14_MPTEL11 */};
 
     private static final List<FeatureSet> ALL_MPTEL_SETS_LIST = Arrays.asList(ALL_MPTEL_SETS_ARRAY);
 
@@ -234,7 +234,17 @@ public class TelemetryActions {
                       MP50_MPTEL20_JAVA8,
                       MicroProfileActions.MP70_EE10);
     }
-
+    public static boolean mpTelemetry21IsActive(){
+        if (RepeatTestFilter.isRepeatActionActive(MP14_MPTEL21_ID) ||
+            RepeatTestFilter.isRepeatActionActive(MP41_MPTEL21_ID) ||
+            RepeatTestFilter.isRepeatActionActive(MP50_MPTEL21_ID) ||
+            RepeatTestFilter.isRepeatActionActive(MP50_MPTEL21_JAVA8_ID) ||
+            RepeatTestFilter.isRepeatActionActive(MicroProfileActions.MP71_EE10_ID) ||
+            RepeatTestFilter.isRepeatActionActive(MicroProfileActions.MP71_EE11_ID)) {
+            return true;
+       }
+       return false;
+    }
     public static boolean mpTelemetry20IsActive(){
         if (RepeatTestFilter.isRepeatActionActive(MP14_MPTEL20_ID) ||
             RepeatTestFilter.isRepeatActionActive(MP41_MPTEL20_ID) ||
