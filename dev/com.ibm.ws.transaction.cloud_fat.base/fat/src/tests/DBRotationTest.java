@@ -40,6 +40,7 @@ import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.database.container.DatabaseContainerType;
 import componenttest.topology.database.container.DatabaseContainerUtil;
 import componenttest.topology.impl.LibertyServer;
+import componenttest.topology.utils.FATServletClient;
 
 @RunWith(FATRunner.class)
 @AllowedFFDC(value = { "com.microsoft.sqlserver.jdbc.SQLServerException", "javax.resource.spi.ResourceAllocationException",
@@ -619,12 +620,17 @@ public class DBRotationTest extends CloudFATServletClient {
 
     @Override
     protected boolean checkOrphanLeaseExists(LibertyServer server, String path, String serverName) throws Exception {
+        boolean absent = false;
         try {
-            runTest(server, path, "checkOrphanLeaseAbsence");
-            return false;
+            final StringBuilder sb = runInServlet(server, path, "checkOrphanLeaseAbsence");
+
+            if (sb.indexOf(FATServletClient.SUCCESS) != -1) {
+                absent = true;
+            }
         } catch (Exception e) {
         }
-        return true;
+
+        return !absent;
     }
 
     @Override

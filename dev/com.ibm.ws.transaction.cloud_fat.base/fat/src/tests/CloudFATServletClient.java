@@ -273,10 +273,23 @@ public abstract class CloudFATServletClient extends CloudTestBase {
 
         setupOrphanLease(server1, SERVLET_NAME, nonexistantServerName);
 
-        assertNotNull(server1.getServerName() + " did not perform peer recovery",
-                      server1.waitForStringInTrace("< peerRecoverServers Exit", FATUtils.LOG_SEARCH_TIMEOUT));
+        final String scheduleMsg = "Scheduling lease checker in ";
+        final String failureMsg = " should be attempting peer recovery";
 
-        assertFalse("Orphan lease was not deleted", checkOrphanLeaseExists(server1, SERVLET_NAME, nonexistantServerName));
+        // Retry the test for lease deletion in case (e.g.) the server temporarily lost contact with its database
+        int retries = 0;
+        boolean orphanLeaseStillExists = true;
+        while (orphanLeaseStillExists && retries++ < 5) {
+            final String s = server1.waitForStringInTraceUsingMark(scheduleMsg, FATUtils.LOG_SEARCH_TIMEOUT);
+            server1.setTraceMarkToEndOfDefaultTrace();
+            Log.info(getClass(), "testOrphanLeaseDeletion", s);
+            assertNotNull(server1.getServerName() + failureMsg, s);
+
+            orphanLeaseStillExists = checkOrphanLeaseExists(server1, SERVLET_NAME, nonexistantServerName);
+            Log.info(getClass(), "testOrphanLeaseDeletion", "orphanLeaseStillExists: " + orphanLeaseStillExists);
+        }
+
+        assertFalse("Orphan lease should have been deleted after " + --retries + " tries", orphanLeaseStillExists);
     }
 
     @Test
