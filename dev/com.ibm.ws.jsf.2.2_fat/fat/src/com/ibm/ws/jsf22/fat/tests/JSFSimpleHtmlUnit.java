@@ -264,28 +264,32 @@ public class JSFSimpleHtmlUnit {
 
     /**
      * Create a testcase 169346: Port MYFACES-3949, javax.faces.ViewState autocomplete
-     * 
-     * AUTOCOMPLETE_OFF_VIEW_STATE changed to false (2.3.11, 3.0,3, 4.0.3, and 4.1.0) -- see MYFACES-4659 
-     *
+     * Updated to include one-time-code via MYFACES-4721 (which also reverts MYFACES-4659 [removed autocomplete])
+     * See the JIRA for more info.
      * @throws Exception
      */
     @Test
-    @SkipForRepeat(SkipForRepeat.EE8_OR_LATER_FEATURES) // parameter change in 2.3.11
+    @SkipForRepeat(SkipForRepeat.EE11_FEATURES)
     public void check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE() throws Exception {
         try (WebClient webClient = new WebClient()) {
 
             // Make a request to a dummy page to ensure that MyFaces initializes if it has not done so already
             URL url = JSFUtils.createHttpUrl(jsfTestServer1, APP_NAME, "dummy.jsf");
-            webClient.getPage(url);
+            HtmlPage page = webClient.getPage(url);
 
             String msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'true'";
-            if(JakartaEEAction.isEE11OrLaterActive()) {
+            String autocompleteValue = "autocomplete=\"off\"";
+            if(JakartaEEAction.isEE11OrLaterActive()) { // default in 4.1.2 (but backported to 4.1.1 in OL)
                 msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'false'";
+                autocompleteValue = "autocomplete=\"one-time-code\"";
             } 
+            assertTrue("The expected autocomplete attribute was not found!: " + autocompleteValue, page.asXml().contains(autocompleteValue));
+
             // Check the trace.log
             // There should be a match so fail if there is not.
             assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
             Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
+
         }
     }
 
