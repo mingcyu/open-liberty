@@ -21,9 +21,9 @@ import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryAction
 @RunWith(Suite.class)
 @MinimumJavaLevel(javaLevel = 11)
 @SuiteClasses({
-                //ClientWithNoCdi.class,
+                ClientWithNoCdi.class,
                 JaxRsIntegration.class,
-                /*JaxRsIntegrationWithConcurrency.class,
+                JaxRsIntegrationWithConcurrency.class,
                 ReactiveMessageThatTriggersClientTest.class,
                 Telemetry10.class,
                 TelemetryAloneTest.class,
@@ -53,7 +53,7 @@ import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryAction
                 TelemetryWithSpanErrorTest.class,
                 TelemetryAttributesTest.class,
                 TelemetryRuntimeInstanceTest.class,
-                TelemetrySdkDisabledTrueWarningTest.class*/
+                TelemetrySdkDisabledTrueWarningTest.class
 
 })
 public class FATSuite {

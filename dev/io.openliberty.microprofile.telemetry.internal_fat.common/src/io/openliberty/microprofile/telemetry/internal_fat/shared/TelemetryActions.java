@@ -112,7 +112,7 @@ public class TelemetryActions {
                                                                MicroProfileActions.MP70_EE11,
                                                                MicroProfileActions.MP70_EE10,
                                                                MicroProfileActions.MP61,
-                                                               MicroProfileActions.MP60,/*
+                                                               MicroProfileActions.MP60,
                                                                MP61_MPTEL20,
                                                                MP50_MPTEL21,
                                                                MP50_MPTEL20,
@@ -124,7 +124,7 @@ public class TelemetryActions {
                                                                MP41_MPTEL11,
                                                                MP14_MPTEL21,
                                                                MP14_MPTEL20,
-                                                               MP14_MPTEL11*/};
+                                                               MP14_MPTEL11};
 
     private static final List<FeatureSet> ALL_MPTEL_SETS_LIST = Arrays.asList(ALL_MPTEL_SETS_ARRAY);
 
@@ -177,6 +177,17 @@ public class TelemetryActions {
     }
 
     public static RepeatTests telemetry20Repeats() {
+        return telemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
+    }
+
+
+    public static RepeatTests telemetry20and21Repeats(String serverName) {
+        return repeat(serverName, MicroProfileActions.MP71_EE11, MP14_MPTEL21, MP41_MPTEL21, MP50_MPTEL21,
+                      MP50_MPTEL21_JAVA8, MicroProfileActions.MP71_EE10, MicroProfileActions.MP70_EE11, MP14_MPTEL20, MP41_MPTEL20, MP50_MPTEL20,
+                      MP50_MPTEL20_JAVA8, MP61_MPTEL20, MicroProfileActions.MP70_EE10);
+    }
+
+    public static RepeatTests telemetry20and21Repeats() {
         return telemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
     }
 
