@@ -64,16 +64,9 @@ public class ExternalTestService {
     private static final String PROP_NETWORK_LOCATION = "global.network.location";
     private static final String PROP_SERVER_ORIGIN = "server.origin";
     private static final String PROP_CONSUL_SERVERLIST = "global.consulServerList";
-    private static final String PROP_ACCESS_TOKEN = "global.ghe.access.token";
-
-    // Encrypted prefix to distinguish encrypted vs unencrypted properties
-    private static final String ENCRYPTED_PREFIX = "encrypted!";
 
     // Random number generator to scramble service order
     private static final Random rand = new Random();
-
-    // A property decrypter which is itself an external test service
-    private static ExternalTestService propertiesDecrypter;
 
     /**
      * Private constructor - new instances or collections of external test service
@@ -473,90 +466,6 @@ public class ExternalTestService {
     }
 
     /**
-     * Decrypts a property using the property decrypter service.
-     * This method is synchronized so that two requests to decrypt a value do not both try to find a decrypter service instance at the same time.
-     * TODO move the decrypter service to it's own class
-     *
-     * @param  encryptedValue a potentially encrypted value that needs to be decrypted
-     * @return                the original value if it was not encrypted, otherwise the decrypted value
-     * @throws Exception      if either no healthy liberty-properties-decrypter services could be found or no consul server could be contacted.
-     */
-    private static synchronized String decrypt(String encryptedValue) throws Exception {
-        if (!encryptedValue.startsWith(ENCRYPTED_PREFIX)) {
-            return encryptedValue;
-        }
-
-        // Identify Access Token
-        String accessToken = System.getProperty(PROP_ACCESS_TOKEN);
-        if (accessToken == null) {
-            throw new Exception("Missing Property called: '" + PROP_ACCESS_TOKEN
-                                + "', this property is needed to decrypt secure properties, see https://github.ibm.com/websphere/WS-CD-Open/wiki/Automated-Tests#running-fats-that-use-secure-properties-locally for more info");
-        }
-
-        RetryPolicy retry = new CappedExponentialSleeps(1000, 8, 128000);
-
-        // Locate Properties Decrypter Instance
-        String decrypted = null;
-        while (decrypted == null) {
-            while (propertiesDecrypter == null) {
-                try {
-                    propertiesDecrypter = ExternalTestService.getService("liberty-properties-decrypter");
-                } catch (Exception e) {
-                    if (retry.retryable()) {
-                        continue;
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-
-            // Decrypt Properties
-            HttpsRequest propsRequest = new HttpsRequest("https://" + propertiesDecrypter.getAddress() + ":" + propertiesDecrypter.getPort() + "/decrypt?value=" + encryptedValue
-                                                         + "&access_token=" + accessToken);
-            propsRequest.allowInsecure();
-            propsRequest.timeout(10000);
-            propsRequest.expectCode(HttpsURLConnection.HTTP_OK).expectCode(HttpsURLConnection.HTTP_UNAUTHORIZED).expectCode(HttpsURLConnection.HTTP_FORBIDDEN);
-            propsRequest.silent();
-            try {
-                decrypted = propsRequest.run(String.class);
-            } catch (Exception e) {
-                switch (propsRequest.getResponseCode()) {
-                    case HttpsURLConnection.HTTP_INTERNAL_ERROR:
-                    case HttpsURLConnection.HTTP_BAD_GATEWAY:
-                    case HttpsURLConnection.HTTP_UNAVAILABLE:
-                    case HttpsURLConnection.HTTP_NOT_IMPLEMENTED:
-                        propertiesDecrypter.reportUnhealthy(e.getMessage());
-                        propertiesDecrypter = null;
-                        if (retry.retryable()) {
-                            break;
-                        } else {
-                            ; //fall through
-                        }
-
-                    default:
-                        propertiesDecrypter.reportUnhealthy(e.getMessage());
-                        propertiesDecrypter = null;
-                        break;
-                }
-
-            }
-            switch (propsRequest.getResponseCode()) {
-                case HttpsURLConnection.HTTP_UNAUTHORIZED:
-                    throw new Exception(PROP_ACCESS_TOKEN
-                                        + " is not recognized by github.ibm.com, see https://github.ibm.com/websphere/WS-CD-Open/wiki/Automated-Tests#running-fats-that-use-secure-properties-locally for more info");
-                case HttpsURLConnection.HTTP_FORBIDDEN:
-                    throw new Exception(PROP_ACCESS_TOKEN
-                                        + " is not able to be access organisation data, Access Token requires read:org permission, see https://github.ibm.com/websphere/WS-CD-Open/wiki/Automated-Tests#running-fats-that-use-secure-properties-locally for more info");
-                case HttpsURLConnection.HTTP_OK:
-                    //Do nothing
-            }
-
-        }
-
-        return decrypted;
-    }
-
-    /**
      * Determines the network location of the test system that is attempting to access the
      * external test service.
      *
@@ -646,68 +555,10 @@ public class ExternalTestService {
                                 .decode(ByteBuffer.wrap(getValue()));
                 String utf8Value = charValue.toString();
 
-                if (utf8Value.startsWith(ENCRYPTED_PREFIX)) {
-                    stringValue = ExternalTestService.decrypt(utf8Value);
-                } else {
-                    stringValue = utf8Value;
-                }
+                stringValue = ExternalTestServiceDecrypter.decrypt(utf8Value);
             }
             return stringValue;
         }
-    }
-
-    /**
-     * Retry policy interface
-     */
-    private interface RetryPolicy {
-
-        /**
-         * @return true if the operation should be retried; false otherwise.
-         */
-        boolean retryable();
-
-    }
-
-    /**
-     * Exponentially longer sleeping retry policy until a maximum time has elapsed.
-     */
-    private static class CappedExponentialSleeps implements RetryPolicy {
-
-        private int sleepMsecs;
-        private final int numSleeps;
-        private int completedSleeps;
-        private final int capMsecs;
-
-        /**
-         * @param sleepMsecs initial sleep time in msecs (doubles on each retry)
-         * @param numSleeps  number of times to do a sleep before it becomes non-retryable
-         * @param capMsecs   maximum number of msecs to sleep
-         */
-        public CappedExponentialSleeps(int sleepMsecs, int numSleeps, int capMsecs) {
-            this.sleepMsecs = sleepMsecs;
-            this.numSleeps = numSleeps;
-            this.capMsecs = capMsecs;
-            this.completedSleeps = 0;
-        }
-
-        @Override
-        public boolean retryable() {
-            if (completedSleeps < numSleeps) {
-                sleepMsecs *= 2;
-                if (sleepMsecs > capMsecs)
-                    sleepMsecs = capMsecs;
-
-                completedSleeps++;
-                try {
-                    Thread.sleep(sleepMsecs);
-                } catch (InterruptedException e) {
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        }
-
     }
 
     ///// GETTERS /////
