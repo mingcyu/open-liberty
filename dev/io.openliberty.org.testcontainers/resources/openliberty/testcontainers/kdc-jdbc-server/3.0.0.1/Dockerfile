@@ -1,7 +1,7 @@
 # Base image used by external users is overwritten at runtime
 # by a mirrored version from Artifactory for internal users.
 
-ARG BASE_IMAGE="public.ecr.aws/docker/library/alpine:3.21"
+ARG BASE_IMAGE="public.ecr.aws/docker/library/alpine:3"
 
 FROM ${BASE_IMAGE}
 

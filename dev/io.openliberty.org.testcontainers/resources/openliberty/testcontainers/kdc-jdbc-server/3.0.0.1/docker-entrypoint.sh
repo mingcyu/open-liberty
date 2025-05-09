@@ -98,8 +98,8 @@ EOT
     echo "Creating dbuser Account"
     kadmin.local -q "addprinc -pw ${KRB5_PASS} dbuser@${KRB5_REALM}"
     
-    echo "Creating XE/oracle Account"
-    kadmin.local -q "addprinc -pw ${KRB5_PASS} XE/oracle@${KRB5_REALM}"
+    echo "Creating FREE/oracle Account"
+    kadmin.local -q "addprinc -pw ${KRB5_PASS} FREE/oracle@${KRB5_REALM}"
     
     echo "Creating oracle kerberos principal"
     kadmin.local -q "addprinc -pw ${KRB5_PASS} ORACLEUSR@${KRB5_REALM}"

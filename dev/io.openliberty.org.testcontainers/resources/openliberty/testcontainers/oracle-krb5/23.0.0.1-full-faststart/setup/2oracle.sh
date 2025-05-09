@@ -21,7 +21,7 @@ touch $SQLNETORA
     # Tell oracle to use kerberos for authentication
     echo "SQLNET.AUTHENTICATION_SERVICES=(BEQ, KERBEROS5)" >> $SQLNETORA
     # Use the service name oracle (kerberos service name NOT ORACLE SERVICE NAME)
-    echo "SQLNET.AUTHENTICATION_KERBEROS5_SERVICE=XE" >> $SQLNETORA
+    echo "SQLNET.AUTHENTICATION_KERBEROS5_SERVICE=FREE" >> $SQLNETORA
     echo "UPDATED SQLNET.ORA"
 
 # Step 6B: Set the Initialization Parameters

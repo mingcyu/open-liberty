@@ -34,7 +34,7 @@ public class OracleKerberosContainer extends OracleContainer {
 
     //TODO Start using ImageBuilder
     private static final DockerImageName ORACLE_KRB5 = ImageBuilder
-                    .build("oracle-krb5:23-full-faststart")
+                    .build("oracle-krb5:23.0.0.1-full-faststart")
                     .getDockerImageName()
                     .asCompatibleSubstituteFor("gvenzl/oracle-free");
 
