@@ -285,12 +285,13 @@ public class ExternalTestService {
     /**
      * Retrieves a Consul value from a key/value pair that may or may not be associated with a Consul service.
      *
-     * TODO this is never called is it necessary ??
+     * TODO consider removing as this method is unused
      *
      * @param propertyName The property name or path. It should be available in a web browser at:
      *                         ${consulServer}/v1/kv/service/${propertyName}
      */
-    public static String getProperty(String propertyName) throws Exception {
+    @Deprecated
+    private static String getProperty(String propertyName) throws Exception {
         Exception firstEx = null;
         for (String consulServer : getConsulServers()) {
             try {
@@ -605,8 +606,8 @@ public class ExternalTestService {
 
     /**
      * Iterates through the list of properties and calls getStringValue()
-     *
-     * TODO is this necessary or can we be lazy about this?
+     * This is an eager decrypt so we can fail fast if the accessToken
+     * is unset or rejected by the decrypter service.
      *
      * @throws Exception
      */
