@@ -21,8 +21,6 @@ import com.ibm.websphere.simplicity.log.Log;
 /**
  * A reporter class that keeps track of unhealthy services.
  * Could also keep track of healthy services.
- *
- * TODO add unit testing
  */
 public class ExternalTestServiceReporter {
 
