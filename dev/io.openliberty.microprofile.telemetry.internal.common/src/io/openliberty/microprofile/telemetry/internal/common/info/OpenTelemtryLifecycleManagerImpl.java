@@ -37,6 +37,7 @@ import com.ibm.wsspi.kernel.feature.LibertyFeature;
 import io.openliberty.checkpoint.spi.CheckpointPhase;
 import io.openliberty.microprofile.telemetry.internal.common.constants.OpenTelemetryConstants;
 import io.openliberty.microprofile.telemetry.internal.interfaces.OpenTelemetryInfoFactory;
+import io.openliberty.microprofile.telemetry.spi.OpenTelemetryInfo;
 
 @Component(service = { ApplicationStateListener.class, OpenTelemetryLifecycleManager.class }, property = { "service.vendor=IBM", "service.ranking:Integer=1500" })
 public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListener, OpenTelemetryLifecycleManager {
@@ -188,11 +189,7 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
     @Override
     public OpenTelemetryInfoInternal getOpenTelemetryInfo() {
         try {
-            ApplicationMetaData metaData = null;
-            ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-            if (cmd != null) {
-                metaData = cmd.getModuleMetaData().getApplicationMetaData();
-            }
+            ApplicationMetaData metaData = getApplicationMetaData();
             return getOpenTelemetryInfo(metaData);
         } catch (Exception e) {
             Tr.error(tc, Tr.formatMessage(tc, "CWMOT5002.telemetry.error", e));
@@ -252,7 +249,17 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
 
             }
             LazyInitializer<OpenTelemetryInfoInternal> supplier = atomicRef.get();
-            return supplier.get();
+            OpenTelemetryInfoInternal returnValue = supplier.get();
+
+            //This will only ever be OpenTelemetryLogHandler. See that class for comments on why this exists.
+            OpenTelemetryInfoReadyListener listener = infoReadyListener.get();
+            if (listener != null) {
+                listener.notifyOpenTelemetryInfoReady(returnValue);
+            }
+            infoReadyListener.set(null);
+
+            return returnValue;
+
         } catch (Exception e) {
             Tr.error(tc, Tr.formatMessage(tc, "CWMOT5002.telemetry.error", e));
             return new ErrorOpenTelemetryInfo();
@@ -264,5 +271,37 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
         checkThenSetRuntimeFields();
 
         return isRuntimeEnabled;
+    }
+
+    //Hidden API to work around the issue of OpenTelemetry logging triggering creation of OpenTelemetryInfo while logging methods busy creating OpenTelemetryInfo
+    private final ThreadLocal<OpenTelemetryInfoReadyListener> infoReadyListener = ThreadLocal.withInitial(() -> null);
+
+    public void setOpenTelemetryInfoReadyListener(OpenTelemetryInfoReadyListener infoReadyListener) {
+        this.infoReadyListener.set(infoReadyListener);
+    }
+
+    public boolean isOpenTelemetryInitalized() {
+        if (isRuntimeEnabled) {
+            return runtimeInstance.isInitialized();
+        } else {
+            ApplicationMetaData metaData = getApplicationMetaData();
+            OpenTelemetryInfoReference atomicRef = (OpenTelemetryInfoReference) metaData.getMetaData(slotForOpenTelemetryInfoHolder);
+            LazyInitializer<OpenTelemetryInfoInternal> supplier = atomicRef.get();
+            return supplier.isInitialized();
+        }
+    }
+
+    public interface OpenTelemetryInfoReadyListener {
+        public void notifyOpenTelemetryInfoReady(OpenTelemetryInfo otelInstance);
+    }
+    //End of hidden api
+
+    private ApplicationMetaData getApplicationMetaData() {
+        ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
+        if (cmd != null) {
+            return cmd.getModuleMetaData().getApplicationMetaData();
+        } else {
+            return null;
+        }
     }
 }
