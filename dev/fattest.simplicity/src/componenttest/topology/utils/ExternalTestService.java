@@ -42,26 +42,46 @@ import com.ibm.websphere.simplicity.log.Log;
 
 /**
  * This class represents an external service that has been defined in a central registry with additional properties about it.
+ * TODO write unit tests for this class
  */
 public class ExternalTestService {
 
     private static final Class<?> c = ExternalTestService.class;
 
+    // Service properties from consul
+    private final Map<String, ServiceProperty> props;
+
+    // Network properties to external service
     private final String address;
     private final String serviceName;
     private final int port;
     private final String hostname;
-    private final Map<String, ServiceProperty> props;
-    private static Random rand = new Random();
-    private static Map<String, Collection<String>> unhealthyServiceInstances = new HashMap<String, Collection<String>>();
-    private static ExternalTestService propertiesDecrypter;
 
+    // TODO - create a reporter class that keeps track of unhealthy services with proper synchronization
+    private static Map<String, Collection<String>> unhealthyServiceInstances = new HashMap<String, Collection<String>>();
+
+    // Keys for client JVM properties
     private static final String PROP_NETWORK_LOCATION = "global.network.location";
     private static final String PROP_SERVER_ORIGIN = "server.origin";
     private static final String PROP_CONSUL_SERVERLIST = "global.consulServerList";
-    private static final String ENCRYPTED_PREFIX = "encrypted!";
     private static final String PROP_ACCESS_TOKEN = "global.ghe.access.token";
 
+    // Encrypted prefix to distinguish encrypted vs unencrypted properties
+    private static final String ENCRYPTED_PREFIX = "encrypted!";
+
+    // Random number generator to scramble service order
+    private static final Random rand = new Random();
+
+    // A property decrypter which is itself an external test service
+    private static ExternalTestService propertiesDecrypter;
+
+    /**
+     * Private constructor - new instances or collections of external test service
+     * are created via builder methods on this class.
+     *
+     * @param data  - consul json response with data that represents this external test service
+     * @param props - consul service properties for this external test service
+     */
     private ExternalTestService(JsonObject data, Map<String, ServiceProperty> props) {
         JsonObject serviceData = data.getJsonObject("Service");
         JsonObject nodeData = data.getJsonObject("Node");
@@ -90,50 +110,7 @@ public class ExternalTestService {
 
     }
 
-    /**
-     * Retrieves a Consul value from a key/value pair that may or may not be associated with a Consul service.
-     *
-     * @param propertyName The property name or path. It should be available in a web browser at:
-     *                         ${consulServer}/v1/kv/service/${propertyName}
-     */
-    public static String getProperty(String propertyName) throws Exception {
-        Exception firstEx = null;
-        for (String consulServer : getConsulServers()) {
-            try {
-                JsonArray propertiesJson = new HttpsRequest(consulServer + "/v1/kv/service/" + propertyName + "?recurse=true&stale")
-                                .allowInsecure()
-                                .timeout(30000)
-                                .expectCode(HttpsURLConnection.HTTP_OK)
-                                .expectCode(HttpsURLConnection.HTTP_NOT_FOUND)
-                                .run(JsonArray.class);
-
-                if (propertiesJson == null) {
-                    throw new Exception("The Consul server (" + consulServer
-                                        + ") was unavailable or did not return a result for the property: " + propertyName
-                                        + ". Look on #was-liberty-ops for outages, or updates to global.consulServerList");
-                }
-
-                if (propertiesJson.size() != 1) {
-                    throw new Exception("Expected to find exactly 1 property but found " + propertiesJson.size() +
-                                        ". Full JSON is: " + propertiesJson);
-
-                }
-                JsonObject propertyObject = propertiesJson.getJsonObject(0);
-                if (!propertyObject.containsKey("Value")) {
-                    throw new Exception("Property " + propertyName + " was found but contained no value. Full JSON is: " + propertyObject);
-                }
-
-                ServiceProperty prop = new ServiceProperty("", propertyName, propertyObject.getString("Value"));
-                return prop.getStringValue();
-            } catch (Exception e) {
-                if (firstEx == null)
-                    firstEx = e;
-                continue;
-            }
-        }
-
-        throw firstEx;
-    }
+    ///// BUILDER METHODS /////
 
     /**
      * Returns an ExternalTestService that matches the given service name.
@@ -189,25 +166,6 @@ public class ExternalTestService {
      */
     public static Collection<ExternalTestService> getServices(int count, String serviceName) throws Exception {
         return getServices(count, serviceName, null);
-    }
-
-    private static List<String> consulServers = null;
-
-    private static List<String> getConsulServers() throws Exception {
-        if (consulServers != null)
-            return consulServers;
-
-        String consulServerList = System.getProperty(PROP_CONSUL_SERVERLIST);
-        if (consulServerList == null) {
-            throw new Exception("There are no Consul hosts defined. Please ensure that the '" + PROP_CONSUL_SERVERLIST
-                                + "' property contains a comma separated list of Consul hosts and is included in the "
-                                + "user.build.properties file in your home directory. If not running on the IBM nework, "
-                                + "this message can be ignored.");
-        }
-
-        // Add all the servers to the list twice, effectively giving us a retry so double the chance of working if consul is slow
-        List<String> servers = Arrays.asList((consulServerList + "," + consulServerList).split(","));
-        return consulServers = servers;
     }
 
     /**
@@ -343,6 +301,87 @@ public class ExternalTestService {
 
     }
 
+    ///// UTILITY METHODS /////
+
+    /**
+     * Retrieves a Consul value from a key/value pair that may or may not be associated with a Consul service.
+     *
+     * TODO this is never called is it necessary ??
+     *
+     * @param propertyName The property name or path. It should be available in a web browser at:
+     *                         ${consulServer}/v1/kv/service/${propertyName}
+     */
+    public static String getProperty(String propertyName) throws Exception {
+        Exception firstEx = null;
+        for (String consulServer : getConsulServers()) {
+            try {
+                JsonArray propertiesJson = new HttpsRequest(consulServer + "/v1/kv/service/" + propertyName + "?recurse=true&stale")
+                                .allowInsecure()
+                                .timeout(30000)
+                                .expectCode(HttpsURLConnection.HTTP_OK)
+                                .expectCode(HttpsURLConnection.HTTP_NOT_FOUND)
+                                .run(JsonArray.class);
+
+                if (propertiesJson == null) {
+                    throw new Exception("The Consul server (" + consulServer
+                                        + ") was unavailable or did not return a result for the property: " + propertyName
+                                        + ". Look on #was-liberty-ops for outages, or updates to global.consulServerList");
+                }
+
+                if (propertiesJson.size() != 1) {
+                    throw new Exception("Expected to find exactly 1 property but found " + propertiesJson.size() +
+                                        ". Full JSON is: " + propertiesJson);
+
+                }
+                JsonObject propertyObject = propertiesJson.getJsonObject(0);
+                if (!propertyObject.containsKey("Value")) {
+                    throw new Exception("Property " + propertyName + " was found but contained no value. Full JSON is: " + propertyObject);
+                }
+
+                ServiceProperty prop = new ServiceProperty("", propertyName, propertyObject.getString("Value"));
+                return prop.getStringValue();
+            } catch (Exception e) {
+                if (firstEx == null)
+                    firstEx = e;
+                continue;
+            }
+        }
+
+        throw firstEx;
+    }
+
+    private static List<String> consulServers = null;
+
+    /**
+     * Get list of consul servers from the consul server list system property
+     *
+     * @return           List of servers some of which may be repeated
+     * @throws Exception if no servers were defined
+     */
+    private static List<String> getConsulServers() throws Exception {
+        if (consulServers != null)
+            return consulServers;
+
+        String consulServerList = System.getProperty(PROP_CONSUL_SERVERLIST);
+        if (consulServerList == null) {
+            throw new Exception("There are no Consul hosts defined. Please ensure that the '" + PROP_CONSUL_SERVERLIST
+                                + "' property contains a comma separated list of Consul hosts and is included in the "
+                                + "user.build.properties file in your home directory. If not running on the IBM nework, "
+                                + "this message can be ignored.");
+        }
+
+        // Add all the servers to the list twice, effectively giving us a retry so double the chance of working if consul is slow
+        List<String> servers = Arrays.asList((consulServerList + "," + consulServerList).split(","));
+        return consulServers = servers;
+    }
+
+    /**
+     * Parses a json object from a consul http response to a service property object
+     * TODO document what an example object might look like and what values we parse out
+     *
+     * @param  json a json object
+     * @return      a service property if the object can be parsed, null otherwise.
+     */
     private static ServiceProperty parseServiceProperty(JsonObject json) {
         String key = json.getString("Key");
         String[] keyParts = key.split("/", 4);
@@ -366,59 +405,25 @@ public class ExternalTestService {
         return new ServiceProperty(instanceName, keyName, base64EncodedValue);
     }
 
-    private static class ServiceProperty {
-
-        private final String instance;
-        private final String key;
-        private String base64EncodedValue;
-        private byte[] value = null;
-        private String stringValue = null;
-
-        private ServiceProperty(String instance, String key, String base64EncodedValue) {
-            this.instance = instance;
-            this.key = key;
-            this.base64EncodedValue = base64EncodedValue;
-        }
-
-        private String getNodeName() {
-            return instance;
-        }
-
-        private String getKey() {
-            return key;
-        }
-
-        private synchronized byte[] getValue() {
-            if (value == null) {
-                value = Base64.getDecoder().decode(base64EncodedValue);
-                base64EncodedValue = null;
-            }
-            return value;
-        }
-
-        /**
-         * @return                          the value as a string
-         * @throws CharacterCodingException if the value is not a UTF-8 encoded string
-         * @throws Exception                if the value is encrypted and cannot be decrypted
-         */
-        private String getStringValue() throws CharacterCodingException, Exception {
-            if (stringValue == null) {
-                CharBuffer charValue = Charset.forName("UTF-8")
-                                .newDecoder()
-                                .onMalformedInput(CodingErrorAction.REPORT)
-                                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                                .decode(ByteBuffer.wrap(getValue()));
-                String utf8Value = charValue.toString();
-                if (utf8Value.startsWith(ENCRYPTED_PREFIX)) {
-                    stringValue = ExternalTestService.decrypt(utf8Value);
-                } else {
-                    stringValue = utf8Value;
-                }
-            }
-            return stringValue;
-        }
-    }
-
+    /**
+     * Iterates through a list of services and returns a collection of desired size of services that match various criteria
+     * as described below:
+     *
+     * <ol>
+     * <li>Network location filtering: Service must allow connections from the client network location</li>
+     * <li>Property decryption: Property decrypter service must be able to decrypt service properties (if applicable)</li>
+     * <li>Test Service Filter: Service must pass the supplied filter's test method</li>
+     * </ol>
+     *
+     * If the service fails any of these criteria it will be reported as unhealthy and we will continue onto the next service
+     * until we have collected the requested under.
+     *
+     * @param  count        number of services to locate
+     * @param  testServices the list of all test services
+     * @param  filter       a client supplied filter with additional criteria
+     * @return              collection of test services that match all criteria, or null if no service could be located.
+     * @throws Exception    if we have exhausted the list of services and we encountered an exception along the way.
+     */
     private static Collection<ExternalTestService> getMatchedService(int count, List<ExternalTestService> testServices, ExternalTestServiceFilter filter) throws Exception {
         Collections.shuffle(testServices, rand);
         Exception exception = null;
@@ -467,60 +472,14 @@ public class ExternalTestService {
         return null;
     }
 
-    private interface RetryPolicy {
-
-        /**
-         * @return true if the operation should be retried; false otherwise.
-         */
-        boolean retryable();
-
-    }
-
-    private static class CappedExponentialSleeps implements RetryPolicy {
-
-        private int sleepMsecs;
-        private final int numSleeps;
-        private int completedSleeps;
-        private final int capMsecs;
-
-        /**
-         * @param sleepMsecs initial sleep time in msecs (doubles on each retry)
-         * @param numSleeps  number of times to do a sleep before it becomes non-retryable
-         * @param capMsecs   maximum number of msecs to sleep
-         */
-        public CappedExponentialSleeps(int sleepMsecs, int numSleeps, int capMsecs) {
-            this.sleepMsecs = sleepMsecs;
-            this.numSleeps = numSleeps;
-            this.capMsecs = capMsecs;
-            this.completedSleeps = 0;
-        }
-
-        /*
-         */
-        @Override
-        public boolean retryable() {
-            if (completedSleeps < numSleeps) {
-                sleepMsecs *= 2;
-                if (sleepMsecs > capMsecs)
-                    sleepMsecs = capMsecs;
-
-                completedSleeps++;
-                try {
-                    Thread.sleep(sleepMsecs);
-                } catch (InterruptedException e) {
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        }
-
-    }
-
     /**
-     * @param  encryptedValue
-     * @return                decryptedValue
-     * @throws Exception      If either no healthy liberty-properties-decrypter services could be found or no consul server could be contacted.
+     * Decrypts a property using the property decrypter service.
+     * This method is synchronized so that two requests to decrypt a value do not both try to find a decrypter service instance at the same time.
+     * TODO move the decrypter service to it's own class
+     *
+     * @param  encryptedValue a potentially encrypted value that needs to be decrypted
+     * @return                the original value if it was not encrypted, otherwise the decrypted value
+     * @throws Exception      if either no healthy liberty-properties-decrypter services could be found or no consul server could be contacted.
      */
     private static synchronized String decrypt(String encryptedValue) throws Exception {
         if (!encryptedValue.startsWith(ENCRYPTED_PREFIX)) {
@@ -598,7 +557,11 @@ public class ExternalTestService {
     }
 
     /**
-     * @return
+     * Determines the network location of the test system that is attempting to access the
+     * external test service.
+     *
+     * @return The network location system property if it was set, otherwise a heuristically
+     *         determined network location based on the server origin system property.
      */
     private static String getNetworkLocation() {
         String networkLocation = System.getProperty(PROP_NETWORK_LOCATION);
@@ -634,6 +597,121 @@ public class ExternalTestService {
         }
     }
 
+    ///// UTILITY CLASSES /////
+
+    /**
+     * POJO that represents a service property
+     */
+    private static class ServiceProperty {
+
+        private final String instance;
+        private final String key;
+        private String base64EncodedValue;
+        private byte[] value = null;
+        private String stringValue = null;
+
+        private ServiceProperty(String instance, String key, String base64EncodedValue) {
+            this.instance = instance;
+            this.key = key;
+            this.base64EncodedValue = base64EncodedValue;
+        }
+
+        private String getNodeName() {
+            return instance;
+        }
+
+        private String getKey() {
+            return key;
+        }
+
+        private synchronized byte[] getValue() {
+            if (value == null) {
+                value = Base64.getDecoder().decode(base64EncodedValue);
+                base64EncodedValue = null;
+            }
+            return value;
+        }
+
+        /**
+         * @return                          the value as a string
+         * @throws CharacterCodingException if the value is not a UTF-8 encoded string
+         * @throws Exception                if the value is encrypted and cannot be decrypted
+         */
+        private String getStringValue() throws CharacterCodingException, Exception {
+            if (stringValue == null) {
+                CharBuffer charValue = Charset.forName("UTF-8")
+                                .newDecoder()
+                                .onMalformedInput(CodingErrorAction.REPORT)
+                                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                                .decode(ByteBuffer.wrap(getValue()));
+                String utf8Value = charValue.toString();
+
+                if (utf8Value.startsWith(ENCRYPTED_PREFIX)) {
+                    stringValue = ExternalTestService.decrypt(utf8Value);
+                } else {
+                    stringValue = utf8Value;
+                }
+            }
+            return stringValue;
+        }
+    }
+
+    /**
+     * Retry policy interface
+     */
+    private interface RetryPolicy {
+
+        /**
+         * @return true if the operation should be retried; false otherwise.
+         */
+        boolean retryable();
+
+    }
+
+    /**
+     * Exponentially longer sleeping retry policy until a maximum time has elapsed.
+     */
+    private static class CappedExponentialSleeps implements RetryPolicy {
+
+        private int sleepMsecs;
+        private final int numSleeps;
+        private int completedSleeps;
+        private final int capMsecs;
+
+        /**
+         * @param sleepMsecs initial sleep time in msecs (doubles on each retry)
+         * @param numSleeps  number of times to do a sleep before it becomes non-retryable
+         * @param capMsecs   maximum number of msecs to sleep
+         */
+        public CappedExponentialSleeps(int sleepMsecs, int numSleeps, int capMsecs) {
+            this.sleepMsecs = sleepMsecs;
+            this.numSleeps = numSleeps;
+            this.capMsecs = capMsecs;
+            this.completedSleeps = 0;
+        }
+
+        @Override
+        public boolean retryable() {
+            if (completedSleeps < numSleeps) {
+                sleepMsecs *= 2;
+                if (sleepMsecs > capMsecs)
+                    sleepMsecs = capMsecs;
+
+                completedSleeps++;
+                try {
+                    Thread.sleep(sleepMsecs);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+    }
+
+    ///// GETTERS /////
+
     /**
      * @return the address
      */
@@ -662,9 +740,10 @@ public class ExternalTestService {
         return port;
     }
 
+    ///// METHODS /////
+
     /**
-     * Returns a map of properties found about the service
-     * <p>
+     * Returns a map of properties found about the service.
      * Properties whose values are not Strings are not returned by this method but can be written to a file with {@link #writePropertyAsFile}
      *
      * @return a map of properties found about the service in the central registry
@@ -688,6 +767,13 @@ public class ExternalTestService {
         return properties;
     }
 
+    /**
+     * Iterates through the list of properties and calls getStringValue()
+     *
+     * TODO is this necessary or can we be lazy about this?
+     *
+     * @throws Exception
+     */
     private void decryptProperties() throws Exception {
         for (ServiceProperty prop : props.values()) {
             try {
@@ -700,8 +786,7 @@ public class ExternalTestService {
     }
 
     /**
-     * Write a service property value to a file
-     * <p>
+     * Write a service property value to a file.
      * Useful if you have a truststore or keyfile stored in your service properties
      *
      * @param  keyName               the name of the service property to write to the file
@@ -751,6 +836,8 @@ public class ExternalTestService {
         //Placeholder to implement later
     }
 
+    ///// MAIN /////
+
     /**
      * Testing method to ensure the ExternalTestService Works
      *
@@ -771,10 +858,8 @@ public class ExternalTestService {
                 System.out.println(service.getProperties());
                 //service.reportUnhealthy("Testing");
             }
-
         }
 
         System.out.println("Found " + serviceAddresses.size() + " EBC services");
     }
-
 }
