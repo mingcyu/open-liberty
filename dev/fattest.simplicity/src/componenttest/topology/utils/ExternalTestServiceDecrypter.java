@@ -18,12 +18,13 @@ import java.util.function.Function;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.ibm.websphere.simplicity.log.Log;
+
 /**
  * A wrapper for the liberty-properties-decrypter external test service.
  *
  * This wrapper is used by other external test services to decrypt sensitive properties at test runtime.
  *
- * TODO add logging
  * TODO add unit testing
  */
 public class ExternalTestServiceDecrypter {
@@ -59,7 +60,7 @@ public class ExternalTestServiceDecrypter {
             try {
                 instance = ExternalTestService.getService("liberty-properties-decrypter");
             } catch (Exception e) {
-                if (DECRYPTER_SERVICE_RETRY.retryable()) { // Wait and continue
+                if (DECRYPTER_SERVICE_RETRY.retryable("INITALIZER", e.getMessage())) { // Wait and continue
                     continue;
                 } else {
                     throw new RuntimeException("Could not get a liberty-properties-decrypter service", e);
@@ -78,7 +79,7 @@ public class ExternalTestServiceDecrypter {
             try {
                 instance = ExternalTestService.getService("liberty-properties-decrypter");
             } catch (Exception e) {
-                if (DECRYPTER_SERVICE_RETRY.retryable()) { // Wait and continue
+                if (DECRYPTER_SERVICE_RETRY.retryable("RE_INITALIZER", e.getMessage())) { // Wait and continue
                     continue;
                 } else {
                     throw new RuntimeException("Could not get a liberty-properties-decrypter service", e);
@@ -99,6 +100,8 @@ public class ExternalTestServiceDecrypter {
      * @throws NullPointerException  if the decrypter service was was unreachable after a series of retries
      */
     public static String decrypt(String property) {
+        final String m = "decrypt";
+
         // Do not decrypt property if it is not encrypted
         if (!property.startsWith(ENCRYPTED_PREFIX)) {
             return property;
@@ -133,7 +136,7 @@ public class ExternalTestServiceDecrypter {
                 ExternalTestServiceReporter.reportUnhealthy(decrypter, e);
 
                 //Should we retry
-                if (retry.retryable()) {
+                if (retry.retryable(m, e.toString())) {
                     // If so, then compute a new decrypter, then
                     // continue on and check for specific response codes.
                     decrypter = DECRYPTER_SERVICE.compute(SERVICE_KEY, RE_INITALIZER);
@@ -161,7 +164,6 @@ public class ExternalTestServiceDecrypter {
                 case HttpsURLConnection.HTTP_OK:
                     //Do nothing
             }
-
         }
 
         return Objects.requireNonNull(decrypted, "Unable to decrypt the provided property. See earlier logs for failed decryption attempts.");
@@ -190,9 +192,11 @@ public class ExternalTestServiceDecrypter {
     private interface RetryPolicy {
 
         /**
-         * @return true if the operation should be retried; false otherwise.
+         * @param  method calling method
+         * @param  reason reason for the retury
+         * @return        true if the operation should be retried; false otherwise.
          */
-        boolean retryable();
+        boolean retryable(String method, String reason);
 
     }
 
@@ -207,7 +211,7 @@ public class ExternalTestServiceDecrypter {
         private int current = 1;
 
         // Track number of sleeps
-        private final AtomicInteger counter = new AtomicInteger(1);
+        private final AtomicInteger counter = new AtomicInteger(0);
 
         // Track sleep duration, count
         private final Duration sleep;
@@ -226,13 +230,18 @@ public class ExternalTestServiceDecrypter {
         }
 
         @Override
-        public boolean retryable() {
+        public boolean retryable(String method, String reason) {
             if (counter.getAndIncrement() >= maxRetries) {
+                Log.info(c, method, "Cannot allow retry(" + counter.get() + "), instead allow failure due to: " + reason);
                 return false;
             }
 
+            long sleepTime = sleep.toMillis() * current;
+
+            Log.info(c, method, "Allow retry(" + counter.get() + ") after sleeping for " + sleepTime + "ms.  Retry called because: " + reason);
+
             try {
-                Thread.sleep(sleep.toMillis() * current);
+                Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 // Thread was interrupted, ignore it and continue on...
             }
@@ -248,7 +257,7 @@ public class ExternalTestServiceDecrypter {
 
     private static class CounterRetryPolicy implements RetryPolicy {
         // Track number of retries
-        private final AtomicInteger counter = new AtomicInteger(1);
+        private final AtomicInteger counter = new AtomicInteger(0);
 
         private final int maxRetries;
 
@@ -257,11 +266,13 @@ public class ExternalTestServiceDecrypter {
         }
 
         @Override
-        public boolean retryable() {
+        public boolean retryable(String method, String reason) {
             if (counter.getAndIncrement() >= maxRetries) {
+                Log.info(c, method, "Cannot allow retry(" + counter.get() + "), instead allow failure due to: " + reason);
                 return false;
             }
 
+            Log.info(c, method, "Allow retry(" + counter.get() + ").  Retry called because: " + reason);
             return true;
         }
     }

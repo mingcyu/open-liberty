@@ -38,6 +38,8 @@ import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.net.ssl.HttpsURLConnection;
 
+import com.ibm.websphere.simplicity.log.Log;
+
 /**
  * This class represents an external service that has been defined in a central registry with additional properties about it.
  * TODO write unit tests for this class
@@ -175,24 +177,32 @@ public class ExternalTestService {
      * @throws Exception   If either not enough healthy services could be found or no consul server could be contacted.
      */
     public static Collection<ExternalTestService> getServices(int count, String serviceName, ExternalTestServiceFilter filter) throws Exception {
+        final String m = "getServices";
+
         if (filter == null) {
             filter = new ExternalTestServiceFilterAlwaysMatched();
         }
 
         Collection<String> unhealthyReadOnly = ExternalTestServiceReporter.getUnhealthyReport(serviceName);
 
+        Log.info(c, m, "Getting " + count + " external test service(s) named '" + serviceName + "' with a " + filter.getClass().getName());
+        if (!unhealthyReadOnly.isEmpty()) {
+            Log.info(c, m, "\tExisting unhealthy instances: " + unhealthyReadOnly.toString());
+        }
+
         Exception finalError = null;
         for (String consulServer : getConsulServers()) {
             JsonArray instances;
             try {
-                HttpsRequest instancesRequest = new HttpsRequest(consulServer + "/v1/health/service/" + serviceName + "?passing=true&stale");
-                instancesRequest.timeout(30000);
-                instancesRequest.allowInsecure();
+                HttpsRequest instancesRequest = new HttpsRequest(consulServer + "/v1/health/service/" + serviceName + "?passing=true&stale")
+                                .timeout(30000)
+                                .allowInsecure();
                 instances = instancesRequest.run(JsonArray.class);
             } catch (Exception e) {
                 finalError = e;
                 continue;
             }
+
             //fail if no instances available
             if (instances.isEmpty()) {
                 throw new Exception("There are no healthy services available for " + serviceName);
@@ -263,9 +273,12 @@ public class ExternalTestService {
                 }
             }
 
+            Log.info(c, m, "Found " + healthyTestServices.size() + " potential " + serviceName + " services, attempting to find a matching service.");
+
             //pick random healthy instance
-            Collection<ExternalTestService> matchedServices = getMatchedService(count, healthyTestServices, filter);
+            Collection<ExternalTestService> matchedServices = getMatchedServices(count, healthyTestServices, filter);
             if (matchedServices != null && matchedServices.size() == count) {
+                Log.info(c, m, "Found " + matchedServices.size() + " service(s): " + matchedServices);
                 return matchedServices;
             }
 
@@ -273,11 +286,12 @@ public class ExternalTestService {
 
         }
 
+        Log.info(c, m, "Ran out of consul servers before finding enough match services");
+
         //Http requests above ended in exception
         Exception e = new Exception("Exception attempting to connect to Consul servers");
         e.initCause(finalError);
         throw e;
-
     }
 
     ///// UTILITY METHODS /////
@@ -342,6 +356,8 @@ public class ExternalTestService {
         if (consulServers != null)
             return consulServers;
 
+        final String m = "getConsulServers";
+
         String consulServerList = System.getProperty(PROP_CONSUL_SERVERLIST);
         if (consulServerList == null) {
             throw new Exception("There are no Consul hosts defined. Please ensure that the '" + PROP_CONSUL_SERVERLIST
@@ -352,6 +368,9 @@ public class ExternalTestService {
 
         // Add all the servers to the list twice, effectively giving us a retry so double the chance of working if consul is slow
         List<String> servers = Arrays.asList((consulServerList + "," + consulServerList).split(","));
+
+        Log.info(c, m, "Initial consul server list (duplicates expected): " + servers);
+
         return consulServers = servers;
     }
 
@@ -404,12 +423,13 @@ public class ExternalTestService {
      * @return              collection of test services that match all criteria, or null if no service could be located.
      * @throws Exception    if we have exhausted the list of services and we encountered an exception along the way.
      */
-    private static Collection<ExternalTestService> getMatchedService(int count, List<ExternalTestService> testServices, ExternalTestServiceFilter filter) throws Exception {
+    private static Collection<ExternalTestService> getMatchedServices(int count, List<ExternalTestService> testServices, ExternalTestServiceFilter filter) throws Exception {
         Collections.shuffle(testServices, rand);
         Exception exception = null;
         Collection<ExternalTestService> matchedServices = new ArrayList<ExternalTestService>();
+
         for (ExternalTestService externalTestService : testServices) {
-            //Do Network Location Filter
+            //Do Network Location Filtering
             try {
                 String locationString = externalTestService.getProperties().get("allowed.networks");
                 if (locationString != null) {
@@ -578,6 +598,11 @@ public class ExternalTestService {
     }
 
     ///// METHODS /////
+
+    @Override
+    public String toString() {
+        return "ExternalTestService [serviceName=" + serviceName + ", hostname=" + hostname + ", port=" + port + "]";
+    }
 
     /**
      * Returns a map of properties found about the service.
