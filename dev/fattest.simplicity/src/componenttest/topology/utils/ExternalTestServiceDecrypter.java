@@ -130,7 +130,7 @@ public class ExternalTestServiceDecrypter {
             } catch (Exception e) {
 
                 // The decrypter threw an unexpected exception, mark it unhealthy
-                decrypter.reportUnhealthy(e.getMessage());
+                ExternalTestServiceReporter.reportUnhealthy(decrypter, e);
 
                 //Should we retry
                 if (retry.retryable()) {

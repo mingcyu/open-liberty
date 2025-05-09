@@ -38,8 +38,6 @@ import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.net.ssl.HttpsURLConnection;
 
-import com.ibm.websphere.simplicity.log.Log;
-
 /**
  * This class represents an external service that has been defined in a central registry with additional properties about it.
  * TODO write unit tests for this class
@@ -56,9 +54,6 @@ public class ExternalTestService {
     private final String serviceName;
     private final int port;
     private final String hostname;
-
-    // TODO - create a reporter class that keeps track of unhealthy services with proper synchronization
-    private static Map<String, Collection<String>> unhealthyServiceInstances = new HashMap<String, Collection<String>>();
 
     // Keys for client JVM properties
     private static final String PROP_NETWORK_LOCATION = "global.network.location";
@@ -184,16 +179,7 @@ public class ExternalTestService {
             filter = new ExternalTestServiceFilterAlwaysMatched();
         }
 
-        Collection<String> unhealthyReadOnly;
-        synchronized (unhealthyServiceInstances) {
-
-            Collection<String> unhealthyList = unhealthyServiceInstances.get(serviceName);
-            if (unhealthyList == null) {
-                unhealthyList = new HashSet<String>();
-                unhealthyServiceInstances.put(serviceName, unhealthyList);
-            }
-            unhealthyReadOnly = new HashSet<String>(unhealthyList);
-        }
+        Collection<String> unhealthyReadOnly = ExternalTestServiceReporter.getUnhealthyReport(serviceName);
 
         Exception finalError = null;
         for (String consulServer : getConsulServers()) {
@@ -430,11 +416,10 @@ public class ExternalTestService {
                     String networkLocation = getNetworkLocation();
                     if (!allowedNetworks.contains(networkLocation)) {
                         //Network is not allowed
-                        externalTestService.reportUnhealthy("Build Machine cannot use instance as its networks location ("
-                                                            + networkLocation +
-                                                            ") is not in allowed.networks ("
-                                                            + locationString +
-                                                            ")");
+                        String reason = "Build Machine cannot use instance as its networks location ("
+                                        + networkLocation + ") is not in allowed.networks ("
+                                        + locationString + ")";
+                        ExternalTestServiceReporter.reportUnhealthy(externalTestService, reason);
                         continue;
                     }
 
@@ -661,23 +646,6 @@ public class ExternalTestService {
         } finally {
             out.close();
         }
-    }
-
-    /**
-     * This method should be used to report the instance as not working locally and will not be randomly selected again unless no other options remain
-     *
-     * Note: This implicitly calls release
-     *
-     * @param reason A simple explaination of what was unhealthy about it. e.g. Could not connect to selenium on machine.
-     */
-    public void reportUnhealthy(String reason) {
-        synchronized (unhealthyServiceInstances) {
-            Collection<String> unhealthyList = unhealthyServiceInstances.get(serviceName);
-            unhealthyList.add(address);
-
-        }
-        Log.info(getClass(), "reportUnhealthy", getServiceName() + " Service at " + getAddress() + " reported as unhealthy because: " + reason);
-        release();
     }
 
     /**
