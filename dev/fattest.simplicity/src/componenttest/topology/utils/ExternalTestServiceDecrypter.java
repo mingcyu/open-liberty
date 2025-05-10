@@ -24,8 +24,6 @@ import com.ibm.websphere.simplicity.log.Log;
  * A wrapper for the liberty-properties-decrypter external test service.
  *
  * This wrapper is used by other external test services to decrypt sensitive properties at test runtime.
- *
- * TODO add unit testing
  */
 public class ExternalTestServiceDecrypter {
 

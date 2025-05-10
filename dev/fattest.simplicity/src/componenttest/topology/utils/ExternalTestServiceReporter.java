@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.ibm.websphere.simplicity.log.Log;
@@ -51,17 +50,17 @@ public class ExternalTestServiceReporter {
         final String serviceName = service.getServiceName();
         final String address = service.getAddress();
 
-        UNHEALTHY.compute(serviceName, (key, collection) -> {
-            if (Objects.isNull(collection)) { // if absent, initialize
-                collection = new HashSet<String>(Arrays.asList(address));
-            } else { // if present, append
-                collection.add(address);
-            }
+        Log.info(c, "reportUnhealthy", "The " + serviceName + " service at " + address + " reported as unhealthy because: " + reason);
 
-            Log.info(c, "reportUnhealthy", "The " + serviceName + " service at " + address + " reported as unhealthy because: " + reason);
-
+        UNHEALTHY.computeIfPresent(serviceName, (key, collection) -> {
+            collection.add(address);
             return collection;
         });
+
+        UNHEALTHY.computeIfAbsent(serviceName, (key) -> {
+            return new HashSet<String>(Arrays.asList(address));
+        });
+
     }
 
     /**
