@@ -69,7 +69,7 @@ public class ExternalTestServiceDecrypter {
     };
 
     /**
-     * Function that replaces an existing decrypter service
+     * Function that replaces an existing decrypter service, that has been reported unhealthy
      */
     private static final BiFunction<String, ExternalTestService, ExternalTestService> RE_INITALIZER = (key, current) -> {
         ExternalTestService instance = null;
@@ -106,13 +106,13 @@ public class ExternalTestServiceDecrypter {
         }
 
         // Ensure access token is available
-        String accessToken = findAccessToken();
+        final String accessToken = findAccessToken();
 
         // Get a decrypter service, new or existing
         ExternalTestService decrypter = DECRYPTER_SERVICE.computeIfAbsent(SERVICE_KEY, INITALIZER);
 
         // Set retry policy for decrypting a property, to account for occasional network issues.
-        RetryPolicy retry = new CounterRetryPolicy(5);
+        final RetryPolicy retry = new CounterRetryPolicy(5);
 
         String decrypted = null;
         while (decrypted == null) {
@@ -136,8 +136,9 @@ public class ExternalTestServiceDecrypter {
                 //Should we retry
                 if (retry.retryable(m, e.toString())) {
                     // If so, then compute a new decrypter, then
-                    // continue on and check for specific response codes.
+                    // continue on to try again using a different decrypter service.
                     decrypter = DECRYPTER_SERVICE.compute(SERVICE_KEY, RE_INITALIZER);
+                    continue;
                 } else {
                     // If not, remove the unhealthy decrypter, then
                     // break out of the while loop

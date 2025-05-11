@@ -376,12 +376,15 @@ public class ExternalTestService {
 
     /**
      * Parses a json object from a consul http response to a service property object
-     * TODO document what an example object might look like and what values we parse out
      *
      * @param  json a json object
      * @return      a service property if the object can be parsed, null otherwise.
      */
     private static ServiceProperty parseServiceProperty(JsonObject json) {
+        /*
+         * Get the service property key in the form:
+         * service/<service-name>/<service-instance-name>/<property-key-name>
+         */
         String key = json.getString("Key");
         String[] keyParts = key.split("/", 4);
 
@@ -392,6 +395,10 @@ public class ExternalTestService {
         String instanceName = keyParts[2];
         String keyName = keyParts[3];
 
+        /*
+         * Get the service property value.
+         * The data is base64 encoded. After decoding, the data may still be encrypted
+         */
         JsonValue value = json.get("Value");
         String base64EncodedValue;
         // Value can be null, so check the type before decoding it
