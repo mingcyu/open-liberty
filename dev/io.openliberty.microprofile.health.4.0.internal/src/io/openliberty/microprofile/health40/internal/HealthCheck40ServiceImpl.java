@@ -769,7 +769,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                             Tr.debug(tc, "In performHealthCheck(): hcResponses = " + hcResponses);
                         }
 
-                        if (!hcResponses.isEmpty()) {
+                        if (hcResponses != null && !hcResponses.isEmpty()) {
                             evaluatedStatusFx.accept(hcResponses);
                         }
                     }
