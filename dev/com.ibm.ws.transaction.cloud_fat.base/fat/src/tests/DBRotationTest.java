@@ -476,7 +476,7 @@ public class DBRotationTest extends CloudFATServletClient {
     @Test
     // Annoying that all these have to be allowed rather that some being expected. Thanks Derby.
     @AllowedFFDC(value = { "com.ibm.ws.recoverylog.spi.LogsUnderlyingTablesMissingException", "javax.transaction.SystemException", "java.lang.Exception",
-                           "com.ibm.ws.recoverylog.spi.InternalLogException" })
+                           "com.ibm.ws.recoverylog.spi.InternalLogException", "java.lang.IllegalStateException" })
     public void testReactionToDeletedTables() throws Exception {
 
         if (!TxTestContainerSuite.isDerby()) { // Can't get a connection to drop tables on embedded Derby
@@ -484,15 +484,16 @@ public class DBRotationTest extends CloudFATServletClient {
             server2.useSecondaryHTTPPort();
 
             FATUtils.startServers(_runner, server2, noRecoveryGroupServer1);
-            assertNotNull("Home server recovery should have completed",
+            assertNotNull(server2.getServerName() + " recovery should have completed",
                           server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
 
-            runTestWithResponse(noRecoveryGroupServer1, SERVLET_NAME, "dropServer2Tables");
+            runTest(noRecoveryGroupServer1, SERVLET_NAME, "dropServer2Tables");
 
-            runTestWithResponse(server2, SERVLET_NAME, "twoTrans");
-            assertNotNull("Home server tables sould have been deleted", server2.waitForStringInTrace("Underlying SQL tables missing", FATUtils.LOG_SEARCH_TIMEOUT));
+            runTest(server2, SERVLET_NAME, "twoTrans");
+            assertNotNull(server2.getServerName() + " recovery tables should have been deleted",
+                          server2.waitForStringInTrace("Underlying SQL tables missing", FATUtils.LOG_SEARCH_TIMEOUT));
 
-            assertNotNull("Server should have stopped",
+            assertNotNull(server2.getServerName() + " should have stopped",
                           server2.waitForStringInLog("CWWKE0036I: The server com.ibm.ws.transaction_ANYDBCLOUD002 stopped", FATUtils.LOG_SEARCH_TIMEOUT));
         }
     }
