@@ -688,6 +688,19 @@ public class ExternalTestService {
         //Placeholder to implement later
     }
 
+    /**
+     * Test classes should use the {@link ExternalTestServiceReporter}
+     * instead of this method.
+     *
+     * TODO remove when all tests have been updated to use the reporter
+     *
+     * @param reason
+     */
+    @Deprecated
+    public void reportUnhealthy(String reason) {
+        ExternalTestServiceReporter.reportUnhealthy(this, reason);
+    }
+
     ///// MAIN /////
 
     /**
