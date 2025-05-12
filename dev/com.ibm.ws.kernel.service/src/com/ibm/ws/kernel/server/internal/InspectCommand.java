@@ -12,6 +12,7 @@
  *******************************************************************************/
 package com.ibm.ws.kernel.server.internal;
 
+import static com.ibm.ws.kernel.server.internal.InspectCommand.Introspectors.INTROSPECTORS;
 import static org.osgi.service.component.annotations.ConfigurationPolicy.IGNORE;
 
 import java.io.PrintWriter;
@@ -22,9 +23,9 @@ import java.util.stream.Stream;
 
 import org.apache.felix.service.command.Descriptor;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 
 import com.ibm.wsspi.logging.Introspector;
@@ -41,24 +42,17 @@ import com.ibm.wsspi.logging.Introspector;
                         "service.vendor=IBM"
            })
 public class InspectCommand {
-    private final BundleContext ctx;
-
-    @Activate
-    public InspectCommand(BundleContext ctx) {
-        this.ctx = ctx;
-    }
-
     @Descriptor("Lists or invokes the known introspections available in this server. Run `introspect help' for more information.")
     public void inspect(String... args) {
         if (args.length == 0) {
-            new Introspectors().list();
+            INTROSPECTORS.listAll();
         } else if ("help".equalsIgnoreCase(args[0])) {
             if (args.length == 1)
                 displayUsage();
             else
-                Stream.of(args).skip(1).forEach(new Introspectors()::describe);
+                Stream.of(args).skip(1).forEach(INTROSPECTORS::findAndDescribe);
         } else {
-            Stream.of(args).forEach(new Introspectors()::run);
+            Stream.of(args).forEach(INTROSPECTORS::findAndRun);
         }
     }
 
@@ -76,35 +70,37 @@ public class InspectCommand {
         System.out.println("       Displays the description of the named introspection.");
     }
 
-    private final class Introspectors {
-        final Collection<ServiceReference<Introspector>> refs;
+    /**
+     * Retrieves each introspector in turn, and runs actions on it.
+     */
+    enum Introspectors {
+        INTROSPECTORS;
 
-        Introspectors() {
-            try {
-                refs = ctx.getServiceReferences(Introspector.class, null);
-            } catch (InvalidSyntaxException e) {
-                throw new RuntimeException("error: unable to retrieve introspector service references", e);
-            }
+        /**
+         * Like Consumer<Introspector> but it allows exceptions to be thrown
+         */
+        private interface IntrospectorAction {
+            void actOn(Introspector i) throws Exception;
         }
 
-        void list() {
+        void listAll() {
             System.out.println("Available introspections: ");
-            forEach("retrieve introspector name", this::list0);
+            forEach("retrieve introspector name", this::list);
         }
 
-        void describe(String name) {
-            forEach("describe introspector", this::describe0, i -> Objects.equals(name, i.getIntrospectorName()));
+        void findAndDescribe(String name) {
+            forEach("describe introspector", this::describe, i -> Objects.equals(name, i.getIntrospectorName()));
         }
 
-        void run(String name) {
-            forEach("run introspector", this::run0, i -> Objects.equals(name, i.getIntrospectorName()));
+        void findAndRun(String name) {
+            forEach("run introspector", this::run, i -> Objects.equals(name, i.getIntrospectorName()));
         }
 
-        private void list0(Introspector i) {
+        private void list(Introspector i) {
             System.out.println("\t" + i.getIntrospectorName());
         }
 
-        private void describe0(Introspector ii) {
+        private void describe(Introspector ii) {
             System.out.println(ii.getIntrospectorName());
             System.out.println("============= " + ii.getIntrospectorName().replaceAll(".", "="));
             System.out.println(ii.getIntrospectorDescription());
@@ -112,7 +108,7 @@ public class InspectCommand {
             System.out.println();
         }
 
-        private void run0(Introspector i) throws Exception {
+        private void run(Introspector i) throws Exception {
             try (PrintWriter pw = new PrintWriter(System.out)) {
                 i.introspect(pw);
                 pw.flush();
@@ -121,6 +117,14 @@ public class InspectCommand {
 
         @SafeVarargs
         private final void forEach(String desc, IntrospectorAction action, Predicate<Introspector>... filters) {
+            final BundleContext ctx = FrameworkUtil.getBundle(Introspectors.class).getBundleContext();
+            final Collection<ServiceReference<Introspector>> refs;
+            try {
+                refs = ctx.getServiceReferences(Introspector.class, null);
+            } catch (InvalidSyntaxException e) {
+                throw new RuntimeException("error: unable to retrieve introspector service references", e);
+            }
+
             for (final ServiceReference<Introspector> rrr : refs) {
                 try {
                     final Introspector svc = ctx.getService(rrr);
@@ -149,9 +153,5 @@ public class InspectCommand {
                 }
             }
         }
-    }
-
-    private interface IntrospectorAction {
-        void actOn(Introspector i) throws Exception;
     }
 }
