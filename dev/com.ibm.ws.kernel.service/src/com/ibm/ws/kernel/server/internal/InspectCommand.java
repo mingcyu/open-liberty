@@ -15,14 +15,17 @@ package com.ibm.ws.kernel.server.internal;
 import static org.osgi.service.component.annotations.ConfigurationPolicy.IGNORE;
 
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.felix.service.command.Descriptor;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 import com.ibm.wsspi.logging.Introspector;
 
@@ -38,80 +41,117 @@ import com.ibm.wsspi.logging.Introspector;
                         "service.vendor=IBM"
            })
 public class InspectCommand {
-    private final List<Introspector> introspectors;
+    private final BundleContext ctx;
 
     @Activate
-    public InspectCommand(@Reference(name = "introspectors", policyOption = ReferencePolicyOption.GREEDY) List<Introspector> introspectors) {
-        this.introspectors = introspectors;
+    public InspectCommand(BundleContext ctx) {
+        this.ctx = ctx;
     }
 
     @Descriptor("Lists or invokes the known introspections available in this server. Run `introspect help' for more information.")
     public void inspect(String... args) {
         if (args.length == 0) {
-            listIntrospections();
-        } else if ("help".equals(args[0])) {
-            if (args.length == 1) {
-                System.out.println("usage: inspect");
-                System.out.println("       Lists available introspections.");
-                System.out.println();
-                System.out.println("usage: inspect <introspection>");
-                System.out.println("       Displays the output of the named introspection.");
-                System.out.println();
-                System.out.println("usage: inspect help");
-                System.out.println("       Displays this usage message.");
-                System.out.println();
-                System.out.println("usage: inspect help <introspection>");
-                System.out.println("       Displays the description of the named introspection.");
-            } else {
-                Stream.of(args).skip(1).forEach(this::describeIntrospection);
-            }
+            new Introspectors().list();
+        } else if ("help".equalsIgnoreCase(args[0])) {
+            if (args.length == 1)
+                displayUsage();
+            else
+                Stream.of(args).skip(1).forEach(new Introspectors()::describe);
         } else {
-            Stream.of(args).forEach(this::displayIntrospection);
+            Stream.of(args).forEach(new Introspectors()::run);
         }
     }
 
-    private Stream<Introspector> stream() {
-        return introspectors.stream();
+    private void displayUsage() {
+        System.out.println("usage: inspect");
+        System.out.println("       Lists available introspections.");
+        System.out.println();
+        System.out.println("usage: inspect <introspection>");
+        System.out.println("       Displays the output of the named introspection.");
+        System.out.println();
+        System.out.println("usage: inspect help");
+        System.out.println("       Displays this usage message.");
+        System.out.println();
+        System.out.println("usage: inspect help <introspection>");
+        System.out.println("       Displays the description of the named introspection.");
     }
 
-    private Introspector[] findMatchingIntrospections(String name) {
-        Introspector[] matches = stream().filter(i -> name.equals(i.getIntrospectorName())).toArray(Introspector[]::new);
-        if (matches.length == 0) {
-            System.err.println("error: could not find an introspector matching '" + name + "'");
-        }
-        return matches;
-    }
+    private final class Introspectors {
+        final Collection<ServiceReference<Introspector>> refs;
 
-    private void listIntrospections() {
-        System.out.println("Available introspections: ");
-        stream().map(Introspector::getIntrospectorName).sorted().map("\t"::concat).forEach(System.out::println);
-    }
-
-    private void displayIntrospection(String name) {
-        try (PrintWriter sysout = new PrintWriter(System.out)) {
-            for (Introspector ii : findMatchingIntrospections(name)) {
-                System.out.println("Introspector: " + ii.getIntrospectorName());
-                System.out.println("============= " + ii.getIntrospectorName().replaceAll(".", "="));
-                try {
-                    ii.introspect(sysout);
-                } catch (Exception e) {
-                    System.err.println("Failed generating introspection for " + ii.getIntrospectorName());
-                    e.printStackTrace();
-                }
-                System.out.println();
+        Introspectors() {
+            try {
+                refs = ctx.getServiceReferences(Introspector.class, null);
+            } catch (InvalidSyntaxException e) {
+                throw new RuntimeException("error: unable to retrieve introspector service references", e);
             }
-        } catch (Exception e) {
-            System.err.println("error: failed to create print writer" + e);
-            e.printStackTrace();
         }
-    }
 
-    private void describeIntrospection(String name) {
-        for (Introspector ii : findMatchingIntrospections(name)) {
-            System.out.println("Introspector: " + ii.getIntrospectorName());
+        void list() {
+            System.out.println("Available introspections: ");
+            forEach("retrieve introspector name", this::list0);
+        }
+
+        void describe(String name) {
+            forEach("describe introspector", this::describe0, i -> Objects.equals(name, i.getIntrospectorName()));
+        }
+
+        void run(String name) {
+            forEach("run introspector", this::run0, i -> Objects.equals(name, i.getIntrospectorName()));
+        }
+
+        private void list0(Introspector i) {
+            System.out.println("\t" + i.getIntrospectorName());
+        }
+
+        private void describe0(Introspector ii) {
+            System.out.println(ii.getIntrospectorName());
             System.out.println("============= " + ii.getIntrospectorName().replaceAll(".", "="));
             System.out.println(ii.getIntrospectorDescription());
             System.out.println();
+            System.out.println();
         }
+
+        private void run0(Introspector i) throws Exception {
+            try (PrintWriter pw = new PrintWriter(System.out)) {
+                i.introspect(pw);
+                pw.flush();
+            }
+        }
+
+        @SafeVarargs
+        private final void forEach(String desc, IntrospectorAction action, Predicate<Introspector>... filters) {
+            for (final ServiceReference<Introspector> rrr : refs) {
+                try {
+                    final Introspector svc = ctx.getService(rrr);
+                    // Check the filters, and ignore non-matching introspectors
+                    try {
+                        if (Stream.of(filters).anyMatch(f -> !f.test(svc)))
+                            continue;
+                    } catch (Exception e) {
+                        System.err.println("error: failed to match introspector of type " + svc.getClass());
+                        e.printStackTrace();
+                        continue;
+                    }
+                    // found a match! run action on introspector
+                    try (AutoCloseable ungetter = () -> ctx.ungetService(rrr)) {
+                        try {
+                            action.actOn(svc);
+                        } catch (Exception e) {
+                            System.err.println("error: failed to " + desc + " for service of type " + svc.getClass());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("error: problem occurred while ungetting service of type " + svc.getClass());
+                    }
+                } catch (Exception e) {
+                    System.err.println("error: unable to retrieve service of type " + rrr.getClass().getName());
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private interface IntrospectorAction {
+        void actOn(Introspector i) throws Exception;
     }
 }
