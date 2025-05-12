@@ -18,6 +18,8 @@ import static org.osgi.service.component.annotations.ConfigurationPolicy.IGNORE;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -85,7 +87,9 @@ public class InspectCommand {
 
         void listAll() {
             System.out.println("Available introspections: ");
-            forEach("retrieve introspector name", this::list);
+            SortedSet<String> set = new TreeSet<>();
+            forEach("retrieve introspector name", i -> set.add("\t" + i.getIntrospectorName()));
+            set.forEach(System.out::println);
         }
 
         void findAndDescribe(String name) {
@@ -94,10 +98,6 @@ public class InspectCommand {
 
         void findAndRun(String name) {
             forEach("run introspector", this::run, i -> Objects.equals(name, i.getIntrospectorName()));
-        }
-
-        private void list(Introspector i) {
-            System.out.println("\t" + i.getIntrospectorName());
         }
 
         private void describe(Introspector ii) {
