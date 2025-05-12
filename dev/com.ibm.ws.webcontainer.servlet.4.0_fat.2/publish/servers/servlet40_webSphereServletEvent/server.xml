@@ -1,0 +1,29 @@
+<!--
+    Copyright (c) 2021, 2025 IBM Corporation and others.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Eclipse Public License 2.0
+    which accompanies this distribution, and is available at
+    http://www.eclipse.org/legal/epl-2.0/
+    
+    SPDX-License-Identifier: EPL-2.0
+ -->
+<server description="Server for testing the websphere servlet event listener">
+
+    <include location="../fatTestCommon.xml"/>
+
+    <featureManager>
+        <feature>servlet-4.0</feature>
+    </featureManager>
+
+    <!-- FAT framework expects to start with the usual port  -->
+    <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"
+                  httpPort="${bvt.prop.HTTP_default}"
+                  httpsPort="${bvt.prop.HTTP_default.secure}">
+                  <tcpOptions id="defaultTCPOptions" portOpenRetries="60"/>
+    </httpEndpoint>
+
+    <!-- Global listener which is different than the standard listener that should be defined in web.xml <listener> or @WebListener -->
+    <webContainer listeners="websphere.servlet.listener.WebSphereApplicationListener"/> 
+
+</server>
