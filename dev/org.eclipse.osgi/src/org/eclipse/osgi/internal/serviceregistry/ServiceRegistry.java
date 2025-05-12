@@ -44,6 +44,7 @@ import org.eclipse.osgi.internal.framework.BundleContextImpl;
 import org.eclipse.osgi.internal.framework.EquinoxContainer;
 import org.eclipse.osgi.internal.framework.FilterImpl;
 import org.eclipse.osgi.internal.messages.Msg;
+import org.eclipse.osgi.internal.serviceregistry.ServiceRegistrationImpl.FrameworkHookRegistration;
 import org.eclipse.osgi.internal.serviceregistry.ServiceUse.ServiceUseLock;
 import org.eclipse.osgi.storage.BundleInfo.Generation;
 import org.eclipse.osgi.util.NLS;
@@ -126,6 +127,48 @@ public class ServiceRegistry {
 	 * Map of threads awaiting ServiceUseLocks. Used for deadlock detection.
 	 */
 	private final ConcurrentMap<Thread, ServiceUseLock> awaitedUseLocks = new ConcurrentHashMap<>();
+
+	private final Map<String, FrameworkHookHolder> frameworkHooks = createFrameworkHooksMap();
+
+	static Map<String, FrameworkHookHolder> createFrameworkHooksMap() {
+		@SuppressWarnings("deprecation")
+		Class<?>[] hookClasses = {
+				org.osgi.framework.hooks.bundle.CollisionHook.class, //
+				org.osgi.framework.hooks.bundle.EventHook.class, //
+				org.osgi.framework.hooks.bundle.FindHook.class, //
+				org.osgi.framework.hooks.service.EventHook.class, //
+				org.osgi.framework.hooks.service.EventListenerHook.class, //
+				org.osgi.framework.hooks.service.FindHook.class, //
+				org.osgi.framework.hooks.service.ListenerHook.class, //
+				org.osgi.framework.hooks.weaving.WeavingHook.class, //
+				org.osgi.framework.hooks.weaving.WovenClassListener.class
+		};
+		Map<String, FrameworkHookHolder> result = new HashMap<>();
+		for (Class<?> clazz : hookClasses) {
+			result.put(clazz.getName(), new FrameworkHookHolder(clazz));
+		}
+		return Collections.unmodifiableMap(result);
+	}
+
+	static final FrameworkHookHolder NULL_HOLDER = new FrameworkHookHolder(null);
+
+	static class FrameworkHookHolder {
+		final Class<?> hookClass;
+		private volatile List<ServiceRegistrationImpl<?>> hooks = Collections.emptyList();
+
+		public FrameworkHookHolder(Class<?> hookClass) {
+			this.hookClass = hookClass;
+		}
+
+		void setHooks(List<ServiceRegistrationImpl<?>> hooks) {
+			this.hooks = hooks == null || hooks.isEmpty() ? Collections.emptyList()
+					: Collections.unmodifiableList(new ArrayList<>(hooks));
+		}
+
+		List<ServiceRegistrationImpl<?>> getHooks() {
+			return this.hooks;
+		}
+	}
 
 	/**
 	 * Initializes the internal data structures of this ServiceRegistry.
@@ -250,7 +293,7 @@ public class ServiceRegistry {
 			String clazz = clazzes[i].intern();
 			if (!copy.contains(clazz)) {
 				isListenerHook = isListenerHook || listenerHookName.equals(clazz);
-				hookTypes = getHookClass(clazz, hookTypes);
+				hookTypes = addHookClass(clazz, hookTypes);
 				copy.add(clazz);
 			}
 		}
@@ -284,38 +327,32 @@ public class ServiceRegistry {
 		return registration;
 	}
 
-	@SuppressWarnings("deprecation")
-	private List<Class<?>> getHookClass(String className, List<Class<?>> hookTypes) {
-		switch (className) {
-		case "org.osgi.framework.hooks.bundle.CollisionHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.bundle.CollisionHook.class, hookTypes);
-		case "org.osgi.framework.hooks.bundle.EventHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.bundle.EventHook.class, hookTypes);
-		case "org.osgi.framework.hooks.bundle.FindHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.bundle.FindHook.class, hookTypes);
-		case "org.osgi.framework.hooks.service.EventHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.service.EventHook.class, hookTypes);
-		case "org.osgi.framework.hooks.service.EventListenerHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.service.EventListenerHook.class, hookTypes);
-		case "org.osgi.framework.hooks.service.FindHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.service.FindHook.class, hookTypes);
-		case "org.osgi.framework.hooks.service.ListenerHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.service.ListenerHook.class, hookTypes);
-		case "org.osgi.framework.hooks.weaving.WeavingHook": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.weaving.WeavingHook.class, hookTypes);
-		case "org.osgi.framework.hooks.weaving.WovenClassListener": //$NON-NLS-1$
-			return addHook(org.osgi.framework.hooks.weaving.WovenClassListener.class, hookTypes);
-		default:
+	private List<Class<?>> addHookClass(String className, List<Class<?>> hookTypes) {
+		Class<?> hookClass = frameworkHooks.getOrDefault(className, NULL_HOLDER).hookClass;
+		if (hookClass == null) {
+			// the className is not a hookClass; do nothing
 			return hookTypes;
 		}
-	}
-
-	private List<Class<?>> addHook(Class<?> hookType, List<Class<?>> hookTypes) {
 		if (hookTypes == null) {
 			hookTypes = new ArrayList<>(1);
 		}
-		hookTypes.add(hookType);
+		hookTypes.add(hookClass);
 		return hookTypes;
+
+	}
+
+	private void setHookRegistrations(String hookClass, List<ServiceRegistrationImpl<?>> hooks) {
+		FrameworkHookHolder holder = frameworkHooks.get(hookClass);
+		if (holder != null) {
+			// Holder will only be non-null for actual framework hook classes;
+			// Some hook implementations may be registered with multiple objectClass types.
+			// If one of the objectClass types is not a hook class then we ignore it.
+			holder.setHooks(hooks);
+		}
+	}
+
+	private List<ServiceRegistrationImpl<?>> getHookRegistrations(String hookClass) {
+		return frameworkHooks.getOrDefault(hookClass, NULL_HOLDER).getHooks();
 	}
 
 	/**
@@ -1018,6 +1055,9 @@ public class ServiceRegistry {
 			// The list is sorted, so we must find the proper location to insert
 			insertIndex = -Collections.binarySearch(services, registration) - 1;
 			services.add(insertIndex, registration);
+			if (registration instanceof FrameworkHookRegistration) {
+				setHookRegistrations(clazz, services);
+			}
 		}
 
 		// Add the ServiceRegistrationImpl to the list of all published Services.
@@ -1051,6 +1091,9 @@ public class ServiceRegistry {
 				// The list is sorted, so we must find the proper location to insert
 				insertIndex = -1 - Collections.binarySearch(services, registration);
 				services.add(insertIndex, registration);
+				if (registration instanceof FrameworkHookRegistration) {
+					setHookRegistrations(clazz, services);
+				}
 			}
 
 			// Remove the ServiceRegistrationImpl from the list of all published Services
@@ -1085,6 +1128,9 @@ public class ServiceRegistry {
 			services.remove(registration);
 			if (services.isEmpty()) { // remove empty list
 				publishedServicesByClass.remove(clazz);
+			}
+			if (registration instanceof FrameworkHookRegistration) {
+				setHookRegistrations(clazz, services);
 			}
 		}
 
@@ -1360,7 +1406,7 @@ public class ServiceRegistry {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> void notifyHooksPrivileged(Class<T> hookType, String serviceMethod, HookContext<T> hookContext) {
-		List<ServiceRegistrationImpl<?>> hooks = lookupServiceRegistrations(hookType.getName(), null);
+		List<ServiceRegistrationImpl<?>> hooks = getHookRegistrations(hookType.getName());
 		// Since the list is already sorted, we don't need to sort the list to call the
 		// hooks
 		// in the proper order.
