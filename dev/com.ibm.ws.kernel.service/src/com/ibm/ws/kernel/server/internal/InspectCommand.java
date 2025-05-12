@@ -102,7 +102,7 @@ public class InspectCommand {
 
         private void describe(Introspector ii) {
             System.out.println(ii.getIntrospectorName());
-            System.out.println("============= " + ii.getIntrospectorName().replaceAll(".", "="));
+            System.out.println(ii.getIntrospectorName().replaceAll(".", "="));
             System.out.println(ii.getIntrospectorDescription());
             System.out.println();
             System.out.println();
