@@ -264,12 +264,13 @@ public class JSFSimpleHtmlUnit {
 
     /**
      * Create a testcase 169346: Port MYFACES-3949, javax.faces.ViewState autocomplete
-     * Updated to include one-time-code via MYFACES-4721 (which also reverts MYFACES-4659 [removed autocomplete])
+     * Note: one-time-code is now default for faces-4.1+. 
+     * Note: Autcomplete default was set to false in 2.3.11 and 4.0.3 but later changed back.
+     *   -  See MYFACES-4721 / MYFACES-4659
      * See the JIRA for more info.
      * @throws Exception
      */
     @Test
-    @SkipForRepeat(SkipForRepeat.EE11_FEATURES)
     public void check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE() throws Exception {
         try (WebClient webClient = new WebClient()) {
 
@@ -280,16 +281,18 @@ public class JSFSimpleHtmlUnit {
             String msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'true'";
             String autocompleteValue = "autocomplete=\"off\"";
             if(JakartaEEAction.isEE11OrLaterActive()) { // default in 4.1.2 (but backported to 4.1.1 in OL)
-                msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'false'";
+                msg = "No context init parameter 'org.apache.myfaces.AUTOCOMPLETE_OFF_VIEW_STATE' found, using default value 'one-time-code'";
                 autocompleteValue = "autocomplete=\"one-time-code\"";
             } 
             assertTrue("The expected autocomplete attribute was not found!: " + autocompleteValue, page.asXml().contains(autocompleteValue));
 
-            // Check the trace.log
-            // There should be a match so fail if there is not.
-            assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
-            Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
-
+            //Skip the check for checkpoint since the context param messages are not logged in the checkpoint log
+            if(!CheckpointRule.isActive()){
+                // Check the trace.log
+                // There should be a match so fail if there is not.
+                assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
+                Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
+            }
         }
     }
 
