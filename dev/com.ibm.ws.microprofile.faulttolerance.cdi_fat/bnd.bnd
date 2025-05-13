@@ -61,7 +61,15 @@ tested.features: mpFaultTolerance-1.0,\
                  restfulws-3.1,\
                  restfulws-4.0,\
                  jsonp-2.0,\
-                 jsonp-2.1
+                 jsonp-2.1,\
+                 connectors-2.1,\
+                 mdb-3.2,\
+                 jca-1.7,\
+                 ejbremote-3.2,\
+                 ejb-3.2,\
+                 ejbpersistenttimer-3.2,\
+                 jdbc-4.1,\
+                 ejbhome-3.2
 
 fat.project: true
 
