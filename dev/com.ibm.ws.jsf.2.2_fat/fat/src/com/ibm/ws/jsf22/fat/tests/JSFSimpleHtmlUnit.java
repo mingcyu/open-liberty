@@ -286,11 +286,13 @@ public class JSFSimpleHtmlUnit {
             } 
             assertTrue("The expected autocomplete attribute was not found!: " + autocompleteValue, page.asXml().contains(autocompleteValue));
 
-            // Check the trace.log
-            // There should be a match so fail if there is not.
-            assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
-            Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
-
+            //Skip the check for checkpoint since the context param messages are not logged in the checkpoint log
+            if(!CheckpointRule.isActive()){
+                // Check the trace.log
+                // There should be a match so fail if there is not.
+                assertFalse(msg, jsfTestServer1.findStringsInLogs(msg).isEmpty());
+                Log.info(c, name.getMethodName(), "check_defaultLogging_AUTOCOMPLETE_OFF_VIEW_STATE :: Found expected msg in log -->" + msg);
+            }
         }
     }
 
