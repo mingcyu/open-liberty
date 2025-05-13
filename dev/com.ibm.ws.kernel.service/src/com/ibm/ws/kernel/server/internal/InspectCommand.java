@@ -16,6 +16,7 @@ import static com.ibm.ws.kernel.server.internal.InspectCommand.Introspectors.INT
 import static org.osgi.service.component.annotations.ConfigurationPolicy.IGNORE;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.SortedSet;
@@ -109,10 +110,12 @@ public class InspectCommand {
         }
 
         private void run(Introspector i) throws Exception {
-            try (PrintWriter pw = new PrintWriter(System.out)) {
+            final StringWriter sw = new StringWriter();
+            try (PrintWriter pw = new PrintWriter(sw)) {
                 i.introspect(pw);
                 pw.flush();
             }
+            System.out.println(sw);
         }
 
         @SafeVarargs
