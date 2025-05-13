@@ -25,6 +25,11 @@ dependencies {
   	exclude group: 'jakarta.nosql', module: 'jakarta.nosql-api'
   }
   jnosql "org.eclipse.jnosql.databases:jnosql-mongodb:${jnosqlVersion}", withoutJakartaAPI
+  
+  //Annotation processor - generates .java files in build/libs/generated/sources - static meta models
+  annotationProcessor "org.eclipse.jnosql.metamodel:mapping-metamodel-processor:1.1.4"
+  compileOnly "org.eclipse.jnosql.metamodel:mapping-metamodel-processor:1.1.4"
+  
 }
 
 
