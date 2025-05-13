@@ -65,6 +65,11 @@ public class OracleKerberosContainer extends OracleContainer {
         withEnv("KRB5_KDC", KRB5_KDC_EXTERNAL);
     }
 
+    @Override
+    public String getUsername() {
+        return "system";
+    }
+
     public String getKerberosUsername() {
         return "ORACLEUSR@" + KerberosContainer.KRB5_REALM;
     }
@@ -75,8 +80,18 @@ public class OracleKerberosContainer extends OracleContainer {
     }
 
     @Override
+    public String getPassword() {
+        return "oracle";
+    }
+
+    @Override
     public OracleContainer withPassword(String password) {
         throw new UnsupportedOperationException("hardcoded setting, cannot change");
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return "FREE";
     }
 
     @Override
