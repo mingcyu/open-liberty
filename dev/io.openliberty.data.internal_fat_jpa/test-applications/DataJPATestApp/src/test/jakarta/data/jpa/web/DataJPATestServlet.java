@@ -512,15 +512,11 @@ public class DataJPATestServlet extends FATServlet {
         assertEquals(27480960216618.32,
                      demographics.publicDebtAsBigDecimal(when)
                                      .doubleValue(),
-                     1.0);
+                     0.01);
 
         try {
             Optional<BigInteger> i = demographics.publicDebtAsBigInteger(when);
-            // TODO is BigDecimal.toBigIntegerExact() broken?
-            // or are the fractional digits not being included?
-            //fail("Should not convert BigDecimal 27480960216618.32 to BigInteger " + i);
-            assertEquals(27480960216618L,
-                         i.orElseThrow().longValue());
+            fail("Should not convert BigDecimal 27480960216618.32 to BigInteger " + i);
         } catch (MappingException x) {
             if (x.getCause() instanceof ArithmeticException)
                 ; // expected - out of range
@@ -561,11 +557,7 @@ public class DataJPATestServlet extends FATServlet {
 
         try {
             Long l = demographics.publicDebtAsLong(when);
-            // TODO is BigDecimal.longValueExact() broken?
-            // or are the fractional digits not being included?
-            //fail("Should not convert BigDecimal 27480960216618.32 to Long " + l);
-            assertEquals(Long.valueOf(27480960216618L),
-                         l);
+            fail("Should not convert BigDecimal 27480960216618.32 to Long " + l);
         } catch (MappingException x) {
             // expected - out of range
         }
