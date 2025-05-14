@@ -156,7 +156,7 @@ public class CrossFeatureJaegerTest {
             Log.info(c, "testCrossFeatureFromTelemetry", span.toString());
         }
         //OpenTracing, MpTelemetry-1.0 and MpTelemetry-1.1 use HTTP_URL while MpTelemetry 2.0 uses URL_FULL
-        if (TelemetryActions.mpTelemetry20IsActive()) {
+        if (TelemetryActions.mpTelemetry20IsActive() || TelemetryActions.mpTelemetry21IsActive()) {
             Span server1 = findOneFrom(spans, hasAttribute(HTTP_ROUTE, "/crossFeature/1"));
             Span client2 = findOneFrom(spans, isSpan().withKind(SpanKind.CLIENT)
                                                       .withAttribute(URL_FULL, getUrl(opentracingServer) + "/2"));
