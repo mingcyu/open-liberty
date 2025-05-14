@@ -32,7 +32,11 @@ public class OracleKerberosContainer extends OracleContainer {
 
     private static final Class<?> c = OracleKerberosContainer.class;
 
-    //TODO Start using ImageBuilder
+    /*
+     * TODO: https://github.com/testcontainers/testcontainers-java/pull/10263
+     * If this ever get's merged consider passing the future (RemoteDockerImage)
+     * to the parent constructor so we can lazily start this image.
+     */
     private static final DockerImageName ORACLE_KRB5 = ImageBuilder
                     .build("oracle-krb5:23.0.0.1-full-faststart")
                     .getDockerImageName()
