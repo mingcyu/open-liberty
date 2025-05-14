@@ -189,13 +189,13 @@ public class BasicCalculatorClientJ2EEMain {
                 // TODO Auto-generated catch block
                 e.printStackTrace(); // do nothing
             }
-        }
-        System.out.println("Wait an additional 2 seconds for ORB to startup...");
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace(); // do nothing
+            System.out.println("Wait an additional 2 seconds for ORB to startup...");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace(); // do nothing
+            }
         }
         System.out.println("The wait time " + waitTime + " seconds has expired. Resuming the operation.");
         return;
