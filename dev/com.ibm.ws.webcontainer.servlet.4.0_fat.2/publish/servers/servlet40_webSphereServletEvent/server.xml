@@ -9,19 +9,11 @@
  -->
 <server description="Server for testing the websphere servlet event listener">
 
-    <include location="../fatTestCommon.xml"/>
+    <include location="../fatTestPorts.xml"/>
 
     <featureManager>
         <feature>servlet-4.0</feature>
     </featureManager>
-
-    <!-- FAT framework expects to start with the usual port  -->
-    <httpEndpoint id="defaultHttpEndpoint"
-                  host="*"
-                  httpPort="${bvt.prop.HTTP_default}"
-                  httpsPort="${bvt.prop.HTTP_default.secure}">
-                  <tcpOptions id="defaultTCPOptions" portOpenRetries="60"/>
-    </httpEndpoint>
 
     <!-- Global listener which is different than the standard listener that should be defined in web.xml <listener> or @WebListener -->
     <webContainer listeners="websphere.listener.WebSphereApplicationListener"/> 

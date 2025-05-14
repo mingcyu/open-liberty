@@ -44,19 +44,19 @@ import componenttest.topology.impl.LibertyServer;
  * Response text should look similar like this:
  *
  * [(MAIN) WebSpshereApplicationListener.onApplicationStart
- * >> 1. WebSphereFilterListener.onFilterStartInit for filter [websphere.filter.EvenFilter]
- * << 1. WebSphereFilterListener.onFilterFinishInit for filter [websphere.filter.EvenFilter]
- * >>> 1.1 WebSphereFilterInvocationListener.onFilterStartDoFilter for ServletEvent.getServletName [websphere.filter.EvenFilter]
+ * >> 1. WebSphereFilterListener.onFilterStartInit for filter [websphere.filter.EventFilter]
+ * << 1. WebSphereFilterListener.onFilterFinishInit for filter [websphere.filter.EventFilter]
+ * >>> 1.1 WebSphereFilterInvocationListener.onFilterStartDoFilter for ServletEvent.getServletName [websphere.filter.EventFilter]
  * >> 2. WebSphereServletListener.onServletStartInit for ServletEvent.getServletName [websphere.servlet.EventServlet]
  * << 2. WebSphereServletListener.onServletFinishInit for ServletEvent.getServletName [websphere.servlet.EventServlet]
  * >> 2. WebSphereServletListener.onServletAvailableForService for ServletEvent.getServletName [websphere.servlet.EventServlet]
+ * >> 2. WebSphereServletListener.onServletAvailableForService for ServletEvent.getServletName [websphere.servlet.EventServlet]
  * >>> 2.2 WebSphereServletInvocationListener.onServletStartService, for request URL [http://localhost:8010/WebSphereServletEvent/ServletEvent]. OutputStream obtained.
  * >>>(service)>>> Context attribute from WebSphere API [WEBSPHERE Servlet API using ApplicationListener.]
- * >>>(service)>>> Context attribute from Standard API [STANDARD Servlet API using ServletContextListener]
+ * >>>(service)>>> Context attribute from Standard API [STANDARD Servlet API using ServletContextListener.]
  * <<< 2.2 WebSphereServletInvocationListener.onServletFinishService, for request URL [http://localhost:8010/WebSphereServletEvent/ServletEvent]
- * <<< 1.1 WebSphereFilterInvocationListener.onFilterFinishDoFilter for filter [websphere.filter.EvenFilter]
- *
- *
+ * <<< 1.1 WebSphereFilterInvocationListener.onFilterFinishDoFilter for filter [websphere.filter.EventFilter]
+ * ]
  */
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
@@ -66,7 +66,7 @@ public class WebSphereServletEventListenerTest {
     private static final String APP_NAME = "WebSphereServletEvent";
 
     //Verify the response contains all of these keywords (WEBSPHERE Servlet API and STANDARD Servlet API are context attributes,
-    //                                                  "websphere.filter.EvenFilter",          is the filter name
+    //                                                  "websphere.filter.EventFilter",          is the filter name
     //                                                  "websphere.servlet.EventServlet"        is the servlet name )
     private final String[] expectedKeys = { "WebSpshereApplicationListener.onApplicationStart",
                                             "WebSphereFilterListener.onFilterStartInit",
@@ -80,7 +80,7 @@ public class WebSphereServletEventListenerTest {
                                             "STANDARD Servlet API",
                                             "WebSphereServletInvocationListener.onServletFinishService",
                                             "WebSphereFilterInvocationListener.onFilterFinishDoFilter",
-                                            "websphere.filter.EvenFilter",
+                                            "websphere.filter.EventFilter",
                                             "websphere.servlet.EventServlet"
     };
 
@@ -109,6 +109,8 @@ public class WebSphereServletEventListenerTest {
         LOG.info("====== <test_ServletContext_Attributes> ======");
 
         String url = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/" + APP_NAME + "/ServletEvent";
+        LOG.info("Send Request: [" + url + "]");
+
         HttpGet getMethod = new HttpGet(url);
 
         try (final CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -117,13 +119,12 @@ public class WebSphereServletEventListenerTest {
                 LOG.info("\n" + "Response Text: \n[" + responseText + "]");
 
                 for (String keyword : expectedKeys) {
-                    if (responseText.contains(keyword)) {
-                        LOG.info("\n Found [" + keyword + "]");
-                    } else {
+                    if (!responseText.contains(keyword)) {
                         fail("Response does not contain [" + keyword + "]");
                     }
-
                 }
+
+                LOG.info("===== All key words are found. Test PASS. =====");
             }
         }
     }

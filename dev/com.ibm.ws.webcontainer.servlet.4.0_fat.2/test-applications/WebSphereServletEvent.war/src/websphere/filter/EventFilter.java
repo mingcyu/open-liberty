@@ -19,16 +19,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 
 @WebFilter("/*")
-public class EvenFilter implements Filter {
-    private static final String CLASS_NAME = EvenFilter.class.getName();
+public class EventFilter implements Filter {
+    private static final String CLASS_NAME = EventFilter.class.getName();
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         log(">>> doFilter ENTER");
 
         chain.doFilter(request, response);
-        
+
         log("<<<<< doFilter EXIT");
 
     }
@@ -37,4 +36,3 @@ public class EvenFilter implements Filter {
         System.out.println("\t" + CLASS_NAME + ": " + s);
     }
 }
-

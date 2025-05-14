@@ -48,11 +48,7 @@ public class EventServlet extends HttpServlet {
         log(temp);
         WebSphereApplicationListener.OUTBUFFER.append(temp);
 
-        //outputStream.println("\tContext attribute from WebSphere API [" + WebSphereAPI + "]");
-        //outputStream.println("\tContext attribute from Standard API [" + StandardAPI + "]");
-
         _log("<<<<< service() EXIT");
-
     }
 
     private void _log(String s) {
