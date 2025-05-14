@@ -328,12 +328,16 @@ public class SimpleFileBasedHealthCheckTest {
 
         /*
          * The checkInterval is at 30 seconds.
-         * Due to slowness of server startup, or app startups or test execution startup we'll wait 10 and then 5 seconds
+         * Due to slowness of server startup, or app startups or test execution startup we'll wait 12 and then 5 seconds.
+         * We will check the last 10 seconds and 5 seconds respectively for each cycle.
+         * We wait 12 and check the last 10 due the fact that the update phase maybe have issue the first health check queries during the wait.
+         * If that is the case, waiting 12 seconds and checking the last 12 seconds would fail due to the file being modified during that duration.
          * and expect the live and ready files not to be updated.
          *
          * Then we'll wait 20 seconsd and we should expect it to have been updated during that time frame.
+         *
          */
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(12);
         Assert.assertFalse(Constants.READY_SHOULD_NOT_HAVE_UPDATED,
                            HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(10)));
         Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_UPDATED,
