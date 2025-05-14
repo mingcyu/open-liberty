@@ -14,6 +14,7 @@ package test.jakarta.data.nosql.web;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -74,5 +75,14 @@ public class DataNoSQLServlet extends FATServlet {
                                      .map(c -> c.firstName)
                                      .sorted(Comparator.naturalOrder())
                                      .collect(Collectors.toList()));
+    }
+
+    @Test
+    public void testGeneratedMetaModelsAvailable() {
+        try {
+            Class.forName("test.jakarta.data.nosql.web._Employee");
+        } catch (ClassNotFoundException e) {
+            fail("Static metamodel class _Employee (for Data) was not generated or available at runtime.");
+        }
     }
 }
