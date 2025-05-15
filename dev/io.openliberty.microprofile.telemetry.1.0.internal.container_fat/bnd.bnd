@@ -64,6 +64,7 @@ tested.features:\
 	com.ibm.websphere.org.eclipse.microprofile.rest.client.1.1;version=latest,\
 	io.openliberty.io.opentelemetry;version=latest,\
 	io.openliberty.io.opentelemetry.2.0;version=latest,\
+	io.openliberty.io.opentelemetry.internal.2.1;version=latest,\
 	io.openliberty.org.testcontainers;version=latest,\
 	io.openliberty.io.opentracing.opentracing-api.0.33.0;version=latest,\
 	io.grpc:grpc-api;version='${grpcVersion}',\
