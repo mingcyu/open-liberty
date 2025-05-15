@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.async;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless;
 
 public class TestException extends Exception {
 

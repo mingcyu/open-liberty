@@ -14,6 +14,8 @@ import javax.ejb.Stateless;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
+
 @Stateless
 public class CircuitBreakerEJB {
 

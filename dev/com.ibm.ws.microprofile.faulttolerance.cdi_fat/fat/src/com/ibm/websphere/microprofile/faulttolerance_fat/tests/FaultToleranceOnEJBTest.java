@@ -19,8 +19,10 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 
-import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.CircuitBreakerOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.FaultToleranceOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.RetryOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.TimeOutOnEJBServlet;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
 import com.ibm.ws.microprofile.faulttolerance.fat.repeat.RepeatFaultTolerance;
@@ -44,10 +46,9 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
 
     @Server(SERVER_NAME)
     @TestServlets({
-                    //         @TestServlet(contextRoot = APP_NAME, servlet = FaultToleranceOnEJBServlet.class),
-                    //      @TestServlet(contextRoot = APP_NAME, servlet = RetryOnEJBServlet.class),
-                    //@TestServlet(contextRoot = APP_NAME, servlet = TimeOutOnEJBServlet.class),
-                    @TestServlet(contextRoot = APP_NAME, servlet = CircuitBreakerOnEJBServlet.class)
+                    @TestServlet(contextRoot = APP_NAME, servlet = FaultToleranceOnEJBServlet.class),
+                    @TestServlet(contextRoot = APP_NAME, servlet = RetryOnEJBServlet.class),
+                    @TestServlet(contextRoot = APP_NAME, servlet = TimeOutOnEJBServlet.class),
     })
 
     public static LibertyServer server;
@@ -59,7 +60,7 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
     public static void setup() throws Exception {
 
         WebArchive war = ShrinkWrap.create(WebArchive.class, APP_NAME + ".war")
-                        .addPackages(true, FaultToleranceOnEJBServlet.class.getPackage());
+                        .addPackages(true, TestException.class.getPackage());
 
         ShrinkHelper.exportDropinAppToServer(server, war, DeployOptions.SERVER_ONLY);
 
