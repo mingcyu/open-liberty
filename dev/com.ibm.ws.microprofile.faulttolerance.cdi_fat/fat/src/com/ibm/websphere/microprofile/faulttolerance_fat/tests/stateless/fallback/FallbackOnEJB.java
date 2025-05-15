@@ -8,30 +8,31 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.fallback;
 
 import javax.ejb.Stateless;
 
 import org.eclipse.microprofile.faulttolerance.Fallback;
-import org.eclipse.microprofile.faulttolerance.Retry;
+
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
 
 @Stateless
-public class FaultTolerenceInterceptorOnEJB {
+public class FallbackOnEJB {
 
-    private boolean passed = false;
+    public static final int FROM_TEST_METHOD = 0;
+    public static final int FROM_FALL_BACK_METHOD = 1;
 
-    @Retry(maxRetries = 1)
+    @SuppressWarnings("unused")
     @Fallback(fallbackMethod = "fallbackMethod")
-    public void unstableMethod() throws TestException {
-        throw new TestException();
+    public int test() throws TestException {
+        if (true) {//trick the compiler
+            throw new TestException();
+        }
+        return FROM_TEST_METHOD;
     }
 
-    public void fallbackMethod() {
-        passed = true;
-    }
-
-    public boolean isPassed() {
-        return passed;
+    public int fallbackMethod() {
+        return FROM_FALL_BACK_METHOD;
     }
 
 }

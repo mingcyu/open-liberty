@@ -8,34 +8,35 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.timeout;
 
-import javax.ejb.Stateful;
+import javax.ejb.Stateless;
 
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
-@Stateful
+@Stateless
 public class TimeoutOnEJB {
 
     private static final int TIMEOUT_DURATION = 1000;
-
-    private boolean passed = false;
-
-    public boolean isPassed() {
-        return passed;
-    }
+    public static final int SOME_VALUE = 42;
 
     //A simple test that makes sure the counter works.
     @Timeout(TIMEOUT_DURATION)
-    public void testMethod() throws TimeoutException {
+    public void testMethodThatTimesOut(ResultsRecord record) throws TimeoutException {
+        record.testMethodCalled = true;
         try {
             Thread.sleep(TIMEOUT_DURATION * 2);
         } catch (InterruptedException e) {
-            passed = true;
+            record.testMethodRecievedInteruptException = true;
             return;
         }
-        passed = false;
+        record.testMethodContinuedPastInterruptException = true;
+    }
+
+    @Timeout(TIMEOUT_DURATION * 1000)
+    public int testMethodThatWontTimeOut() throws TimeoutException {
+        return SOME_VALUE;
     }
 
 }

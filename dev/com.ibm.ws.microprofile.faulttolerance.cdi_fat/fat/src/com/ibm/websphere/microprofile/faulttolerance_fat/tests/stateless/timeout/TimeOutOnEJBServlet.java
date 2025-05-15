@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.timeout;
 
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
@@ -33,14 +33,24 @@ public class TimeOutOnEJBServlet extends FATServlet {
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
-    public void testRetryOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+    public void testTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        ResultsRecord record = new ResultsRecord();
         try {
-            ejb.testMethod();
+            ejb.testMethodThatTimesOut(record);
         } catch (EJBException e) {
             Assert.assertTrue(e.getCausedByException() instanceof TimeoutException);
-            Assert.assertTrue(ejb.isPassed());
+            Assert.assertTrue(record.testMethodCalled);
+            Assert.assertTrue(record.testMethodRecievedInteruptException);
+            Assert.assertFalse(record.testMethodContinuedPastInterruptException);
         }
         Assert.fail();
+    }
+
+    @Test
+    //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
+    @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
+    public void testNoTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        Assert.assertEquals(TimeoutOnEJB.SOME_VALUE, ejb.testMethodThatWontTimeOut());
     }
 
 }

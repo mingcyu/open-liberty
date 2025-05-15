@@ -31,9 +31,22 @@ public class RetryOnEJBServlet extends FATServlet {
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
-    public void testRetryOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        ejb.testMethod();
-        Assert.assertTrue(ejb.isPassed());
+    public void testRetryEventuallyPassesOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+
+        //This method will fail until it has failed the Maximum number of times it was configured to
+        //do so. Fault Tolerence will make it retry each time.
+
+        //When it has reached the maximum it will successfully return the number of times it has run.
+        int result = ejb.retryEventuallyPass();
+        Assert.assertEquals(RetryOnEJB.MAX, result);
+    }
+
+    @Test
+    //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
+    @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
+    public void testRetryNeverPassesOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+
+        //TODO
     }
 
 }

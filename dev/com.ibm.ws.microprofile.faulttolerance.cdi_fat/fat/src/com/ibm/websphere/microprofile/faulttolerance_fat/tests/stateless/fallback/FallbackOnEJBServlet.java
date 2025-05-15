@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.fallback;
 
 import javax.ejb.EJB;
 import javax.servlet.annotation.WebServlet;
@@ -22,18 +22,20 @@ import componenttest.app.FATServlet;
 import componenttest.rules.repeater.MicroProfileActions;
 import junit.framework.Assert;
 
-@WebServlet("/FaultToleranceOnEJBServlet")
-public class FaultToleranceOnEJBServlet extends FATServlet {
+@WebServlet("/FallbackOnEJBServlet")
+public class FallbackOnEJBServlet extends FATServlet {
 
     @EJB
-    private FaultTolerenceInterceptorOnEJB faultTolerenceInterceptorOnEJB;
+    private FallbackOnEJB ejb;
 
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testFallbackOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        faultTolerenceInterceptorOnEJB.unstableMethod();
-        Assert.assertTrue(faultTolerenceInterceptorOnEJB.isPassed());
+        int result = ejb.test();
+
+        //Assert that an exception caused us to get a result from the fallback method
+        Assert.assertEquals(FallbackOnEJB.FROM_FALL_BACK_METHOD, result);
     }
 
 }

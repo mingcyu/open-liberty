@@ -22,6 +22,8 @@ import javax.servlet.annotation.WebServlet;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.junit.Test;
 
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
+
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.app.FATServlet;
 

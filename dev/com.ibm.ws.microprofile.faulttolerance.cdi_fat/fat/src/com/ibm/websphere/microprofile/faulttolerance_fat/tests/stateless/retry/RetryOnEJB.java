@@ -10,28 +10,26 @@
  *******************************************************************************/
 package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
 
-import javax.ejb.Stateful;
+import javax.ejb.Stateless;
 
 import org.eclipse.microprofile.faulttolerance.Retry;
 
-@Stateful
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
+
+@Stateless
 public class RetryOnEJB {
 
-    private boolean passed = false;
+    public static final int MAX = 5;
     private int counter = 0;
-
-    public boolean isPassed() {
-        return passed;
-    }
 
     //A simple test that makes sure the counter works.
     @Retry(maxRetries = 10)
-    public void testMethod() throws TestException {
-        if (counter < 5) {
+    public int retryEventuallyPass() throws TestException {
+        if (counter < MAX) {
             counter++;
             throw new TestException();
         }
-        passed = true;
+        return counter;
     }
 
 }
