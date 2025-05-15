@@ -81,7 +81,7 @@ public class ConfigTest {
      * Only startupCheckInterval is configured expect CWMMH01012W
      */
     public void onlyStartConfigServerTest() throws Exception {
-        final String METHOD_NAME = "emptyServerCheck";
+        final String METHOD_NAME = "onlyStartConfigServerTest";
 
         server = onlyStartConfigServer;
         server.startServer();
@@ -127,7 +127,7 @@ public class ConfigTest {
      * Bad configuration used for "startupCheckInterval" expect "CWMMH01011W"
      */
     public void badStartupCheckIntervalConfigTest() throws Exception {
-        final String METHOD_NAME = "emptyServerCheck";
+        final String METHOD_NAME = "badStartupCheckIntervalConfigTest";
 
         server = badStartupCheckIntervalServer;
         server.startServer();
@@ -167,7 +167,7 @@ public class ConfigTest {
      * Bad configuration used for "checkInterval" expect "CWMMH0101W"
      */
     public void badCheckIntervalConfigTest() throws Exception {
-        final String METHOD_NAME = "emptyServerCheck";
+        final String METHOD_NAME = "badCheckIntervalConfigTest";
 
         server = badCheckIntervalServer;
         server.startServer();
