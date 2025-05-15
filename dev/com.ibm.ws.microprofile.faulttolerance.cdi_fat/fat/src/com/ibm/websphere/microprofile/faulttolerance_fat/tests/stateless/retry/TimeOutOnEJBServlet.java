@@ -11,10 +11,12 @@
 package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry;
 
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.junit.Test;
 
 import componenttest.annotation.SkipForRepeat;
@@ -22,18 +24,23 @@ import componenttest.app.FATServlet;
 import componenttest.rules.repeater.MicroProfileActions;
 import junit.framework.Assert;
 
-@WebServlet("/FaultToleranceOnEJBServlet")
-public class FaultToleranceOnEJBServlet extends FATServlet {
+@WebServlet("/TimeOutOnEJBServlet")
+public class TimeOutOnEJBServlet extends FATServlet {
 
     @EJB
-    private FaultTolerenceInterceptorOnEJB faultTolerenceInterceptorOnEJB;
+    private TimeoutOnEJB ejb;
 
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
-    public void testFallbackOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        faultTolerenceInterceptorOnEJB.unstableMethod();
-        Assert.assertTrue(faultTolerenceInterceptorOnEJB.isPassed());
+    public void testRetryOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        try {
+            ejb.testMethod();
+        } catch (EJBException e) {
+            Assert.assertTrue(e.getCausedByException() instanceof TimeoutException);
+            Assert.assertTrue(ejb.isPassed());
+        }
+        Assert.fail();
     }
 
 }

@@ -22,18 +22,18 @@ import componenttest.app.FATServlet;
 import componenttest.rules.repeater.MicroProfileActions;
 import junit.framework.Assert;
 
-@WebServlet("/FaultToleranceOnEJBServlet")
-public class FaultToleranceOnEJBServlet extends FATServlet {
+@WebServlet("/RetryOnEJBServlet")
+public class RetryOnEJBServlet extends FATServlet {
 
     @EJB
-    private FaultTolerenceInterceptorOnEJB faultTolerenceInterceptorOnEJB;
+    private RetryOnEJB ejb;
 
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
-    public void testFallbackOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        faultTolerenceInterceptorOnEJB.unstableMethod();
-        Assert.assertTrue(faultTolerenceInterceptorOnEJB.isPassed());
+    public void testRetryOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        ejb.testMethod();
+        Assert.assertTrue(ejb.isPassed());
     }
 
 }

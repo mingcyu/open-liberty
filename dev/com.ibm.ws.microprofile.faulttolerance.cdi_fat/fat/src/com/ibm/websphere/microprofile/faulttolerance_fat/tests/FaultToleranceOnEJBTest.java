@@ -19,6 +19,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.CircuitBreakerOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.FaultToleranceOnEJBServlet;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
@@ -26,6 +27,7 @@ import com.ibm.ws.microprofile.faulttolerance.fat.repeat.RepeatFaultTolerance;
 
 import componenttest.annotation.Server;
 import componenttest.annotation.TestServlet;
+import componenttest.annotation.TestServlets;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.impl.LibertyServer;
@@ -41,7 +43,13 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
     private final static String APP_NAME = "StatelessRetryApp";
 
     @Server(SERVER_NAME)
-    @TestServlet(contextRoot = APP_NAME, servlet = FaultToleranceOnEJBServlet.class)
+    @TestServlets({
+                    //         @TestServlet(contextRoot = APP_NAME, servlet = FaultToleranceOnEJBServlet.class),
+                    //      @TestServlet(contextRoot = APP_NAME, servlet = RetryOnEJBServlet.class),
+                    //@TestServlet(contextRoot = APP_NAME, servlet = TimeOutOnEJBServlet.class),
+                    @TestServlet(contextRoot = APP_NAME, servlet = CircuitBreakerOnEJBServlet.class)
+    })
+
     public static LibertyServer server;
 
     @ClassRule
@@ -60,7 +68,7 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        server.stopServer();
+        server.stopServer("CNTR0020E");
     }
 
 }
