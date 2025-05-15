@@ -29,6 +29,7 @@ import org.osgi.service.condition.Condition;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.logging.collector.CollectorConstants;
 import com.ibm.ws.logging.data.AccessLogConfig;
 import com.ibm.ws.logging.data.FFDCData;
@@ -182,6 +183,7 @@ public class OpenTelemetryLogHandler implements SynchronousHandler, OpenTelemtry
         if (OpenTelemetryAccessor.isRuntimeEnabled()) {
             // Runtime OpenTelemetry instance
             otelInstance = this.runtimeOtelInfo;
+            synchronousWriteInternal(event, otelInstance);
         } else if (!openTelemtryLifecycleManagerImpl.isOpenTelemetryInitalized()) {
 
             /*
@@ -209,6 +211,8 @@ public class OpenTelemetryLogHandler implements SynchronousHandler, OpenTelemtry
         queuedMessages.set(null);
     }
 
+    //Methods called via OpenTelemetryLogHandler.synchronousWrite must be Trivial to prevent enormous amounts of trace about trace.
+    @Trivial
     private void synchronousWriteInternal(Object event, OpenTelemetryInfo otelInstance) {
 
         if (otelInstance != null && otelInstance.isEnabled()) {

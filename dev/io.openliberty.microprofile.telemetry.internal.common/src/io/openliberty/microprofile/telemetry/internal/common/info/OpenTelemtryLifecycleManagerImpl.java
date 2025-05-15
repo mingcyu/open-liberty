@@ -23,6 +23,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.container.service.app.deploy.ApplicationInfo;
 import com.ibm.ws.container.service.app.deploy.extended.ExtendedApplicationInfo;
 import com.ibm.ws.container.service.metadata.MetaDataSlotService;
@@ -280,11 +281,19 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
         this.infoReadyListener.set(infoReadyListener);
     }
 
+    //Methods called via OpenTelemetryLogHandler.synchronousWrite must be Trivial to prevent enormous amounts of trace about trace.
+    @Trivial
     public boolean isOpenTelemetryInitalized() {
         if (isRuntimeEnabled) {
             return runtimeInstance.isInitialized();
         } else {
             ApplicationMetaData metaData = getApplicationMetaData();
+
+            //This will be false when OpenTelemetryLogHandler attempts to write its early messages during its init()
+            if (metaData == null) {
+                return false;
+            }
+
             OpenTelemetryInfoReference atomicRef = (OpenTelemetryInfoReference) metaData.getMetaData(slotForOpenTelemetryInfoHolder);
             LazyInitializer<OpenTelemetryInfoInternal> supplier = atomicRef.get();
             return supplier.isInitialized();
@@ -296,6 +305,8 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
     }
     //End of hidden api
 
+    //Methods called via OpenTelemetryLogHandler.synchronousWrite must be Trivial to prevent enormous amounts of trace about trace.
+    @Trivial
     private ApplicationMetaData getApplicationMetaData() {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
         if (cmd != null) {
