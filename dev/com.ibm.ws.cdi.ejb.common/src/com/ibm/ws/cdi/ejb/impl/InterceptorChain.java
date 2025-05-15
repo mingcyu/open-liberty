@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  *******************************************************************************/
@@ -113,8 +113,7 @@ public class InterceptorChain implements InvocationContext {
         //if there are more interceptors left in the chain, call the next one
         if (nextInterceptor < interceptors.size()) {
             rc = invokeNextInterceptor();
-        }
-        else {
+        } else {
             //otherwise call proceed on the delegate InvocationContext
             rc = delegateInvocationContext.proceed();
         }
@@ -127,15 +126,23 @@ public class InterceptorChain implements InvocationContext {
 
         //find the next interceptor in the chain
         Interceptor<S> interceptor = (Interceptor<S>) interceptors.get(nextInterceptor);
-        CommonBean<S> commonBean = (CommonBean<S>) interceptor;
+        S interceptorInstance = null;
+        CommonBean<S> commonBean = null;
+        if (interceptor instanceof CommonBean) {
+            commonBean = (CommonBean<S>) interceptor;
+            interceptorInstance = (S) this.activeInterceptors.get(commonBean.getIdentifier());
+        }
 
-        S interceptorInstance = (S) this.activeInterceptors.get(commonBean.getIdentifier());
+        //TODO - investigate if we should use activeInterceptors for interceptors that are not CommonBean
+        //such as ones registered via a CDI extension. e.g via org.jboss.weld.bean.BeanIdentifiers
         if (interceptorInstance == null) {
             //create a contextual instance of the interceptor
             interceptorInstance = (S) beanManager.getReference(interceptor, interceptor.getBeanClass(), creationalContext);
-            S previous = (S) this.activeInterceptors.putIfAbsent(commonBean.getIdentifier(), interceptorInstance);
-            if (previous != null) {
-                interceptorInstance = previous;
+            if (commonBean != null) {
+                S previous = (S) this.activeInterceptors.putIfAbsent(commonBean.getIdentifier(), interceptorInstance);
+                if (previous != null) {
+                    interceptorInstance = previous;
+                }
             }
         }
 
