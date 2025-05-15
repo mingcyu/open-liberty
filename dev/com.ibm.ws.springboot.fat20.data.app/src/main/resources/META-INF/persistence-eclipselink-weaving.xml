@@ -25,8 +25,8 @@
 -->
         <class>com.ibm.ws.springboot.support.version20.test.data.app.customer.Customer</class>
         <properties>
-            <!-- need to disable weaving EclipseLink when not using @EnableLoadTimeWeaving -->
-            <property name="eclipselink.weaving" value="false"/>
+            <!-- enable weaving to test with @EnableLoadTimeWeaving -->
+            <property name="eclipselink.weaving" value="true"/>
         </properties>
     </persistence-unit>
 
@@ -36,8 +36,8 @@
 -->
         <class>com.ibm.ws.springboot.support.version20.test.data.app.employee.Employee</class>
         <properties>
-            <!-- need to disable weaving EclipseLink when not using @EnableLoadTimeWeaving -->
-            <property name="eclipselink.weaving" value="false"/>
+            <!-- enable weaving to test with @EnableLoadTimeWeaving -->
+            <property name="eclipselink.weaving" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

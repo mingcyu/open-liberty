@@ -24,6 +24,10 @@
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
 -->
         <class>com.ibm.ws.springboot.support.version30.test.data.app.customer.Customer</class>
+        <properties>
+            <!-- need to disable weaving EclipseLink when not using @EnableLoadTimeWeaving -->
+            <property name="eclipselink.weaving" value="false"/>
+        </properties>
     </persistence-unit>
 
     <persistence-unit name="employee-unit" transaction-type="JTA">
@@ -31,6 +35,9 @@
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
 -->
         <class>com.ibm.ws.springboot.support.version30.test.data.app.employee.Employee</class>
-
+        <properties>
+            <!-- need to disable weaving EclipseLink when not using @EnableLoadTimeWeaving -->
+            <property name="eclipselink.weaving" value="false"/>
+        </properties>
     </persistence-unit>
 </persistence>
