@@ -53,6 +53,10 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
+// In MpTelemetry-2.1 SemanticAttributes moved to their relative classes
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+
 /**
  * Tests propagating traces between liberty servers running mpOpenTracing-3.0 and mpTelemetry-1.0, feeding traces to the same trace server.
  * Spans are exported to Jaeger
@@ -170,6 +174,20 @@ public class CrossFeatureJaegerTest {
             assertThat(server2, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
             assertThat(client3, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
             assertThat(server3, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
+        } else if (TelemetryActions.mpTelemetry21IsActive()) {
+            Span server1 = findOneFrom(spans, hasAttribute(HTTP_ROUTE, "/crossFeature/1"));
+            Span client2 = findOneFrom(spans, isSpan().withKind(SpanKind.CLIENT)
+                                                      .withAttribute(UrlAttributes.URL_FULL, getUrl(opentracingServer) + "/2"));
+            Span server2 = findOneFrom(spans, isSpan().withKind(SpanKind.SERVER)
+                                                      .withAttribute(UrlAttributes.URL_FULL, getUrl(opentracingServer) + "/2"));
+            Span client3 = findOneFrom(spans, hasAttribute(UrlAttributes.URL_FULL, getUrl(telemetryServer) + "/3"));
+            Span server3 = findOneFrom(spans, hasAttribute(HttpAttributes.HTTP_ROUTE, "/crossFeature/3"));
+
+            assertThat(server1, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
+            assertThat(client2, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
+            assertThat(server2, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
+            assertThat(client3, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
+            assertThat(server3, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
         } else {
             Span server1 = findOneFrom(spans, hasAttribute(SemanticAttributes.HTTP_ROUTE, "/crossFeature/1"));
             Span client2 = findOneFrom(spans, isSpan().withKind(SpanKind.CLIENT)
@@ -205,9 +223,8 @@ public class CrossFeatureJaegerTest {
         for (Span span : spans) {
             Log.info(c, "testCrossFeatureFromOpenTracing", span.toString());
         }
-        //OpenTracing, MpTelemetry-1.0 and MpTelemetry-1.1 use HTTP_URL while MpTelemetry 2.0 uses URL_FULL
+        //OpenTracing, MpTelemetry-1.0 and MpTelemetry-1.1 use HTTP_URL while MpTelemetry 2.0 and 2.1 use URL_FULL
         if (TelemetryActions.mpTelemetry20IsActive()) {
-
             Span server1 = findOneFrom(spans, isSpan().withAttribute(HTTP_URL, getUrl(opentracingServer) + "/1"));
             Span client2 = findOneFrom(spans, isSpan().withAttribute(HTTP_URL, getUrl(telemetryServer) + "/2"));
             Span server2 = findOneFrom(spans, hasAttribute(HTTP_ROUTE, "/crossFeature/2"));
@@ -215,6 +232,20 @@ public class CrossFeatureJaegerTest {
                                                       .withAttribute(URL_FULL, getUrl(opentracingServer) + "/3"));
             Span server3 = findOneFrom(spans, isSpan().withKind(SpanKind.SERVER)
                                                       .withAttribute(HTTP_URL, getUrl(opentracingServer) + "/3"));
+
+            assertThat(server1, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
+            assertThat(client2, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
+            assertThat(server2, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
+            assertThat(client3, hasResourceAttribute(TELEMETRY_SDK_NAME, "opentelemetry"));
+            assertThat(server3, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
+        } else if (TelemetryActions.mpTelemetry21IsActive()) {
+            Span server1 = findOneFrom(spans, isSpan().withAttribute(UrlAttributes.URL_FULL, getUrl(opentracingServer) + "/1"));
+            Span client2 = findOneFrom(spans, isSpan().withAttribute(UrlAttributes.URL_FULL, getUrl(telemetryServer) + "/2"));
+            Span server2 = findOneFrom(spans, hasAttribute(HttpAttributes.HTTP_ROUTE, "/crossFeature/2"));
+            Span client3 = findOneFrom(spans, isSpan().withKind(SpanKind.CLIENT)
+                                                      .withAttribute(UrlAttributes.URL_FULL, getUrl(opentracingServer) + "/3"));
+            Span server3 = findOneFrom(spans, isSpan().withKind(SpanKind.SERVER)
+                                                      .withAttribute(UrlAttributes.URL_FULL, getUrl(opentracingServer) + "/3"));
 
             assertThat(server1, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
             assertThat(client2, hasResourceAttribute(JAEGER_VERSION, "Java-1.6.0"));
