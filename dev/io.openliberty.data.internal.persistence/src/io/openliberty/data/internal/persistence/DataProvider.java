@@ -408,7 +408,8 @@ public class DataProvider implements //
         ComponentMetaData metadata = event.getMetaData();
         J2EEName jeeName = metadata.getJ2EEName();
 
-        boolean isEJBmetadata = metadata instanceof IdentifiableComponentMetaData ? ((IdentifiableComponentMetaData) metadata).getPersistentIdentifier().startsWith("EJB") : false;
+        boolean isEJBmetadata = metadata instanceof IdentifiableComponentMetaData i &&
+                                i.getPersistentIdentifier().startsWith("EJB");
 
         // Jakarta Data repositories can be in modules, applications, or libraries,
         // but never in components.
@@ -921,6 +922,7 @@ public class DataProvider implements //
     @Override
     @Trivial
     public void moduleStarting(ModuleInfo moduleInfo) throws StateChangeException {
+        // TODO get rid of ModuleStateListener entirely. It appears we don't need it anymore
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
             Tr.debug(this, tc, "moduleStarting " + moduleInfo);
 
