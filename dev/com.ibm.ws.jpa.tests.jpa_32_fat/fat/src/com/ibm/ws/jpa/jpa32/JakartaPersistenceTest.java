@@ -1,6 +1,13 @@
-/**
+/*******************************************************************************
+ * Copyright (c) 2025 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-2.0/
  *
- */
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
+
 package com.ibm.ws.jpa.jpa32;
 
 import org.jboss.shrinkwrap.api.Filters;
@@ -34,8 +41,8 @@ import io.openliberty.jpa.persistence.tests.web.JakartaPersistenceServlet;
 @MinimumJavaLevel(javaLevel = 17)
 public class JakartaPersistenceTest {
 
-    public static final String APP_NAME = "jakartapersistence32";
-    public static final String SERVLET = "JakartaPersistence";
+    public static final String APP_NAME = "jakartapersistence";
+    public static final String SERVLET = "JakartaPersistence32";
     public static final String SPECLEVEL = "3.2";
 
     @Server("JakartaPersistenceServer")
@@ -62,8 +69,8 @@ public class JakartaPersistenceTest {
         final String resPath = "test-applications/" + APP_NAME + "/resources/jpa-" + specLevel + "/web/";
 
         WebArchive app = ShrinkWrap.create(WebArchive.class, APP_NAME + "_" + specLevel + ".war");
-        app.addPackage("io.openliberty.jpa.data.tests.models");
-        app.addPackage("io.openliberty.jpa.data.tests.web");
+        app.addPackage("io.openliberty.jpa.persistence.tests.models");
+        app.addPackage("io.openliberty.jpa.persistence.tests.web");
         app.merge(ShrinkWrap.create(GenericArchive.class).as(ExplodedImporter.class).importDirectory(resPath).as(GenericArchive.class),
                   "/",
                   Filters.includeAll());
