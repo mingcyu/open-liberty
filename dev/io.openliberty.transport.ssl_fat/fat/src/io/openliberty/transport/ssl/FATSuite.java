@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package com.ibm.ws.example;
+package io.openliberty.transport.ssl;
 
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;

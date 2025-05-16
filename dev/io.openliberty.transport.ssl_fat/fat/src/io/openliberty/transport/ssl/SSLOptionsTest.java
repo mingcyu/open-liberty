@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package com.ibm.ws.example;
+package io.openliberty.transport.ssl;
 
 import static componenttest.annotation.SkipForRepeat.EE10_FEATURES;
 import static componenttest.annotation.SkipForRepeat.EE10_OR_LATER_FEATURES;
@@ -20,6 +20,8 @@ import static componenttest.annotation.SkipForRepeat.EE8_OR_LATER_FEATURES;
 import static componenttest.annotation.SkipForRepeat.EE9_FEATURES;
 import static componenttest.annotation.SkipForRepeat.EE9_OR_LATER_FEATURES;
 import static componenttest.annotation.SkipForRepeat.NO_MODIFICATION;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -39,13 +41,11 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.ws.webcontainer.security.test.servlets.SSLBasicAuthClient;
 
-import app1.web.TestServletA;
 import componenttest.annotation.Server;
 import componenttest.annotation.SkipForRepeat;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
-import componenttest.topology.utils.FATServletClient;
 
 /**
  * Example Shrinkwrap FAT project:
@@ -61,9 +61,12 @@ import componenttest.topology.utils.FATServletClient;
  * servlet referenced by the annotation, and will be run whenever this test class runs.
  */
 @RunWith(FATRunner.class)
-public class SSLOptionsTest extends FATServletClient {
+public class SSLOptionsTest{
 
     private static final Logger LOG = Logger.getLogger(SSLOptionsTest.class.getName());
+
+    private static final String SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG = "suppressHandshakeFailureFalse.xml";
+    private static final String SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG = "suppressHandshakeFailureTrue.xml";
 
     public static final String APP_NAME = "app1";
 
@@ -77,18 +80,20 @@ public class SSLOptionsTest extends FATServletClient {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        // Create a WebArchive that will have the file name 'app1.war' once it's written to a file
-        // Include the 'app1.web' package and all of it's java classes and sub-packages
-        // Automatically includes resources under 'test-applications/APP_NAME/resources/' folder
-        // Exports the resulting application to the ${server.config.dir}/apps/ directory
-        ShrinkHelper.defaultApp(server, APP_NAME, "app1.web");
+        // The app basicauth is added in the config and we validate it was actually installed
+        server.addInstalledAppForValidation("basicauth");
 
-        server.startServer();
+        server.startServer(SSLOptionsTest.class.getSimpleName() + ".log");
+        // Wait for SSL endpoint to start
+        assertNotNull("We need to wait for the SSL port to open",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        server.stopServer();
+        // Ignoring unrelated warning due to app install SRVE0272W: JSP Processor not defined. Skipping : BasicAuthJSP.jsp
+        // Ignore CWWKO0801E because it is expected for handshake failures
+        server.stopServer("SRVE0272W", "CWWKO0801E");
     }
 
     /**
@@ -120,38 +125,44 @@ public class SSLOptionsTest extends FATServletClient {
     }
 
     /**
-     * Test that an SSL handshake failure does get logged when
-     * suppressHandshakeErrors="false".
+     * Test that an SSL handshake failure does get logged with the default
+     * sslOptions value suppressHandshakeErrors="false".
      */
     @Test
     public void handshakeFailureGetsLogged() throws Exception {
         LOG.info("Entering handshakeFailureGetsLogged");
 
-        ServerConfiguration configuration = server.getServerConfiguration();
-        LOG.info("Server configuration that the test started with: " + configuration);
-
-        HttpEndpoint httpEndpoint = configuration.getHttpEndpoints().getById("defaultHttpEndpoint");
-        LOG.info("SSL Options for default endpoint: " + httpEndpoint.getSslOptions());
-
-        // server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG);
-        // server.setMarkToEndOfLog();
-        // server.setTraceMarkToEndOfDefaultTrace();
-        // server.updateServerConfiguration(configuration);
-        // server.waitForConfigUpdateInLogUsingMark(null);
-
-        // // Requires info trace
-        // assertNotNull("We need to wait for the SSL port to open",
-        //               server.waitForStringInLog("CWWKO0219I:.*-ssl"));
-        // server.addInstalledAppForValidation("basicauth");
-        // assertNotNull("Need to wait for 'smarter planet' message (server is ready).",
-        //               server.waitForStringInLog("CWWKF0011I"));
-
-        // // Hit the servlet on the SSL port
-        // hitServerWithBadHandshake();
-        // assertNotNull("Handshake error failure unexpectedly not logged",
-        //               server.waitForStringInLog("CWWKO0801E"));
+        // Hit the servlet on the SSL port
+        hitServerWithBadHandshake();
+        assertNotNull("Handshake error failure unexpectedly not logged",
+                      server.waitForStringInLog("CWWKO0801E"));
 
         LOG.info("Exiting handshakeFailureGetsLogged");
+    }
+
+    /**
+     * Test that an SSL handshake failure does not get logged when
+     * suppressHandshakeErrors="true".
+     */
+    @Test
+    public void handshakeFailureIsNotLogged() throws Exception {
+        LOG.info("Entering handshakeFailureIsNotLogged");
+
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        // Requires info trace
+        assertNotNull("We need to wait for the SSL port to open",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+
+        // Hit the servlet on the SSL port
+        hitServerWithBadHandshake();
+        assertNull("Handshake error failure was unexpectedly logged after 5 seconds",
+                   server.waitForStringInLog("CWWKO0801E", 5000));
+
+        LOG.info("Exiting handshakeFailureIsNotLogged");
     }
 
     /**
