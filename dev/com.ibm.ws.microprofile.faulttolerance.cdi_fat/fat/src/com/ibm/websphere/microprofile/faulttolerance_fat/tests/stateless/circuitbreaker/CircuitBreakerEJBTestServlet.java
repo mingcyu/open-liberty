@@ -9,13 +9,13 @@
  *******************************************************************************/
 package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.circuitbreaker;
 
+import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.ExecutionAssert.assertReturns;
+import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.ExecutionAssert.assertThrows;
+import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.ExecutionAssert.assertThrowsEjbWrapped;
 import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.circuitbreaker.CircuitBreakerEJB.Response.RETURN;
 import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.circuitbreaker.CircuitBreakerEJB.Response.THROW;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-import javax.ejb.EJBException;
 import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 
@@ -55,40 +55,12 @@ public class CircuitBreakerEJBTestServlet extends FATServlet {
         assertThrows(TestException.class, () -> bean.test(THROW));
     }
 
-    private <E extends Exception> E assertThrows(Class<E> expected, ThrowingRunnable runnable) {
-        try {
-            runnable.run();
-            throw new AssertionError("Exception not thrown");
-        } catch (Exception e) {
-            assertThat("Thrown exception is not of the correct type", e, instanceOf(expected));
-            return expected.cast(e);
-        }
-    }
-
-    private <E extends Exception> E assertThrowsEjbWrapped(Class<E> expected, ThrowingRunnable runnable) {
-        EJBException e = assertThrows(EJBException.class, runnable);
-        assertThat("Thrown exception is not of the correct type", e.getCause(), instanceOf(expected));
-        return expected.cast(e.getCause());
-    }
-
-    private <T> void assertReturns(ThrowingRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (Exception e) {
-            throw new AssertionError("Unexpected exception thrown: " + e, e);
-        }
-    }
-
     private void sleep(int ms) {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
             fail("Test interrupted");
         }
-    }
-
-    public static interface ThrowingRunnable {
-        public void run() throws Exception;
     }
 
 }

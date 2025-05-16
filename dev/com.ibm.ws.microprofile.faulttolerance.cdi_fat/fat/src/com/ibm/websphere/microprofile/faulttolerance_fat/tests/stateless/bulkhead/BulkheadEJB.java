@@ -13,7 +13,7 @@ import javax.ejb.Stateless;
 
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 
-import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhead.BarrierFactory.Barrier;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.BarrierFactory.Barrier;
 
 @Stateless
 public class BulkheadEJB {

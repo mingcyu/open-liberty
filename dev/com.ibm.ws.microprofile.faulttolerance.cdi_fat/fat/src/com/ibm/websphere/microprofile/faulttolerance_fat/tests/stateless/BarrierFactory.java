@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhead;
+package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless;
 
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertThat;
