@@ -41,8 +41,8 @@ import componenttest.topology.utils.FATServletClient;
 @RunWith(FATRunner.class)
 public class FaultToleranceOnEJBTest extends FATServletClient {
 
-    private final static String SERVER_NAME = "StatelessRetryTest";
-    private final static String APP_NAME = "StatelessRetryApp";
+    private final static String SERVER_NAME = "FTAnnotationsDirectlyOnEjb";
+    private final static String APP_NAME = "FTAnnotationsDirectlyOnEjbApp";
 
     @Server(SERVER_NAME)
     @TestServlets({
