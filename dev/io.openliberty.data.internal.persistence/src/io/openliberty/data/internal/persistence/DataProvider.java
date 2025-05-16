@@ -434,7 +434,6 @@ public class DataProvider implements //
                     // This delays createEMBuilder until restore.
                     // While this works by avoiding all connections to the data source, it does make restore much slower.
                     // TODO figure out how to do more work on restore without having to make a connection to the data source
-                    //if (futureEMBuilder.jeeName.equals(jeeName)) {
 
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
                         Tr.debug(this, tc, "completing futureEMBuilder " + futureEMBuilder, futureEMBuilder.jeeName, metadata);
@@ -450,7 +449,6 @@ public class DataProvider implements //
                     }
 
                     processed.add(futureEMBuilder);
-                    //}
                 }
 
             }
