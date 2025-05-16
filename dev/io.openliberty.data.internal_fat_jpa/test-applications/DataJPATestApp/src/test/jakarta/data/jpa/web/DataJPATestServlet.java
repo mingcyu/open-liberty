@@ -2379,7 +2379,8 @@ public class DataJPATestServlet extends FATServlet {
                                              .map(c -> c.name)
                                              .collect(Collectors.toList()));
 
-        // TODO JPA doesn't allow querying by IdClass. This would need to be interpreted as (c.name=?1 AND c.state=?2)
+        // TODO enable once EclipseLink #29073 is fixed
+        // JPA doesn't allow querying by IdClass. This would need to be interpreted as (c.name=?1 AND c.state=?2)
         // The current error is confusing: You have attempted to set a value of type class test.jakarta.data.jpa.web.CityId
         // for parameter 1 with expected type of class java.lang.String from query string SELECT o FROM City o WHERE (o.state=?1)
         //cities.findById(CityId.of("Rochester", "Minnesota"));
@@ -4692,7 +4693,8 @@ public class DataJPATestServlet extends FATServlet {
 
         long mnVer = cities.currentVersion(mnId.name, mnId.getStateName());
         long nyVer = cities.currentVersion(nyId.name, nyId.getStateName());
-        // TODO
+
+        // TODO enable once EclipseLink #29073 is fixed, and maybe remove the above
         //long mnVer = cities.currentVersion(mnId);
         //long nyVer = cities.currentVersion(nyId);
 
