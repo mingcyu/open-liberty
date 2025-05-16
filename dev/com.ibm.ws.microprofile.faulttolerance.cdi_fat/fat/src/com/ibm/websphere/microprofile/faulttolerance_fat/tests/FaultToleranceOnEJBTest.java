@@ -20,9 +20,9 @@ import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
-import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.FaultToleranceOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.fallback.FallbackOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.RetryOnEJBServlet;
-import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.TimeOutOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.timeout.TimeOutOnEJBServlet;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
 import com.ibm.ws.microprofile.faulttolerance.fat.repeat.RepeatFaultTolerance;
@@ -46,7 +46,7 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
 
     @Server(SERVER_NAME)
     @TestServlets({
-                    @TestServlet(contextRoot = APP_NAME, servlet = FaultToleranceOnEJBServlet.class),
+                    @TestServlet(contextRoot = APP_NAME, servlet = FallbackOnEJBServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = RetryOnEJBServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = TimeOutOnEJBServlet.class),
     })

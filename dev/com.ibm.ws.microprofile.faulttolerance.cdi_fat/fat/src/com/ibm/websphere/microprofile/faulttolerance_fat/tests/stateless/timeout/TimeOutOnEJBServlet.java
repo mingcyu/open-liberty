@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.junit.Test;
 
+import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.SkipForRepeat;
 import componenttest.app.FATServlet;
 import componenttest.rules.repeater.MicroProfileActions;
@@ -30,20 +31,23 @@ public class TimeOutOnEJBServlet extends FATServlet {
     @EJB
     private TimeoutOnEJB ejb;
 
+    @ExpectedFFDC("org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException")
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
     @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         ResultsRecord record = new ResultsRecord();
+        boolean caughtException = false;
         try {
             ejb.testMethodThatTimesOut(record);
         } catch (EJBException e) {
+            caughtException = true;
             Assert.assertTrue(e.getCausedByException() instanceof TimeoutException);
             Assert.assertTrue(record.testMethodCalled);
             Assert.assertTrue(record.testMethodRecievedInteruptException);
             Assert.assertFalse(record.testMethodContinuedPastInterruptException);
         }
-        Assert.fail();
+        Assert.assertTrue(caughtException);
     }
 
     @Test

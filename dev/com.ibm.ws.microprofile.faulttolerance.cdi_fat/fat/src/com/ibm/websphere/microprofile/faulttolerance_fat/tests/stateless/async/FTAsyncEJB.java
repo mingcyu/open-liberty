@@ -18,6 +18,7 @@ import javax.ejb.Stateless;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Retry;
 
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhead.BarrierFactory.Barrier;
 
 @Stateless
