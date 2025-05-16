@@ -79,16 +79,11 @@ public class DataNoSQLServlet extends FATServlet {
 
     @Test
     public void testGeneratedMetaModelsAvailable() {
+        //Check for _Employees is not needed as Jakarta process repositories in a way different than hibernate
         try {
             Class.forName("test.jakarta.data.nosql.web._Employee");
         } catch (ClassNotFoundException e) {
             fail("Static metamodel class _Employee (for Data) was not generated or available at runtime.");
-        }
-
-        try {
-            Class.forName("test.jakarta.data.nosql.web._Employees");
-        } catch (ClassNotFoundException e) {
-            fail("Static metamodel class _Employees (for Data) was not generated or available at runtime.");
         }
     }
 }
