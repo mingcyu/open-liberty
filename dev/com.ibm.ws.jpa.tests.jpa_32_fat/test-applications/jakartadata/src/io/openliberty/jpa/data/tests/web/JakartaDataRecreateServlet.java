@@ -33,8 +33,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -57,12 +57,8 @@ import io.openliberty.jpa.data.tests.models.Coordinate;
 import io.openliberty.jpa.data.tests.models.County;
 import io.openliberty.jpa.data.tests.models.DemographicInfo;
 import io.openliberty.jpa.data.tests.models.DemographicInformation;
-import io.openliberty.jpa.data.tests.models.Door;
 import io.openliberty.jpa.data.tests.models.ECEntity;
-import io.openliberty.jpa.data.tests.models.Garage;
-import io.openliberty.jpa.data.tests.models.House;
 import io.openliberty.jpa.data.tests.models.Item;
-import io.openliberty.jpa.data.tests.models.Kitchen;
 import io.openliberty.jpa.data.tests.models.Line;
 import io.openliberty.jpa.data.tests.models.Line.Point;
 import io.openliberty.jpa.data.tests.models.NaturalNumber;
@@ -81,11 +77,16 @@ import io.openliberty.jpa.data.tests.models.Segment;
 import io.openliberty.jpa.data.tests.models.Store;
 import io.openliberty.jpa.data.tests.models.Triangle;
 import io.openliberty.jpa.data.tests.models.Vehicle;
+import io.openliberty.jpa.data.tests.models.Door;
+import io.openliberty.jpa.data.tests.models.Garage;
+import io.openliberty.jpa.data.tests.models.House;
+import io.openliberty.jpa.data.tests.models.Kitchen;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.UserTransaction;
@@ -486,6 +487,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
     @Test //Reference issue: https://github.com/eclipse-ee4j/eclipselink/issues/2234
     public void testELGH2234() throws Exception {
+        deleteAllEntities(Product.class);
 
         Product p = Product.of("testSnapshot", "product", 10.50f);
         tx.begin();
@@ -511,7 +513,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     @Test //Original Issue: https://github.com/OpenLiberty/open-liberty/issues/29457"
     @SkipIfSysProp(DB_Oracle) //Additional Issue: https://github.com/OpenLiberty/open-liberty/issues/29440
     public void testOLGH29457() throws Exception {
-
+        deleteAllEntities(DemographicInfo.class);
         // Create a DemographicInfo instance
         DemographicInfo demographicInfo = DemographicInfo.of(2023, 8, 21, 500, 200000.00, 1000000.00);
 
@@ -637,7 +639,6 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
         assertEquals(4, primes.size());
     }
-
     @Test
     // "Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30093"
     public void testOLGH30093() throws Exception {
@@ -658,9 +659,9 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
         tx.begin();
         try {
-            ids = em.createQuery(
-                                 "SELECT ID(THIS) FROM Prime WHERE ID(THIS) < ?1 ORDER BY ID(THIS) DESC",
-                                 Long.class)
+             ids = em.createQuery(
+                                    "SELECT ID(THIS) FROM Prime WHERE ID(THIS) < ?1 ORDER BY ID(THIS) DESC",
+                                    Long.class)
                             .setParameter(1, 7)
                             .getResultList();
             tx.commit();
@@ -668,7 +669,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
-
+        
         assertEquals(3, ids.size());
         assertEquals(5L, ids.get(0).longValue());
         assertEquals(3L, ids.get(1).longValue());
@@ -794,7 +795,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     @Ignore
     //Reference issue : https://github.com/OpenLiberty/open-liberty/issues/30444
     public void testOLGH30444() throws Exception {
-        deleteAllEntities(Package.class);
+        deleteAllEntities(Package.class); 
 
         Package p1 = Package.of(1, 1.0f, 1.0f, 1.0f, "testOLGH28545-1");
         Package p2 = Package.of(2, 1.0f, 2.0f, 1.0f, "testOLGH28545-2");
@@ -1749,8 +1750,8 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
     @Test
     @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30501")
-    public void testOLGH30501() throws Exception {
-        deleteAllEntities(Prime.class);
+    public void testOLGH30501() throws Exception{
+        deleteAllEntities(Prime.class); 
 
         List<RomanNumeral> result;
         Prime two = Prime.of(2, "II", "two");
@@ -1766,13 +1767,14 @@ public class JakartaDataRecreateServlet extends FATServlet {
         tx.commit();
 
         result = em.createQuery("SELECT NEW io.openliberty.jpa.data.tests.models.RomanNumeral( "
-                                + " name, romanNumeral, romanNumeralSymbols) "
-                                + "FROM Prime WHERE numberId <= ?1 "
-                                + "ORDER BY name", RomanNumeral.class)
-                        .setParameter(1, 7) // Positional parameter starts at 1
-                        .getResultList();
+        + " name, romanNumeral, romanNumeralSymbols) "
+        + "FROM Prime WHERE numberId <= ?1 "
+        + "ORDER BY name", RomanNumeral.class)
+        .setParameter(1, 7) // Positional parameter starts at 1
+        .getResultList();
 
-    }
+
+    }   
 
     @Test
     @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29475")
@@ -1840,7 +1842,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
         e1.setLongListEC(new ArrayList<>(List.of(14L, 12L, 1L)));
         e1.setStringSet(Set.of("fourteen", "twelve", "one"));
         e1.setStringSetEC(Set.of("fourteen", "twelve", "one"));
-
+       
         ECEntity e2 = new ECEntity();
         e2.setId("EC2");
         e2.setIntArray(new int[] { 14, 12, 2 });
@@ -1849,131 +1851,131 @@ public class JakartaDataRecreateServlet extends FATServlet {
         e2.setStringSet(Set.of("fourteen", "twelve", "two"));
         e2.setStringSetEC(Set.of("fourteen", "twelve", "two"));
 
+
         tx.begin();
         em.persist(e1);
         em.persist(e2);
         tx.commit();
-        // Test JPQL queries
-        String jpql;
-        List<?> results;
-        // Query for intArray
-        tx.begin();
-        try {
-            jpql = "SELECT intArray FROM ECEntity WHERE id=?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC1")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-
-        // Query for longList
-        tx.begin();
-        try {
-            jpql = "SELECT longList FROM ECEntity WHERE id=?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC1")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        // Query for stringSet
-        tx.begin();
-        try {
-            jpql = "SELECT stringSet FROM ECEntity WHERE id=?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC1")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        tx.begin();
-        try {
-            jpql = "SELECT longListEC FROM ECEntity WHERE id=?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC1")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        // Query for longListEC
-        tx.begin();
-        try {
-            jpql = "SELECT longListEC FROM ECEntity WHERE id LIKE ?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC%")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        tx.begin();
-        try {
-            jpql = "SELECT longList FROM ECEntity WHERE id LIKE ?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC%")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        // Query for stringSetEC
-        tx.begin();
-        try {
-            jpql = "SELECT stringSetEC FROM ECEntity WHERE id LIKE ?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC%")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-        tx.begin();
-        try {
-            jpql = "SELECT stringSet FROM ECEntity WHERE id LIKE ?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC%")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-
-        tx.begin();
-        try {
-            jpql = "SELECT stringSetEC FROM ECEntity WHERE id=?1";
-            results = em.createQuery(jpql)
-                            .setParameter(1, "EC1")
-                            .getResultList();
-            logQueryResults(jpql, results);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
-
+         // Test JPQL queries
+    String jpql;
+    List<?> results;
+    // Query for intArray
+    tx.begin();
+    try {
+        jpql = "SELECT intArray FROM ECEntity WHERE id=?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC1")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
     }
 
+    // Query for longList
+    tx.begin();
+    try {
+        jpql = "SELECT longList FROM ECEntity WHERE id=?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC1")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    // Query for stringSet
+    tx.begin();
+    try {
+        jpql = "SELECT stringSet FROM ECEntity WHERE id=?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC1")
+                    .getResultList();
+        logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    tx.begin();
+    try {
+        jpql = "SELECT longListEC FROM ECEntity WHERE id=?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC1")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    // Query for longListEC
+    tx.begin();
+    try {
+        jpql = "SELECT longListEC FROM ECEntity WHERE id LIKE ?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC%")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    tx.begin();
+    try {
+        jpql = "SELECT longList FROM ECEntity WHERE id LIKE ?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC%")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    // Query for stringSetEC
+    tx.begin();
+    try {
+        jpql = "SELECT stringSetEC FROM ECEntity WHERE id LIKE ?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC%")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+    tx.begin();
+    try {
+        jpql = "SELECT stringSet FROM ECEntity WHERE id LIKE ?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC%")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+
+    tx.begin();
+    try {
+        jpql = "SELECT stringSetEC FROM ECEntity WHERE id=?1";
+        results = em.createQuery(jpql)
+                    .setParameter(1, "EC1")
+                    .getResultList();
+                    logQueryResults(jpql,results);
+        tx.commit();
+    } catch (Exception e) {
+        tx.rollback();
+        throw e;
+    }
+
+    }
     public void logQueryResults(String jpql, Collection<?> results) {
         System.out.println(jpql);
         System.out.println("getResultList returned a " + results.getClass().getTypeName());
@@ -1983,18 +1985,18 @@ public class JakartaDataRecreateServlet extends FATServlet {
             System.out.println("    elements are of type <empty>");
         }
         StringBuilder s = new StringBuilder();
-        boolean first = true;
-        for (Object element : results) {
-            if (first)
-                first = false;
-            else
-                s.append(", ");
-            if (element instanceof int[])
-                s.append(Arrays.toString((int[]) element));
-            else
-                s.append(element);
-        }
-        System.out.println("            contents are [" + s.toString() + "]");
+            boolean first = true;
+            for (Object element : results) {
+                if (first)
+                    first = false;
+                else
+                    s.append(", ");
+                if (element instanceof int[])
+                    s.append(Arrays.toString((int[]) element));
+                else
+                    s.append(element);
+            }
+            System.out.println("            contents are [" + s.toString() + "]");
     }
 
     @Test //Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29460
@@ -2132,7 +2134,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
         assertEquals(27.97f, totals.get(0), 0.01);
 
     }
-
+    
     @Test
     @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30789")
     public void testOLGH30789() throws Exception {
