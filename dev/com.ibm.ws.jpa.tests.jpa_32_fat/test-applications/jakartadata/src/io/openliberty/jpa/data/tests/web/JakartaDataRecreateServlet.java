@@ -487,6 +487,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
     @Test //Reference issue: https://github.com/eclipse-ee4j/eclipselink/issues/2234
     public void testELGH2234() throws Exception {
+        
         Product p = Product.of("testSnapshot", "product", 10.50f);
         tx.begin();
         em.persist(p);
@@ -511,6 +512,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     @Test //Original Issue: https://github.com/OpenLiberty/open-liberty/issues/29457"
     @SkipIfSysProp(DB_Oracle) //Additional Issue: https://github.com/OpenLiberty/open-liberty/issues/29440
     public void testOLGH29457() throws Exception {
+        
         // Create a DemographicInfo instance
         DemographicInfo demographicInfo = DemographicInfo.of(2023, 8, 21, 500, 200000.00, 1000000.00);
 
