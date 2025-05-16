@@ -419,6 +419,10 @@ public class InfoStore_Test extends InfoStore_TestBase {
         Assert.assertEquals(4, parmTypes.size());
         Assert.assertEquals(Arrays.asList("int", String.class.getName(), List.class.getName(), "long"), parmTypes);
 
+        @SuppressWarnings("deprecation")
+        List<List<? extends com.ibm.wsspi.anno.info.AnnotationInfo>> parameterAnnos = mi.getParameterAnnotations();
+        Assert.assertEquals(4, parameterAnnos.size());
+
         List<? extends List<? extends AnnotationInfo>> parmAnnos = mi.getParmAnnotations();
         Assert.assertEquals(4, parmAnnos.size());
 

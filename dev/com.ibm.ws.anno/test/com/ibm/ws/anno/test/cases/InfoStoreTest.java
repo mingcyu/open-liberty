@@ -129,7 +129,7 @@ public class InfoStoreTest {
         Assert.assertEquals(4, parmTypes.size());
         Assert.assertEquals(Arrays.asList("int", String.class.getName(), List.class.getName(), "long"), parmTypes);
 
-        List<? extends List<? extends AnnotationInfo>> parmAnnos = mi.getParmAnnotations();
+        List<List<? extends AnnotationInfo>> parmAnnos = mi.getParameterAnnotations();
         Assert.assertEquals(4, parmAnnos.size());
 
         Assert.assertEquals(0, parmAnnos.get(0).size());

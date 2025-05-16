@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2025 IBM Corporation and others.
+ * Copyright (c) 2011 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -191,14 +191,9 @@ public class MethodInfoImpl extends InfoImpl implements MethodInfo {
         return this.parameterClassInfos;
     }
 
+    /** {@inheritDoc} */
     @Override
-    @Deprecated
     public List<List<? extends AnnotationInfo>> getParameterAnnotations() {
-        return parameterAnnotations;
-    }
-    
-    @Override
-    public List<? extends List<? extends AnnotationInfo>> getParmAnnotations() {
         return parameterAnnotations;
     }
 
