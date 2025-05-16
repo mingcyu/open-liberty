@@ -86,15 +86,9 @@ public class DataNoSQLServlet extends FATServlet {
         }
 
         try {
-            Class.forName("test.jakarta.data.nosql.web.Employee_");
+            Class.forName("test.jakarta.data.nosql.web._Employees");
         } catch (ClassNotFoundException e) {
-            fail("Static metamodel class Employee_ (for Data) was not generated or available at runtime.");
-        }
-
-        try {
-            Class.forName("test.jakarta.data.nosql.web.Employees_");
-        } catch (ClassNotFoundException e) {
-            fail("Static metamodel class Employees_ (for Data) was not generated or available at runtime.");
+            fail("Static metamodel class _Employees (for Data) was not generated or available at runtime.");
         }
     }
 }
