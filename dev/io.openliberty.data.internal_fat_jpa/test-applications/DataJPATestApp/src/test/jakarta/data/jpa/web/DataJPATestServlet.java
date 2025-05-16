@@ -1311,11 +1311,9 @@ public class DataJPATestServlet extends FATServlet {
                                              .map(a -> a.houseNumber + " " + a.streetName)
                                              .collect(Collectors.toList()));
 
-        // [EclipseLink-6002] Aggregated objects cannot be written/deleted/queried independently from their owners.
-        //                    Descriptor: [RelationalDescriptor(test.jakarta.data.web.StreetAddress --> [])]
-        //                    Query: ReportQuery(referenceClass=StreetAddress )
-        // TODO uncomment the following to reproduce the above error:
-        // List<ShippingAddress> found = shippingAddresses.findByRecipientInfoNotEmpty();
+        // TODO Enable once EclipseLink bug #31558 is fixed:
+        // List<ShippingAddress> found = shippingAddresses
+        //                .findByStreetAddressRecipientInfoNotEmpty();
         // assertEquals(1, found.size());
         // ShippingAddress a = found.get(0);
         // assertEquals(a1.id, a.id);
