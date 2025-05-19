@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -46,6 +47,7 @@ import componenttest.annotation.Server;
 import componenttest.annotation.SkipForRepeat;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
+import componenttest.rules.repeater.JakartaEEAction;
 import componenttest.topology.impl.LibertyServer;
 
 /**
@@ -69,19 +71,31 @@ public class SSLOptionsTest{
     private static final String SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG = "suppressHandshakeFailureFalse.xml";
     private static final String SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG = "suppressHandshakeFailureTrue.xml";
     private static final String SUPPRESS_HANDSHAKE_FAILURE_LOW_COUNT_CONFIG = "suppressHandshakeFailureLowCount.xml";
-
-    public static final String APP_NAME = "app1";
+    private static final String DEFAULT_SSLOPTIONS_CONFIG = "defaultSSLOptions.xml";
+    private static final String SSLOPTIONS_CONFIG = "SSLOptions.xml";
 
     private static final String DEFAULT_REALM = "Basic Authentication";
     private static final String DEFAULT_SERVLET_NAME = "ServletName: BasicAuthServlet";
     private static final String DEFAULT_CONTEXT_ROOT = "/basicauth";
 
+    private static final String KEYSTORE = "sslOptions.jks";
+    private static final String TRUSTSTORE = "trust.jks";
+    private static final String ALTERNATE_TRUSTSTORE = "optionsTrust.jks";
+    private static final String PASSWORD = "Liberty";
 
     @Server("SSLOptionsServer")
     public static LibertyServer server;
 
     @BeforeClass
     public static void setUp() throws Exception {
+
+        /*
+         * Transform apps for EE9+.
+         */
+        if (JakartaEEAction.isEE9OrLaterActive()) {
+            JakartaEEAction.transformApp(Paths.get(server.getServerRoot() + "/apps/basicauth.war"));
+        }
+
         // The app basicauth is added in the config and we validate it was actually installed
         server.addInstalledAppForValidation("basicauth");
 
@@ -255,6 +269,46 @@ public class SSLOptionsTest{
                      1, server.findStringsInLogsUsingMark("CWWKO0804I", server.getDefaultLogFile()).size());
 
         LOG.info("Exiting handshakeFailuresHaveLogCap");
+    }
+
+    /**
+     * Test that SSL Configuration dynamically updated on the SSLOption is
+     * used. Start with an SSLOption set to the default SSL Config and make
+     * sure it can be accessed. Dynamically update the SSLOption to point
+     * to an alternate SSL Configuration and make sure you access it with
+     * the appropriate trust.
+     */
+    @Test
+    public void dynamicUpdateToSSLOption() throws Exception {
+        LOG.info("Entering dynamicUpdateToSSLOption");
+
+        // Use default SSL Config
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(DEFAULT_SSLOPTIONS_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        // Requires info trace
+        assertNotNull("We need to wait for the SSL port to open (first time)",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+
+        // Hit the servlet on the SSL port
+        hitServer(KEYSTORE, PASSWORD, TRUSTSTORE, PASSWORD);
+
+        // Swith to SSLConfig specified on the SSLOptions
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(SSLOPTIONS_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        // Requires info trace
+        assertNotNull("We need to wait for the SSL port to start (again)",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+
+        // Hit the servlet on the SSL port
+        hitServer(KEYSTORE, PASSWORD, ALTERNATE_TRUSTSTORE, PASSWORD);
+
+        LOG.info("Exiting dynamicUpdateToSSLOption");
     }
 
     /**
