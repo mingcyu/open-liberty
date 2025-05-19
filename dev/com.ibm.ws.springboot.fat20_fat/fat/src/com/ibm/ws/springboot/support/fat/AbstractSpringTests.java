@@ -44,10 +44,11 @@ import com.ibm.websphere.simplicity.config.SpringBootApplication;
 import com.ibm.websphere.simplicity.config.VirtualHost;
 import com.ibm.websphere.simplicity.config.WebApplication;
 
+import componenttest.containers.TestContainerSuite;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
 
-public abstract class AbstractSpringTests {
+public abstract class AbstractSpringTests extends TestContainerSuite {
 
     @Rule
     public TestName testName = new TestName();
@@ -79,6 +80,7 @@ public abstract class AbstractSpringTests {
     public static final String SPRING_BOOT_20_APP_WEBSOCKET = "com.ibm.ws.springboot.fat20.websocket.app-0.0.1-SNAPSHOT.jar";
     public static final String SPRING_BOOT_20_APP_TRANSACTIONS = "com.ibm.ws.springboot.fat20.transactions.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_20_APP_DATA = "com.ibm.ws.springboot.fat20.data.app-0.0.1-SNAPSHOT.war";
+    public static final String SPRING_BOOT_20_APP_JMS = "com.ibm.ws.springboot.fat20.jms.app-0.0.1-SNAPSHOT.war";
     public static final String LIBERTY_USE_DEFAULT_HOST = "server.liberty.use-default-host";
     public static final String SPRING_LIB_INDEX_CACHE = "lib.index.cache";
     public static final String SPRING_WORKAREA_DIR = "workarea/spring/";
@@ -158,6 +160,7 @@ public abstract class AbstractSpringTests {
 
     public static void stopServer(boolean cleanupApps, String... expectedFailuresRegExps) throws Exception {
         extraServerArgs.clear();
+        clearEnvVariables();
         boolean isActive = serverStarted.getAndSet(false);
         try {
             // don't archive until after stopping and removing the lib.index.cache
@@ -189,6 +192,19 @@ public abstract class AbstractSpringTests {
                 server.deleteDirectoryFromLibertyServerRoot("logs/");
             }
         }
+    }
+
+    public static void configureEnvVariable(LibertyServer server, Map<String, String> newEnv) throws Exception {
+        Properties serverEnvProperties = new Properties();
+        serverEnvProperties.putAll(newEnv);
+        File serverEnvFile = new File(server.getFileFromLibertyServerRoot("server.env").getAbsolutePath());
+        try (OutputStream out = new FileOutputStream(serverEnvFile)) {
+            serverEnvProperties.store(out, "");
+        }
+    }
+
+    private static void clearEnvVariables() throws Exception {
+        configureEnvVariable(server, Collections.emptyMap());
     }
 
     public abstract Set<String> getFeatures();
