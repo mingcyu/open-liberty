@@ -246,7 +246,6 @@ public class OraclePlatform extends org.eclipse.persistence.platform.database.Da
         fieldTypeMapping.put(java.time.LocalDate.class, new FieldTypeDefinition("DATE"));
         fieldTypeMapping.put(java.time.LocalDateTime.class, new FieldTypeDefinition("TIMESTAMP"));
         fieldTypeMapping.put(java.time.LocalTime.class, new FieldTypeDefinition("TIMESTAMP"));
-        fieldTypeMapping.put(java.time.Instant.class, new FieldTypeDefinition("TIMESTAMP", false));
         // Offset classes contain an offset from UTC/Greenwich in the ISO-8601 calendar system so TZ should be included
         // but TIMESTAMP WITH TIME ZONE is not supported until 10g
         fieldTypeMapping.put(java.time.OffsetDateTime.class, new FieldTypeDefinition("TIMESTAMP"));

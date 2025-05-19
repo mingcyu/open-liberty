@@ -418,7 +418,6 @@ public class PostgreSQLPlatform extends DatabasePlatform {
         fieldTypeMapping.put(java.time.LocalTime.class, new FieldTypeDefinition("TIME", false));
         fieldTypeMapping.put(java.time.OffsetDateTime.class, new FieldTypeDefinition("TIMESTAMP", false));
         fieldTypeMapping.put(java.time.OffsetTime.class, new FieldTypeDefinition("TIME", false));
-        fieldTypeMapping.put(java.time.Instant.class, new FieldTypeDefinition("TIMESTAMP", false));
 
         fieldTypeMapping.put(java.util.UUID.class, new FieldTypeDefinition("UUID", false));
 
