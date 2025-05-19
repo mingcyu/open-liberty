@@ -20,6 +20,7 @@ import static componenttest.annotation.SkipForRepeat.EE8_OR_LATER_FEATURES;
 import static componenttest.annotation.SkipForRepeat.EE9_FEATURES;
 import static componenttest.annotation.SkipForRepeat.EE9_OR_LATER_FEATURES;
 import static componenttest.annotation.SkipForRepeat.NO_MODIFICATION;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -67,6 +68,7 @@ public class SSLOptionsTest{
 
     private static final String SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG = "suppressHandshakeFailureFalse.xml";
     private static final String SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG = "suppressHandshakeFailureTrue.xml";
+    private static final String SUPPRESS_HANDSHAKE_FAILURE_LOW_COUNT_CONFIG = "suppressHandshakeFailureLowCount.xml";
 
     public static final String APP_NAME = "app1";
 
@@ -163,6 +165,96 @@ public class SSLOptionsTest{
                    server.waitForStringInLog("CWWKO0801E", 5000));
 
         LOG.info("Exiting handshakeFailureIsNotLogged");
+    }
+
+    /**
+     * Test that suppression of the SSL handshake logging setting is properly
+     * updated dynamically.
+     */
+    @Test
+    public void dynamicUpdateToSuppression() throws Exception {
+        LOG.info("Entering dynamicUpdateToSuppression");
+        int saveCnt = 0;
+
+        // SUPPRESS OFF BY DEFAULT
+
+        // Hit the servlet on the SSL port
+        server.setMarkToEndOfLog();
+        hitServerWithBadHandshake();
+        assertNotNull("Handshake error failure unexpectedly not logged (first time)",
+                      server.waitForStringInLog("CWWKO0801E"));
+
+        // SUPPRESS ON
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        assertNotNull("We need to wait for the SSL port to start (again)",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+        saveCnt = server.findStringsInLogs("CWWKO0801E").size();
+
+        // Hit the servlet on the SSL port
+        server.setMarkToEndOfLog();
+        hitServerWithBadHandshake();
+        assertEquals("We should not see any new failure messages logged",
+                     saveCnt, server.findStringsInLogs("CWWKO0801E").size());
+
+        // SUPPRESS OFF
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        // Requires info trace
+        assertNotNull("We need to wait for the SSL port to start (again)",
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
+
+        // Hit the servlet on the SSL port
+        server.setMarkToEndOfLog();
+        hitServerWithBadHandshake();
+        assertNotNull("Handshake error failure unexpectedly not logged (second time)",
+                      server.waitForStringInLogUsingMark("CWWKO0801E"));
+
+        LOG.info("Exiting dynamicUpdateToSuppression");
+    }
+
+    /**
+     * Test that repeated SSL handshake failures have a log cap,
+     * and that the attribute is honored.
+     */
+    @Test
+    public void handshakeFailuresHaveLogCap() throws Exception {
+        LOG.info("Entering handshakeFailuresHaveLogCap");
+
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+        server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_LOW_COUNT_CONFIG);
+        server.waitForConfigUpdateInLogUsingMark(null);
+
+        // Requires info trace
+        assertNotNull("We need to wait for the SSL port to open",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+        server.setMarkToEndOfLog();
+        server.setTraceMarkToEndOfDefaultTrace();
+
+        // Hit the servlet on the SSL port
+        hitServerWithBadHandshake();
+        hitServerWithBadHandshake();
+        hitServerWithBadHandshake();
+        hitServerWithBadHandshake();
+        hitServerWithBadHandshake();
+        hitServerWithBadHandshake();
+        assertNotNull("Handshake error failure unexpectedly not logged",
+                      server.waitForStringInLog("CWWKO0801E"));
+        assertEquals("Should only find 2 CWWKO0801E log entries",
+                     2, server.findStringsInLogsUsingMark("CWWKO0801E", server.getDefaultLogFile()).size());
+        assertNotNull("Expected informational message that logging has stopped was not logged",
+                      server.waitForStringInLog("CWWKO0804I"));
+        assertEquals("Should only find 1 CWWKO0804I log entry",
+                     1, server.findStringsInLogsUsingMark("CWWKO0804I", server.getDefaultLogFile()).size());
+
+        LOG.info("Exiting handshakeFailuresHaveLogCap");
     }
 
     /**
