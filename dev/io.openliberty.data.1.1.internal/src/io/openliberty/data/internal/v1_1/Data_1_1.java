@@ -13,6 +13,7 @@
 package io.openliberty.data.internal.v1_1;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.exceptions.MappingException;
 import jakarta.data.page.PageRequest;
+import jakarta.data.repository.Find;
 import jakarta.data.repository.Select;
 
 /**
@@ -275,8 +277,20 @@ public class Data_1_1 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public boolean atLeast(int major, int minor) {
+        return major == 1 && minor <= 1;
+    }
+
+    @Override
+    @Trivial
     public Annotation getCountAnnotation(Method method) {
         return method.getAnnotation(Count.class);
+    }
+
+    @Override
+    @Trivial
+    public Class<?> getEntityClass(Find find) {
+        return find.value();
     }
 
     @Override
@@ -287,9 +301,14 @@ public class Data_1_1 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public String[] getSelections(Method method) {
-        Annotation select = method.getAnnotation(Select.class);
-        return select == null ? null : ((Select) select).value();
+    public String[] getSelections(AnnotatedElement element) {
+        Select[] selects = element.getAnnotationsByType(Select.class);
+        if (selects.length == 0)
+            return NO_SELECTIONS;
+        String[] values = new String[selects.length];
+        for (int i = 0; i < selects.length; i++)
+            values[i] = selects[i].value();
+        return values;
     }
 
     @Override

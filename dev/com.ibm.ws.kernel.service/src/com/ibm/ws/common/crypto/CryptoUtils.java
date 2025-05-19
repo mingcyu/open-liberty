@@ -23,13 +23,10 @@ import java.util.Map;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.kernel.service.util.JavaInfo;
 
 public class CryptoUtils {
     private static final TraceComponent tc = Tr.register(CryptoUtils.class);
-
-    private static boolean issuedBetaMessage = false;
 
     static String FIPSLevel = getFipsLevel();
     public final static String MESSAGE_DIGEST_ALGORITHM_SHA256 = "SHA-256";
@@ -142,25 +139,22 @@ public class CryptoUtils {
     }
 
     public static void logInsecureAlgorithm(String configProperty, String insecureAlgorithm) {
-        // TODO remove beta check
         // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
-        if (false && isRunningBetaMode()) {
+        if (false) {
             Tr.warning(tc, "CRYPTO_INSECURE", configProperty, insecureAlgorithm, getSecureAlternative(insecureAlgorithm));
         }
     }
 
     public static void logInsecureAlgorithmReplaced(String configProperty, String insecureAlgorithm, String secureAlgorithm) {
-        // TODO remove beta check
         // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
-        if (false && isRunningBetaMode()) {
+        if (false) {
             Tr.warning(tc, "CRYPTO_INSECURE_REPLACED", configProperty, insecureAlgorithm, secureAlgorithm);
         }
     }
 
     public static void logInsecureProvider(String provider, String insecureAlgorithm) {
-        // TODO remove beta check
         // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
-        if (false && isRunningBetaMode()) {
+        if (false) {
             Tr.warning(tc, "CRYPTO_INSECURE_PROVIDER", provider, insecureAlgorithm);
         }
     }
@@ -347,8 +341,7 @@ public class CryptoUtils {
         if (fips140_3Checked)
             return fips140_3Enabled;
         else {
-            boolean enabled = ("140-3".equals(FIPSLevel) || "true".equals(getPropertyLowerCase("global.fips_140-3", "false")) || isSemeruFips())
-                              && isRunningBetaMode();
+            boolean enabled = "140-3".equals(FIPSLevel);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "isFips140_3Enabled: " + enabled);
             }
@@ -376,7 +369,6 @@ public class CryptoUtils {
 
     public static boolean isFips140_2Enabled() {
         //JDK set the fip mode default to 140-2
-        //boolean result = "140-2".equals(FIPSLevel) && isRunningBetaMode();
         boolean result = !isFips140_3Enabled() && "true".equals(getPropertyLowerCase(USE_FIPS_PROVIDER, "false")) &&
                          IBMJCE_PLUS_FIPS_NAME.equalsIgnoreCase(getPropertyLowerCase(USE_FIPS_PROVIDER_NAME, "NO_PROVIDER_NAME"));
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -399,33 +391,13 @@ public class CryptoUtils {
         }
     }
 
-    public static boolean isRunningBetaMode() {
-
-        if (!ProductInfo.getBetaEdition()) {
-            return false;
-        } else {
-            // Running beta exception, issue message if we haven't already issued one for this class
-            if (!issuedBetaMessage) {
-                Tr.info(tc, "BETA: A beta method has been invoked for the class CryptoUtils for the first time.");
-                issuedBetaMessage = true;
-            }
-            return true;
-        }
-    }
-
     /** generate random bytes using SecureRandom */
     public static byte[] generateRandomBytes(int length) {
         byte[] seed = null;
         SecureRandom rand = new SecureRandom();
+        seed = new byte[length];
+        rand.nextBytes(seed);
 
-        // TODO: Investigate hardware Crypto
-        //String hardwareCryptoProvider = "IBMJCECCA";
-        //Provider provider = rand.getProvider();
-        //if (hardwareCryptoProvider.equals(provider.getName())) {
-        //    seed = new byte[length];
-        //    rand.nextBytes(seed);
-        //} else {
-        seed = rand.generateSeed(length);
         return seed;
     }
 }
