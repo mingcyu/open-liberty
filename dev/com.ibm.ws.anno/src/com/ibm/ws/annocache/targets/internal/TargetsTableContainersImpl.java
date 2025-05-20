@@ -92,31 +92,12 @@ public class TargetsTableContainersImpl
     }
 
     @Override
-    @Deprecated
-    public void addName(String name, ScanPolicy policy) {
-        names.add(name);
-        policies.put(name, policy);
-    }
-    
-    @Override
     public void addName(String name, String signature, ScanPolicy policy) {
         names.add(name);
         putSignature(name, signature);
         policies.put(name, policy);
     }
 
-    @Override
-    @Deprecated
-    public void addNameAfter(String name, ScanPolicy policy, String afterName) {
-        int addOffset = names.indexOf(afterName);
-        if ( addOffset == -1 ) {
-            throw new IndexOutOfBoundsException("Name [ " + afterName + " ] is not within container table [ " + getHashText() + " ]");
-        }
-
-        names.add(addOffset + 1, name);
-        policies.put(name, policy);
-    }
-    
     @Override
     public void addNameAfter(String name, String signature, ScanPolicy policy, String afterName) {
         int addOffset = names.indexOf(afterName);
@@ -129,18 +110,6 @@ public class TargetsTableContainersImpl
         policies.put(name, policy);
     }
     
-    @Override
-    @Deprecated
-    public void addNameBefore(String name, ScanPolicy policy, String beforeName) {
-        int addOffset = names.indexOf(beforeName);
-        if ( addOffset == -1 ) {
-            throw new IndexOutOfBoundsException("Name [ " + beforeName + " ] is not within container table [ " + getHashText() + " ]");
-        }
-
-        names.add(addOffset, name);
-        policies.put(name, policy);
-    }
-
     @Override
     public void addNameBefore(String name, String signature, ScanPolicy policy, String beforeName) {
         int addOffset = names.indexOf(beforeName);
