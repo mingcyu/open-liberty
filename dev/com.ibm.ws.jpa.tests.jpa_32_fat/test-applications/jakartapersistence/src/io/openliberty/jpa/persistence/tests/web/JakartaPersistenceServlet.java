@@ -10,7 +10,6 @@
 package io.openliberty.jpa.persistence.tests.web;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -31,11 +30,6 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     @Resource
     private UserTransaction tx;
-
-    @Test
-    public void alwaysPasses() {
-        assertTrue(true);
-    }
 
     @Test
     public void testSetOperationsJPQL() {
