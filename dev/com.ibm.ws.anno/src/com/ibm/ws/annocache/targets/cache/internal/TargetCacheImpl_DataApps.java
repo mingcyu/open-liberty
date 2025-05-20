@@ -180,6 +180,8 @@ public class TargetCacheImpl_DataApps extends TargetCacheImpl_DataBase {
         }
 
         synchronized( appsLock ) {
+            // getFactory().logStack("Forcing app [ " + appName + " ]"); // 30315
+
             return apps.computeIfAbsent(appName, this::createAppData);
         }
     }
