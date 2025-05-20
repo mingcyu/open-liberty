@@ -77,6 +77,8 @@ import io.openliberty.jpa.data.tests.models.Segment;
 import io.openliberty.jpa.data.tests.models.Store;
 import io.openliberty.jpa.data.tests.models.Triangle;
 import io.openliberty.jpa.data.tests.models.Vehicle;
+import io.openliberty.jpa.data.tests.models.ShippingAddress;
+import io.openliberty.jpa.data.tests.models.StreetAddress;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -2128,6 +2130,67 @@ public class JakartaDataRecreateServlet extends FATServlet {
         // This cannot be avoided even when setting standard_conforming_strings=on
         // EclipseLink should handle this case by adding in additional escapes to the bound parameters where PostgreSQL uses the default escape character `\`
         assertEquals(27.97f, totals.get(0), 0.01);
+
+    }
+
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/31558")
+    public void testOLGH31558() throws Exception {
+        deleteAllEntities(ShippingAddress.class);
+
+        ShippingAddress a1 = new ShippingAddress();
+        a1.id = 1001L;
+        a1.city = "Rochester";
+        a1.state = "Minnesota";
+        a1.streetAddress = new StreetAddress(2800, "37th St NW", List.of("Receiving Dock", "Building 040-1"));
+        a1.zipCode = 55901;
+
+        ShippingAddress a2 = new ShippingAddress();
+        a2.id = 1002L;
+        a2.city = "Rochester";
+        a2.state = "Minnesota";
+        a2.streetAddress = new StreetAddress(201, "4th St SE");
+        a2.zipCode = 55904;
+
+        ShippingAddress a3 = new ShippingAddress();
+        a3.id = 1003L;
+        a3.city = "Rochester";
+        a3.state = "Minnesota";
+        a3.streetAddress = new StreetAddress(200, "1st Ave SW");
+        a3.zipCode = 55902;
+
+        ShippingAddress a4 = new ShippingAddress();
+        a4.id = 1004L;
+        a4.city = "Rochester";
+        a4.state = "Minnesota";
+        a4.streetAddress = new StreetAddress(151, "4th St SE");
+        a4.zipCode = 55904;
+
+        tx.begin();
+        em.persist(a1);
+        em.persist(a2);
+        em.persist(a3);
+        em.persist(a4);
+        tx.commit();
+
+        tx.begin();
+        try {
+            List<ShippingAddress> found = em.createQuery("SELECT o FROM ShippingAddress o WHERE (o.streetAddress.recipientInfo IS NOT EMPTY)")
+                           .getResultList();
+            tx.commit();
+            assertEquals(1, found.size());
+            ShippingAddress a = found.get(0);
+            assertEquals(a1.id, a.id);
+            assertEquals(a1.city, a.city);
+            assertEquals(a1.state, a.state);
+            assertEquals(a1.zipCode, a.zipCode);
+            assertEquals(a1.streetAddress.houseNumber, a.streetAddress.houseNumber);
+            assertEquals(a1.streetAddress.streetName, a.streetAddress.streetName);
+            assertEquals(a1.streetAddress.recipientInfo, a.streetAddress.recipientInfo);
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
 
     }
 
