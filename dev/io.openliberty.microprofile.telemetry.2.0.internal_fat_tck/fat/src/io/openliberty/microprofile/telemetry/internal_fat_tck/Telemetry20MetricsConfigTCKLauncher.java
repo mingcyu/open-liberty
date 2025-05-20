@@ -63,8 +63,6 @@ public class Telemetry20MetricsConfigTCKLauncher {
 
         //JvmCpuTest should be excluded on AIX. Upstream issue: https://bugs.openjdk.org/browse/JDK-8030957
         OperatingSystem os = server.getMachine().getOperatingSystem();
-        
-        System.out.println(os);
         if(os == OperatingSystem.AIX){
             suiteName = "tck-suite-metrics-server-config-aix.xml";
         }
