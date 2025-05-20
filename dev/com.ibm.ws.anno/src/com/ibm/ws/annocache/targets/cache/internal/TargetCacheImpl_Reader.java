@@ -16,7 +16,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +50,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
     public TargetCacheImpl_Reader(TargetCacheImpl_Factory factory,
                                   String path, InputStream stream,
-                                  String encoding) throws UnsupportedEncodingException {
+                                  Charset charset) {
         super();
 
         this.factory = factory;
@@ -58,9 +58,9 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
         this.path = path;
         this.stream = stream;
 
-        this.encoding = encoding;
+        this.charset = charset;
 
-        this.reader = new InputStreamReader(stream, encoding); // throws UnsupportedEncodingException
+        this.reader = new InputStreamReader(stream, charset);
         this.bufferedReader = new BufferedReader(reader);
 
         //
@@ -88,7 +88,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
     protected final String path;
     protected final InputStream stream;
 
-    protected final String encoding;
+    protected final Charset charset;
     protected final InputStreamReader reader;
     protected final BufferedReader bufferedReader;
 
@@ -104,7 +104,7 @@ public class TargetCacheImpl_Reader implements TargetCache_Reader, TargetCache_I
 
     @Trivial
     public String getEncoding() {
-        return encoding;
+        return charset.name();
     }
 
     @Trivial

@@ -17,7 +17,8 @@
 instrument.disabled: true
 
 -includeresource: \
-   @${repo;com.ibm.ws.org.eclipse.platform:org.eclipse.osgi;3.23.0.v20250201-1235}!/!module-info.class
+   @${repo;com.ibm.ws.org.eclipse.platform:org.eclipse.osgi;3.23.0.v20250201-1235}!/!module-info.class, \
+   org/eclipse=${bin}/org/eclipse
 
 -buildpath: \
 	com.ibm.ws.org.eclipse.platform:org.eclipse.osgi;version=3.23.0.v20250201-1235

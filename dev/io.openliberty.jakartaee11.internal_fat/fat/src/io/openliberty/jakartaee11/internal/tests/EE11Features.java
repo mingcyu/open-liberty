@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2024 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -276,6 +276,11 @@ public class EE11Features {
         features.remove("jsonpContainer-2.1");
         features.remove("passwordUtilities-1.1");
         features.remove("persistenceContainer-3.2");
+
+        //remove MP 7.0 features which would conflict with MP 7.1 features
+        features.remove("microProfile-7.0");
+        features.remove("mpOpenAPI-4.0");
+        features.remove("mpTelemetry-2.0");
 
         // remove client features
         features.remove("jakartaeeClient-11.0");

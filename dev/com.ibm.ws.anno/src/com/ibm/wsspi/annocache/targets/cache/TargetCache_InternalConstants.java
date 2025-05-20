@@ -12,6 +12,9 @@
  *******************************************************************************/
 package com.ibm.wsspi.annocache.targets.cache;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 // Save Format:
 //
 // Common rules:
@@ -153,7 +156,7 @@ public interface TargetCache_InternalConstants {
 
     // Common encoding:
 
-    String SERIALIZATION_ENCODING = "UTF-8";
+    Charset SERIALIZATION_ENCODING = StandardCharsets.UTF_8;
 
     // Common formatting tags:
 

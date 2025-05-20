@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1997, 2024 IBM Corporation and others.
+ * Copyright (c) 1997, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.crypto.util.InvalidPasswordCipherException;
 import com.ibm.ws.crypto.util.MessageUtils;
@@ -722,18 +721,6 @@ public class PasswordUtil {
 
                             done = true;
                         } catch (InvalidPasswordCipherException e) {
-                            Throwable cause = e.getCause();
-                            if (cause.getCause() != null)
-                                cause = cause.getCause();
-                            if (cause instanceof NoSuchAlgorithmException) {
-                                if (CryptoUtils.isFips140_3Enabled()) {
-                                    logger.logp(Level.SEVERE, PasswordUtil.class.getName(), "encode_password", "PASSWORDUTIL_EXCEPTION_FIPS140_3_HASH_SHA1_UNAVAILABLE_ALGORITHM",
-                                                cause);
-                                    return null;
-                                } else {
-                                    e = new InvalidPasswordCipherException(cause.toString());
-                                }
-                            }
                             logger.logp(Level.SEVERE, PasswordUtil.class.getName(), "encode_password", "PASSWORDUTIL_CYPHER_EXCEPTION", e);
                             return null;
                         } catch (UnsupportedCryptoAlgorithmException e) {
@@ -757,8 +744,9 @@ public class PasswordUtil {
                     }
                 }
             }
-
-            buffer.append(crypto_algorithm);
+            // if "aes-128" or "aes-256" is used we want to make the tag "aes" instead so it will be usable on Liberty servers older than 25.0.0.4
+            String normalizedCryptoAlgorithm = crypto_algorithm.contains("aes") ? "aes" : crypto_algorithm;
+            buffer.append(normalizedCryptoAlgorithm);
             String alias = (null == info) ? null : info.getKeyAlias();
             if (alias != null && 0 < alias.length()) {
                 buffer.append(':').append(alias);

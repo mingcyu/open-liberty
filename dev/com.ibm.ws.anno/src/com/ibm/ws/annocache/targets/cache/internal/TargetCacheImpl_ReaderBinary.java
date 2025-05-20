@@ -13,6 +13,7 @@
 package com.ibm.ws.annocache.targets.cache.internal;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,13 +54,13 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
 
     public TargetCacheImpl_ReaderBinary(
         TargetCacheImpl_Factory factory,
-        String path, String encoding,
+        String path, Charset charset,
         boolean readStrings, boolean readFull) throws IOException {
 
         this.factory = factory;
 
         if ( readFull ) {
-            this.bufInput = new UtilImpl_ReadBufferFull(path, encoding);
+            this.bufInput = new UtilImpl_ReadBufferFull(path, charset);
             if ( readStrings ) {
                 this.strings = readStrings();
                 // 'readStrings' finishes by seeking to offset 0.
@@ -67,7 +68,7 @@ public class TargetCacheImpl_ReaderBinary implements TargetCache_BinaryConstants
                 this.strings = null;
             }
         } else {
-            this.bufInput = new UtilImpl_ReadBufferPartial(path, TargetCacheImpl_WriterBinary.STAMP_SIZE, encoding);
+            this.bufInput = new UtilImpl_ReadBufferPartial(path, TargetCacheImpl_WriterBinary.STAMP_SIZE, charset);
             this.strings = null; // Do not read strings unless doing a fully buffered read.
         }
 
