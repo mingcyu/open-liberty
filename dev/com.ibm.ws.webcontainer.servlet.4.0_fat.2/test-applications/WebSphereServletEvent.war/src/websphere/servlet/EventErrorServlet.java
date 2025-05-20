@@ -17,38 +17,24 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import websphere.listener.StandardServletContextListener;
-import websphere.listener.WebSphereApplicationListener;
-
 /**
  * Tests the legacy WebSphere servlet event API
  *
  * https://openliberty.io/docs/latest/reference/javadoc/api/servlet-4.0.com.ibm.websphere.servlet.event.html
  *
- * These APIs were from WAS 4.0+ time frame. Application should use the servlet standard APIs instead!
- *
- * Since these APIs are still around, this test is added to cover the test gap in this area.
+ * This servlet throws a ServletException to trigger a ServletErrorListener event
  */
 
-@WebServlet(urlPatterns = { "/ServletEvent", "/FilterErrorEvent" })
-public class EventServlet extends HttpServlet {
-    private static final String CLASS_NAME = EventServlet.class.getName();
+@WebServlet(urlPatterns = "/ServletError")
+public class EventErrorServlet extends HttpServlet {
+    private static final String CLASS_NAME = EventErrorServlet.class.getName();
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String temp;
         _log(">>>>> service() ENTRY ");
+        _log(">>>>> service() about to throw a ServletException.");
 
-        //retrieve the context attributes set by standard and WebSphere servlet API.
-        String WebSphereAPI = (String) req.getServletContext().getAttribute(WebSphereApplicationListener.WEBSPHERE_ATT);
-        String StandardAPI = (String) req.getServletContext().getAttribute(StandardServletContextListener.STANDARD_ATT);
-
-        temp = "\t\t\t\t>>>(service)>>> Context attribute from WebSphere API [" + WebSphereAPI + "]\n" + "\t\t\t\t>>>(service)>>> Context attribute from Standard API ["
-               + StandardAPI + "]\n";
-        log(temp);
-        WebSphereApplicationListener.OUTBUFFER.append(temp);
-
-        _log("<<<<< service() EXIT");
+        throw new RuntimeException(CLASS_NAME + " throws Runtime NPE");
     }
 
     private void _log(String s) {

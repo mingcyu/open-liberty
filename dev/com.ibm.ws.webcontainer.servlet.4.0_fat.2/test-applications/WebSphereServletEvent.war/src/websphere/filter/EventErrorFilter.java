@@ -17,20 +17,22 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-//map to "/*"
-public class EventFilter implements Filter {
-    private static final String CLASS_NAME = EventFilter.class.getName();
+/*
+ * Cause a ServletException to trigger the FilterErrorListener event
+ *
+ * map /FilterErrorEvent
+ */
+public class EventErrorFilter implements Filter {
+    private static final String CLASS_NAME = EventErrorFilter.class.getName();
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        try {
-            log(">>> doFilter ENTER");
-            chain.doFilter(request, response);
-        } catch (Exception e) {
-            log(CLASS_NAME + ". Exception [ " + e + "]");
-        } finally {
-            log("<<< doFilter EXIT");
-        }
+        log(">>> doFilter ENTER");
+
+        chain.doFilter(request, response);
+
+        log("<<< doFilter after chain.doFilter. Throwing a ServletException");
+        throw new ServletException(CLASS_NAME + "throws ServletException ");
     }
 
     private void log(String s) {

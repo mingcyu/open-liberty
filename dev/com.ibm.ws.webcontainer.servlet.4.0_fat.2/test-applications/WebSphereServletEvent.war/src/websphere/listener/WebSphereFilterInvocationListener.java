@@ -38,7 +38,7 @@ public class WebSphereFilterInvocationListener implements FilterInvocationListen
             WebSphereServletInvocationListener.outputStream.println(WebSphereApplicationListener.OUTBUFFER.toString());
         } catch (IOException e) {
             e.printStackTrace();
-        } finally{
+        } finally {
             WebSphereServletInvocationListener.outputStream = null;
         }
     }
@@ -47,7 +47,7 @@ public class WebSphereFilterInvocationListener implements FilterInvocationListen
     public void onFilterStartDoFilter(FilterInvocationEvent arg0) {
         log("onFilterStartDoFilter, filter [" + arg0.getFilterName() + "]");
 
-        WebSphereApplicationListener.OUTBUFFER.append("\t\t\t>>> 1.1 WebSphereFilterInvocationListener.onFilterStartDoFilter for ServletEvent.getServletName [" + arg0.getFilterName() + "]\n");
+        WebSphereApplicationListener.OUTBUFFER.append("\t\t\t>>> 1.1 WebSphereFilterInvocationListener.onFilterStartDoFilter for filter [" + arg0.getFilterName() + "]\n");
     }
 
     private void log(String s) {

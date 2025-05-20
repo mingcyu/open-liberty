@@ -23,10 +23,10 @@ import com.ibm.websphere.servlet.event.ServletContextEventSource;
  *      <webContainer listeners="websphere.servlet.listener.WebSphereApplicationListener"/>
  *
  * This is the main entry which is invoked during server/application startup.
- * It then retrieved the ServletContextEventSource to register all the application's listeners.
- * (ServletListener and ServletInvocationListener as an example.)
+ * It then retrieves the ServletContextEventSource's attribute "com.ibm.websphere.servlet.event.ServletContextEventSource"
+ * to register all other application's listeners.
  *
- * When request is invoked, these listeners will add some data into the response outputStream prior
+ * When request is invoked, these listeners will add their data into the response outputStream prior
  * to the target servlet.  The client will then assert on the response data.
  *
  */
@@ -36,17 +36,20 @@ public class WebSphereApplicationListener implements ApplicationListener {
     public static final String WEBSPHERE_ATT = "WEBSPHERE_API";
     private final String WEBSPHERE_ATT_VALUE = "WEBSPHERE Servlet API using ApplicationListener.";
 
-    //NOTE: this OUTBUFFER will have duplicate entries (in the filter and servlet doXYZ area) after the FIRST request.
-    public static StringBuffer OUTBUFFER;
+    public static StringBuffer OUTBUFFER; //Hold all data from all resources.  It is written back to client from the WebSphereFilterInvocationListener.onFilterFinishDoFilter
 
     ServletContext context = null;
+
     ServletContextEventSource evtSource;
 
-    //Other listeners
+    //All listeners
     WebSphereServletListener wServletL;
     WebSphereServletInvocationListener wServletIL;
     WebSphereFilterListener wFilterL;
     WebSphereFilterInvocationListener wFilterIL;
+    WebSphereServletErrorListener wServletErrL;
+    WebSphereFilterErrorListener wFilterErrL;
+    WebSphereFilterListenerImplExt wFilterLImp;
 
     public WebSphereApplicationListener() {
         log("WebSphereApplicationListener constructor");
@@ -70,6 +73,10 @@ public class WebSphereApplicationListener implements ApplicationListener {
             evtSource.removeFilterListener(wFilterL);
             evtSource.removeFilterInvocationListener(wFilterIL);
 
+            evtSource.removeServletErrorListener(wServletErrL);
+            evtSource.removeFilterErrorListener(wFilterErrL);
+            evtSource.removeFilterListener(wFilterLImp);
+
             evtSource = null;
         }
 
@@ -87,7 +94,8 @@ public class WebSphereApplicationListener implements ApplicationListener {
         OUTBUFFER.append("(MAIN) WebSpshereApplicationListener.onApplicationStart \n");
 
         /*
-         * Register other application's listener via WebSphere ServletContextEventSource
+         * Register other application's listener via WebSphere ServletContextEventSource's
+         * "com.ibm.websphere.servlet.event.ServletContextEventSource" attribute
          */
         evtSource = (ServletContextEventSource) context.getAttribute(ServletContextEventSource.ATTRIBUTE_NAME);
         if (evtSource != null) {
@@ -100,6 +108,15 @@ public class WebSphereApplicationListener implements ApplicationListener {
             //servlet
             evtSource.addServletListener(wServletL = new WebSphereServletListener());
             evtSource.addServletInvocationListener(wServletIL = new WebSphereServletInvocationListener());
+
+            //servlet error
+            evtSource.addServletErrorListener(wServletErrL = new WebSphereServletErrorListener());
+
+            //filter error
+            evtSource.addFilterErrorListener(wFilterErrL = new WebSphereFilterErrorListener());
+
+            //FilterListenerImpl
+            evtSource.addFilterListener(wFilterLImp = new WebSphereFilterListenerImplExt());
         }
     }
 
