@@ -135,7 +135,6 @@ public class SSLOptionsTest{
     public void afterTest() throws Exception {
         // Restore the server to the default state.
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.restoreServerConfiguration();
         server.waitForConfigUpdateInLogUsingMark(null);
     }
@@ -165,7 +164,6 @@ public class SSLOptionsTest{
         LOG.info("Entering handshakeFailureIsNotLogged");
 
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
@@ -200,7 +198,6 @@ public class SSLOptionsTest{
 
         // SUPPRESS ON
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_TRUE_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
@@ -216,7 +213,6 @@ public class SSLOptionsTest{
 
         // SUPPRESS OFF
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_FALSE_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
@@ -242,7 +238,6 @@ public class SSLOptionsTest{
         LOG.info("Entering handshakeFailuresHaveLogCap");
 
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(SUPPRESS_HANDSHAKE_FAILURE_LOW_COUNT_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
@@ -250,7 +245,6 @@ public class SSLOptionsTest{
         assertNotNull("We need to wait for the SSL port to open",
                       server.waitForStringInLog("CWWKO0219I:.*-ssl"));
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
 
         // Hit the servlet on the SSL port
         hitServerWithBadHandshake();
@@ -284,7 +278,6 @@ public class SSLOptionsTest{
 
         // Use default SSL Config
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(DEFAULT_SSLOPTIONS_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
@@ -297,7 +290,6 @@ public class SSLOptionsTest{
 
         // Swith to SSLConfig specified on the SSLOptions
         server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
         server.setServerConfigurationFile(SSLOPTIONS_CONFIG);
         server.waitForConfigUpdateInLogUsingMark(null);
 
