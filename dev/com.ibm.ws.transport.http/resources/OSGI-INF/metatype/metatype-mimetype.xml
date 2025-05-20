@@ -85,6 +85,7 @@
               jpg=image/jpeg,
               JPG=image/jpeg,
               js=application/x-javascript,
+              json=application/json,
               ksh=application/x-ksh,
               latex=application/x-latex,
               list=text/plain,
