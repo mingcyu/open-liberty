@@ -67,7 +67,6 @@ import jakarta.data.Sort;
 import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.EntityExistsException;
 import jakarta.data.exceptions.MappingException;
-import jakarta.data.exceptions.NonUniqueResultException;
 import jakarta.data.exceptions.OptimisticLockingFailureException;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -188,12 +187,18 @@ public class DataTestServlet extends FATServlet {
                        new Prime(41, "29", "101001", 3, "XLI", "forty-one"),
                        new Prime(43, "2B", "101011", 4, "XLIII", "forty-three"),
                        new Prime(47, "2F", "101111", 5, "XLVII", "forty-seven"),
-                       new Prime(4001, "FA1", "111110100001", 7, null, "four thousand one"), // romanNumeralSymbols null
-                       new Prime(4003, "FA3", "111110100011", 8, null, "four thousand three"), // romanNumeralSymbols null
-                       new Prime(4007, "Fa7", "111110100111", 9, null, "four thousand seven"), // romanNumeralSymbols null
-                       new Prime(4013, "FAD", "111110101101", 9, "", "Four Thousand Thirteen"), // empty list of romanNumeralSymbols
-                       new Prime(4019, "FB3", "111110110011", 9, "", "four thousand nineteen"), // empty list of romanNumeralSymbols
-                       new Prime(4021, "FB5", "111110110101", 9, "", " Four thousand twenty-one ")); // extra blank space at beginning and end
+                       // romanNumeralSymbols null:
+                       new Prime(4001, "FA1", "111110100001", 7, null, "four thousand one"),
+                       // romanNumeralSymbols null:
+                       new Prime(4003, "FA3", "111110100011", 8, null, "four thousand three"),
+                       // romanNumeralSymbols null:
+                       new Prime(4007, "Fa7", "111110100111", 9, null, "four thousand seven"),
+                       // empty list of romanNumeralSymbols:
+                       new Prime(4013, "FAD", "111110101101", 9, "", "Four Thousand Thirteen"),
+                       // empty list of romanNumeralSymbols:
+                       new Prime(4019, "FB3", "111110110011", 9, "", "four thousand nineteen"),
+                       // extra blank space at beginning and end:
+                       new Prime(4021, "FB5", "111110110101", 9, "", " Four thousand twenty-one "));
     }
 
     /**
@@ -480,17 +485,6 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Test the CharCount keyword to query based on string length.
-     */
-    @Test
-    public void testCharCountKeyword() {
-        assertIterableEquals(List.of("eleven", "nineteen", "seven", "thirteen", "three"),
-                             primes.findByNameCharCountBetween(5, 8)
-                                             .map(p -> p.name)
-                                             .collect(Collectors.toList()));
-    }
-
-    /**
      * Asynchronous repository method that returns a CompletableFuture of Page.
      */
     @Test
@@ -577,22 +571,8 @@ public class DataTestServlet extends FATServlet {
         assertEquals((byte) 41,
                      primes.numberAsByte(41));
 
-        try {
-            byte result = primes.numberAsByte(4021);
-            fail("Should not convert long value 4021 to byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
-
         assertEquals((byte) 37,
                      primes.numberAsByteWrapper(37).orElseThrow().byteValue());
-
-        try {
-            Optional<Byte> result = primes.numberAsByteWrapper(4019);
-            fail("Should not convert long value 4019 to Byte value " + result);
-        } catch (MappingException x) {
-            // expected - out of range
-        }
 
         assertEquals(4003.0, primes.numberAsDouble(4003), 0.01);
 
@@ -637,19 +617,6 @@ public class DataTestServlet extends FATServlet {
 
         assertEquals(false,
                      primes.singleHexDigit(12).isPresent());
-
-        try {
-            Optional<Character> found = primes.singleHexDigit(29);
-            fail("Should not be able to return hex 1D as a single character: " +
-                 found);
-        } catch (MappingException x) {
-            if (x.getMessage() != null &&
-                x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("singleHexDigit"))
-                ; // pass
-            else
-                throw x;
-        }
     }
 
     /**
@@ -666,20 +633,6 @@ public class DataTestServlet extends FATServlet {
     @Test
     public void testCountAsBigInteger() {
         assertEquals(BigInteger.valueOf(13L), primes.countAsBigIntegerByNumberIdLessThan(43));
-    }
-
-    /**
-     * Repository method that returns the count as a boolean value,
-     * which is not an allowed return type. This must raise an error.
-     */
-    @Test
-    public void testCountAsBoolean() {
-        try {
-            boolean count = primes.countAsBooleanByNumberIdLessThan(42);
-            fail("Count queries cannot have a boolean return type: " + count);
-        } catch (MappingException x) {
-            // expected
-        }
     }
 
     /**
@@ -1086,14 +1039,6 @@ public class DataTestServlet extends FATServlet {
         packages.save(new Package(10002, 11.0f, 12.4f, 4.0f, "testDeleteIgnoresFirstKeywork#10002"));
         packages.save(new Package(10003, 12.0f, 11.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10003"));
         packages.save(new Package(10004, 13.0f, 10.0f, 4.0f, "testDeleteIgnoresFirstKeywork#10004"));
-
-        try {
-            Optional<Package> pkg = packages.deleteFirst();
-            fail("Expected packages.deleteFirst() to ignore the 'first' keyword" +
-                 " and fail to return a signular result. Instead returned: " + pkg);
-        } catch (NonUniqueResultException e) {
-            // pass
-        }
 
         Package pkg = packages.deleteFirst5ByWidthLessThan(10.5f);
         assertEquals(10004, pkg.id);
@@ -1638,13 +1583,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(14.0f, p1.width, 0.01f);
         assertEquals(4.0f, p1.height, 0.01f);
         assertEquals("testFindAndDelete#40001", p1.description);
-
-        try {
-            Optional<Package> p = packages.deleteByDescription("testFindAndDelete#4001x");
-            fail("Should get NonUniqueResultException when there are multiple results but a singular return type. Instead, result is: " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
 
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
         boolean supportsOrderByForUpdate = !jdbcJarName.startsWith("derby");
@@ -2498,6 +2436,10 @@ public class DataTestServlet extends FATServlet {
     public void testIgnoreCaseInQueryConditions() {
         // Equals
         assertEquals("twenty-nine", primes.findByNameIgnoreCase("Twenty-Nine").name);
+
+        Prime prime = primes.findByNameIgnoreCase(" Four Thousand Twenty-One ");
+        assertEquals(4021L, prime.numberId);
+        assertEquals(" Four thousand twenty-one ", prime.name);
 
         // Not
         assertIterableEquals(List.of("two", "five", "seven"),
@@ -3522,6 +3464,21 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Test the LENGTH JDQL function to query based on string length.
+     */
+    @Test
+    public void testLengthFunction() {
+        assertIterableEquals(List.of("eleven",
+                                     "nineteen",
+                                     "seven",
+                                     "thirteen",
+                                     "three"),
+                             primes.findByLengthOfNameBetween(5, 8)
+                                             .map(p -> p.name)
+                                             .collect(Collectors.toList()));
+    }
+
+    /**
      * Repository method with return type of LongStream, involving type conversion.
      */
     @Test
@@ -3677,18 +3634,6 @@ public class DataTestServlet extends FATServlet {
         assertEquals(197, ints[2]); // sum
         assertEquals(12, ints[3]); // count
         assertEquals(16, ints[4]); // average
-
-        try {
-            float[] floats = primes.minMaxSumCountAverageFloat(35);
-            fail("Allowed unsafe conversion from double to float: " +
-                 Arrays.toString(floats));
-        } catch (MappingException x) {
-            if (x.getMessage().startsWith("CWWKD1046E") &&
-                x.getMessage().contains("float[]"))
-                ; // unsafe to convert double to float
-            else
-                throw x;
-        }
 
         List<Long> list = primes.minMaxSumCountAverageList(30);
         assertEquals(Long.valueOf(2L), list.get(0)); // minimum
@@ -3887,6 +3832,52 @@ public class DataTestServlet extends FATServlet {
                                              .stream()
                                              .map(p -> p.numberId)
                                              .collect(Collectors.toList()));
+    }
+
+    /**
+     * Test implementation of methods that a repository inherits from
+     * java.lang.Object, some of which go through the proxy handler.
+     */
+    @SuppressWarnings("unlikely-arg-type")
+    @Test
+    public void testObjectMethods() throws InterruptedException {
+        // .equals is true for same instance and false for other instance
+        assertEquals(true, people.equals(people));
+        assertEquals(false, people.equals(personnel));
+
+        // .getClass returns the repository interface
+        assertEquals(true, People.class.isAssignableFrom(people.getClass()));
+
+        // .hashCode returns same value each time invoked
+        int hash = people.hashCode();
+        assertEquals(hash, people.hashCode());
+
+        // .notify and .notifyAll
+        synchronized (people) {
+            people.notify();
+            people.notifyAll();
+        }
+
+        // .toString
+        String str = people.toString();
+        assertEquals(str,
+                     true,
+                     str.contains(People.class.getName()));
+
+        // .wait
+        synchronized (people) {
+            people.wait(20); // 20 ms
+            people.wait(10, 500000); // 10.5 ms
+            Thread.currentThread().interrupt();
+            try {
+                // wait until interrupted, which should be immediately per above
+                people.wait();
+            } catch (InterruptedException x) {
+                // expected
+            } finally {
+                Thread.interrupted();
+            }
+        }
     }
 
     /**
@@ -4983,7 +4974,7 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Use repository methods with Rounded, RoundedUp, and RoundedDown keywords.
+     * Use repository methods with ROUND, CEILING, and FLOOR functions in a Query.
      */
     @Test
     public void testRounding() {
@@ -5216,43 +5207,11 @@ public class DataTestServlet extends FATServlet {
         Prime p = primes.findByNumberIdBetween(14L, 18L);
         assertEquals(17L, p.numberId);
 
-        // No result must raise EmptyResultException:
-        try {
-            p = primes.findByNumberIdBetween(24L, 28L);
-            fail("Unexpected prime " + p);
-        } catch (EmptyResultException x) {
-            // expected
-        }
-
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            p = primes.findByNumberIdBetween(34L, 48L);
-            fail("Should find more primes than " + p);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
-
         // With custom return type:
 
         // Single result is fine:
         long n = primes.findAsLongBetween(12L, 16L);
         assertEquals(13L, n);
-
-        // No result must raise EmptyResultException:
-        try {
-            n = primes.findAsLongBetween(32L, 36L);
-            fail("Unexpected prime number " + n);
-        } catch (EmptyResultException x) {
-            // expected
-        }
-
-        // Multiple results must raise NonUniqueResultException:
-        try {
-            n = primes.findAsLongBetween(22L, 42L);
-            fail("Should find more prime numbers than " + n);
-        } catch (NonUniqueResultException x) {
-            // expected
-        }
     }
 
     /**
@@ -6132,19 +6091,16 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
-     * Test the Trimmed keyword by querying against data that has leading and trailing blank space.
+     * Test the TRIM function by querying against data that has leading and trailing
+     * blank space.
      */
     @Test
-    public void testTrimmedKeyword() {
-        List<Prime> found = primes.findByNameTrimmedCharCountAndNumberIdBetween(24, 4000L, 4025L);
+    public void testTrimFunction() {
+        List<Prime> found = primes.withTrimmedNameLengthAndNumBetween(24, 4000L, 4025L);
         assertNotNull(found);
         assertEquals("Found: " + found, 1, found.size());
         assertEquals(4021L, found.get(0).numberId);
         assertEquals(" Four thousand twenty-one ", found.get(0).name);
-
-        Prime prime = primes.findByNameTrimmedIgnoreCase("FOUR THOUSAND TWENTY-ONE").orElseThrow();
-        assertEquals(4021L, prime.numberId);
-        assertEquals(" Four thousand twenty-one ", prime.name);
     }
 
     /**

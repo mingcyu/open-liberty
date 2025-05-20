@@ -28,6 +28,7 @@ import javax.json.JsonObject;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -78,7 +79,7 @@ public class SlowAppStartupHealthCheckFastTest {
         log("setupClass", testName + "Starting the server.");
 
         if (!server.isStarted())
-            server.startServer(false, false);
+            server.startServer(true, false);
 
         // Read to run a smarter planet
         server.waitForStringInLogUsingMark("CWWKF0011I");
@@ -104,6 +105,13 @@ public class SlowAppStartupHealthCheckFastTest {
 
         boolean flag = server1.removeDropinsApplications(APP_NAME + ".war");
         log("cleanUp", " - Removed the app? [" + flag + "]");
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        // Once the tests and repeated tests are completed, ensure the server
+        // is fully stopped, in order to avoid conflicts with succeeding tests.
+        server1.stopServer(EXPECTED_FAILURES);
     }
 
     /*
@@ -198,7 +206,9 @@ public class SlowAppStartupHealthCheckFastTest {
 
                             log("testStartupEndpointOnServerStart", message + " At this point the test will be re-run. Number of current attempts ---> " + num_of_attempts);
                             startServerThread.join();
-                            cleanUp();
+                            log("testStartupEndpointOnServerStart", " - Stopping the server, to re-run the test...");
+                            if ((server1 != null) && (server1.isStarted()))
+                                server1.stopServer(EXPECTED_FAILURES);
                             break; // We repeat the test case
                         }
                     } else {

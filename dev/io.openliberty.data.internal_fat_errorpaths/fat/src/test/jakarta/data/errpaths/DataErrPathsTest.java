@@ -80,7 +80,15 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1037E.*findByBirthdayOrderBySSN", // CursoredPage of non-entity
                                    "CWWKD1037E.*registrations", // CursoredPage of non-entity
                                    "CWWKD1041E.*findBySsnBetweenAnd.*NotNull", // CursoredPage without PageRequest
-                                   "CWWKD1049E.*countByBirthday", // exists method returning Page<Long>
+                                   "CWWKD1046E.*firstLetterOfName", // unsafe conversion to Character
+                                   "CWWKD1046E.*minMaxSumCountAverageFloat", // unsafe conversion to float
+                                   "CWWKD1047E.*ssnAsByte", // unsafe conversion to byte
+                                   "CWWKD1049E.*countAsBooleanBySSNLessThan", // count returning boolean
+                                   "CWWKD1049E.*countByBirthday", // count returning Page<Long>
+                                   "CWWKD1054E.*deleteByNameStartsWith", // NonUniqueResultException
+                                   "CWWKD1054E.*deleteFirst", // NonUniqueResultException
+                                   "CWWKD1054E.*findBySSNBetweenAndNameNotNull", // NonUniqueResultException
+                                   "CWWKD1054E.*findSSNAsLongBetween", // NonUniqueResultException
                                    "CWWKD1077E.*test.jakarta.data.errpaths.web.RepoWithoutDataStore",
                                    "CWWKD1078E.*test.jakarta.data.errpaths.web.InvalidNonJNDIRepo",
                                    "CWWKD1079E.*test.jakarta.data.errpaths.web.InvalidJNDIRepo",
@@ -107,7 +115,12 @@ public class DataErrPathsTest extends FATServletClient {
                                    "CWWKD1099E.*findFirst3", // PageRequest incompatible with First
                                    "CWWKD1100E.*selectByLastName", // CursoredPage with ORDER BY clause
                                    "CWWKD1101E.*nameAndZipCode", // Record return type with invalid attribute name
-                                   "CWWKD1104E.*inWard" // @Param with empty string value
+                                   "CWWKD1104E.*inWard", // @Param with empty string value
+                                   "CWWKD1105E.*findByNameNotNullOrderByDescriptionAsc", // keyword in OrderBy
+                                   "CWWKD1108E.*Invitation", // JPA entity lacks @Entity
+                                   "CWWKD1109E.*Investment", // Record entity has JPA anno
+                                   "CWWKD1110E.*findByEmailAddressesGreaterThanEqual", // collection >=
+                                   "CWWKD1110E.*findByEmailAddressesIgnoreCaseContains" // collection IgnoreCase
                     };
 
     @Server("io.openliberty.data.internal.fat.errpaths")

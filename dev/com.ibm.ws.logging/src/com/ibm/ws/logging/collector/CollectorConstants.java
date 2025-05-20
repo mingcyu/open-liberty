@@ -47,4 +47,8 @@ public class CollectorConstants {
     public static final short KEYS_JSON = 0;
     public static final short KEYS_LOGSTASH = 1;
     public static final short KEYS_TELEMETRY_LOGGING = 2;
+
+    /* mpTelemetry access log trace response header */
+    public static final String ACCESS_TRACE_HEADER_NAME = "io.openliberty.trace";
+
 }
