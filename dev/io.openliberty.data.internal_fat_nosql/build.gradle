@@ -34,12 +34,6 @@ dependencies {
 
 def metaModelDir = file("build/libs/generated/sources/annotationProcessor/java/main") 
 
-task copyToGeneratedSources(type : Copy){
-  from metaModelDir
-  into file("generated-src")
-  include '**/*.java'
-  }
-
 task addJNoSQL(type: Copy) {
   mustRunAfter jar
   from configurations.jnosql
