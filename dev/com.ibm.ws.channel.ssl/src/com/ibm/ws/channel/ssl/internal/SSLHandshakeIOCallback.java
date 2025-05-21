@@ -87,6 +87,12 @@ public class SSLHandshakeIOCallback implements TCPReadCompletedCallback, TCPWrit
             SSLUtils.handleHandshake(connLink, netBuffer, decryptedNetBuffer,
                                      encryptedAppBuffer, result, callback, true);
         } catch (IOException ioe) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Caught IOException while performing callback read, " + ioe);
+            }
+
+            connLink.getChannel().getHandshakeErrorTracker().noteHandshakeError(ioe, connLink.getRemoteAddress(),
+                    connLink.getRemotePort(), connLink.getLocalAddress(), connLink.getLocalPort());
             error(vc, rsc, ioe);
         }
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
@@ -119,6 +125,12 @@ public class SSLHandshakeIOCallback implements TCPReadCompletedCallback, TCPWrit
             SSLUtils.handleHandshake(connLink, netBuffer, decryptedNetBuffer,
                                      encryptedAppBuffer, result, callback, true);
         } catch (IOException ioe) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "Caught IOException while performing callback write, " + ioe);
+            }
+
+            connLink.getChannel().getHandshakeErrorTracker().noteHandshakeError(ioe, connLink.getRemoteAddress(),
+                    connLink.getRemotePort(), connLink.getLocalAddress(), connLink.getLocalPort());
             error(vc, wsc, ioe);
         }
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
