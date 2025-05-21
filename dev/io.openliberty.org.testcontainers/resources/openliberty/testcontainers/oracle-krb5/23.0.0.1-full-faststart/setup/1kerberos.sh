@@ -45,7 +45,7 @@ cat <<EOT > /etc/krb5.conf
 EOT
 
 echo "Make configuration and key table accessible"
-# Not ideal security paractice but only used for testing
+# Not ideal security practice but only used for testing
 # In production these files should be restricted to user "oracle"
 chmod 777 /etc/krb5.conf
 chmod 777 /etc/krb5.keytab
