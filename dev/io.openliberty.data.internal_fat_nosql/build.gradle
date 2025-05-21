@@ -32,6 +32,7 @@ dependencies {
   
 }
 
+def metaModelDir = file("build/libs/generated/sources/annotationProcessor/java/main") 
 
 task addJNoSQL(type: Copy) {
   mustRunAfter jar
