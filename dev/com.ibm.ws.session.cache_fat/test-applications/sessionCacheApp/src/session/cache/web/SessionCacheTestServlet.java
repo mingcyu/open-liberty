@@ -741,7 +741,6 @@ public class SessionCacheTestServlet extends FATServlet {
             System.out.println("Session was null and was expecting null value.");
             return;
         } else if (session == null) {
-
             // Retry getSession() as session may need time to replicate to server B
             TimeUnit.SECONDS.sleep(5);
             session = request.getSession(false);
