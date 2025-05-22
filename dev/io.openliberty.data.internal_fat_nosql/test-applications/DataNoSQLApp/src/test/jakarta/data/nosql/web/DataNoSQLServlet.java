@@ -86,4 +86,9 @@ public class DataNoSQLServlet extends FATServlet {
             fail("Static metamodel class _Employee (for Data) was not generated or available at runtime.");
         }
     }
+
+    @Test
+    public void testEmployeeBasicRepositoryFindAllWithPages() {
+
+    }
 }
