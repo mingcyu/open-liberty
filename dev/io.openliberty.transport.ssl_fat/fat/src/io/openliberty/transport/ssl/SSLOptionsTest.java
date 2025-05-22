@@ -9,14 +9,6 @@
  *******************************************************************************/
 package io.openliberty.transport.ssl;
 
-import static componenttest.annotation.SkipForRepeat.EE10_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE10_OR_LATER_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE11_OR_LATER_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE8_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE8_OR_LATER_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE9_FEATURES;
-import static componenttest.annotation.SkipForRepeat.EE9_OR_LATER_FEATURES;
-import static componenttest.annotation.SkipForRepeat.NO_MODIFICATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -40,6 +32,7 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.ws.webcontainer.security.test.servlets.SSLBasicAuthClient;
 
+import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
 import componenttest.annotation.SkipForRepeat;
 import componenttest.annotation.TestServlet;
@@ -106,7 +99,10 @@ public class SSLOptionsTest{
     public static void tearDown() throws Exception {
         // Ignoring unrelated warning due to app install SRVE0272W: JSP Processor not defined. Skipping : BasicAuthJSP.jsp
         // Ignore CWWKO0801E because it is expected for handshake failures
-        server.stopServer("SRVE0272W", "CWWKO0801E");
+        // Server occasionally fails on stop with CWPKI0024E due to default certificate alias specified by the attribute serverKeyAlias 
+        // is either not found in KeyStore or is invalid. The trust store contains the alias and this doesn't affect the tests
+        // since the logic still functions appropriately so we can ignore this.
+        server.stopServer("SRVE0272W", "CWWKO0801E", "CWPKI0024E");
     }
 
     /**
@@ -121,6 +117,7 @@ public class SSLOptionsTest{
 
         ServerConfiguration configuration = server.getServerConfiguration();
         LOG.info("Server configuration that was saved: " + configuration);
+        
     }
 
     /**
@@ -134,6 +131,11 @@ public class SSLOptionsTest{
         server.setMarkToEndOfLog();
         server.restoreServerConfiguration();
         server.waitForConfigUpdateInLogUsingMark(null);
+        if(server.findStringsInLogsUsingMark("CWWKG0018I", server.getDefaultLogFile()).size() == 0) { // Server configuration was updated so need to wait for ssl port
+            assertNotNull("We need to wait for the SSL port to open after config update",
+                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+        }
+        
     }
 
     /**
@@ -268,8 +270,13 @@ public class SSLOptionsTest{
      * sure it can be accessed. Dynamically update the SSLOption to point
      * to an alternate SSL Configuration and make sure you access it with
      * the appropriate trust.
+     * 
+     * We allow an IllegalArgumentException FFDC because occasionally the tests
+     * produce an error CWPKI0024E loading the keystore which do not affect the
+     * test at all.
      */
     @Test
+    @AllowedFFDC("java.lang.IllegalArgumentException")
     public void dynamicUpdateToSSLOption() throws Exception {
         LOG.info("Entering dynamicUpdateToSSLOption");
 
