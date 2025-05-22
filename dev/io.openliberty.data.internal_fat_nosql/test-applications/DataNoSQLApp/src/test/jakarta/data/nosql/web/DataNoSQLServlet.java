@@ -17,9 +17,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.data.page.PageRequest;
 import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
 
@@ -89,6 +92,17 @@ public class DataNoSQLServlet extends FATServlet {
 
     @Test
     public void testEmployeeBasicRepositoryFindAllWithPages() {
+        Queue<Integer> wageList = new LinkedList<>();
+        wageList.offer(934500);
+        wageList.offer(904500);
+        wageList.offer(867200);
+        wageList.offer(800500);
+        wageList.offer(734500);
+        wageList.offer(720300);
+        wageList.offer(934572);
+        wageList.offer(934572);
+        wageList.offer(934572);
 
+        PageRequest request = PageRequest.ofSize(3);
     }
 }
