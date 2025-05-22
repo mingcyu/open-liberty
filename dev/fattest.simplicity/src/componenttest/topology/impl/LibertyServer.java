@@ -7813,22 +7813,22 @@ public class LibertyServer implements LogMonitorClient {
     public boolean isFIPS140_3EnabledAndSupported(JavaInfo serverJavaInfo, boolean logOutput) throws IOException {
         String methodName = "isFIPS140_3EnabledAndSupported";
         boolean isIBMJVM8 = (serverJavaInfo.majorVersion() == 8) && (serverJavaInfo.VENDOR == Vendor.IBM);
-        boolean isIBMJVM17 = (serverJavaInfo.majorVersion() == 17) && (serverJavaInfo.VENDOR == Vendor.IBM);
+        boolean isIBMJVMGreaterOrEqualTo11 = (serverJavaInfo.majorVersion() >= 11) && (serverJavaInfo.VENDOR == Vendor.IBM);
         if (logOutput && GLOBAL_FIPS_140_3) {
             Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion()
                                     + " and vendor: " + serverJavaInfo.VENDOR);
             if (isIBMJVM8) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
                                         " and IBM java 8 is available to run with FIPS 140-3 enabled.");
-            } else if (isIBMJVM17) {
+            } else if (isIBMJVMGreaterOrEqualTo11) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
-                                        " and IBM java 17 is available to run with FIPS 140-3 enabled.");
+                                        " and IBM java " + serverJavaInfo.majorVersion() + " is available to run with FIPS 140-3 enabled.");
             } else {
                 throw new RuntimeException("The global build properties FIPS_140_3 is set for server " + getServerName() +
-                                           ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
+                                           ",  but no IBM java on liberty server to run with FIPS 140-3 enabled.");
             }
         }
-        return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVM17);
+        return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVMGreaterOrEqualTo11);
     }
 
     public boolean isFIPS140_3EnabledAndSupported() throws IOException {
@@ -8100,7 +8100,7 @@ public class LibertyServer implements LogMonitorClient {
     private Map<String, String> getFipsJvmOptions(JavaInfo info, boolean includeGlobalArgs) throws Exception, IOException {
         Map<String, String> opts = new HashMap<>();
         if (isFIPS140_3EnabledAndSupported(info, false)) {
-            if (info.majorVersion() == 17) {
+            if (info.majorVersion() >= 11) {
                 Log.info(c, "getFipsJvmOptions",
                          "FIPS 140-3 global build properties is set for server " + getServerName()
                                                  + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
