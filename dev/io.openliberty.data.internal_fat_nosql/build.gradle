@@ -34,6 +34,12 @@ dependencies {
 
 def metaModelDir = file("build/libs/generated/sources/annotationProcessor/java/main") 
 
+assemble.doLast {
+  copy{
+    from metaModelDir
+    into "generated-src"
+    }
+  }
 task addJNoSQL(type: Copy) {
   mustRunAfter jar
   from configurations.jnosql
