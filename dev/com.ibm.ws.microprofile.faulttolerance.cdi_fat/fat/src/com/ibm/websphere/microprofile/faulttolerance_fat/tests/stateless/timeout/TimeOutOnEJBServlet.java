@@ -20,9 +20,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.junit.Test;
 
 import componenttest.annotation.ExpectedFFDC;
-import componenttest.annotation.SkipForRepeat;
 import componenttest.app.FATServlet;
-import componenttest.rules.repeater.MicroProfileActions;
 import junit.framework.Assert;
 
 @WebServlet("/TimeOutOnEJBServlet")
@@ -34,7 +32,7 @@ public class TimeOutOnEJBServlet extends FATServlet {
     @ExpectedFFDC("org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException")
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
-    @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
+    //@SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         ResultsRecord record = new ResultsRecord();
         boolean caughtException = false;
@@ -52,7 +50,7 @@ public class TimeOutOnEJBServlet extends FATServlet {
 
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
-    @SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
+    //@SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testNoTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Assert.assertEquals(TimeoutOnEJB.SOME_VALUE, ejb.testMethodThatWontTimeOut());
     }

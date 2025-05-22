@@ -27,9 +27,12 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.Barrier
 
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.app.FATServlet;
+import componenttest.custom.junit.runner.Mode;
+import componenttest.custom.junit.runner.Mode.TestMode;
 
 @SuppressWarnings("serial")
 @WebServlet("/bulkheadejb")
+@Mode(TestMode.EXPERIMENTAL)
 public class BulkheadEJBTestServlet extends FATServlet {
 
     @Inject

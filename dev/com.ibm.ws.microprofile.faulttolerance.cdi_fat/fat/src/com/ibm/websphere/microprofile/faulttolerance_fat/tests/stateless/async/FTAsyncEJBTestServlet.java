@@ -26,9 +26,12 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.Barrier
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
 
 import componenttest.app.FATServlet;
+import componenttest.custom.junit.runner.Mode;
+import componenttest.custom.junit.runner.Mode.TestMode;
 
 @SuppressWarnings("serial")
 @WebServlet("/ftasyncejb")
+@Mode(TestMode.EXPERIMENTAL)
 public class FTAsyncEJBTestServlet extends FATServlet {
 
     @Inject

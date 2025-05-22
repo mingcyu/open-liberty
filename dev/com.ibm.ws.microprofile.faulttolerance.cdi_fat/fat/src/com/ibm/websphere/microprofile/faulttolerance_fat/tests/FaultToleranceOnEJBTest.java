@@ -23,7 +23,7 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.async.FTAsyncEJBTestServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhead.BulkheadEJBTestServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.circuitbreaker.CircuitBreakerEJBTestServlet;
-import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.fallback.FallbackOnEJBServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.interceptedretry.InterceptedRetryOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.RetryOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.timeout.TimeOutOnEJBServlet;
 import com.ibm.websphere.simplicity.ShrinkHelper;
@@ -49,12 +49,12 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
 
     @Server(SERVER_NAME)
     @TestServlets({
-                    @TestServlet(contextRoot = APP_NAME, servlet = FallbackOnEJBServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = RetryOnEJBServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = TimeOutOnEJBServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = FTAsyncEJBTestServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = BulkheadEJBTestServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = CircuitBreakerEJBTestServlet.class),
+                    @TestServlet(contextRoot = APP_NAME, servlet = InterceptedRetryOnEJBServlet.class),
 
     })
 

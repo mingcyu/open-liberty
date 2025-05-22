@@ -20,7 +20,7 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 public class RetryOnEJB {
 
     public static final int MAX = 5;
-    private int counter = 0;
+    private static int counter = 0;
 
     //A simple test that makes sure the counter works.
     @Retry(maxRetries = 10)
@@ -30,6 +30,19 @@ public class RetryOnEJB {
             throw new TestException();
         }
         return counter;
+    }
+
+    public static final int NEVER_PASS_MAX = 10;
+    private static int neverPassCounter = 0;
+
+    public static int getNeverPassCounter() {
+        return neverPassCounter;
+    }
+
+    @Retry(maxRetries = NEVER_PASS_MAX)
+    public int retryNeverPass() throws TestException {
+        neverPassCounter++;
+        throw new TestException();
     }
 
 }
