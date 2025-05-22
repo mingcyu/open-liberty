@@ -17,11 +17,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.data.Order;
+import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
 import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
@@ -30,6 +33,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 
+@SuppressWarnings("serial")
 @WebServlet("/*")
 public class DataNoSQLServlet extends FATServlet {
     private static final long serialVersionUID = 1L;
@@ -104,5 +108,23 @@ public class DataNoSQLServlet extends FATServlet {
         wageList.offer(934572);
 
         PageRequest request = PageRequest.ofSize(3);
+        Order<Employee> order = Order.by(_Employee.wage.desc());
+
+        Page<Employee> page = Employees.findAll(request, order);
+
+        //Page assertions
+        assertEquals(9, page.totalElements());
+        assertEquals(3, page.totalPages());
+
+        //Order assertions
+        do {
+            page = Employees.findAll(request, order);
+            Iterator<Employee> it = page.iterator();
+            while (it.hasNext()) {
+                assertEquals("Incorrect order of results during pagination", wageList.poll().intValue(), it.next().wage);
+            }
+        } while ((request = page.hasNext() ? page.nextPageRequest() : null) != null);
+        //Complete Assertion
+        assertEquals("InComplete set of results during pagination", 0, wageList.size());
     }
 }
