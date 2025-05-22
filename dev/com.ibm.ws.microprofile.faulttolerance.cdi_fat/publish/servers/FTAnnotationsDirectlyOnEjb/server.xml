@@ -19,6 +19,7 @@
     <featureManager>
 	    <feature>componenttest-1.0</feature>
 		<feature>servlet-6.0</feature>
+		<feature>cdi-4.0</feature>
 		<feature>enterpriseBeans-4.0</feature>
 		<feature>mpFaultTolerance-4.0</feature>
 		<feature>mpConfig-3.1</feature>
