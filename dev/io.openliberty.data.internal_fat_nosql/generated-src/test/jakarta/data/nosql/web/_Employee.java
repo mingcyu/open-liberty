@@ -21,7 +21,7 @@ import org.eclipse.jnosql.mapping.semistructured.metamodel.attributes.StringAttr
 import org.eclipse.jnosql.mapping.semistructured.metamodel.attributes.CriteriaAttribute;
 //CHECKSTYLE:OFF
 @StaticMetamodel(Employee.class)
-@Generated(value = "The StaticMetamodel of the class Employee provider by Eclipse JNoSQL", date = "2025-05-21T21:38:53.540813")
+@Generated(value = "The StaticMetamodel of the class Employee provider by Eclipse JNoSQL", date = "2025-05-22T21:08:45.010674")
 public interface _Employee {
 
         String EMPNUM = "_id";
