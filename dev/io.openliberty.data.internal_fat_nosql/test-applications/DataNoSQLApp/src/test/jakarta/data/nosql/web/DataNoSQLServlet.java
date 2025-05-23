@@ -110,7 +110,7 @@ public class DataNoSQLServlet extends FATServlet {
         PageRequest request = PageRequest.ofSize(3);
         Order<Employee> order = Order.by(_Employee.wage.desc());
 
-        Page<Employee> page = Employees.findAll(request, order);
+        Page<Employee> page = employees.findAll(request, order);
 
         //Page assertions
         assertEquals(9, page.totalElements());
@@ -118,7 +118,7 @@ public class DataNoSQLServlet extends FATServlet {
 
         //Order assertions
         do {
-            page = Employees.findAll(request, order);
+            page = employees.findAll(request, order);
             Iterator<Employee> it = page.iterator();
             while (it.hasNext()) {
                 assertEquals("Incorrect order of results during pagination", wageList.poll().intValue(), it.next().wage);
