@@ -38,6 +38,9 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     @Test
     public void testSetOperationsJPQL() throws Exception{
+        deleteAllEntities(Person.class);
+        deleteAllEntities(Organization.class);
+
         Person person1 = Person.of(1L, "AAA");
         Person person2 = Person.of(2L, "BBB");
         tx.begin();
@@ -83,5 +86,12 @@ public class JakartaPersistenceServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
+    }
+
+    private void deleteAllEntities(Class<?> cls) throws Exception {
+        tx.begin();
+        em.createQuery("DELETE FROM " + cls.getSimpleName())
+                        .executeUpdate();
+        tx.commit();
     }
 }
