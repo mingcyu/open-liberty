@@ -52,28 +52,36 @@ public class JakartaPersistenceServlet extends FATServlet {
         em.persist(org2);
         tx.commit();
 
-        // UNION
-        List<String> unionResult = em.createQuery(
+        tx.begin();
+        try {
+            // UNION
+            List<String> unionResult = em.createQuery(
                                                     "SELECT p.name FROM Person p " +
                                                     "UNION " +
                                                     "SELECT o.name FROM Organization o", String.class)
-                                    .getResultList();
-        assertEquals(Arrays.asList("AAA", "BBB", "CCC"), unionResult);
+                            .getResultList();
+            assertEquals(Arrays.asList("AAA", "BBB", "CCC"), unionResult);
 
-        // INTERSECT
-        List<String> intersectResult = em.createQuery(
-                                                    "SELECT p.name FROM Person p " +
-                                                    "INTERSECT " +
-                                                    "SELECT o.name FROM Organization o", String.class)
-                                    .getResultList();
-        assertEquals(Arrays.asList("BBB"), intersectResult);
+            // INTERSECT
+            List<String> intersectResult = em.createQuery(
+                                                        "SELECT p.name FROM Person p " +
+                                                        "INTERSECT " +
+                                                        "SELECT o.name FROM Organization o", String.class)
+                            .getResultList();
+            assertEquals(Arrays.asList("BBB"), intersectResult);
 
-        // EXCEPT
-        List<String> exceptResult = em.createQuery(
+            // EXCEPT
+            List<String> exceptResult = em.createQuery(
                                                     "SELECT p.name FROM Person p " +
                                                     "EXCEPT " +
                                                     "SELECT o.name FROM Organization o", String.class)
-                                    .getResultList();
-        assertEquals(Arrays.asList("AAA"), exceptResult);
+                            .getResultList();
+            assertEquals(Arrays.asList("AAA"), exceptResult);
+            tx.commit();
+        }
+        catch(Exception e) {
+            tx.rollback();
+            throw e;
+        }
     }
 }
