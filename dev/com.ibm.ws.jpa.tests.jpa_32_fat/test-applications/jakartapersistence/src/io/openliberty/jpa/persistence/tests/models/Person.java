@@ -16,7 +16,13 @@ import jakarta.persistence.Id;
 @Entity
 public class Person {
     @Id
-    private Long id;
-    private String name;
+    public Long id;
+    public String name;
 
+    public static Person of(Long id, String name) {
+        Person inst = new Person();
+        inst.id = id;
+        inst.name = name;
+        return inst;
+    }
 }
