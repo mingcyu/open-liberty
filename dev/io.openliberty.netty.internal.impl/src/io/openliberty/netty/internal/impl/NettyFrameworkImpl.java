@@ -223,10 +223,10 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      */
     @Override
     public void serverStopping() {
-		if(!ProductInfo.getBetaEdition()) {
-			// Do nothing if beta isn't enabled
-			return;
-		}
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		return;
+	}
     	if (isActive) {
     		if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
     			Tr.event(this, tc, "Destroying all endpoints (closing all channels): " + activeChannelMap.keySet());
@@ -320,10 +320,10 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      */
     @Reference(service = ServerStarted.class, policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
     protected void setServerStarted(ServiceReference<ServerStarted> ref) {
-		if(!ProductInfo.getBetaEdition()) {
-			// Do nothing if beta isn't enabled
-			return;
-		}
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		return;
+	}
         // set will be called when the ServerStarted service has been registered (by the
         // FeatureManager as of 9/2015). This is a signal that
         // the server is fully started, but before the "smarter planet" message has been
@@ -363,12 +363,12 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      * @throws Exception
      */
     public <T> FutureTask<T> runWhenServerStarted(Callable<T> callable) throws Exception {
-		if(!ProductInfo.getBetaEdition()) {
-			// Do nothing if beta isn't enabled
-			FutureTask<T> future = new FutureTask<T>(callable);
-			future.cancel(false);
-			return future;
-		}
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		FutureTask<T> future = new FutureTask<T>(callable);
+		future.cancel(false);
+		return future;
+	}
         synchronized (syncStarted) {
         	FutureTask<T> future = new FutureTask<T>(callable);
             if (!serverCompletelyStarted.get()) {
