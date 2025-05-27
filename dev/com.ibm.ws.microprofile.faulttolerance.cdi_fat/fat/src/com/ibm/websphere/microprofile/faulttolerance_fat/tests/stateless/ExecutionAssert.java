@@ -23,10 +23,21 @@ public class ExecutionAssert {
 
     private static final int COMPLETION_TIMEOUT = 1000;
 
+    /**
+     * Like {@link Runnable}, but can throw checked exceptions
+     */
     public static interface ThrowingRunnable {
         public void run() throws Exception;
     }
 
+    /**
+     * Runs {@code runnable} and asserts that it throws an exception of type {@code expected}.
+     *
+     * @param <E>      the expected exception type
+     * @param expected the expected exception type
+     * @param runnable the code to run
+     * @return the thrown exception
+     */
     public static <E extends Exception> E assertThrows(Class<E> expected, ThrowingRunnable runnable) {
         try {
             runnable.run();
@@ -37,13 +48,26 @@ public class ExecutionAssert {
         }
     }
 
+    /**
+     * Runs {@code runnable} and asserts that it throws an {@link EJBException} whose cause is of type {@code expected}.
+     *
+     * @param <E>      the expected exception type
+     * @param expected the expected exception type
+     * @param runnable the code to run
+     * @return the cause of the thrown {@code EJBException}
+     */
     public static <E extends Exception> E assertThrowsEjbWrapped(Class<E> expected, ThrowingRunnable runnable) {
         EJBException e = assertThrows(EJBException.class, runnable);
         assertThat("Thrown exception is not of the correct type", e.getCause(), instanceOf(expected));
         return expected.cast(e.getCause());
     }
 
-    public static <T> void assertReturns(ThrowingRunnable runnable) {
+    /**
+     * Runs {@code runnable} and asserts that it returns normally (i.e. doesn't throw an exception)
+     *
+     * @param runnable the code to run
+     */
+    public static void assertReturns(ThrowingRunnable runnable) {
         try {
             runnable.run();
         } catch (Exception e) {
@@ -51,12 +75,17 @@ public class ExecutionAssert {
         }
     }
 
-    public static void assertThrowsEjbWrapped(Class<? extends Exception> expected, Future<?> future) {
-        EJBException e = assertThrows(EJBException.class, future);
-        assertThat("Wrapped exception has wrong type", e.getCause(), instanceOf(expected));
-    }
-
-    public static <T extends Exception> T assertThrows(Class<T> expected, Future<?> future) {
+    /**
+     * Asserts that {@code future} completes exceptionally with an exception of type {@code expected}.
+     * <p>
+     * Will wait up to {@value #COMPLETION_TIMEOUT} ms for {@code future} to complete.
+     *
+     * @param <E>      the expected exception type
+     * @param expected the expected exception type
+     * @param future   the future to wait for
+     * @return the exception that {@code future} completed with
+     */
+    public static <E extends Exception> E assertThrows(Class<E> expected, Future<?> future) {
         try {
             Object result = future.get(COMPLETION_TIMEOUT, TimeUnit.MILLISECONDS);
             throw new AssertionError("Expected exception not thrown. Result: " + result);
@@ -71,6 +100,31 @@ public class ExecutionAssert {
         }
     }
 
+    /**
+     * Asserts that {@code future} completes exceptionally with an {@link EJBException} whose cause has type {@code expected}.
+     * <p>
+     * Will wait up to {@value #COMPLETION_TIMEOUT} ms for {@code future} to complete.
+     *
+     * @param <E>      the expected exception type
+     * @param expected the expected exception type
+     * @param future   the future to wait for
+     * @return the cause of the {@code EJBException}
+     */
+    public static <E extends Exception> E assertThrowsEjbWrapped(Class<E> expected, Future<?> future) {
+        EJBException e = assertThrows(EJBException.class, future);
+        assertThat("Wrapped exception has wrong type", e.getCause(), instanceOf(expected));
+        return expected.cast(e.getCause());
+    }
+
+    /**
+     * Asserts that {@code future} completes successfully (i.e. without throwing an exception).
+     * <p>
+     * Will wait up to {@value #COMPLETION_TIMEOUT} ms for {@code future} to complete.
+     *
+     * @param <T>    the return type of {@code future}
+     * @param future the future to wait for
+     * @return the value that {@code future} completed with
+     */
     public static <T> T assertCompletes(Future<T> future) {
         try {
             return future.get(COMPLETION_TIMEOUT, TimeUnit.MILLISECONDS);
