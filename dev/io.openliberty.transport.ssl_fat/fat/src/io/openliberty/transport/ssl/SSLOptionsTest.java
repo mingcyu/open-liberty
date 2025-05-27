@@ -133,7 +133,7 @@ public class SSLOptionsTest{
         server.waitForConfigUpdateInLogUsingMark(null);
         if(server.findStringsInLogsUsingMark("CWWKG0018I", server.getDefaultLogFile()).size() == 0) { // Server configuration was updated so need to wait for ssl port
             assertNotNull("We need to wait for the SSL port to open after config update",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
         }
         
     }
@@ -149,7 +149,7 @@ public class SSLOptionsTest{
         // Hit the servlet on the SSL port
         hitServerWithBadHandshake();
         assertNotNull("Handshake error failure unexpectedly not logged",
-                      server.waitForStringInLog("CWWKO0801E"));
+                      server.waitForStringInLogUsingMark("CWWKO0801E"));
 
         LOG.info("Exiting handshakeFailureGetsLogged");
     }
@@ -168,12 +168,12 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to open",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
 
         // Hit the servlet on the SSL port
         hitServerWithBadHandshake();
         assertNull("Handshake error failure was unexpectedly logged after 5 seconds",
-                   server.waitForStringInLog("CWWKO0801E", 5000));
+                   server.waitForStringInLogUsingMark("CWWKO0801E", 5000));
 
         LOG.info("Exiting handshakeFailureIsNotLogged");
     }
@@ -193,7 +193,7 @@ public class SSLOptionsTest{
         server.setMarkToEndOfLog();
         hitServerWithBadHandshake();
         assertNotNull("Handshake error failure unexpectedly not logged (first time)",
-                      server.waitForStringInLog("CWWKO0801E"));
+                      server.waitForStringInLogUsingMark("CWWKO0801E"));
 
         // SUPPRESS ON
         server.setMarkToEndOfLog();
@@ -201,7 +201,7 @@ public class SSLOptionsTest{
         server.waitForConfigUpdateInLogUsingMark(null);
 
         assertNotNull("We need to wait for the SSL port to start (again)",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
         saveCnt = server.findStringsInLogs("CWWKO0801E").size();
 
         // Hit the servlet on the SSL port
@@ -242,7 +242,7 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to open",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
         server.setMarkToEndOfLog();
 
         // Hit the servlet on the SSL port
@@ -253,11 +253,11 @@ public class SSLOptionsTest{
         hitServerWithBadHandshake();
         hitServerWithBadHandshake();
         assertNotNull("Handshake error failure unexpectedly not logged",
-                      server.waitForStringInLog("CWWKO0801E"));
+                      server.waitForStringInLogUsingMark("CWWKO0801E"));
         assertEquals("Should only find 2 CWWKO0801E log entries",
                      2, server.findStringsInLogsUsingMark("CWWKO0801E", server.getDefaultLogFile()).size());
         assertNotNull("Expected informational message that logging has stopped was not logged",
-                      server.waitForStringInLog("CWWKO0804I"));
+                      server.waitForStringInLogUsingMark("CWWKO0804I"));
         assertEquals("Should only find 1 CWWKO0804I log entry",
                      1, server.findStringsInLogsUsingMark("CWWKO0804I", server.getDefaultLogFile()).size());
 
@@ -287,7 +287,7 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to open (first time)",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
 
         // Hit the servlet on the SSL port
         hitServer(KEYSTORE, PASSWORD, TRUSTSTORE, PASSWORD);
@@ -299,7 +299,7 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to start (again)",
-                      server.waitForStringInLog("CWWKO0219I:.*-ssl"));
+                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
 
         // Hit the servlet on the SSL port
         hitServer(KEYSTORE, PASSWORD, ALTERNATE_TRUSTSTORE, PASSWORD);
