@@ -31,6 +31,8 @@ import componenttest.custom.junit.runner.Mode.TestMode;
 
 @SuppressWarnings("serial")
 @WebServlet("/ftasyncejb")
+// Disabled because the CDI-EJB integration for interceptors does not work when an interceptor returns and then calls proceed on another thread
+// Lots of cases to test here (e.g. transactions) if we want to make this work.
 @Mode(TestMode.EXPERIMENTAL)
 public class FTAsyncEJBTestServlet extends FATServlet {
 
