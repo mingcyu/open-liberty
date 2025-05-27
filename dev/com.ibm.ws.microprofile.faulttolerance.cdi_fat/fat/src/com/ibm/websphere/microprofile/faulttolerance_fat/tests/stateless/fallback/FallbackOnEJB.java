@@ -19,16 +19,11 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 @Stateless
 public class FallbackOnEJB {
 
-    public static final int FROM_TEST_METHOD = 0;
     public static final int FROM_FALL_BACK_METHOD = 1;
 
-    @SuppressWarnings("unused")
     @Fallback(fallbackMethod = "fallbackMethod")
     public int test() throws TestException {
-        if (true) {//trick the compiler
-            throw new TestException();
-        }
-        return FROM_TEST_METHOD;
+        throw new TestException();
     }
 
     public int fallbackMethod() {

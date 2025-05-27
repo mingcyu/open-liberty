@@ -23,6 +23,7 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.async.FTAsyncEJBTestServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhead.BulkheadEJBTestServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.circuitbreaker.CircuitBreakerEJBTestServlet;
+import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.fallback.FallbackOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.interceptedretry.InterceptedRetryOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.retry.RetryOnEJBServlet;
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.timeout.TimeOutOnEJBServlet;
@@ -55,9 +56,8 @@ public class FaultToleranceOnEJBTest extends FATServletClient {
                     @TestServlet(contextRoot = APP_NAME, servlet = BulkheadEJBTestServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = CircuitBreakerEJBTestServlet.class),
                     @TestServlet(contextRoot = APP_NAME, servlet = InterceptedRetryOnEJBServlet.class),
-
+                    @TestServlet(contextRoot = APP_NAME, servlet = FallbackOnEJBServlet.class),
     })
-
     public static LibertyServer server;
 
     @ClassRule
