@@ -25,12 +25,14 @@ import org.junit.Test;
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.app.FATServlet;
 
+@SuppressWarnings("serial")
 @WebServlet("/TimeOutOnEJBServlet")
 public class TimeOutOnEJBServlet extends FATServlet {
 
     @EJB
     private TimeoutOnEJB ejb;
 
+    // EJB will create FFDC for non-application exceptions
     @ExpectedFFDC("org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException")
     @Test
     public void testTimeoutOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {

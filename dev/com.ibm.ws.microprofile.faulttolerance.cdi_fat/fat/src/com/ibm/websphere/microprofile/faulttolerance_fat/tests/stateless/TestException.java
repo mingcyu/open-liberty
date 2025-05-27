@@ -9,6 +9,7 @@
  *******************************************************************************/
 package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless;
 
+@SuppressWarnings("serial")
 public class TestException extends Exception {
 
 }

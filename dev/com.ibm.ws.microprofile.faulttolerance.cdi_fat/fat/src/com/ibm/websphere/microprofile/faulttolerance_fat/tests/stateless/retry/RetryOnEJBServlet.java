@@ -23,6 +23,7 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 import componenttest.annotation.AllowedFFDC;
 import componenttest.app.FATServlet;
 
+@SuppressWarnings("serial")
 @WebServlet("/RetryOnEJBServlet")
 public class RetryOnEJBServlet extends FATServlet {
 

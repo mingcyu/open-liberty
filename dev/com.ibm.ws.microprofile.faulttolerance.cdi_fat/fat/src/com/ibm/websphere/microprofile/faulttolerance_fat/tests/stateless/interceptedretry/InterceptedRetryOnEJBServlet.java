@@ -16,12 +16,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
 import org.junit.Test;
 
-import componenttest.annotation.SkipForRepeat;
 import componenttest.app.FATServlet;
 import componenttest.custom.junit.runner.Mode;
 import componenttest.custom.junit.runner.Mode.TestMode;
-import componenttest.rules.repeater.MicroProfileActions;
 
+@SuppressWarnings("serial")
 @WebServlet("/InterceptedRetryOnEJBServlet")
 public class InterceptedRetryOnEJBServlet extends FATServlet {
 

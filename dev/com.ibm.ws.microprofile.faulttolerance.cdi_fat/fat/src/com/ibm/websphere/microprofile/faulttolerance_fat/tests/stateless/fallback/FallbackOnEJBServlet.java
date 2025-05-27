@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 
+@SuppressWarnings("serial")
 @WebServlet("/FallbackOnEJBServlet")
 public class FallbackOnEJBServlet extends FATServlet {
 

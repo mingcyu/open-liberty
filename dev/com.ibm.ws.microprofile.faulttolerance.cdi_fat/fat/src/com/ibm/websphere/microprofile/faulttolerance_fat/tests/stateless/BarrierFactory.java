@@ -87,7 +87,7 @@ public class BarrierFactory implements AutoCloseable {
 
         public void assertAwaited() {
             try {
-                awaited.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                awaited.get(COMPLETION_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (Error t) {
                 throw t;
             } catch (RuntimeException e) {
