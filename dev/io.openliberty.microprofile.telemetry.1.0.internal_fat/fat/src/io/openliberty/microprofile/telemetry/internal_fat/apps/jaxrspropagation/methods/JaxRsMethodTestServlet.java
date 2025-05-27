@@ -90,7 +90,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
         SpanData clientSpan = spans.get(1);
         SpanData serverSpan = spans.get(2);
 
-        if(featureVersion.equals("2.1")){
+        if(featureVersion.equals("2.1")){  //SemanticAttributes moved to their relative classes organised by root namespaces
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
@@ -101,7 +101,7 @@ public class JaxRsMethodTestServlet extends FATServlet {
                             .withKind(SpanKind.SERVER)
                             .withAttribute(HttpAttributes.HTTP_REQUEST_METHOD, "GET")
                             .withAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L));
-        } else if(featureVersion.equals("2.0")){
+        } else if(featureVersion.equals("2.0")){ //SemanticAttributes moved to a new package. HTTP_URL has changed to URL_FULL
             assertThat(clientSpan, isSpan()
                             .withKind(SpanKind.CLIENT)
                             .withAttribute(HTTP_REQUEST_METHOD, "GET")

@@ -87,7 +87,7 @@ public class ClientWithNoCdi {
 
         server.deleteDirectoryFromLibertyServerRoot("apps");
 
-        assertNotNull("pOpenTelemtryLifecycleManagerImpl.applicationStarting was not invoked",
+        assertNotNull("OpenTelemtryLifecycleManagerImpl.applicationStarting was not invoked",
                       server.waitForStringInLog("OpenTelemtryLifecycleManagerImpl > applicationStarting Entry", server.getDefaultTraceFile()));
 
         assertNotNull("OpenTelemtryLifecycleManagerImpl.applicationStopped was not invoked",
