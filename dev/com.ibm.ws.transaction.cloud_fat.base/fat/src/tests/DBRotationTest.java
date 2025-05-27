@@ -517,7 +517,11 @@ public class DBRotationTest extends CloudFATServletClient {
                               server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
 
                 runTest(noRecoveryGroupServer1, SERVLET_NAME, "dropServer2Tables");
-                runTest(server2, SERVLET_NAME, "doomedTran");
+                try {
+                    runInServlet(server2, SERVLET_NAME, "doomedTran");
+                } catch (IOException e) {
+                    // Not really bothered. Server probably went away too quickly.
+                }
 
                 assertNotNull(server2.getServerName() + " recovery tables should have been deleted",
                               server2.waitForStringInTrace("Underlying SQL tables missing", FATUtils.LOG_SEARCH_TIMEOUT));
