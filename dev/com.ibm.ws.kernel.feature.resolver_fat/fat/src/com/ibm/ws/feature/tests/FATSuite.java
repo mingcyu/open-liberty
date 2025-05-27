@@ -18,6 +18,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+                BaselineResolutionErrorCaseTest.class,
                 ReportFeaturesUnitTest.class,
                 // ReportImagesUnitTest.class, // Disabled: See issue 29079
                 // FeatureDetailsUnitTest.class, // Disabled: Not getting features in WL.

@@ -421,8 +421,10 @@ public class FeatureResolverImpl implements FeatureResolver {
      */
     private List<String> normalizeRootPlatforms(Collection<String> rootPlatforms){
         List<String> normalizedPlatforms = new ArrayList<String>();
-        for(String plat : rootPlatforms){
-            normalizedPlatforms.add(plat.trim().toLowerCase());
+        if(rootPlatforms != null){
+            for(String plat : rootPlatforms){
+                normalizedPlatforms.add(plat.trim().toLowerCase());
+            }
         }
         return normalizedPlatforms;
     }
