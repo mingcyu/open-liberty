@@ -42,12 +42,18 @@ dependencies {
   compileOnly "org.hibernate.orm:hibernate-core:${hibernateVersion}"
 }
 
+/*
+ * Copy Hibernate and transitive dependencies into shared resources
+ */
 task addHibernateJPA32(type: Copy) {
   shouldRunAfter jar
   from configurations.hibernateJPA32
   into new File(autoFvtDir, 'publish/shared/resources/jpa32_hibernate')
 }
 
+/*
+ * Add Hibernate and transitive dependencies into the permissions section of server.xml(s) 
+ */
 task addHibernatePermissions() {
   // Find server.xml files
   def serverConfigs = []
@@ -108,6 +114,9 @@ task addHibernatePermissions() {
   }
 }
 
+/*
+ * Copy Derby 16 into shared resources
+ */
 task addDerby16(type: Copy) {
   shouldRunAfter jar
   from configurations.derby16
@@ -117,26 +126,34 @@ task addDerby16(type: Copy) {
   rename 'derbytools-.*.jar', 'derbytools.jar'
 }
 
+/*
+ * Copy generated source code into a source folder for Eclipse
+ */
 task addGeneratedSources(type: Copy) {
-    doLast {
-        from "build/libs/generated/sources/annotationProcessor/java/main"
-        into "generated-src"
-    }
+  doLast {
+    from "build/libs/generated/sources/annotationProcessor/java/main"
+    into "generated-src"
+  }
 }
 
-// Copy bundle io.openliberty.org.testcontainers to AutoFVT/lib/
-// This bundle is required both at compiletime and runtime.
+/*
+ * Define gradle lifecycle
+ */
+
 addRequiredLibraries.dependsOn copyTestContainers
 addRequiredLibraries.dependsOn copyJdbcDrivers
 
 addRequiredLibraries.dependsOn addHibernateJPA32
 addRequiredLibraries.dependsOn addDerby16
 
+assemble.dependsOn addHibernatePermissions
+assemble.dependsOn addGeneratedSources
+
+/*
+ *  Enable the parameters compiler argument
+ */
 apply plugin: 'java'
 
 compileJava {
   options.compilerArgs << '-parameters'
 }
-
-assemble.dependsOn addHibernatePermissions
-assemble.dependsOn addGeneratedSources
