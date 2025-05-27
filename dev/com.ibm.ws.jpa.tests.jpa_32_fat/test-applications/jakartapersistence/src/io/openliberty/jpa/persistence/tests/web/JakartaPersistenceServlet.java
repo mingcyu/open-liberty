@@ -28,10 +28,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.transaction.HeuristicMixedException;
-import jakarta.transaction.HeuristicRollbackException;
-import jakarta.transaction.NotSupportedException;
-import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.UserTransaction;
 
@@ -228,11 +224,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             throw new RuntimeException("Transaction failed during testOLGH28913MultipleResultsQuery", e);
         }
-
         List<String> results = em.createQuery(
                                               "SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.hexadecimal IS NOT NULL", String.class)
                         .getResultList();
-
         assertTrue("Expected hex value 41 not found", results.contains("41")); // 65 in hex
         assertTrue("Expected hex value 42 not found", results.contains("42")); // 66 in hex
     }
