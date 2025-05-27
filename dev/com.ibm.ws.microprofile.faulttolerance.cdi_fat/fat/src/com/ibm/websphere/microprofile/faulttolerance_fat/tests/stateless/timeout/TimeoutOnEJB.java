@@ -19,7 +19,6 @@ import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 public class TimeoutOnEJB {
 
     private static final int TIMEOUT_DURATION = 1000;
-    public static final int SOME_VALUE = 42;
 
     //A simple test that makes sure the counter works.
     @Timeout(TIMEOUT_DURATION)
@@ -31,12 +30,12 @@ public class TimeoutOnEJB {
             record.testMethodRecievedInteruptException = true;
             return;
         }
+
         record.testMethodContinuedPastInterruptException = true;
     }
 
     @Timeout(TIMEOUT_DURATION * 1000)
-    public int testMethodThatWontTimeOut() throws TimeoutException {
-        return SOME_VALUE;
+    public void testMethodThatWontTimeOut() throws TimeoutException {
     }
 
 }

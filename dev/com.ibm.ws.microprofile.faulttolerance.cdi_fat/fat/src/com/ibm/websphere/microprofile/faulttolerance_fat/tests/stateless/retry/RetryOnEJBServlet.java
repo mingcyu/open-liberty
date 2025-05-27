@@ -15,13 +15,13 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestException;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.app.FATServlet;
-import junit.framework.Assert;
 
 @WebServlet("/RetryOnEJBServlet")
 public class RetryOnEJBServlet extends FATServlet {
@@ -30,8 +30,6 @@ public class RetryOnEJBServlet extends FATServlet {
     private RetryOnEJB ejb;
 
     @Test
-    //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
-    //@SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testRetryEventuallyPassesOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
 
         //This method will fail until it has failed the Maximum number of times it was configured to

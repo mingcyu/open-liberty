@@ -19,17 +19,16 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.TestExc
 @Stateless
 public class InterceptedRetryOnEJB {
 
-    public static final int MAX = 5;
-    public static final int MAX_PLUS_FENCEPOST = 6; //The intercepter will be called for
+    public static final int MAX_RETRIES = 10;
+    public static final int NUMBER_OF_FAILURES = 5;
+    public static final int FAILURES_PLUS_FENCEPOST = 6; //The intercepter will be called for
     private static int counter = 0;
 
     //Test that the LoggingInterceptor is called every retry
-    @Retry(maxRetries = 10)
+    @Retry(maxRetries = MAX_RETRIES)
     @LogInterceptorBinding
     public int retryEventuallyPass() throws TestException {
-
-        System.out.println("GREP");
-        if (counter < MAX) {
+        if (counter < NUMBER_OF_FAILURES) {
             counter++;
             throw new TestException();
         }

@@ -15,10 +15,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import componenttest.app.FATServlet;
-import junit.framework.Assert;
 
 @WebServlet("/FallbackOnEJBServlet")
 public class FallbackOnEJBServlet extends FATServlet {
@@ -28,7 +28,6 @@ public class FallbackOnEJBServlet extends FATServlet {
 
     @Test
     //The fault tolerance CDI Extension does not fire events for methods on an EJB on these versions
-    //@SkipForRepeat({ MicroProfileActions.MP13_ID, MicroProfileActions.MP20_ID })
     public void testFallbackOnEJB(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         int result = ejb.test();
 

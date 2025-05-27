@@ -36,7 +36,8 @@ public class CircuitBreakerEJBTestServlet extends FATServlet {
     @Inject
     private CircuitBreakerEJB bean;
 
-    //On EE8_MP20 the first CircuitBreakerOpenException is correctly wrapped in an EJBException, but the second is not.
+    //On EE8_MP20 the first CircuitBreakerOpenException is correctly wrapped in an EJBException,
+    //but on the second attempt we get a TestException instead of the expected CircuitBreakerOpenException.
     @SkipForRepeat(MicroProfileActions.MP20_ID)
     @Test
     @ExpectedFFDC("org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException")
@@ -48,7 +49,6 @@ public class CircuitBreakerEJBTestServlet extends FATServlet {
         assertThrows(TestException.class, () -> bean.test(THROW));
         assertThrows(TestException.class, () -> bean.test(THROW));
         // 50% failure rate in last four requests -> circuit opens
-        System.out.println("GREP");
         assertThrowsEjbWrapped(CircuitBreakerOpenException.class, () -> bean.test(RETURN));
         assertThrowsEjbWrapped(CircuitBreakerOpenException.class, () -> bean.test(THROW));
         // Wait for circuit to half-open
