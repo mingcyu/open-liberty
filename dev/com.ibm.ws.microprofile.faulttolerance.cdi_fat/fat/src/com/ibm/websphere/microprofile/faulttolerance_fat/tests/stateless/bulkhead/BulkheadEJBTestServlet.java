@@ -11,6 +11,7 @@ package com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.bulkhe
 
 import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.ExecutionAssert.assertCompletes;
 import static com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.ExecutionAssert.assertThrowsEjbWrapped;
+import static componenttest.rules.repeater.MicroProfileActions.MP20_ID;
 
 import java.util.concurrent.Future;
 
@@ -26,13 +27,11 @@ import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.Barrier
 import com.ibm.websphere.microprofile.faulttolerance_fat.tests.stateless.BarrierFactory.Barrier;
 
 import componenttest.annotation.ExpectedFFDC;
+import componenttest.annotation.SkipForRepeat;
 import componenttest.app.FATServlet;
-import componenttest.custom.junit.runner.Mode;
-import componenttest.custom.junit.runner.Mode.TestMode;
 
 @SuppressWarnings("serial")
 @WebServlet("/bulkheadejb")
-@Mode(TestMode.EXPERIMENTAL)
 public class BulkheadEJBTestServlet extends FATServlet {
 
     @Inject
@@ -42,7 +41,12 @@ public class BulkheadEJBTestServlet extends FATServlet {
     private ManagedExecutorService executor;
 
     @Test
+    // EJB will FFDC on non-application exceptions
     @ExpectedFFDC("org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException")
+    // Pre mpFaultTolerance-3.0 (MP-4.0), bulkhead state is per-bean instance
+    // Stateless EJBs are pooled and calls are serlialized, effectively giving each call its own bulkhead,
+    // which means the bulkhead is technically working correctly but is completely useless.
+    @SkipForRepeat(MP20_ID)
     public void testBulkhead() {
         try (BarrierFactory bf = new BarrierFactory()) {
             Barrier b1 = bf.create();
