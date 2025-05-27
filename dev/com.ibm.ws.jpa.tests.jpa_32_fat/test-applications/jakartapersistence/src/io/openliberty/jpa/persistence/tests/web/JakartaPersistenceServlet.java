@@ -63,8 +63,8 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertNotNull(exceptResult);
     }
 
-    @Test // Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29460
-    public void testOLGH29460_NoMatchAndOrdering() throws Exception {
+    @Test
+    public void testRecordAsEmbeddable_NoMatchAndOrdering() throws Exception {
         // Clean up any existing data
         tx.begin();
         em.createQuery("DELETE FROM Participant").executeUpdate();
@@ -110,8 +110,8 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertTrue("Expected empty results for non-matching last name", results.isEmpty());
     }
 
-    @Test // Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29460
-    public void testOLGH29460_NullEdgeCaseAndOrdering() throws Exception {
+    @Test
+    public void testRecordAsEmbeddable_NullEdgeCaseAndOrdering() throws Exception {
         // Setup test data with null, empty, and edge case values
         Participant p1 = Participant.of("Anna", null, 13); // Null last name (should be excluded)
         Participant p2 = Participant.of("Mike", "Green", 14); // Valid
