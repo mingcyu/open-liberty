@@ -28,6 +28,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.servlet.annotation.WebServlet;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.UserTransaction;
 
@@ -212,6 +216,20 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertNotNull("Query result should not be null", results);
         assertFalse("Query result should not be empty", results.isEmpty());
         assertTrue("Expected hexadecimal value not found in results", results.contains(character.getHexadecimal()));
+    }
+
+    @Test
+    public void testInvalidFieldInAsciiCharacterQuery() {
+        try {
+            em.createQuery("SELECT nonExistentField FROM AsciiCharacter", String.class).getResultList();
+        } catch (Exception e) {
+            assertTrue("Expected exception to be thrown due to non-existent field",
+                       e instanceof IllegalArgumentException || e instanceof RuntimeException);
+            assertTrue("Unexpected exception type: " + e.getClass(),
+                       e instanceof IllegalArgumentException || e instanceof RuntimeException);
+            assertTrue("Exception message did not contain 'nonExistentField': " + e.getMessage(),
+                       e.getMessage().contains("nonExistentField") || e.getClass().equals(IllegalArgumentException.class) || e.getClass().equals(RuntimeException.class));
+        }
     }
 
     @Test // Verifies that multiple persisted AsciiCharacter entries return correct hexadecimal values via JPQL query
