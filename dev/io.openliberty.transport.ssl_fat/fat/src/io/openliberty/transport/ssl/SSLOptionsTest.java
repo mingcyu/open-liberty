@@ -41,17 +41,9 @@ import componenttest.rules.repeater.JakartaEEAction;
 import componenttest.topology.impl.LibertyServer;
 
 /**
- * Example Shrinkwrap FAT project:
- * <li> Application packaging is done in the @BeforeClass, instead of ant scripting.
- * <li> Injects servers via @Server annotation. Annotation value corresponds to the
- * server directory name in 'publish/servers/%annotation_value%' where ports get
- * assigned to the LibertyServer instance when the 'testports.properties' does not
- * get used.
- * <li> Specifies an @RunWith(FATRunner.class) annotation. Traditionally this has been
- * added to bytecode automatically by ant.
- * <li> Uses the @TestServlet annotation to define test servlets. Notice that not all @Test
- * methods are defined in this class. All of the @Test methods are defined on the test
- * servlet referenced by the annotation, and will be run whenever this test class runs.
+ * Test to verify the SSL options are correctly parsed and used in
+ * the server http endpoint. We test updating sslOptions in an endpoint
+ * correctly works and we verify suppressHandhake is properly set.
  */
 @RunWith(FATRunner.class)
 public class SSLOptionsTest{
