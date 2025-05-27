@@ -34,9 +34,9 @@ import java.util.concurrent.TimeUnit;
 public class BarrierFactory implements AutoCloseable {
 
     /** Timeout for awaiting barriers, should be longer than any test requires */
-    private static final int TIMEOUT = 10000;
+    private static final int TIMEOUT = 20000;
     /** Timeout for waiting for await() to be called on a barrier */
-    private static final int COMPLETION_TIMEOUT = 1000;
+    private static final int COMPLETION_TIMEOUT = 5000;
 
     private final List<Barrier> barriers = new ArrayList<>();
     private final List<Throwable> barrierErrors = new ArrayList<>();

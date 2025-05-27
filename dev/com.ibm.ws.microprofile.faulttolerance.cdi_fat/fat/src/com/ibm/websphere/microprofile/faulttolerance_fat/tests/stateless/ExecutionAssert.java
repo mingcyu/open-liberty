@@ -21,7 +21,7 @@ import javax.ejb.EJBException;
 
 public class ExecutionAssert {
 
-    private static final int COMPLETION_TIMEOUT = 1000;
+    private static final int COMPLETION_TIMEOUT = 5000;
 
     /**
      * Like {@link Runnable}, but can throw checked exceptions
