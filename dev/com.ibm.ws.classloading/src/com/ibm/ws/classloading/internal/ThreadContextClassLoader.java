@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2022 IBM Corporation and others.
+ * Copyright (c) 2013, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -215,4 +216,11 @@ public class ThreadContextClassLoader extends UnifiedClassLoader implements Keye
         return classLoader == appLoader;
     }
 
+    // This is needed by spring to ensure GLIBC generated classes are defined by the app classloader
+    public Class<?> publicDefineClass(String name, byte[] b, ProtectionDomain protectionDomain) {
+        if (appLoader instanceof AppClassLoader) {
+            return ((AppClassLoader) appLoader).defineClassForTCCL(name, b, protectionDomain);
+        }
+        return defineClass(name, b, 0, b.length, protectionDomain);
+    }
 }
