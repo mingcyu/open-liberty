@@ -78,6 +78,7 @@ task addDerby16(type: Copy) {
 }
 
 task addMQ(type: Copy) {
+  shouldRunAfter jar
   from configurations.mq
   into new File(autoFvtDir, 'publish/shared/resources/mq')
   rename 'wmq.*.rar', 'wmq.jakarta.jmsra.rar'

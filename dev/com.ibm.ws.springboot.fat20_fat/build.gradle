@@ -45,6 +45,7 @@ configurations {
 }
 
 task addMQ(type: Copy) {
+  shouldRunAfter jar
   from configurations.mq
   into new File(autoFvtDir, 'publish/shared/resources/mq')
   rename 'wmq.*.rar', 'wmq.jmsra.rar'
