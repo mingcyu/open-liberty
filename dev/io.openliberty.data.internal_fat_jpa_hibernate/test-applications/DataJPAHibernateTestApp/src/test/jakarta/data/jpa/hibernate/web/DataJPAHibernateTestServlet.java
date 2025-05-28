@@ -89,21 +89,21 @@ public class DataJPAHibernateTestServlet extends FATServlet {
         // save
         City saved = cities.save(Milwaukee);
         assertEquals(Milwaukee.areaCodes, saved.areaCodes);
-        assertEquals(Milwaukee.id.name, saved.id.name);
-        assertEquals(Milwaukee.id.stateName, saved.id.stateName);
+        assertEquals(Milwaukee.name, saved.name);
+        assertEquals(Milwaukee.stateName, saved.stateName);
         assertEquals(Milwaukee.population, saved.population);
 
         // findById
-        City found = cities.findById(Milwaukee.id)
+        City found = cities.findById(Milwaukee.getIdClass())
                         .orElseThrow(() -> new AssertionError("Could not find entity by id"));
         assertEquals(Milwaukee.areaCodes, found.areaCodes);
-        assertEquals(Milwaukee.id.name, found.id.name);
-        assertEquals(Milwaukee.id.stateName, found.id.stateName);
+        assertEquals(Milwaukee.name, found.name);
+        assertEquals(Milwaukee.stateName, found.stateName);
         assertEquals(Milwaukee.population, found.population);
 
         // delete
         cities.delete(Milwaukee);
-        cities.findById(Milwaukee.id)
+        cities.findById(Milwaukee.getIdClass())
                         .ifPresent(city -> {
                             throw new AssertionError("Found entity after it was deleted: " + city.toString());
                         });
@@ -117,10 +117,10 @@ public class DataJPAHibernateTestServlet extends FATServlet {
         //NOTE: tran.begin() / tran.commit() requires hibernate property hibernate.allow_update_outside_transaction=true
         //see https://hibernate.atlassian.net/browse/HHH-18260
         tran.begin();
-        cities.deleteById(GreenBay.id);
+        cities.deleteById(GreenBay.getIdClass());
         tran.commit();
 
-        cities.findById(GreenBay.id).ifPresent(city -> {
+        cities.findById(GreenBay.getIdClass()).ifPresent(city -> {
             throw new AssertionError("Found entity after it was deleted: " + city.toString());
         });
     }
@@ -148,7 +148,7 @@ public class DataJPAHibernateTestServlet extends FATServlet {
 
         // findAll
         sdCitiesCopy = new ArrayList<>(sdCities);
-        final List<City> foundCities = cities.findAll().filter(city -> city.id.stateName.equals("South Dakota")).toList();
+        final List<City> foundCities = cities.findAll().filter(city -> city.stateName.equals("South Dakota")).toList();
         for (City found : foundCities) {
             assertTrue("Found entity that was not an element of the original list: " + found.toString(), sdCitiesCopy.remove(found));
         }
@@ -156,7 +156,7 @@ public class DataJPAHibernateTestServlet extends FATServlet {
 
         // deleteAll
         cities.deleteAll(sdCities);
-        assertFalse(cities.findAll().anyMatch(city -> city.id.stateName.equals("South Dakota")));
+        assertFalse(cities.findAll().anyMatch(city -> city.stateName.equals("South Dakota")));
     }
 
     @Test

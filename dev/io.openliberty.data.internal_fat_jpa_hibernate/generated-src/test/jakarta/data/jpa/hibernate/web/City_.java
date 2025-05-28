@@ -15,9 +15,14 @@ public abstract class City_ {
 
 	
 	/**
-	 * @see #id
+	 * @see #name
 	 **/
-	public static final String ID = "id";
+	public static final String NAME = "name";
+	
+	/**
+	 * @see #stateName
+	 **/
+	public static final String STATE_NAME = "stateName";
 	
 	/**
 	 * @see #population
@@ -36,9 +41,14 @@ public abstract class City_ {
 	public static volatile EntityType<City> class_;
 	
 	/**
-	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#id}
+	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#name}
 	 **/
-	public static volatile SingularAttribute<City, CityId> id;
+	public static volatile SingularAttribute<City, String> name;
+	
+	/**
+	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#stateName}
+	 **/
+	public static volatile SingularAttribute<City, String> stateName;
 	
 	/**
 	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#population}

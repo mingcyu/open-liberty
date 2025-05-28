@@ -125,7 +125,7 @@ public class Cities_ implements Cities {
 	}
 	
 	/**
-	 * Find {@link City} by {@link City#id id}.
+	 * Find {@link City} by identifier.
 	 *
 	 * @see test.jakarta.data.jpa.hibernate.web.Cities#findById(CityId)
 	 **/
@@ -197,7 +197,7 @@ public class Cities_ implements Cities {
 	}
 	
 	/**
-	 * Find {@link City} by {@link City#id id}.
+	 * Delete {@link City} by identifier.
 	 *
 	 * @see test.jakarta.data.jpa.hibernate.web.Cities#deleteById(CityId)
 	 **/
@@ -208,7 +208,7 @@ public class Cities_ implements Cities {
 		var _query = _builder.createCriteriaDelete(City.class);
 		var _entity = _query.from(City.class);
 		_query.where(
-				_builder.equal(_entity.get(City_.id), id)
+				_builder.equal(_entity.get("{id}"), id)
 		);
 		try {
 			session.createMutationQuery(_query)

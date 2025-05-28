@@ -34,7 +34,6 @@ tested.features: databaseRotation, cdi-4.1
 #fat.bucket.db.type: Postgres
 
 -buildpath: \
-  com.ibm.tx.jta.jakarta;version=latest,\
   com.ibm.websphere.appserver.spi.kernel.service;version=latest,\
   com.ibm.websphere.appserver.spi.logging,\
   com.ibm.websphere.org.osgi.core,\
@@ -55,5 +54,5 @@ tested.features: databaseRotation, cdi-4.1
   io.openliberty.jakarta.transaction.2.0;version=latest,\
   io.openliberty.org.testcontainers;version=latest
 
-# If building with gradle do not include org.hibernate.orm:hibernate-core;version=7.0.0.Final
--buildpath.extra: ${if;${driver;gradle};;org.hibernate.orm:hibernate-core\\;version=7.0.0.Final}
+# If building with gradle do not include org.hibernate.orm:hibernate-core;version=7.0.9.Final
+-buildpath.extra: ${if;${driver;gradle};;org.hibernate.orm:hibernate-core\\;version=7.0.9.Final}

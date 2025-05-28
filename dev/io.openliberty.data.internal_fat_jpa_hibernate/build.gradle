@@ -13,8 +13,11 @@
  // Always pull from Maven Central so we don't have to upload transitive dependencies to artifactory
 apply from: '../wlp-gradle/subprojects/maven-central-mirror.gradle'
 
+//Enable the parameters compiler argument
+apply plugin: 'java'
+
 ext {
-  hibernateVersion = '7.0.0.Final'
+  hibernateVersion = '7.0.9.Final'
 }
 
 configurations {
@@ -24,11 +27,12 @@ configurations {
 
 dependencies {
   def withoutJakartaAPI = { 
-  	exclude group: 'jakarta.activation', module: 'jakarta.activation-api'
-  	exclude group: 'jakarta.inject', module: 'jakarta.inject-api'
-  	exclude group: 'jakarta.persistence', module: 'jakarta.persistence-api'
-  	exclude group: 'jakarta.transaction', module: 'jakarta.transaction-api'
-  	exclude group: 'jakarta.xml.bind', module: 'jakarta.xml.bind-api'
+      exclude group: 'jakarta.activation', module: 'jakarta.activation-api'
+      exclude group: 'jakarta.inject', module: 'jakarta.inject-api'
+      exclude group: 'jakarta.persistence', module: 'jakarta.persistence-api'
+      exclude group: 'jakarta.transaction', module: 'jakarta.transaction-api'
+      exclude group: 'jakarta.xml.bind', module: 'jakarta.xml.bind-api'
+      exclude group: 'org.glassfish.jaxb', module: 'jaxb-runtime'
   }
   
   hibernateJPA32 "org.hibernate.orm:hibernate-community-dialects:${hibernateVersion}", withoutJakartaAPI
@@ -38,7 +42,7 @@ dependencies {
 
   //Annotation processor - generates .java files in build/libs/generated/sources
   //Some generated .java files import hibernate dependencies, need this compileOnly dependency
-  annotationProcessor "org.hibernate.orm:hibernate-jpamodelgen:${hibernateVersion}"
+  annotationProcessor "org.hibernate.orm:hibernate-processor:${hibernateVersion}"
   compileOnly "org.hibernate.orm:hibernate-core:${hibernateVersion}"
 }
 
@@ -62,14 +66,20 @@ task addHibernatePermissions() {
       serverConfigs << d.file.path
     }
   }
-  println "serverConfigs: " + serverConfigs
+  
+  println "serverConfigs: "
+  serverConfigs.sort()
+  serverConfigs.each { serverConfig -> println "- " + serverConfig }
 
   // Generate permissions
   def permissions = []
   configurations.hibernateJPA32.resolvedConfiguration.resolvedArtifacts.each { ResolvedArtifact a ->
-    permissions << "<javaPermission codebase=\"\${shared.resource.dir}/jpa32_hibernate/${a.file.name}\" className=\"java.security.AllPermission\"/>"
+    permissions << "<javaPermission className=\"java.security.AllPermission\" codebase=\"\${shared.resource.dir}/jpa32_hibernate/${a.file.name}\"/>"
   }
-  println "permissions: " + permissions;
+  
+  println "permissions: "
+  permissions.sort()
+  permissions.each { permission -> println "- " + permission }
 
   // Replace existing permissions
   serverConfigs.each { String p ->
@@ -129,11 +139,28 @@ task addDerby16(type: Copy) {
 /*
  * Copy generated source code into a source folder for Eclipse
  */
-task addGeneratedSources(type: Copy) {
-  doLast {
-    from "build/libs/generated/sources/annotationProcessor/java/main"
-    into "generated-src"
-  }
+def generated_src = new File('generated-src')
+
+task clearGeneratedSources() {
+    doLast {
+      delete {
+        delete fileTree(generated_src)
+      }
+      println "Deleted generated sources directory to allow for new files to be copied"
+    }
+}
+
+task addGeneratedSources() {
+    shouldRunAfter compileJava
+    dependsOn clearGeneratedSources
+    doLast {
+      copy {
+        from 'build/libs/generated/sources/annotationProcessor/java/main'
+        into generated_src
+      }
+      println "Copied generated sources to source folder for version control"
+    }
+
 }
 
 /*
@@ -146,14 +173,9 @@ addRequiredLibraries.dependsOn copyJdbcDrivers
 addRequiredLibraries.dependsOn addHibernateJPA32
 addRequiredLibraries.dependsOn addDerby16
 
-assemble.dependsOn addHibernatePermissions
-assemble.dependsOn addGeneratedSources
-
-/*
- *  Enable the parameters compiler argument
- */
-apply plugin: 'java'
+jar.dependsOn addHibernatePermissions
+jar.dependsOn addGeneratedSources
 
 compileJava {
-  options.compilerArgs << '-parameters'
-}
+    options.compilerArgs << '-parameters'
+  }

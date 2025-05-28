@@ -21,6 +21,8 @@
     <persistence-unit name="HibernateProvider">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>jdbc/HibernateDataSource</jta-data-source>
+        <class>test.jakarta.data.jpa.hibernate.integration.web.County</class>
+        <class>test.jakarta.data.jpa.hibernate.integration.web.Segment</class> <!-- Needed to verify segment does NOT get persisted via Hibernate provider -->
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
             <property name="hibernate.show_sql" value="true"/>

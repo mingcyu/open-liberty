@@ -1,5 +1,5 @@
 <!--
-    Copyright (c) 2024 IBM Corporation and others.
+    Copyright (c) 2024, 2025 IBM Corporation and others.
     All rights reserved. This program and the accompanying materials
     are made available under the terms of the Eclipse Public License 2.0
     which accompanies this distribution, and is available at
@@ -57,18 +57,13 @@
   <javaPermission className="java.lang.RuntimePermission" name="getenv.TURN_OFF_LR_LOOP_ENTRY_BRANCH_OPT"/>
 
   <!-- START: Hibernate permissions -->
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-community-dialects-7.0.0.Final.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-core-7.0.0.Final.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-models-1.0.0.CR3.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/jboss-logging-3.6.1.Final.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/classmate-1.7.0.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/byte-buddy-1.15.11.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/jaxb-runtime-4.0.5.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/antlr4-runtime-4.13.2.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/jaxb-core-4.0.5.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/angus-activation-2.0.2.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/txw2-4.0.5.jar" className="java.security.AllPermission"/>
-  <javaPermission codebase="${shared.resource.dir}/jpa32_hibernate/istack-commons-runtime-4.1.2.jar" className="java.security.AllPermission"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/antlr4-runtime-4.13.2.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/byte-buddy-1.17.5.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/classmate-1.7.0.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-community-dialects-7.0.9.Final.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-core-7.0.9.Final.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-models-1.0.1.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/jboss-logging-3.6.1.Final.jar"/>
   <!-- END: Hibernate permissions -->
   
 </server>

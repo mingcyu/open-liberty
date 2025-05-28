@@ -21,9 +21,11 @@
     <persistence-unit name="MyPersistenceUnit">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:comp/DefaultDataSource</jta-data-source>
+        <class>test.jakarta.data.jpa.hibernate.web.City</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
             <property name="hibernate.show_sql" value="true"/>
+            <!-- TODO remove once https://hibernate.atlassian.net/jira/software/c/projects/HHH/issues/HHH-18260 is fixed -->
             <property name="hibernate.allow_update_outside_transaction" value="true"/>
         </properties>
     </persistence-unit>
