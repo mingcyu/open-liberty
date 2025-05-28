@@ -22,4 +22,9 @@ public class ConcatEntity {
     public String firstName;
 
     public String lastName;
+
+    @Override
+    public String toString() {
+        return "ConcatEntity [ssn_id=" + ssn_id + ", firstName=" + firstName + ", lastName=" + lastName + "]";
+    }
 }

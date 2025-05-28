@@ -72,6 +72,7 @@ public class JakartaPersistenceServlet extends FATServlet {
      */
     @Test
     public void testConcatInWhereCriteriaQuery() throws Exception {
+        deleteAllEntities(ConcatEntity.class);
 
         ConcatEntity concatEntity1 = new ConcatEntity();
         concatEntity1.firstName = "John";
@@ -115,4 +116,66 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals("Expected 0 record that matches full name 'John Jacob'", 0, personNoMatch.size());
         tx.commit();
     }
+
+    /**
+     * Jakarta 3.2 version supports concat() overload accepting list of expressions ie., concat(List<Expression<String>> expressions)
+     *
+     * https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/criteria/criteriabuilder
+     * https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/criteria/criteriabuilder#concat(java.util.List)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConcatCriteriaQuery() throws Exception {
+        deleteAllEntities(ConcatEntity.class);
+
+        ConcatEntity concatEntity1 = new ConcatEntity();
+        concatEntity1.firstName = "John";
+        concatEntity1.lastName = "Jacobs";
+        concatEntity1.ssn_id = 1L;
+
+        ConcatEntity concatEntity2 = new ConcatEntity();
+        concatEntity2.firstName = "Steve";
+        concatEntity2.lastName = "Smith";
+        concatEntity2.ssn_id = 2L;
+
+        tx.begin();
+        em.persist(concatEntity1);
+        em.persist(concatEntity2);
+        tx.commit();
+
+        tx.begin();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<String> cquery = cb.createQuery(String.class);
+        Root<ConcatEntity> root = cquery.from(ConcatEntity.class);
+
+        // use concat on queried result
+        List<jakarta.persistence.criteria.Expression<String>> concatExpression = List.of(root.get("firstName"),
+                                                                                         cb.literal(" "),
+                                                                                         root.get("lastName"));
+
+        cquery.select(cb.concat(concatExpression));
+        cquery.orderBy(cb.desc(root.get("firstName")));
+
+        List<String> fullname = em.createQuery(cquery).getResultList();
+        System.out.println("****** testConcatCriteriaQuery: fullname: " + fullname);
+        assertEquals("Expected full name 'John Jacobs' for first record", "John Jacobs", fullname.get(1));
+        assertEquals("Expected full name 'Steve Smith' for second record", "Steve Smith", fullname.get(0));
+    }
+
+    /**
+     * Utility method to drop all entities from table.
+     *
+     * Order to tests is not guaranteed and thus we should be pessimistic and
+     * delete all entities when we reuse an entity between tests.
+     *
+     * @param clazz - the entity class
+     */
+    private void deleteAllEntities(Class<?> clazz) throws Exception {
+        tx.begin();
+        em.createQuery("DELETE FROM " + clazz.getSimpleName())
+                        .executeUpdate();
+        tx.commit();
+    }
+
 }
