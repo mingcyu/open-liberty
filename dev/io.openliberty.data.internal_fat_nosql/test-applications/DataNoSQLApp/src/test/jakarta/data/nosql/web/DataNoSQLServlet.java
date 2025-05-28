@@ -27,6 +27,8 @@ import jakarta.data.Order;
 import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
 import jakarta.inject.Inject;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 
 import org.junit.Test;
@@ -41,6 +43,19 @@ public class DataNoSQLServlet extends FATServlet {
 
     @Inject
     Employees employees;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        employees.save(new Employee(3456, "Joe", "Biden", "Developer", "New York", 2022, 23, 720300));
+        employees.save(new Employee(7654, "Nicholas", "Jack", "Manager", "New York", 2023, 25, 800500));
+        employees.save(new Employee(3526, "Jesse", "Pinkman", "Consultant", "New York", 2022, 31, 650000));
+        employees.save(new Employee(9865, "Adam", "John", "Developer", "New York", 2024, 22, 934500));
+        employees.save(new Employee(2644, "Jake", "Williams", "Developer", "New York", 2025, 43, 867200));
+        employees.save(new Employee(8754, "William", "Roger", "Manager", "New York", 2019, 33, 904500));
+        employees.save(new Employee(3466, "Ajay", "Barter", "Consultant", "New York", 2021, 29, 734500));
+        employees.save(new Employee(7656, "Richard", "Dave", "Support", "New York", 2022, 40, 657570));
+        employees.save(new Employee(3864, "Nete", "Paul", "Developer", "New York", 2024, 21, 700300));
+    }
 
     /**
      * Verify that implementation of a repository class can be injected.
@@ -103,9 +118,9 @@ public class DataNoSQLServlet extends FATServlet {
         wageList.offer(800500);
         wageList.offer(734500);
         wageList.offer(720300);
-        wageList.offer(934572);
-        wageList.offer(934572);
-        wageList.offer(934572);
+        wageList.offer(700300);
+        wageList.offer(657570);
+        wageList.offer(650000);
 
         PageRequest request = PageRequest.ofSize(3);
         Order<Employee> order = Order.by(_Employee.wage.desc());
