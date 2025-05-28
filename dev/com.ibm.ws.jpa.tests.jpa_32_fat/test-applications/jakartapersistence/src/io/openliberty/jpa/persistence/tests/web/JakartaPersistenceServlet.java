@@ -9,16 +9,20 @@
  *******************************************************************************/
 package io.openliberty.jpa.persistence.tests.web;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
 import componenttest.app.FATServlet;
+import io.openliberty.jpa.persistence.tests.models.ConcatEntity;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.UserTransaction;
 
@@ -56,5 +60,59 @@ public class JakartaPersistenceServlet extends FATServlet {
                                                    "SELECT o.name FROM Organization o", String.class)
                         .getResultList();
         assertNotNull(exceptResult);
+    }
+
+    /**
+     * Jakarta 3.2 version supports concat() overload accepting list of expressions ie., concat(List<Expression<String>> expressions)
+     *
+     * https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/criteria/criteriabuilder
+     * https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/criteria/criteriabuilder#concat(java.util.List)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConcatInWhereCriteriaQuery() throws Exception {
+
+        ConcatEntity concatEntity1 = new ConcatEntity();
+        concatEntity1.firstName = "John";
+        concatEntity1.lastName = "Jacobs";
+        concatEntity1.ssn_id = 1L;
+
+        ConcatEntity concatEntity2 = new ConcatEntity();
+        concatEntity2.firstName = "Steve";
+        concatEntity2.lastName = "Smith";
+        concatEntity2.ssn_id = 2L;
+
+        tx.begin();
+        em.persist(concatEntity1);
+        em.persist(concatEntity2);
+        tx.commit();
+
+        tx.begin();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ConcatEntity> cquery = cb.createQuery(ConcatEntity.class);
+        Root<ConcatEntity> root = cquery.from(ConcatEntity.class);
+        ParameterExpression<String> strParam1 = cb.parameter(String.class);
+
+        List<jakarta.persistence.criteria.Expression<String>> concatExpression = new ArrayList<>();
+        concatExpression.add(root.get("firstName"));
+        concatExpression.add(cb.literal(" "));
+        concatExpression.add(root.get("lastName"));
+
+        cquery.select(root)
+                        .where(cb.equal(cb.concat(concatExpression), strParam1));
+
+        // Use of concat in where clause: Matching case
+        List<ConcatEntity> person = em.createQuery(cquery)
+                        .setParameter(strParam1, "John Jacobs")
+                        .getResultList();
+        assertEquals("Expected 1 record that matches full name 'John Jacobs'", 1, person.size());
+
+        // Use of concat in where clause: No Match case
+        List<ConcatEntity> personNoMatch = em.createQuery(cquery)
+                        .setParameter(strParam1, "John Jacob")
+                        .getResultList();
+        assertEquals("Expected 0 record that matches full name 'John Jacob'", 0, personNoMatch.size());
+        tx.commit();
     }
 }
