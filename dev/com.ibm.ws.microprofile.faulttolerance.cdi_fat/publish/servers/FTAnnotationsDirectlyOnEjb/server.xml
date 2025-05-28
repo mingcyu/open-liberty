@@ -11,8 +11,6 @@
 
     <include location="../fatTestPorts.xml" />
 
-<logging traceSpecification="**=info:EJBContainer=all" traceFileName="logs/trace.log"/>
-
     <featureManager>
 	    <feature>componenttest-1.0</feature>
 		<feature>servlet-6.0</feature>
