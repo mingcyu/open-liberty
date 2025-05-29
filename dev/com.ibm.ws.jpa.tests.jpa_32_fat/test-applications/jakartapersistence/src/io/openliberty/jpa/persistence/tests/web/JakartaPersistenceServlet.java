@@ -9,7 +9,12 @@
  *******************************************************************************/
 package io.openliberty.jpa.persistence.tests.web;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import io.openliberty.jpa.persistence.tests.models.User;
 
 import java.util.List;
 
@@ -56,5 +61,49 @@ public class JakartaPersistenceServlet extends FATServlet {
                                                    "SELECT o.name FROM Organization o", String.class)
                         .getResultList();
         assertNotNull(exceptResult);
+    }
+
+     /**
+     * Method for testing || in JPQL queries.
+     * @throws Exception
+     */
+    @Test
+    public void testJpqlConcat() throws Exception {
+        deleteAllEntities(User.class);
+
+        User user = new User();
+        user.firstName = "John";
+        user.lastName = "Doe";
+        user.userId = 191111233l;
+
+        tx.begin();
+        em.persist(user);
+        tx.commit();
+
+        try{
+            String concatJPQL = "SELECT u.firstName || ' ' || u.lastName FROM User u where u.lastName = ?1" ;
+	        String fullName = em.createQuery(concatJPQL,String.class).setParameter(1, "Doe")
+	            					.getSingleResult();
+
+            assertEquals("John Doe", fullName);
+
+        }catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * Utility method to drop all entities from table.
+     *
+     * Order to tests is not guaranteed and thus we should be pessimistic and
+     * delete all entities when we reuse an entity between tests.
+     *
+     * @param clazz - the entity class
+     */
+    private void deleteAllEntities(Class<?> clazz) throws Exception {
+        tx.begin();
+        em.createQuery("DELETE FROM " + clazz.getSimpleName())
+                        .executeUpdate();
+        tx.commit();
     }
 }
