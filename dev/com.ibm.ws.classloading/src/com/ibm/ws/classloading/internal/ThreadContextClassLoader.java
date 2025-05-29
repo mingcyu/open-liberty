@@ -216,10 +216,13 @@ public class ThreadContextClassLoader extends UnifiedClassLoader implements Keye
         return classLoader == appLoader;
     }
 
-    // This is needed by spring to ensure GLIBC generated classes are defined by the app classloader
+    // This is reflectively called by Spring for GLIBC proxy classes.
+    // To work properly with package private application class beans these proxies
+    // must be defined with the app loader so they have proper visibility to their
+    // super classes.
     public Class<?> publicDefineClass(String name, byte[] b, ProtectionDomain protectionDomain) {
-        if (appLoader instanceof AppClassLoader) {
-            return ((AppClassLoader) appLoader).defineClassForTCCL(name, b, protectionDomain);
+        if (appLoader instanceof SpringLoader) {
+            return ((SpringLoader) appLoader).publicDefineClass(name, b, protectionDomain);
         }
         return defineClass(name, b, 0, b.length, protectionDomain);
     }
