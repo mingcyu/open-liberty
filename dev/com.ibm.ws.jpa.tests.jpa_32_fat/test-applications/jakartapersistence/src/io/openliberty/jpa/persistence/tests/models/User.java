@@ -18,10 +18,42 @@ import jakarta.persistence.Table;
 public class User {
 
     @Id
-    public long userId;
+    public int userId;
 
     public String firstName;
 
     public String lastName;
+
+    public static User of(int userId, String firstName, String lastName) {
+        User user = new User();
+        user.setUserId(userId);
+        user.setFirstName(firstName); 
+        user.setLastName(lastName);
+        return user;
+    }
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
 
 }

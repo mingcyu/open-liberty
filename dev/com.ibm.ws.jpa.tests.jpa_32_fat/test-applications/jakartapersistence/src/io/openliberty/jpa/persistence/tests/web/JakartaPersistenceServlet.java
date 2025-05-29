@@ -71,13 +71,14 @@ public class JakartaPersistenceServlet extends FATServlet {
     public void testJpqlConcat() throws Exception {
         deleteAllEntities(User.class);
 
-        User user = new User();
-        user.firstName = "John";
-        user.lastName = "Doe";
-        user.userId = 191111233l;
-
+        User user1 = User.of(1, "John", "Doe");
+        User user2 = User.of(2, "Harry", "Potter");
+        User user3 = User.of(3, "Hermione", "Granger");
+        
         tx.begin();
-        em.persist(user);
+        em.persist(user1);
+        em.persist(user2);
+        em.persist(user3);
         tx.commit();
 
         try{
@@ -85,7 +86,12 @@ public class JakartaPersistenceServlet extends FATServlet {
 	        String fullName = em.createQuery(concatJPQL,String.class).setParameter(1, "Doe")
 	            					.getSingleResult();
 
+            String concatJPQLFrom = "SELECT u.firstName FROM User u where u.firstName || ' ' || u.lastName = ?1" ;
+	        String firstName= em.createQuery(concatJPQLFrom,String.class).setParameter(1, "Harry Potter")
+	            					.getSingleResult();
+
             assertEquals("John Doe", fullName);
+            assertEquals("Harry", firstName);
 
         }catch (Exception e) {
             throw e;
