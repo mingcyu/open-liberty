@@ -295,6 +295,14 @@ public class OpenTelemtryLifecycleManagerImpl implements ApplicationStateListene
             }
 
             OpenTelemetryInfoReference atomicRef = (OpenTelemetryInfoReference) metaData.getMetaData(slotForOpenTelemetryInfoHolder);
+            
+            //This is true in app mode when this method is called during the startup routine of a WAB.
+            //Which in turn means that WABs will not emit trace during startup in app mode. However I beleive the previous behaviour would
+            //be to throw an NPE. TODO: Confirm this
+            if (atomicRef == null) {
+                return false;
+            }
+            
             LazyInitializer<OpenTelemetryInfoInternal> supplier = atomicRef.get();
             return supplier.isInitialized();
         }
