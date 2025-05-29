@@ -8103,7 +8103,7 @@ public class LibertyServer implements LogMonitorClient {
             if (info.majorVersion() >= 11) {
                 Log.info(c, "getFipsJvmOptions",
                          "FIPS 140-3 global build properties is set for server " + getServerName()
-                                                 + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
+                                                 + " with IBM Java " + info.majorVersion() + ", adding required JVM arguments to run with FIPS 140-3 enabled");
                 opts.put("-Dsemeru.fips", "true");
                 opts.put("-Dsemeru.customprofile", "OpenJCEPlusFIPS.FIPS140-3-withPKCS12");
             } else if (info.majorVersion() == 8) {
