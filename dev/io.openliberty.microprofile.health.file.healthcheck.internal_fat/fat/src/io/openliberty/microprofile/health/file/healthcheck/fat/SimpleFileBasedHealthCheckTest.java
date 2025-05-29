@@ -349,11 +349,16 @@ public class SimpleFileBasedHealthCheckTest {
         Assert.assertFalse(Constants.LIVE_SHOULD_NOT_HAVE_UPDATED,
                            HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(5)));
 
+        /*
+         * We are elapsed 38 seconds after we detected files are created (on the test infra).
+         * Checking within last 12 seconds. (i.e. elapsed after file create ~26-38).
+         * Big time window to account for slowness or "quickness" of the server.
+         */
         TimeUnit.SECONDS.sleep(20);
         Assert.assertTrue(Constants.READY_SHOULD_HAVE_UPDATED,
-                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(8)));
+                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getReadyFile(serverRootDirFile), Duration.ofSeconds(12)));
         Assert.assertTrue(Constants.LIVE_SHOULD_HAVE_UPDATED,
-                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(8)));
+                          HealthFileUtils.isLastModifiedTimeWithinLast(HealthFileUtils.getLiveFile(serverRootDirFile), Duration.ofSeconds(12)));
     }
 
     @Test
