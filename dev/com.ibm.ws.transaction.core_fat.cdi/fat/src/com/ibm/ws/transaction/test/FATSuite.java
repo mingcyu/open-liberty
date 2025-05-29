@@ -25,7 +25,7 @@ import componenttest.rules.repeater.RepeatTests;
 @RunWith(Suite.class)
 @SuiteClasses({
                 CheckedUncheckedTest.class,
-                ReEnableUserTranTest.class,
+                ReEnableUTTest.class,
                 TransactionalTest.class,
                 TransactionalEJBTest.class,
                 TransactionScopedTest.class,

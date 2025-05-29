@@ -10,71 +10,45 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package com.ibm.ws.transactional.web;
+package com.ibm.ws.reenableut.web;
+
+import static org.junit.Assert.assertTrue;
 
 import javax.annotation.Resource;
-import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.transaction.UserTransaction;
 
 import org.junit.Test;
 
-import componenttest.app.FATServlet;
-
-@WebServlet("/reenableusertran")
-public class ReEnableUserTranTestServlet extends FATServlet {
-    private static final long serialVersionUID = 1L;
+@WebServlet("/legacyreenableut")
+public class LegacyReEnableUTTestServlet extends ReEnableUTTestServlet {
 
     @Resource
     private UserTransaction ut;
 
-    @Inject
-    private ReEnableUserTranTestBean bean;
-
-    @Test
-    public void testNotSupportedFromNotSupported() throws Exception {
-        bean.checkReEnablementNotSupportedFromNotSupported();
-    }
-
-    @Test
-    public void testNotSupportedFromNever() throws Exception {
-        bean.checkReEnablementNotSupportedFromNever();
-    }
-
     @Test
     public void testNotSupportedFromRequired() throws Exception {
-        bean.checkReEnablementNotSupportedFromRequired();
+        assertTrue(bean.checkReEnablementNotSupportedFromRequired(false));
     }
 
     @Test
     public void testNotSupportedFromRequiresNew() throws Exception {
-        bean.checkReEnablementNotSupportedFromRequiresNew();
+        assertTrue(bean.checkReEnablementNotSupportedFromRequiresNew(false));
     }
 
     @Test
     public void testNotSupportedFromSupports() throws Exception {
-        bean.checkReEnablementNotSupportedFromSupports();
+        assertTrue(bean.checkReEnablementNotSupportedFromSupports(false));
     }
 
     @Test
     public void testNotSupportedFromMandatory() throws Exception {
-
         ut.begin();
-        bean.checkReEnablementNotSupportedFromMandatory();
-    }
-
-    @Test
-    public void testNeverFromNever() throws Exception {
-        bean.checkReEnablementNeverFromNever();
-    }
-
-    @Test
-    public void testNeverFromNotSupported() throws Exception {
-        bean.checkReEnablementNeverFromNotSupported();
+        assertTrue(bean.checkReEnablementNotSupportedFromMandatory(false));
     }
 
     @Test
     public void testNeverFromSupports() throws Exception {
-        bean.checkReEnablementNeverFromSupports();
+        assertTrue(bean.checkReEnablementNeverFromSupports(false));
     }
 }

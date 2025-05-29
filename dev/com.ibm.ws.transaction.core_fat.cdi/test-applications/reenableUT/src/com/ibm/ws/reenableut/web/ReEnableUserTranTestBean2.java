@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package com.ibm.ws.transactional.web;
+package com.ibm.ws.reenableut.web;
 
 import javax.annotation.Resource;
 import javax.transaction.Transactional;
@@ -23,14 +23,30 @@ public class ReEnableUserTranTestBean2 {
     private UserTransaction ut;
 
     @Transactional(TxType.NOT_SUPPORTED)
-    public void checkNotSupportedReEnablesUserTran() throws Exception {
+    public boolean checkNotSupportedReEnablesUserTran(boolean fixed) throws Exception {
 
-        ut.getStatus();
+        System.out.println("checkNotSupportedReEnablesUserTran(" + fixed + ")");
+        return testLogic(fixed);
     }
 
     @Transactional(TxType.NEVER)
-    public void checkNeverReEnablesUserTran() throws Exception {
+    public boolean checkNeverReEnablesUserTran(boolean fixed) throws Exception {
 
-        ut.getStatus();
+        System.out.println("checkNeverReEnablesUserTran(" + fixed + ")");
+        return testLogic(fixed);
+    }
+
+    private boolean testLogic(boolean fixed) throws Exception {
+        if (!fixed) {
+            try {
+                ut.getStatus();
+                return false;
+            } catch (IllegalStateException e) {
+                return true;
+            }
+        } else {
+            ut.getStatus();
+            return true;
+        }
     }
 }
