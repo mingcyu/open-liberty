@@ -27,7 +27,7 @@ com.fasterxml.woodstox:woodstox-core:6.5.1
 com.github.docker-java:docker-java-api:3.4.0
 com.github.docker-java:docker-java-transport-zerodep:3.4.0
 com.github.docker-java:docker-java-transport:3.4.0
-com.github.mwiede:jsch:0.2.18
+com.github.mwiede:jsch:2.27.0
 com.google.errorprone:error_prone_annotations:2.4.0
 com.google.guava:guava:32.0.1-android
 com.google.inject:guice:2.0

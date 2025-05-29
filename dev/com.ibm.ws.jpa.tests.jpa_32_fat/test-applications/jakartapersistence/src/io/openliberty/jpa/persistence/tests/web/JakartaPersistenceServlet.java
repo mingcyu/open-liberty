@@ -9,6 +9,7 @@
  *******************************************************************************/
 package io.openliberty.jpa.persistence.tests.web;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
@@ -16,9 +17,14 @@ import java.util.List;
 import org.junit.Test;
 
 import componenttest.app.FATServlet;
+import io.openliberty.jpa.persistence.tests.models.Product;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Nulls;
+import jakarta.persistence.criteria.Root;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.UserTransaction;
 
@@ -56,5 +62,136 @@ public class JakartaPersistenceServlet extends FATServlet {
                                                    "SELECT o.name FROM Organization o", String.class)
                         .getResultList();
         assertNotNull(exceptResult);
+    }
+
+    /**
+     * Specifies the precedence of null values within query result sets.
+     * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a5587
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testNullPrecedenceWithJPQL() throws Exception {
+        deleteAllEntities(Product.class);
+        Product product1 = Product.of("testSnapshot", "product1", 10.50f);
+        Product product2 = Product.of(null, "product2", 20.50f);
+        Product product3 = Product.of("sample products", "product3", 30.50f);
+        tx.begin();
+        em.persist(product1);
+        em.persist(product2);
+        em.persist(product3);
+        tx.commit();
+
+        /*
+         * Specifies the precedence of null values within query result sets.
+         */
+        List<Product> productsNullFirst;
+        try {
+
+            tx.begin();
+            productsNullFirst = em.createQuery("FROM Product ORDER BY description DESC NULLS FIRST",
+                                               Product.class)
+                            .getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertEquals(3, productsNullFirst.size());
+        assertEquals("Sorted based on 'description' in desc order with NULLS FIRST, Expecting first element to be 'product2'", "product2", productsNullFirst.get(0).name);
+
+        /*
+         * Null values occur at the end of the result set.
+         */
+        List<Product> productsNullLast;
+        try {
+
+            tx.begin();
+            productsNullLast = em.createQuery("FROM Product ORDER BY description DESC NULLS LAST",
+                                              Product.class)
+                            .getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertEquals(3, productsNullLast.size());
+        assertEquals("Sorted based on 'description' in desc order with NULLS LAST, Expecting last element to be 'product2'", "product2", productsNullLast.get(2).name);
+
+    }
+
+    /**
+     * Specifies the precedence of null values within query result sets.
+     * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#nulls
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testNullPrecedenceWithCriteriaQuery() throws Exception {
+        deleteAllEntities(Product.class);
+        Product p1 = Product.of("testSnapshot", "product1", 10.50f);
+        Product p2 = Product.of(null, "product2", 20.50f);
+        Product p3 = Product.of("sample products", "product3", 30.50f);
+        tx.begin();
+        em.persist(p1);
+        em.persist(p2);
+        em.persist(p3);
+        tx.commit();
+
+        /*
+         * Null values occur at the beginning of the result set.
+         */
+        List<Product> productsNullFirst;
+        try {
+            tx.begin();
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+            CriteriaQuery<Product> criteriaQuery = criteriaBuilder.createQuery(Product.class);
+            Root<Product> from = criteriaQuery.from(Product.class);
+            CriteriaQuery<Product> select = criteriaQuery.select(from);
+            criteriaQuery.orderBy(criteriaBuilder.desc(from.get("description"), Nulls.FIRST));
+            productsNullFirst = em.createQuery(criteriaQuery).getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertEquals(3, productsNullFirst.size());
+        assertEquals("Sorted based on 'description' in desc order with NULLS FIRST, Expecting first element to be 'product2'", "product2", productsNullFirst.get(0).name);
+
+        /*
+         * Null values occur at the end of the result set.
+         */
+        List<Product> productsNullLast;
+        try {
+
+            tx.begin();
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+            CriteriaQuery<Product> criteriaQuery = criteriaBuilder.createQuery(Product.class);
+            Root<Product> from = criteriaQuery.from(Product.class);
+            CriteriaQuery<Product> select = criteriaQuery.select(from);
+            criteriaQuery.orderBy(criteriaBuilder.desc(from.get("description"), Nulls.LAST));
+            productsNullLast = em.createQuery(criteriaQuery).getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertEquals(3, productsNullLast.size());
+        assertEquals("Sorted based on 'description' in desc order with NULLS LAST, Expecting last element to be 'product2'", "product2", productsNullLast.get(2).name);
+    }
+
+    /**
+     * Utility method to drop all entities from table.
+     *
+     * Order to tests is not guaranteed and thus we should be pessimistic and
+     * delete all entities when we reuse an entity between tests.
+     *
+     * @param clazz - the entity class
+     */
+    private void deleteAllEntities(Class<?> clazz) throws Exception {
+        tx.begin();
+        em.createQuery("DELETE FROM " + clazz.getSimpleName())
+                        .executeUpdate();
+        tx.commit();
     }
 }
