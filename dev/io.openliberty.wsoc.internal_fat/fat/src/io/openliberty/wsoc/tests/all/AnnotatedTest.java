@@ -57,7 +57,7 @@ public class AnnotatedTest {
         // 60 seconds is just an upper range -- if it really took over 60 seconds something must have gone wrong ..... and we should take a look
         // Note: The testMaxSessionIdleTimeoutTCKStyle looks at the time from onOpen to onClose. 
 
-        if ((totalTime < 15000) || (totalTime > 6000)) {
+        if ((totalTime < 15000) || (totalTime > 60000)) {
             Assert.fail("Test ran for " + totalTime + " which is either less than 10 seconds or more than 60 seconds,  outside of an acceptable session timeout range.");
         }
     }
