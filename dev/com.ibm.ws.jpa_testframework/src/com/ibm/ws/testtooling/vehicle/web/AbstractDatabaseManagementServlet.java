@@ -167,7 +167,8 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
             final DatabaseMetaData dbMeta = conn.getMetaData();
             dumpDBMeta(dbMeta);
 
-            final Statement stmt = conn.createStatement();
+            System.out.println("Creating statement.");
+            Statement stmt = conn.createStatement();
             final String defaultSchemaName = (overrideDefaultSchema == null || "".equals(overrideDefaultSchema.trim())) ? //
                             sanitize(dbMeta.getUserName()) : // Usually the default schema name
                             sanitize(overrideDefaultSchema); // But always allow for test client to override
@@ -177,15 +178,21 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
             for (String command : commands) {
 
                 // Check if more than 1 minute has passed
-                if ((System.currentTimeMillis() - timestart) > 60000) {
-                    System.out.println("More than 1 minute has passed. Committing and beginning a new transaction.");
+                if ((System.currentTimeMillis() - timestart) > 500) {
+                    System.out.println("Half a second passed. Committing and beginning a new transaction.");
 
                     // Commit the current transaction and begin a new one
                     tx.commit();
                     tx.begin();
 
+                    System.out.println("Creating new statement after timeout.");
+                    stmt = conn.createStatement();
+
                     // Reset the start time
                     timestart = System.currentTimeMillis();
+                }
+                else {
+                    System.out.println("Continuing with current transaction.");
                 }
 
                 final String sql = command.replace("${schemaname}", defaultSchemaName).trim();
