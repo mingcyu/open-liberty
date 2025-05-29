@@ -41,7 +41,7 @@ configurations {
     project(':com.ibm.ws.org.apache.httpcomponents'),
     project(':io.openliberty.org.apache.commons.codec'),
     project(':io.openliberty.org.apache.xercesImpl')
-    mq 'com.ibm.mq:wmq.jmsra:9.4.2.0'
+    mq 'com.ibm.mq:wmq.jmsra:9.4.2.0@rar'
 }
 
 task addMQ(type: Copy) {

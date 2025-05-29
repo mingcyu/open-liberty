@@ -65,7 +65,7 @@ dependencies {
 
     derby16 'org.apache.derby:derby:10.16.1.1',
             'org.apache.derby:derbytools:10.16.1.1'
-    mq 'com.ibm.mq:wmq.jakarta.jmsra:9.4.2.0'
+    mq 'com.ibm.mq:wmq.jakarta.jmsra:9.4.2.0@rar'
 }
 
 task addDerby16(type: Copy) {
