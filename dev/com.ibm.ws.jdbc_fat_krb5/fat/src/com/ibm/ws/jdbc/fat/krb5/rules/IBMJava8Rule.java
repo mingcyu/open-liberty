@@ -39,7 +39,7 @@ public class IBMJava8Rule implements TestRule {
                 if (shouldRun(desc)) {
                     stmt.evaluate();
                 } else {
-                    Log.info(IBMJava8Rule.class, "evaluate", "Rule chain borken, skipping next statement: " + stmt.toString());
+                    Log.info(IBMJava8Rule.class, "evaluate", "Rule chain broken, skipping next statement: " + stmt.toString());
                 }
             }
         };

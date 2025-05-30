@@ -57,9 +57,9 @@ public class FATSuite extends TestContainerSuite {
         // Manually apply rule so that the AlwaysPassesTest runs since having zero test results is considered an error
         if (KerberosPlatformRule.shouldRun(null)) {
             try {
-                network.close();
-            } finally {
                 krb5.stop();
+            } finally {
+                network.close();
             }
         }
     }
