@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Base64.Encoder;
 import java.util.Properties;
 
@@ -162,122 +163,114 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
 
         final PrintWriter pw = resp.getWriter();
         try {
+            // Set transaction timeout to 10 minutes
+            tx.setTransactionTimeout((int) Duration.ofMinutes(10).getSeconds());
             tx.begin();
-            final Connection conn = ds.getConnection();
-            final DatabaseMetaData dbMeta = conn.getMetaData();
-            dumpDBMeta(dbMeta);
 
-            System.out.println("Creating statement.");
-            Statement stmt = conn.createStatement();
-            final String defaultSchemaName = (overrideDefaultSchema == null || "".equals(overrideDefaultSchema.trim())) ? //
-                            sanitize(dbMeta.getUserName()) : // Usually the default schema name
-                            sanitize(overrideDefaultSchema); // But always allow for test client to override
+            try (Connection conn = ds.getConnection()) {
+                final DatabaseMetaData dbMeta = conn.getMetaData();
+                dumpDBMeta(dbMeta);
 
-            int totalCount = 0, successCount = 0;
-            int cmdIdx = 0;
-            for (String command : commands) {
+                final String defaultSchemaName = (overrideDefaultSchema == null || "".equals(overrideDefaultSchema.trim())) ?
+                        sanitize(dbMeta.getUserName()) :
+                        sanitize(overrideDefaultSchema);
 
-                // Check if more than 1 minute has passed
-                if ((System.currentTimeMillis() - timestart) > 500) {
-                    System.out.println("Half a second passed. Committing and beginning a new transaction.");
+                int totalCount = 0, successCount = 0;
+                int cmdIdx = 0;
 
-                    // Commit the current transaction and begin a new one
-                    tx.commit();
-                    tx.begin();
+                for (String command : commands) {
+                    final String sql = command.replace("${schemaname}", defaultSchemaName).trim();
+                    if ("".equals(sql)) {
+                        continue;
+                    }
+                    if (sql.startsWith("#")) {
+                        // Commented out sql line
+                        continue;
+                    }
 
-                    System.out.println("Creating new statement after timeout.");
-                    stmt = conn.createStatement();
+                    cmdIdx++;
 
-                    // Reset the start time
-                    timestart = System.currentTimeMillis();
-                }
-                else {
-                    System.out.println("Continuing with current transaction.");
-                }
+                    totalCount++;
 
-                final String sql = command.replace("${schemaname}", defaultSchemaName).trim();
-                if ("".equals(sql)) {
-                    continue;
-                }
-                if (sql.startsWith("#")) {
-                    // Commented out sql line
-                    continue;
-                }
-
-                cmdIdx++;
-
-                totalCount++;
-                try {
                     System.out.println(cmdIdx + "] Executing: " + sql);
                     pw.println(cmdIdx + "] Executing: " + sql);
 
-                    if (sql.toLowerCase().startsWith("select")) {
-                        ResultSet rs = stmt.executeQuery(sql);
-                        System.out.println("Successful query, Result Set:");
-                        pw.println("  <br>  Successful query, Result Set:");
-                        final ResultSetMetaData rsmd = rs.getMetaData();
-                        final int colCount = rsmd.getColumnCount();
-                        int index = 0;
-                        while (rs.next()) {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(++index).append(": ");
+                    try (Statement stmt = conn.createStatement()) {
+                        if (sql.toLowerCase().startsWith("select")) {
+                            ResultSet rs = stmt.executeQuery(sql);
+                            System.out.println("Successful query, Result Set:");
+                            pw.println("  <br>  Successful query, Result Set:");
+                            final ResultSetMetaData rsmd = rs.getMetaData();
+                            final int colCount = rsmd.getColumnCount();
+                            int index = 0;
+                            while (rs.next()) {
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(++index).append(": ");
 
-                            for (int col = 1; col <= colCount; col++) {
-                                if (col != 1) {
-                                    sb.append(", ");
+                                for (int col = 1; col <= colCount; col++) {
+                                    if (col != 1) {
+                                        sb.append(", ");
+                                    }
+                                    sb.append(rs.getObject(col));
                                 }
-                                sb.append(rs.getObject(col));
+
+                                pw.println(sb);
                             }
+                        } else if (stmt.execute(sql)) {
+                            System.out.println("Successful execution, Result Set:");
+                            pw.println("  <br>  Successful execution, Result Set:");
 
-                            pw.println(sb);
-                        }
-                    } else if (stmt.execute(sql)) {
-                        System.out.println("Successful execution, Result Set:");
-                        pw.println("  <br>  Successful execution, Result Set:");
+                            final ResultSet rs = stmt.getResultSet();
+                            final ResultSetMetaData rsmd = rs.getMetaData();
+                            final int colCount = rsmd.getColumnCount();
+                            int index = 0;
+                            while (rs.next()) {
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(++index).append(": ");
 
-                        final ResultSet rs = stmt.getResultSet();
-                        final ResultSetMetaData rsmd = rs.getMetaData();
-                        final int colCount = rsmd.getColumnCount();
-                        int index = 0;
-                        while (rs.next()) {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(++index).append(": ");
-
-                            for (int col = 1; col <= colCount; col++) {
-                                if (col != 1) {
-                                    sb.append(", ");
+                                for (int col = 1; col <= colCount; col++) {
+                                    if (col != 1) {
+                                        sb.append(", ");
+                                    }
+                                    sb.append(rs.getObject(col));
                                 }
-                                sb.append(rs.getObject(col));
+
+                                pw.println(sb);
                             }
-
-                            pw.println(sb);
+                        } else {
+                            System.out.println("Successful execution, update count = " + stmt.getUpdateCount());
+                            pw.println("  <br>  Successful execution, update count = " + stmt.getUpdateCount());
                         }
-                    } else {
-                        System.out.println("Successful execution, update count = " + stmt.getUpdateCount());
-                        pw.println("  <br>  Successful execution, update count = " + stmt.getUpdateCount());
-                    }
 
-                    successCount++;
-                } catch (Exception e) {
-                    if (!swallowErrors) {
-                        pw.println("  <br>  SQL Execution failed: " + e);
-                    }
-                    if (!sql.startsWith("DROP")) {
-                        System.out.println("SQL Execution failed: " + e);
-                        e.printStackTrace();
-                    }
+                        successCount++;
 
-                } finally {
-                    pw.println("  <br>  ");
+                    } catch (Exception e) {
+                        if (!swallowErrors) {
+                            pw.println("  <br>  SQL Execution failed: " + e);
+                        }
+                        if (!sql.startsWith("DROP")) {
+                            System.out.println("SQL Execution failed: " + e);
+                            e.printStackTrace();
+                        }
+
+                    } finally {
+                        pw.println("  <br>  ");
+                    }
                 }
-            }
 
-            System.out.println("SQL Executed: Total = " + totalCount + " Successful = " + successCount);
+                System.out.println("SQL Executed: Total = " + totalCount + " Successful = " + successCount);
+            }
 
             tx.commit();
         } catch (Exception e) {
             throw new ServletException(e);
         } finally {
+            // Reset transaction timeout back to default
+            try {
+                tx.setTransactionTimeout(0);
+            } catch (Exception e) {
+                //ignore
+            }
             pw.close();
         }
     }
