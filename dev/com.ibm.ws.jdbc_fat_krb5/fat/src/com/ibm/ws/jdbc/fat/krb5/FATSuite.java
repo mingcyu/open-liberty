@@ -41,26 +41,37 @@ public class FATSuite extends TestContainerSuite {
         java.lang.System.setProperty("com.ibm.jsse2.overrideDefaultTLS", "true");
     }
 
-    public static Network network = Network.newNetwork();
-    public static KerberosContainer krb5 = new KerberosContainer(network);
+    public static Network network;
+    public static KerberosContainer krb5;
 
     @BeforeClass
     public static void setup() throws Exception {
         // Manually apply rule so that the AlwaysPassesTest runs since having zero test results is considered an error
         if (KerberosPlatformRule.shouldRun(null)) {
+            network = Network.newNetwork();
+            krb5 = new KerberosContainer(network);
             krb5.start();
         }
     }
 
     @AfterClass
     public static void teardown() throws Exception {
-        // Manually apply rule so that the AlwaysPassesTest runs since having zero test results is considered an error
-        if (KerberosPlatformRule.shouldRun(null)) {
-            try {
-                krb5.stop();
-            } finally {
-                network.close();
-            }
+        if (krb5 == null && network == null) {
+            return; // Nothing to cleanup
         }
+
+        Exception firstError = null;
+
+        try {
+            krb5.stop();
+        } catch (Exception e) {
+            firstError = e;
+            Log.error(FATSuite.class, "teardown", e);
+        } finally {
+            network.close();
+        }
+
+        if (firstError != null)
+            throw firstError;
     }
 }
