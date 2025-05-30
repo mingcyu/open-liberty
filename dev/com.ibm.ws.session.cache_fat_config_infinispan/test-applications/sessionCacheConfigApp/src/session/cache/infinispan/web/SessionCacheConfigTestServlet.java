@@ -406,6 +406,12 @@ public class SessionCacheConfigTestServlet extends FATServlet {
         Object value = toType(type, stringValue);
 
         HttpSession session = request.getSession(true);
+        if (session == null) {
+            // Retry getSession() as request.getSession(true) can not be null in the production world
+            System.out.println("Sleep 5 seconds due to session return null");
+            TimeUnit.SECONDS.sleep(5);
+            session = request.getSession(true);
+        }
         session.setAttribute(attrName, value);
 
         // Verify that attribute does not get persisted to the cache yet
