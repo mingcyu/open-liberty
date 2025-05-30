@@ -80,6 +80,10 @@ import io.openliberty.jpa.data.tests.models.Store;
 import io.openliberty.jpa.data.tests.models.StreetAddress;
 import io.openliberty.jpa.data.tests.models.Triangle;
 import io.openliberty.jpa.data.tests.models.Vehicle;
+import io.openliberty.jpa.data.tests.models.Door;
+import io.openliberty.jpa.data.tests.models.Garage;
+import io.openliberty.jpa.data.tests.models.House;
+import io.openliberty.jpa.data.tests.models.Kitchen;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -2132,6 +2136,85 @@ public class JakartaDataRecreateServlet extends FATServlet {
         // EclipseLink should handle this case by adding in additional escapes to the bound parameters where PostgreSQL uses the default escape character `\`
         assertEquals(27.97f, totals.get(0), 0.01);
 
+    }
+    
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30789")
+    public void testOLGH30789() throws Exception {
+        try {
+            deleteAllEntities(House.class);
+
+            House h1 = new House();
+            h1.setArea(1800);
+
+            h1.setGarage(new Garage());
+            h1.getGarage().setArea(200);
+            h1.getGarage().setDoor(new Door());
+            h1.getGarage().getDoor().setHeight(8);
+            h1.getGarage().getDoor().setWidth(10);
+            h1.getGarage().setType(Garage.Type.Attached);
+
+            h1.setKitchen(new Kitchen());
+            h1.getKitchen().setLength(15);
+            h1.getKitchen().setWidth(12);
+            h1.setLotSize(0.19f);
+            h1.setNumBedrooms(4);
+            h1.setParcelId("TestEmbeddable-104-2288-60");
+            h1.setPurchasePrice(162000);
+            h1.setSold(false);
+
+            House h2 = new House();
+            h2.setArea(2000);
+
+            h2.setGarage(new Garage());
+            h2.getGarage().setArea(220);
+            h2.getGarage().setDoor(new Door());
+            h2.getGarage().getDoor().setHeight(8);
+            h2.getGarage().getDoor().setWidth(12);
+            h2.getGarage().setType(Garage.Type.Detached);
+
+            h2.setKitchen(new Kitchen());
+            h2.getKitchen().setLength(16);
+            h2.getKitchen().setWidth(13);
+            h2.setLotSize(0.18f);
+            h2.setNumBedrooms(4);
+            h2.setParcelId("TestEmbeddable-204-2992-20");
+            h2.setPurchasePrice(188000);
+            h2.setSold(false);
+
+            // Persist the house entity
+            tx.begin();
+
+            em.persist(h1);
+            em.persist(h2);
+
+            tx.commit();
+
+            tx.begin();
+
+            em.createQuery("UPDATE House o SET o.garage=?2, o.area = o.area + ?3, o.kitchen.length=o.kitchen.length+?4, o.numBedrooms = ?5 WHERE o.parcelId = ?1", House.class)
+                            .setParameter(1, h1.getParcelId())
+                            .setParameter(2, null)
+                            .setParameter(3, 50.0)
+                            .setParameter(4, 2.0)
+                            .setParameter(5, 4)
+                            .executeUpdate();
+
+            tx.commit();
+
+            tx.begin();
+
+            House updatedHouse = em.createQuery("SELECT this from House o WHERE o.parcelId = ?1", House.class)
+                            .setParameter(1, h1.getParcelId())
+                            .getSingleResult();
+
+            assertEquals(null, updatedHouse.getGarage());
+            assertEquals(4, h1.getNumBedrooms());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
     }
 
     @Test
