@@ -262,12 +262,7 @@ public class BasicTest {
     @Mode(TestMode.FULL)
     @Test
     public void testMaxSessionIdleTimeout() throws Exception {
-          String arch = System.getProperty("os.arch", "unidentified").toLowerCase();
-          if(arch.contains("s390x")) {
-            at.testMaxSessionIdleTimeout();
-          } else {
-               LOG.info("Skipped the test as it's running on s390x hardware! Known to be slow -- See defect 296687");
-          }
+        at.testMaxSessionIdleTimeout();
     }
 
     @Mode(TestMode.FULL)

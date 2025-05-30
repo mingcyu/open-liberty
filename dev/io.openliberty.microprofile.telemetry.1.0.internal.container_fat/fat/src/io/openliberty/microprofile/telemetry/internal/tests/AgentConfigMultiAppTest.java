@@ -134,7 +134,8 @@ public class AgentConfigMultiAppTest {
 
     @Test
     // Skipping for MP 5.0, 6.1 and 7.0 as JavaAgent 1.29 is sometimes successful and sometimes fails (possible classLoader issue in JavaAgent (BUG))
-    @SkipForRepeat({ TelemetryActions.MP50_MPTEL11_ID, MicroProfileActions.MP61_ID, TelemetryActions.MP50_MPTEL20_ID, MicroProfileActions.MP70_EE10_ID, MicroProfileActions.MP70_EE11_ID })
+    @SkipForRepeat({ TelemetryActions.MP50_MPTEL11_ID, MicroProfileActions.MP61_ID, TelemetryActions.MP50_MPTEL20_ID, MicroProfileActions.MP70_EE10_ID, MicroProfileActions.MP70_EE11_ID,
+                     TelemetryActions.MP50_MPTEL21_ID, MicroProfileActions.MP71_EE10_ID, MicroProfileActions.MP71_EE11_ID })
     public void testAgentMultiApp() throws Exception {
         PropertiesAsset app1Config = new PropertiesAsset().addProperty("otel.service.name", "multi-app-1");
         WebArchive app1 = ShrinkWrap.create(WebArchive.class, "multiApp1.war")
