@@ -234,10 +234,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
          * If createUpdateInterval is set (not -1) , but fileUpdateInterval is not set. Issue warning.
          */
         else if (!isFileHealthCheckingEnabled() && (startupCheckIntervalMilliseconds != HealthCheckConstants.CONFIG_NOT_SET)) {
-
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.warning(tc, "startup.check.interval.config.only.set.CWMMH01012W");
-            }
+            Tr.warning(tc, "startup.check.interval.config.only.set.CWMMH01012W");
         }
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -399,9 +396,7 @@ public class HealthCheck40ServiceImpl implements HealthCheck40Service {
                  * Something is very wrong and we should not continue.
                  */
 
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.warning(tc, "file.healthcheck.system.inconsistency.CWMMH0107W");
-                }
+                Tr.warning(tc, "file.healthcheck.system.inconsistency.CWMMH0107W");
             }
         }
     }
