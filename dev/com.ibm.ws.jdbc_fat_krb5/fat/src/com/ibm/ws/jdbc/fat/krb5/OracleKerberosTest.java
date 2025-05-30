@@ -32,6 +32,7 @@ import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jdbc.fat.krb5.containers.OracleKerberosContainer;
 import com.ibm.ws.jdbc.fat.krb5.rules.IBMJava8Rule;
+import com.ibm.ws.jdbc.fat.krb5.rules.KerberosPlatformRule;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.MaximumJavaLevel;
@@ -60,12 +61,10 @@ public class OracleKerberosTest extends FATServletClient {
     @TestServlet(servlet = OracleKerberosTestServlet.class, contextRoot = APP_NAME)
     public static LibertyServer server;
 
-    public static IBMJava8Rule skipOnIBMJava8 = new IBMJava8Rule();
-
     public static OracleKerberosContainer oracle = new OracleKerberosContainer(FATSuite.network);
 
     @ClassRule
-    public static RuleChain chain = RuleChain.outerRule(skipOnIBMJava8).around(oracle);
+    public static RuleChain chain = RuleChain.outerRule(KerberosPlatformRule.instance()).around(IBMJava8Rule.instance()).around(oracle);
 
     @BeforeClass
     public static void setUp() throws Exception {

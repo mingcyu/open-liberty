@@ -27,6 +27,10 @@ import componenttest.topology.impl.JavaInfo.Vendor;
  */
 public class IBMJava8Rule implements TestRule {
 
+    public static IBMJava8Rule instance() {
+        return new IBMJava8Rule();
+    }
+
     @Override
     public Statement apply(Statement stmt, Description desc) {
         return new Statement() {
@@ -34,6 +38,8 @@ public class IBMJava8Rule implements TestRule {
             public void evaluate() throws Throwable {
                 if (shouldRun(desc)) {
                     stmt.evaluate();
+                } else {
+                    Log.info(IBMJava8Rule.class, "evaluate", "Rule chain borken, skipping next statement: " + stmt.toString());
                 }
             }
         };
