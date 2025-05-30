@@ -1,5 +1,5 @@
 import React from "react"
-import { sanitizeUrl } from "../utils"
+import { sanitizeUrl } from "../../original/core/utils/url"
 
 export function FooterContactEmail ({getComponent, specSelectors}) {
   const Link = getComponent("Link")
