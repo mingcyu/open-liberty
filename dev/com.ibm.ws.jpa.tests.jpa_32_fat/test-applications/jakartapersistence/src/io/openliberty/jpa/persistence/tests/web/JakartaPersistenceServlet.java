@@ -25,6 +25,7 @@ import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
 import io.openliberty.jpa.persistence.tests.models.Participant;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.servlet.annotation.WebServlet;
@@ -324,6 +325,54 @@ public class JakartaPersistenceServlet extends FATServlet {
 
         // Assert that no result was returned
         assertTrue("Expected no results, but got: " + results, results.isEmpty());
+    }
+
+    @Test
+    public void testAsciiCharWithNullHexadecimalUsingDefaultConstructor() throws Exception {
+        deleteAllEntities(AsciiCharacter.class);
+
+        AsciiCharacter character = new AsciiCharacter();
+        character.setThisCharacter('P'); // char for ASCII 80
+        character.setHexadecimal(null);
+
+        String result;
+
+        tx.begin();
+
+        try {
+            em.persist(character);
+
+            result = em.createQuery(
+                                    "SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.thisCharacter = :thisCharacter",
+                                    String.class)
+                            .setParameter("thisCharacter", character.getThisCharacter())
+                            .getSingleResult();
+
+            tx.commit();
+        } catch (NoResultException e) {
+            tx.rollback();
+            result = null;
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+
+        assertNull(result);
+    }
+
+    /**
+     * Utility method to drop all entities from table.
+     *
+     * Order to tests is not guaranteed and thus we should be pessimistic and
+     * delete all entities when we reuse an entity between tests.
+     *
+     * @param clazz - the entity class
+     */
+    private void deleteAllEntities(Class<?> clazz) throws Exception {
+        tx.begin();
+        em.createQuery("DELETE FROM " + clazz.getSimpleName())
+                        .executeUpdate();
+        tx.commit();
     }
 
 }
