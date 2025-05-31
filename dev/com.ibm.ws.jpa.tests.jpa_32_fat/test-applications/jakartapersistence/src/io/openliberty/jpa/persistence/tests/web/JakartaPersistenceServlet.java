@@ -275,4 +275,26 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals(character.getHexadecimal(), result);
     }
 
+    @Test(expected = AssertionError.class)
+    public void testsciiCharacterNullCharacter() throws Exception {
+        AsciiCharacter character = null;
+
+        tx.begin();
+
+        try {
+            em.persist(character);
+
+            em.createQuery(
+                           "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
+                           String.class)
+                            .setParameter(1, character.getThisCharacter())
+                            .getSingleResult();
+
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }
+
 }
