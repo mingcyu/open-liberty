@@ -249,4 +249,30 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertTrue("Expected hex value 42 not found", results.contains("42")); // 66 in hex
     }
 
+    @Test
+    public void testAsciiCharacterwithSpecialCharacter() throws Exception {
+        AsciiCharacter character = AsciiCharacter.of(42); // *
+
+        String result;
+
+        tx.begin();
+
+        try {
+            em.persist(character);
+
+            result = em.createQuery(
+                                    "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
+                                    String.class)
+                            .setParameter(1, character.getThisCharacter())
+                            .getSingleResult();
+
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+
+        assertEquals(character.getHexadecimal(), result);
+    }
+
 }
