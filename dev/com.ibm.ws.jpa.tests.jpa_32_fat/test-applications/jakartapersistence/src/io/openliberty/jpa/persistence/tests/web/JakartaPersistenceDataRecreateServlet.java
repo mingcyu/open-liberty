@@ -10,6 +10,8 @@
 package io.openliberty.jpa.persistence.tests.web;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -55,7 +57,7 @@ public class JakartaPersistenceDataRecreateServlet extends FATServlet {
         } catch (PersistenceException e) {
             // Ensure an exception was thrown
             assertNotNull("Exception", e);
-            ssertTrue("Constructor or Query issue", e.getMessage().toLowerCase().contains("constructor") || e.getMessage().toLowerCase().contains("query"));
+            assertTrue("Constructor or Query issue", e.getMessage().toLowerCase().contains("constructor") || e.getMessage().toLowerCase().contains("query"));
         }
     }
 
