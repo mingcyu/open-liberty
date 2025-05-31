@@ -276,7 +276,7 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     @Test(expected = AssertionError.class)
-    public void testsciiCharacterNullCharacter() throws Exception {
+    public void testAsciiCharacterNullCharacter() throws Exception {
         AsciiCharacter character = null;
 
         tx.begin();
@@ -295,6 +295,35 @@ public class JakartaPersistenceServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
+    }
+
+    @Test
+    public void testAsciiCharacterNonExistentCharacter() throws Exception {
+        AsciiCharacter character = new AsciiCharacter();
+        character.setThisCharacter((char) 200); // Choose a code outside standard ASCII (0-127)
+        character.setHexadecimal(null); // set to null
+
+        tx.begin();
+
+        try {
+            em.persist(character);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+
+        // filters out null hexadecimal values
+        List<String> results = em.createQuery(
+                                              "SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.hexadecimal IS NOT NULL AND c.thisCharacter = ?1",
+                                              String.class)
+                        .setParameter(1, character.getThisCharacter())
+                        .getResultList();
+
+        System.out.println("Query result: " + results);
+
+        // Assert that no result was returned
+        assertTrue("Expected no results, but got: " + results, results.isEmpty());
     }
 
 }
