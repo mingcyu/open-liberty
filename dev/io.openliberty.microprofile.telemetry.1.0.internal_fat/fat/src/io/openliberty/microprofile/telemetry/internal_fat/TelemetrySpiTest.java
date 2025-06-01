@@ -159,7 +159,6 @@ public class TelemetrySpiTest extends FATServletClient {
 
         ShrinkHelper.exportAppToServer(server, customizerTestWar, SERVER_ONLY);
 
-        //server.addEnvVar("OTEL_SDK_DISABLED", "false");
         server.addEnvVar("OTEL_BSP_SCHEDULE_DELAY", "100");
         server.startServer();
     }
