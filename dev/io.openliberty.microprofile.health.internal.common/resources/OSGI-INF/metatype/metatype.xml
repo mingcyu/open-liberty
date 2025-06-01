@@ -18,7 +18,7 @@
 
     <OCD id="io.openliberty.microprofile.health" name="%mpHealth" description="%mpHealth.desc" ibm:alias="mpHealth" >
         <AD id="checkInterval" name="%checkInterval" description="%checkInterval.desc" required="false" type="String" />
-        <AD id="startupCheckInterval" name="%startupCheckInterval" description="%startupCheckInterval.desc" required="false" type="String" ibm:beta="true"/>
+        <AD id="startupCheckInterval" name="%startupCheckInterval" description="%startupCheckInterval.desc" required="false" type="String"/>
     </OCD>
 
     <Designate pid="io.openliberty.microprofile.health">
