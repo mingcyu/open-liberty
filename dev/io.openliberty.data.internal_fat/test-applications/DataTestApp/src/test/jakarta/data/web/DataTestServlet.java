@@ -1463,14 +1463,7 @@ public class DataTestServlet extends FATServlet {
         h = houses.findById("TestEmbeddable-304-3655-30");
         assertEquals("TestEmbeddable-304-3655-30", h.parcelId);
         assertEquals(1880, h.area);
-        // Null embeddables aren't required by JPA, but EclipseLink claims to support it as the default behavior.
-        // See https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Basic_JPA_Development/Entities/Embeddable#Nullable_embedded_values
-        // But it looks like EclipseLink has a bug here in that it only nulls out 1 of the fields of Garage, not all,
-        // JPQL: UPDATE House o SET o.garage=?2, o.area=o.area+?3, o.kitchen.length=o.kitchen.length+?4, o.numBedrooms=?5 WHERE (o.parcelId=?1)
-        // SQL:  UPDATE WLPHouse SET NUMBEDROOMS = 4, AREA = (AREA + 180), GARAGEAREA = NULL, KITCHENLENGTH = (KITCHENLENGTH + 2) WHERE (PARCELID = 'TestEmbeddable-304-3655-30')
-        // This causes the following assertion to fail:
-        // assertEquals(null, h.garage);
-        // TODO re-enable the above if EclipseLink bug #24926 is fixed
+        assertEquals(null, h.garage);
         assertNotNull(h.kitchen);
         assertEquals(16, h.kitchen.length);
         assertEquals(12, h.kitchen.width);
