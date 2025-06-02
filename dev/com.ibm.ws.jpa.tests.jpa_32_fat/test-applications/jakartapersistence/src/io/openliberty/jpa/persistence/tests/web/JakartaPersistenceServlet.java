@@ -96,33 +96,13 @@ public class JakartaPersistenceServlet extends FATServlet {
         em.persist(ticket3);
         tx.commit();
 
-        /*
+         /*
          * The INSERT statements present in the log is missing value mapping:
-         *
-         *
-         *
-         * [5/27/25, 18:28:22:002 IST] 00000051 id=00000000 eclipselink.query 3 [eclipselink.query] Execute query InsertObjectQuery(id=1 name=ticket1 status=OPEN priority=HIGH)
-         * [5/27/25, 18:28:22:003 IST] 00000051 id=00000000 eclipselink.sql 3 [eclipselink.sql] INSERT INTO TICKET (ID, NAME, PRIORITY, STATUS) VALUES (?, ?, ?, ?)
+         * INSERT INTO TICKET (ID, NAME, PRIORITY, STATUS) VALUES (?, ?, ?, ?)
          * bind => [1, ticket1, HIGH, 0]
-         * [5/27/25, 18:28:22:011 IST] 00000051 id=00000000 eclipselink.query 3 [eclipselink.query] Execute query InsertObjectQuery(id=2 name=ticket2 status=CLOSED priority=LOW)
-         * [5/27/25, 18:28:22:011 IST] 00000051 id=00000000 eclipselink.sql 3 [eclipselink.sql] INSERT INTO TICKET (ID, NAME, PRIORITY, STATUS) VALUES (?, ?, ?, ?)
-         * bind => [2, ticket2, LOW, 1]
-         * [5/27/25, 18:28:22:012 IST] 00000051 id=00000000 eclipselink.query 3 [eclipselink.query] Execute query InsertObjectQuery(id=3 name=ticket3 status=CANCELLED
-         * priority=MEDIUM)
-         * [5/27/25, 18:28:22:012 IST] 00000051 id=00000000 eclipselink.sql 3 [eclipselink.sql] INSERT INTO TICKET (ID, NAME, PRIORITY, STATUS) VALUES (?, ?, ?, ?)
-         * bind => [3, ticket3, MEDIUM, 2]
-         *
+         * Persisted Values in column PRIORITY & STATUS, in MySQL Server do not match
+         * the specification description
          */
-
-        // Persisted Values in MySQL Server do not match the specification description: https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/enumeratedvalue
-        //        +----+---------+----------+--------+
-        //        | ID | NAME    | PRIORITY | STATUS |
-        //        +----+---------+----------+--------+
-        //        |  1 | ticket1 | HIGH     |      0 |
-        //        |  2 | ticket2 | LOW      |      1 |
-        //        |  3 | ticket3 | MEDIUM   |      2 |
-        //        +----+---------+----------+--------+
-
         tx.begin();
         List<Ticket> results = em.createQuery("SELECT t FROM Ticket t ORDER BY t.id", Ticket.class).getResultList();
         tx.commit();
