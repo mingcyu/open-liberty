@@ -154,6 +154,7 @@ public class SlowAppStartupHealthCheckFastTest {
             Assume.assumeTrue(runTest); // Skip the test, if runTest is false.
 
             num_of_attempts += 1;
+            log("testStartupEndpointOnServerStart", "Attempt # : " + num_of_attempts);
 
             // Need to ensure the server is not finish starting when startup endpoint is hit so start the server on a separate thread
             // Note: this does not guarantee that we hit the endpoint during server startup, but it is highly likely that it will
@@ -172,9 +173,11 @@ public class SlowAppStartupHealthCheckFastTest {
                 // Repeatedly hit the readiness endpoint until a response of 200 is received
                 while (!app_started) {
                     try {
+                        log("testStartupEndpointOnServerStart", "Hitting /health/started endpoint...");
                         conStarted = HttpUtils.getHttpConnectionWithAnyResponseCode(server1, STARTED_ENDPOINT);
                         responseCode = conStarted.getResponseCode();
                     } catch (ConnectException ce) {
+                        log("testStartupEndpointOnServerStart", "Encountered a ConnectException. Exception: " + ce.getMessage());
                         if (ce.getMessage().contains("Connection refused")) {
                             connectionExceptionEncountered = true;
                         }
@@ -194,6 +197,8 @@ public class SlowAppStartupHealthCheckFastTest {
                                          " This is likely due to a rare timing issue where the server starts faster than we can hit the startup endpoint.";
 
                         if (conStarted == null && connectionExceptionEncountered) {
+                            log("testStartupEndpointOnServerStart",
+                                "Connection exception occurred for the first time, when the endpoint was hit really early on in the server startup cycle, retrying...");
                             first_time = false;
                         } else {
                             if (num_of_attempts == max_num_of_attempts) {
@@ -219,8 +224,9 @@ public class SlowAppStartupHealthCheckFastTest {
                             startServerThread.join();
                         } else if (System.currentTimeMillis() - start_time > time_out) {
                             List<String> lines = server1.findStringsInFileInLibertyServerRoot("(CWWKZ0001I: Application " + APP_NAME + " started)+", MESSAGE_LOG);
+                            log("testStartupEndpointOnServerStart", "Exceeded time out, ensure application has started. lines = " + lines);
                             if (lines.size() == 0) {
-                                log("testStartupEndpointOnServerStart", "Waiting for Application to start.");
+                                log("testStartupEndpointOnServerStart", "Waiting for Application to start, after timed out.");
                                 String line = server1.waitForStringInLog("(CWWKZ0001I: Application " + APP_NAME + " started)+", time_out);
                                 log("testStartupEndpointOnServerStart", "Application started. Line Found : " + line);
                                 assertNotNull("The CWWKZ0001I Application started message did not appear in messages.log", line);
