@@ -24,6 +24,7 @@ import java.util.List;
 import componenttest.app.FATServlet;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -317,6 +318,12 @@ public class JakartaPersistenceServlet extends FATServlet {
         }
         assertEquals(3, productsNullLast.size());
         assertEquals("Sorted based on 'description' in desc order with NULLS LAST, Expecting last element to be 'product2'", "product2", productsNullLast.get(2).name);
+    }
+
+    @Test
+    public void testGetNameReturnsPersistenceUnitName() {
+        EntityManagerFactory emf = em.getEntityManagerFactory();
+        assertEquals("JakartaPersistenceUnit", emf.getName());
     }
 
     /**
