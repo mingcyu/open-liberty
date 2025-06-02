@@ -50,6 +50,7 @@ public class DumpProcessor implements ArchiveProcessor {
     private final String regexServerName;
     private final File serverConfigDir;
     private final File serverOutputDir;
+    private final File serverAltLogDir;
 
     public String getServerName() {
         return serverName;
@@ -93,6 +94,11 @@ public class DumpProcessor implements ArchiveProcessor {
         this.regexServerName = Pattern.quote(serverName); // Avoid special characters.
         this.serverConfigDir = new File( bootProps.getUserRoot(), "servers/" + serverName );
         this.serverOutputDir = bootProps.getOutputFile(null);
+        this.serverAltLogDir = ( bootProps.getLogDirIsConfigured() ? bootProps.getLogDirectory() : null );
+        if ( this.serverAltLogDir != null ) {
+            System.out.println("Detected configured server logs directory [ " + serverAltLogDir.getAbsolutePath() + " ]");
+            System.out.println(format("info.dump.server.alt.logs", serverAltLogDir.getAbsolutePath()));
+        }
 
         this.bootProps = bootProps;
 
@@ -207,10 +213,10 @@ public class DumpProcessor implements ArchiveProcessor {
         nonConfigFiles.exclude(serverPattern("dump_" + REGEX_TIMESTAMP));
         nonConfigFiles.exclude(serverPattern("autopd"));
         
-        // Include these later ...                
+        // Include these later ...
         nonConfigFiles.exclude(serverPattern("logs"));
         nonConfigFiles.exclude(serverPattern("workarea"));
-
+        
         // Exclude server package files ...
         nonConfigFiles.exclude(Pattern.compile(SEP + regexServerName + "\\.(zip|pax)$"));
         nonConfigFiles.exclude(Pattern.compile(SEP + regexServerName + "\\.dump-" + REGEX_TIMESTAMP + "\\.(zip|pax)$"));
@@ -235,7 +241,10 @@ public class DumpProcessor implements ArchiveProcessor {
         // Finally, include these.
         outputConfigFiles.include(serverPattern("dump_" + REGEX_TIMESTAMP));
         outputConfigFiles.include(serverPattern("autopd"));
-        outputConfigFiles.include(serverPattern("logs"));
+        
+        if ( serverAltLogDir == null ) {
+            outputConfigFiles.include(serverPattern("logs"));
+        }
         outputConfigFiles.include(serverPattern("workarea"));
 
         // Exclude work-area locked files.
@@ -254,6 +263,18 @@ public class DumpProcessor implements ArchiveProcessor {
 
         entryConfigs.add(outputConfigFiles);
 
+        // Add the configured log directory, if necessary.
+        
+        if ( serverAltLogDir != null ) {
+            DirEntryConfig outputAltLogs =
+                    new DirEntryConfig("",
+                            serverAltLogDir,
+                            DirPattern.INCLUDE_BY_DEFAULT,
+                            PatternStrategy.IncludePreference);
+
+            entryConfigs.add(outputAltLogs);
+        }
+        
         // Include explicitly requested java dump files.
 
         for ( String javaDump : javaDumps ) {
