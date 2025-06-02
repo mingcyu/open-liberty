@@ -11,6 +11,10 @@ package io.openliberty.jpa.persistence.tests.web;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import io.openliberty.jpa.persistence.tests.models.User;
 
 import java.util.List;
 
@@ -64,6 +68,40 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertNotNull(exceptResult);
     }
 
+     /**
+     * Method for testing || in JPQL queries.
+     * @throws Exception
+     */
+    @Test
+    public void testJpqlConcat() throws Exception {
+        deleteAllEntities(User.class);
+
+        User user1 = User.of(1, "John", "Doe");
+        User user2 = User.of(2, "Harry", "Potter");
+        User user3 = User.of(3, "Hermione", "Granger");
+        
+        tx.begin();
+        em.persist(user1);
+        em.persist(user2);
+        em.persist(user3);
+        tx.commit();
+
+        try{
+            String concatJPQL = "SELECT u.firstName || ' ' || u.lastName FROM User u where u.lastName = ?1" ;
+	        String fullName = em.createQuery(concatJPQL,String.class).setParameter(1, "Doe")
+	            					.getSingleResult();
+
+            String concatJPQLFrom = "SELECT u.firstName FROM User u where u.firstName || ' ' || u.lastName = ?1" ;
+	        String firstName= em.createQuery(concatJPQLFrom,String.class).setParameter(1, "Harry Potter")
+	            					.getSingleResult();
+
+            assertEquals("John Doe", fullName);
+            assertEquals("Harry", firstName);
+
+        }catch (Exception e) {
+            throw e;
+        }
+    }
     /**
      * Specifies the precedence of null values within query result sets.
      * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a5587
