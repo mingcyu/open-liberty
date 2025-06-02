@@ -134,7 +134,6 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
         final boolean swallowErrors = Boolean.valueOf(req.getParameter("swallow.errors"));
         final String overrideDefaultSchema = req.getParameter("override.default.schema");
         final URL ddlScriptURL = cl.getResource(ddlScriptName);
-        long timestart = System.currentTimeMillis();
 
         if (ddlScriptURL == null) {
             throw new ServletException("Unable to locate resource " + ddlScriptName);
@@ -152,7 +151,6 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
         final InputStream is = ddlScriptURL.openStream();
         final byte[] buffer = new byte[1024];
         int bytesRead = 0;
-
         while ((bytesRead = is.read(buffer)) != -1) {
             baos.write(buffer, 0, bytesRead);
         }
@@ -162,104 +160,106 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
         final String[] commands = breakApartDDLIntoCommands(ddl);
 
         final PrintWriter pw = resp.getWriter();
+
+        DatabaseMetaData dbMeta;
+        String defaultSchemaName;
+
+        // Fetch metadata before transaction
+        try (Connection metaConn = ds.getConnection()) {
+            dbMeta = metaConn.getMetaData();
+            dumpDBMeta(dbMeta);
+
+            defaultSchemaName = (overrideDefaultSchema == null || "".equals(overrideDefaultSchema.trim())) ?
+                    sanitize(dbMeta.getUserName()) :
+                    sanitize(overrideDefaultSchema);
+        } catch (Exception e) {
+            throw new ServletException("Failed to retrieve database metadata", e);
+        }
+
         try {
             // Set transaction timeout to 10 minutes
             tx.setTransactionTimeout((int) Duration.ofMinutes(10).getSeconds());
             tx.begin();
 
-            try (Connection conn = ds.getConnection()) {
-                final DatabaseMetaData dbMeta = conn.getMetaData();
-                dumpDBMeta(dbMeta);
+            int totalCount = 0, successCount = 0;
+            int cmdIdx = 0;
 
-                final String defaultSchemaName = (overrideDefaultSchema == null || "".equals(overrideDefaultSchema.trim())) ?
-                        sanitize(dbMeta.getUserName()) :
-                        sanitize(overrideDefaultSchema);
+            for (String command : commands) {
+                final String sql = command.replace("${schemaname}", defaultSchemaName).trim();
 
-                int totalCount = 0, successCount = 0;
-                int cmdIdx = 0;
-
-                for (String command : commands) {
-                    final String sql = command.replace("${schemaname}", defaultSchemaName).trim();
-                    if ("".equals(sql)) {
-                        continue;
-                    }
-                    if (sql.startsWith("#")) {
-                        // Commented out sql line
+                if ("".equals(sql) || sql.startsWith("#")) {
                         continue;
                     }
 
-                    cmdIdx++;
+                cmdIdx++;
+                totalCount++;
 
-                    totalCount++;
+                System.out.println(cmdIdx + "] Executing: " + sql);
+                pw.println(cmdIdx + "] Executing: " + sql);
 
-                    System.out.println(cmdIdx + "] Executing: " + sql);
-                    pw.println(cmdIdx + "] Executing: " + sql);
+                try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
+                    if (sql.toLowerCase().startsWith("select")) {
+                        ResultSet rs = stmt.executeQuery(sql);
+                        System.out.println("Successful query, Result Set:");
+                        pw.println("  <br>  Successful query, Result Set:");
+                        final ResultSetMetaData rsmd = rs.getMetaData();
+                        final int colCount = rsmd.getColumnCount();
+                        int index = 0;
+                        while (rs.next()) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(++index).append(": ");
 
-                    try (Statement stmt = conn.createStatement()) {
-                        if (sql.toLowerCase().startsWith("select")) {
-                            ResultSet rs = stmt.executeQuery(sql);
-                            System.out.println("Successful query, Result Set:");
-                            pw.println("  <br>  Successful query, Result Set:");
-                            final ResultSetMetaData rsmd = rs.getMetaData();
-                            final int colCount = rsmd.getColumnCount();
-                            int index = 0;
-                            while (rs.next()) {
-                                StringBuilder sb = new StringBuilder();
-                                sb.append(++index).append(": ");
-
-                                for (int col = 1; col <= colCount; col++) {
-                                    if (col != 1) {
-                                        sb.append(", ");
-                                    }
-                                    sb.append(rs.getObject(col));
+                            for (int col = 1; col <= colCount; col++) {
+                                if (col != 1) {
+                                    sb.append(", ");
                                 }
-
-                                pw.println(sb);
+                                sb.append(rs.getObject(col));
                             }
-                        } else if (stmt.execute(sql)) {
-                            System.out.println("Successful execution, Result Set:");
-                            pw.println("  <br>  Successful execution, Result Set:");
 
-                            final ResultSet rs = stmt.getResultSet();
-                            final ResultSetMetaData rsmd = rs.getMetaData();
-                            final int colCount = rsmd.getColumnCount();
-                            int index = 0;
-                            while (rs.next()) {
-                                StringBuilder sb = new StringBuilder();
-                                sb.append(++index).append(": ");
+                            pw.println(sb);
+                        }
+                    } else if (stmt.execute(sql)) {
+                        System.out.println("Successful execution, Result Set:");
+                        pw.println("  <br>  Successful execution, Result Set:");
 
-                                for (int col = 1; col <= colCount; col++) {
-                                    if (col != 1) {
-                                        sb.append(", ");
-                                    }
-                                    sb.append(rs.getObject(col));
+                        final ResultSet rs = stmt.getResultSet();
+                        final ResultSetMetaData rsmd = rs.getMetaData();
+                        final int colCount = rsmd.getColumnCount();
+                        int index = 0;
+                        while (rs.next()) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(++index).append(": ");
+
+                            for (int col = 1; col <= colCount; col++) {
+                                if (col != 1) {
+                                    sb.append(", ");
                                 }
-
-                                pw.println(sb);
+                                sb.append(rs.getObject(col));
                             }
-                        } else {
-                            System.out.println("Successful execution, update count = " + stmt.getUpdateCount());
-                            pw.println("  <br>  Successful execution, update count = " + stmt.getUpdateCount());
-                        }
 
-                        successCount++;
-
-                    } catch (Exception e) {
-                        if (!swallowErrors) {
-                            pw.println("  <br>  SQL Execution failed: " + e);
+                            pw.println(sb);
                         }
-                        if (!sql.startsWith("DROP")) {
-                            System.out.println("SQL Execution failed: " + e);
-                            e.printStackTrace();
-                        }
-
-                    } finally {
-                        pw.println("  <br>  ");
+                    } else {
+                        System.out.println("Successful execution, update count = " + stmt.getUpdateCount());
+                        pw.println("  <br>  Successful execution, update count = " + stmt.getUpdateCount());
                     }
+
+                    successCount++;
+
+                } catch (Exception e) {
+                    if (!swallowErrors) {
+                        pw.println("  <br>  SQL Execution failed: " + e);
+                    }
+                    if (!sql.startsWith("DROP")) {
+                        System.out.println("SQL Execution failed: " + e);
+                        e.printStackTrace();
+                    }
+                } finally {
+                    pw.println("  <br>  ");
                 }
-
-                System.out.println("SQL Executed: Total = " + totalCount + " Successful = " + successCount);
             }
+
+            System.out.println("SQL Executed: Total = " + totalCount + " Successful = " + successCount);
 
             tx.commit();
         } catch (Exception e) {
@@ -274,6 +274,7 @@ public abstract class AbstractDatabaseManagementServlet extends HttpServlet {
             pw.close();
         }
     }
+
 
     private static String[] breakApartDDLIntoCommands(String ddl) {
         // Split on either ';' at the end of a line or ';' at the end of the file
