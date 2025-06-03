@@ -219,10 +219,9 @@ public class TestContainerSuite {
         //Always use LibertyImageNameSubstitutor
         tcProps.setProperty("image.substitutor", LibertyImageNameSubstitutor.class.getCanonicalName().toString());
 
-        //Always use TinyImage from AWS
+        //Always use internal testcontainer images from alternative sources (where possible)
         tcProps.setProperty("tinyimage.container.image", "public.ecr.aws/docker/library/alpine:3.17");
-
-        //TODO Switch Ryuk to version from ghcr.io
+        tcProps.setProperty("ryuk.container.image", "ghcr.io/testcontainers/ryuk:0.12.0");
 
         try {
             tcProps.store(new FileOutputStream(configSource.toFile()), "Modified by FAT framework");
