@@ -174,12 +174,18 @@ public class SlowAppStartupHealthCheckFastTest {
 
                 // Repeatedly hit the readiness endpoint until a response of 200 is received
                 while (!app_started) {
+                    if (num_of_attempts == max_num_of_attempts) {
+                        log("testStartupEndpointOnServerStart",
+                            LOG_PREFIX + " Skipping test case due to multiple failed attempts in hitting the startup endpoint faster than the server can start.");
+                        startServerThread.join();
+                        runTest = false; // Skip the test.
+                        break;
+                    }
+
                     try {
-                        log("testStartupEndpointOnServerStart", LOG_PREFIX + "Hitting /health/started endpoint...");
                         conStarted = HttpUtils.getHttpConnectionWithAnyResponseCode(server1, STARTED_ENDPOINT);
                         responseCode = conStarted.getResponseCode();
                     } catch (ConnectException ce) {
-                        log("testStartupEndpointOnServerStart", LOG_PREFIX + "Encountered a ConnectException. Exception: " + ce.getMessage());
                         if (ce.getMessage().contains("Connection refused")) {
                             connectionExceptionEncountered = true;
                         }
@@ -203,14 +209,6 @@ public class SlowAppStartupHealthCheckFastTest {
                                 LOG_PREFIX + "Connection exception occurred for the first time, when the endpoint was hit really early on in the server startup cycle, retrying...");
                             first_time = false;
                         } else {
-                            if (num_of_attempts == max_num_of_attempts) {
-                                log("testStartupEndpointOnServerStart",
-                                    LOG_PREFIX + message + " Skipping test case due to multiple failed attempts in hitting the startup endpoint faster than the server can start.");
-                                startServerThread.join();
-                                runTest = false; // Skip the test.
-                                break;
-                            }
-
                             log("testStartupEndpointOnServerStart",
                                 LOG_PREFIX + message + " At this point the test will be re-run. Number of current attempts ---> " + num_of_attempts);
                             startServerThread.join();
