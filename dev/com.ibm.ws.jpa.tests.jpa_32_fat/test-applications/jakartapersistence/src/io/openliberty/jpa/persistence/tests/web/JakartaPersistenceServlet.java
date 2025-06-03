@@ -10,6 +10,7 @@
 package io.openliberty.jpa.persistence.tests.web;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -21,7 +22,10 @@ import java.util.List;
 import org.junit.Test;
 
 import componenttest.app.FATServlet;
+import io.openliberty.jpa.persistence.tests.models.Priority;
 import io.openliberty.jpa.persistence.tests.models.Product;
+import io.openliberty.jpa.persistence.tests.models.Ticket;
+import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -103,6 +107,73 @@ public class JakartaPersistenceServlet extends FATServlet {
         }
     }
     /**
+     * In previous version, Enumerated annotations were used for mapping Java Enum types to database column values.
+     *
+     * The Annotation @Enumerated are used with EnumType (ORDINAL or STRING)
+     * EnumeratedValue in 3.2, Specifies that an annotated field of a Java enum type is the source of database column values for an enumerated mapping.
+     * The annotated field must be declared final, and must be of type:
+     * byte, short, or int for EnumType.ORDINAL, or
+     * String for EnumType.STRING.
+     * https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/enumeratedvalue
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEnumeratedValue() throws Exception {
+
+        Ticket ticket1 = Ticket.of(1, "ticket1", TicketStatus.OPEN, Priority.HIGH);
+        Ticket ticket2 = Ticket.of(2, "ticket2", TicketStatus.CLOSED, Priority.LOW);
+        Ticket ticket3 = Ticket.of(3, "ticket3", TicketStatus.CANCELLED, Priority.MEDIUM);
+
+        // Checking SQL logs whether the mapping is done as below in the insert queries
+        // TicketStatus.OPEN ENUM property value will be mapped to Table column value 0
+        // Priority.HIGH property value will be mapped to Table column value 'H'
+        tx.begin();
+        em.persist(ticket1);
+        em.persist(ticket2);
+        em.persist(ticket3);
+        tx.commit();
+
+         /*
+         * The INSERT statements present in the log is missing value mapping:
+         * INSERT INTO TICKET (ID, NAME, PRIORITY, STATUS) VALUES (?, ?, ?, ?)
+         * bind => [1, ticket1, HIGH, 0]
+         * Persisted Values in column PRIORITY & STATUS, in MySQL Server do not match
+         * the specification description
+         */
+        tx.begin();
+        List<Ticket> results = em.createQuery("SELECT t FROM Ticket t ORDER BY t.id", Ticket.class).getResultList();
+        tx.commit();
+
+        System.out.println("***** testEnumeratedValue results: " + results);
+        // Assert against status value of first element
+        assertEquals(TicketStatus.OPEN, results.get(0).getStatus());
+        assertFalse(TicketStatus.CLOSED.equals(results.get(0).getStatus()));
+        assertFalse(TicketStatus.CANCELLED.equals(results.get(0).getStatus()));
+        // Assert against status value of second element
+        assertEquals(TicketStatus.CLOSED, results.get(1).getStatus());
+        assertFalse(TicketStatus.OPEN.equals(results.get(1).getStatus()));
+        assertFalse(TicketStatus.CANCELLED.equals(results.get(1).getStatus()));
+        // Assert against status value of third element
+        assertEquals(TicketStatus.CANCELLED, results.get(2).getStatus());
+        assertFalse(TicketStatus.OPEN.equals(results.get(2).getStatus()));
+        assertFalse(TicketStatus.CLOSED.equals(results.get(2).getStatus()));
+        // Assert against priority value of first element
+        assertEquals(Priority.HIGH, results.get(0).getPriority());
+        assertFalse(Priority.MEDIUM.equals(results.get(0).getPriority()));
+        assertFalse(Priority.LOW.equals(results.get(0).getPriority()));
+        // Assert against priority value of second element
+        assertEquals(Priority.LOW, results.get(1).getPriority());
+        assertFalse(Priority.HIGH.equals(results.get(1).getPriority()));
+        assertFalse(Priority.MEDIUM.equals(results.get(1).getPriority()));
+        // Assert against priority value of third element
+        assertEquals(Priority.MEDIUM, results.get(2).getPriority());
+        assertFalse(Priority.HIGH.equals(results.get(2).getPriority()));
+        assertFalse(Priority.LOW.equals(results.get(2).getPriority()));
+
+    }
+
+     /**
      * Specifies the precedence of null values within query result sets.
      * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a5587
      *
