@@ -94,17 +94,52 @@ public class DumpProcessor implements ArchiveProcessor {
         this.regexServerName = Pattern.quote(serverName); // Avoid special characters.
         this.serverConfigDir = new File( bootProps.getUserRoot(), "servers/" + serverName );
         this.serverOutputDir = bootProps.getOutputFile(null);
-        this.serverAltLogDir = ( bootProps.getLogDirIsConfigured() ? bootProps.getLogDirectory() : null );
-        if ( this.serverAltLogDir != null ) {
-            System.out.println("Detected configured server logs directory [ " + serverAltLogDir.getAbsolutePath() + " ]");
-            System.out.println(format("info.dump.server.alt.logs", serverAltLogDir.getAbsolutePath()));
-        }
+        this.serverAltLogDir = getAltLogDir( this.serverConfigDir, bootProps.getLogDirectory() );
+
+        // System.out.println("Server config [ " + serverConfigDir.getAbsolutePath() + " ]");
+        // System.out.println("Server output [ " + serverOutputDir.getAbsolutePath() + " ]");
 
         this.bootProps = bootProps;
 
         this.javaDumps = javaDumps;
 
         this.dumpFile = dumpFile;
+    }
+
+    /**
+     * Answer the alternate server log directory, if one is configured.
+     * 
+     * The log directory is usually configured to "serverName/logs", but may be
+     * configured to a different value.
+     * 
+     * Answer null if the the log directory is configured to the usual value.  Answer
+     * the configured directory if an alternate value is specified.
+     * 
+     * @param serverConfigDir The server configuration directory.
+     * @param serverLogDir The server logs directory.
+     * 
+     * @return The alternate server log directory.
+     */
+    private static File getAltLogDir(File serverConfigDir, File serverLogDir) {
+        if ( serverLogDir == null ) {
+            System.out.println("Null server log directory!");
+            return null; // This may not be necessary.
+        }
+
+        String serverLogPath = serverLogDir.getAbsolutePath();
+
+        File defaultLogDir = new File(serverConfigDir, "logs");
+        String defaultLogPath = defaultLogDir.getAbsolutePath();
+
+        System.out.println("Server logs [ " + serverLogPath + " ]");
+        System.out.println("Default logs [ " + defaultLogPath + " ]");
+
+        if ( !serverLogPath.equals(defaultLogPath) ) {
+            System.out.println(format("info.dump.server.alt.logs", serverLogPath));
+            return serverLogDir;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -242,9 +277,10 @@ public class DumpProcessor implements ArchiveProcessor {
         outputConfigFiles.include(serverPattern("dump_" + REGEX_TIMESTAMP));
         outputConfigFiles.include(serverPattern("autopd"));
         
-        if ( serverAltLogDir == null ) {
-            outputConfigFiles.include(serverPattern("logs"));
-        }
+        // Capture default logs: This will contain the console log, and will
+        // contain any early log files, if the log location was configured in server.xml.
+
+        outputConfigFiles.include(serverPattern("logs"));
         outputConfigFiles.include(serverPattern("workarea"));
 
         // Exclude work-area locked files.
@@ -264,10 +300,13 @@ public class DumpProcessor implements ArchiveProcessor {
         entryConfigs.add(outputConfigFiles);
 
         // Add the configured log directory, if necessary.
-        
+
+        // Put the entry in a subdirectory.  The name of the directory cannot be guaranteed
+        // to be distinct from other names added to the archive.
+
         if ( serverAltLogDir != null ) {
             DirEntryConfig outputAltLogs =
-                    new DirEntryConfig("",
+                    new DirEntryConfig("logs_external/" + serverAltLogDir.getName() + "/",
                             serverAltLogDir,
                             DirPattern.INCLUDE_BY_DEFAULT,
                             PatternStrategy.IncludePreference);
