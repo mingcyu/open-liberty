@@ -36,9 +36,8 @@ import componenttest.topology.impl.JavaInfo.Vendor;
  */
 public class KerberosPlatformRule implements TestRule {
 
-    static {
-        // Needed for IBM JDK 8 support.
-        java.lang.System.setProperty("com.ibm.jsse2.overrideDefaultTLS", "true");
+    public static KerberosPlatformRule instance() {
+        return new KerberosPlatformRule();
     }
 
     @Override
@@ -48,6 +47,8 @@ public class KerberosPlatformRule implements TestRule {
             public void evaluate() throws Throwable {
                 if (shouldRun(desc)) {
                     stmt.evaluate();
+                } else {
+                    Log.info(KerberosPlatformRule.class, "evaluate", "Rule chain broken, skipping next statement: " + stmt.toString());
                 }
             }
         };
