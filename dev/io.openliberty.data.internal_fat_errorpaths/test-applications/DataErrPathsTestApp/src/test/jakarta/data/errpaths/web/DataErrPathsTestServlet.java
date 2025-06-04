@@ -319,6 +319,74 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Error path where a request for cursor-based pagination includes ordering on
+     * VERSION(THIS) when the entity has no version. Expect an error with an
+     * appropriate message.
+     */
+    @Test
+    public void testCursoredPageInvalidOrderNoVersion() {
+        PageRequest pageReq = PageRequest.ofSize(5).afterCursor(Cursor.forKey(0));
+        try {
+            CursoredPage<Voter> page = voters
+                            .selectByBirthday(LocalDate.of(2025, 5, 23),
+                                              pageReq,
+                                              Order.by(Sort.asc("VERSION(THIS)")));
+            fail("Should not be able to retrieve CursoredPage ordering on" +
+                 " VERSION(THIS) when the entity doesn't have a version. Found: " +
+                 page);
+        } catch (MappingException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1093E:") ||
+                !x.getMessage().contains("VERSION(THIS)"))
+                throw x;
+        }
+    }
+
+    /**
+     * Error path where a request for cursor-based pagination includes ordering on
+     * an attribute that the entity does not have. Expect an error with an
+     * appropriate message.
+     */
+    @Test
+    public void testCursoredPageInvalidOrderUnknownSortAttribute() {
+        PageRequest pageReq = PageRequest.ofSize(6).afterCursor(Cursor.forKey(50000));
+        try {
+            CursoredPage<Voter> page = voters
+                            .selectByBirthday(LocalDate.of(2025, 5, 22),
+                                              pageReq,
+                                              Order.by(Sort.asc("income")));
+            fail("Should not be able to retrieve CursoredPage ordering on" +
+                 " an attribute that does not exist on the entity. Found: " +
+                 page);
+        } catch (MappingException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1010E:") ||
+                !x.getMessage().contains("income"))
+                throw x;
+        }
+    }
+
+    /**
+     * Error path where a request for cursor-based pagination includes ordering on
+     * a function that does not exist. Expect an error from EclipseLink.
+     */
+    @Test
+    public void testCursoredPageInvalidOrderUnknownSortFunction() {
+        PageRequest pageReq = PageRequest.ofSize(7).afterCursor(Cursor.forKey(0.22));
+        try {
+            CursoredPage<Voter> page = voters
+                            .selectByBirthday(LocalDate.of(2025, 5, 21),
+                                              pageReq,
+                                              Order.by(Sort.asc("TAXBRACKET(THIS)")));
+            fail("Should not be able to retrieve CursoredPage ordering on" +
+                 " a function that does not exist on the entity. Found: " +
+                 page);
+        } catch (RuntimeException x) {
+            // error is from EclipseLink
+        }
+    }
+
+    /**
      * Verify an error is raised for a repository method that attempts to
      * return a CursoredPage of a record, rather than of the entity.
      */

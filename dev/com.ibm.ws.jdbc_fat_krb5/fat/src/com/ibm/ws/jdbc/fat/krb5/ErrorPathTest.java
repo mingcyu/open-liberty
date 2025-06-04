@@ -22,6 +22,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
@@ -30,6 +31,7 @@ import com.ibm.websphere.simplicity.config.Kerberos;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.jdbc.fat.krb5.containers.DB2KerberosContainer;
+import com.ibm.ws.jdbc.fat.krb5.rules.KerberosPlatformRule;
 
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
@@ -48,8 +50,10 @@ public class ErrorPathTest extends FATServletClient {
     @Server("com.ibm.ws.jdbc.fat.krb5")
     public static LibertyServer server;
 
-    @ClassRule
     public static final DB2KerberosContainer db2 = DB2KerberosTest.db2;
+
+    @ClassRule
+    public static RuleChain chain = RuleChain.outerRule(KerberosPlatformRule.instance()).around(db2);
 
     private static final String APP_NAME = DB2KerberosTest.APP_NAME;
 
