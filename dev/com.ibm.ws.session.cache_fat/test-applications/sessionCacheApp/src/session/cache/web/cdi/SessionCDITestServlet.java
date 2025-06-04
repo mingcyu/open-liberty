@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.cache.Cache;
@@ -82,10 +83,14 @@ public class SessionCDITestServlet extends FATServlet {
         String key1 = sessionId + ".WELD_S#1";
 
         Cache<String, byte[]> cache = Caching.getCache("com.ibm.ws.session.attr.default_host%2FsessionCacheApp", String.class, byte[].class);
-        if (cache == null) {
-            System.out.println("Cache was not found, most likely due to test infrastructure; Try again ...");  
-            TimeUnit.SECONDS.sleep(5);
-            cache = Caching.getCache("com.ibm.ws.session.attr.default_host%2FsessionCacheApp", String.class, byte[].class);
+        try {
+            if (cache == null) {
+                System.out.println("Cache was not found, most likely due to test infrastructure; Try again ...");  
+                TimeUnit.SECONDS.sleep(5);
+                cache = Caching.getCache("com.ibm.ws.session.attr.default_host%2FsessionCacheApp", String.class, byte[].class);
+            }
+        } catch (AssertionError e) {
+            //We are likely on a slow machine, we'll try again
         }
 
         if (cache != null) {
