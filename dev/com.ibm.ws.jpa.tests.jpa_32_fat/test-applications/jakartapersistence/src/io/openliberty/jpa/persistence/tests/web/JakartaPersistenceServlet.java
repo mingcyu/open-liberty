@@ -290,6 +290,93 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     /**
+     * Usage of notEqual() while building criterias
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testNotEqualInCriteria() throws Exception {
+        deleteAllEntities(User.class);
+
+        User user1 = User.of(1, "John", "Doe");
+        User user2 = User.of(2, "Harry", "Potter");
+        User user3 = User.of(3, "Hermione", "Granger");
+        User user4 = User.of(4, "John", "Samuel");
+        User user5 = User.of(5, "John", "Philip");
+        User user6 = User.of(6, "Ron", "Weasley");
+        User user7 = User.of(7, "Nervile", "Longbottom");
+        
+        tx.begin();
+        em.persist(user1);
+        em.persist(user2);
+        em.persist(user3);
+        em.persist(user4);
+        em.persist(user5);
+        em.persist(user6);
+        em.persist(user7);
+        tx.commit();
+       
+        List<User> result;
+        try {
+            tx.begin();
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+            CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+            Root<User> user = criteriaQuery.from(User.class);
+            criteriaQuery.select(user).where(criteriaBuilder.notEqual(user.get("firstName"), "John"));
+	        result = em.createQuery(criteriaQuery).getResultList();
+            assertEquals(4, result.size());
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }
+
+     /**
+     * Usage of equal() while building criterias
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEqualInCriteria() throws Exception {
+        deleteAllEntities(User.class);
+
+        User user1 = User.of(1, "John", "Doe");
+        User user2 = User.of(2, "Harry", "Potter");
+        User user3 = User.of(3, "Hermione", "Granger");
+        User user4 = User.of(4, "John", "Samuel");
+        User user5 = User.of(5, "John", "Philip");
+        User user6 = User.of(6, "Ron", "Weasley");
+        User user7 = User.of(7, "Nervile", "Longbottom");
+        
+        tx.begin();
+        em.persist(user1);
+        em.persist(user2);
+        em.persist(user3);
+        em.persist(user4);
+        em.persist(user5);
+        em.persist(user6);
+        em.persist(user7);
+        tx.commit();
+       
+        List<User> result;
+        try {
+            tx.begin();
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+            CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+            Root<User> user = criteriaQuery.from(User.class);
+            criteriaQuery.select(user).where(criteriaBuilder.equal(user.get("firstName"), "John"));
+	        result = em.createQuery(criteriaQuery).getResultList();
+            assertEquals(3, result.size());
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+       
+    }
+
+    /**
      * Utility method to drop all entities from table.
      *
      * Order to tests is not guaranteed and thus we should be pessimistic and
