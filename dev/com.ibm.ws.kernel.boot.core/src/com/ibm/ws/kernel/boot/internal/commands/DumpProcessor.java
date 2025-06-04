@@ -122,7 +122,7 @@ public class DumpProcessor implements ArchiveProcessor {
      */
     private static File getAltLogDir(File serverConfigDir, File serverLogDir) {
         if ( serverLogDir == null ) {
-            System.out.println("Null server log directory!");
+            // System.out.println("Null server log directory!");
             return null; // This may not be necessary.
         }
 
@@ -131,8 +131,8 @@ public class DumpProcessor implements ArchiveProcessor {
         File defaultLogDir = new File(serverConfigDir, "logs");
         String defaultLogPath = defaultLogDir.getAbsolutePath();
 
-        System.out.println("Server logs [ " + serverLogPath + " ]");
-        System.out.println("Default logs [ " + defaultLogPath + " ]");
+        // System.out.println("Server logs [ " + serverLogPath + " ]");
+        // System.out.println("Default logs [ " + defaultLogPath + " ]");
 
         if ( !serverLogPath.equals(defaultLogPath) ) {
             System.out.println(format("info.dump.server.alt.logs", serverLogPath));
