@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package io.openliberty.microprofile.health.file.healthcheck.app.start.wait.five;
+package io.openliberty.microprofile.health.file.healthcheck.app.start.after;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -18,22 +18,25 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Startup;
 
-import io.openliberty.microprofile.health.file.healthcheck.app.HealthAppServlet;
-
 /**
  *
  */
 @Startup
 @ApplicationScoped
-public class StartupCheckUpAfterFive implements HealthCheck {
+public class StartupCheckUpAfterSecondQuery implements HealthCheck {
+
+    private int counter = 0;
 
     @Override
     public HealthCheckResponse call() {
 
-        if (HealthAppServlet.isFiveSeconds()) {
-            return HealthCheckResponse.named("fiveSec-startup-check").up().build();
+        /*
+         * Return up after first check.
+         */
+        if ((counter++) != 0) {
+            return HealthCheckResponse.named("secondUP-startup-check").up().build();
         } else {
-            return HealthCheckResponse.named("fiveSec-startup-check").down().build();
+            return HealthCheckResponse.named("secondUP-startup-check").down().build();
         }
 
     }
