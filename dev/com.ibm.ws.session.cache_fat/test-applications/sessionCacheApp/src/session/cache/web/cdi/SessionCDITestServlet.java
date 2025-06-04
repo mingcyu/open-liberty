@@ -89,7 +89,7 @@ public class SessionCDITestServlet extends FATServlet {
                 TimeUnit.SECONDS.sleep(5);
                 cache = Caching.getCache("com.ibm.ws.session.attr.default_host%2FsessionCacheApp", String.class, byte[].class);
             }
-        } catch (AssertionError e) {
+        } catch (Exception e) {
             //We are likely on a slow machine, we'll try again
         }
 
