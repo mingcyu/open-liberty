@@ -28,6 +28,7 @@ import org.eclipse.microprofile.rest.client.ext.QueryParamStyle;
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.eclipse.microprofile.rest.client.spi.RestClientListener;
+import org.eclipse.osgi.internal.loader.EquinoxClassLoader;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.cdi.CdiInjectorFactory;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -114,6 +115,8 @@ import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PRO
 import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PROXY_PORT;
 import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PROXY_SCHEME;
 
+import org.eclipse.osgi.internal.loader.EquinoxClassLoader;
+
 /**
  * @author Bill Burke (initial commit according to GitHub history)
  * 
@@ -130,8 +133,28 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     public static final ClientHeadersRequestFilter HEADERS_REQUEST_FILTER = new ClientHeadersRequestFilter();
 
     private static final Class<?> FT_ANNO_CLASS = getFTAnnotationClass();
+    private static final ClassLoader myClassLoader; // liberty change
+    private static final boolean isOSGiEnv; // liberty change
 
     static ResteasyProviderFactory PROVIDER_FACTORY;
+    
+    static {
+        // liberty change start
+        myClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return LibertyRestClientBuilderImpl.class.getClassLoader();
+            }
+        });
+        boolean isOSGi = false;
+        try {
+            isOSGi = myClassLoader instanceof EquinoxClassLoader;
+        } catch (Throwable t) {
+            // not running in an OSGi environment
+        }
+        isOSGiEnv = isOSGi;
+        // liberty change end
+    }
 
     public static void setProviderFactory(ResteasyProviderFactory providerFactory) {
         PROVIDER_FACTORY = providerFactory;
@@ -849,10 +872,26 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     }
 
     private static ClassLoader getClassLoader(Class<?> clazz) {
+        ClassLoader clazzLoader = null;
         if (System.getSecurityManager() == null) {
-            return clazz.getClassLoader();
+            clazzLoader = clazz.getClassLoader();
+        } else {
+            clazzLoader = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader);
         }
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader);
+
+        // We need make sure the correct classloader is used to load files when MPRestClient 
+        // is provided via user OSGI bundles via user feature.
+        // !isOSGiEnv is the case where it is not an OSGi environment.  Mainly this scenario is the TCK scenario.
+        // clazzLoader instanceof EquinoxClassLoader means it is from a Liberty bundle instead of an application
+        try {
+            if (!isOSGiEnv || clazzLoader == null || clazzLoader instanceof EquinoxClassLoader) {
+                clazzLoader = myClassLoader;
+            }
+        } catch (Throwable t) {
+            // This catch block is a just in case scenario that shouldn't happen, but if it did...
+            clazzLoader = myClassLoader;
+        }
+        return clazzLoader;
     }
 
     private static Map<Method, List<InterceptorInvoker>> initInterceptorInvokers(BeanManager beanManager,
