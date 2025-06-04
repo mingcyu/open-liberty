@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.xml.namespace.QName;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
@@ -45,6 +46,8 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     private static final String QUESTION_MARK = "?";
     private static final String ESCAPED_QUESTION_MARK = "\\?";
 
+    Logger log = Logger.getLogger(AbstractMessageResponseTimeInterceptor.class.getName());
+    
     AbstractMessageResponseTimeInterceptor(String phase) {
         super(phase);
     }
@@ -57,6 +60,7 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
         if (null == ex) {
             return;
         }
+
         MessageHandlingTimeRecorder mhtr = ex.get(MessageHandlingTimeRecorder.class);
         if (null != mhtr) {
             mhtr.beginHandling();
@@ -108,7 +112,7 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
         ObjectName operationCounter = this.getOperationCounterName(ex, serviceCountername);
         cr.increaseCounter(operationCounter, mhtr);
     }
-
+    
     protected ObjectName getServiceCounterName(Exchange ex) {
         Bus bus = ex.getBus();
         StringBuilder buffer = new StringBuilder();
@@ -157,7 +161,7 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     protected boolean isServiceCounterEnabled(Exchange ex) {
         Bus bus = ex.getBus();
         CounterRepository counterRepo = bus.getExtension(CounterRepository.class);
-        if (counterRepo == null) {
+        if (counterRepo == null || skipCounter(ex)) { // Liberty change - skipCounter is added to prevent IllegalArgumentException thrown when there are special characters in namespace 
             return false;
         }
         ObjectName serviceCounterName = getServiceCounterName(ex);
@@ -207,4 +211,25 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
         }
         return value;
     }
+    
+    // Liberty change begin
+    private boolean skipCounter(Exchange ex)       {
+        Object interfaceObject = ex.get("javax.xml.ws.wsdl.interface");
+        Object portService = ex.get("javax.xml.ws.wsdl.service");
+        Object portObject = ex.get("javax.xml.ws.wsdl.port");
+        Object portOperation = ex.get("javax.xml.ws.wsdl.operation");
+        
+        return checkForSpecialCharacters(interfaceObject) || checkForSpecialCharacters(portService) || checkForSpecialCharacters(portObject) || checkForSpecialCharacters(portOperation);
+    }
+    
+    private boolean checkForSpecialCharacters(Object obj) {
+        if(obj != null && obj instanceof QName)     {
+            String namespaceURI = ((QName) obj).getNamespaceURI();
+            if (!namespaceURI.matches("[a-zA-Z0-9./:?_]*$")) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // Liberty change end
 }
