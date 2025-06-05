@@ -290,12 +290,12 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     /**
-     * Usage of notEqual() while building criterias
+     * Usage of notEqualTo() expression in queries built using criteria api
      *
      * @throws Exception
      */
     @Test
-    public void testNotEqualInCriteria() throws Exception {
+    public void testNotEqualInCriteriaQuery() throws Exception {
         deleteAllEntities(User.class);
 
         User user1 = User.of(1, "John", "Doe");
@@ -317,14 +317,29 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.commit();
        
         List<User> result;
+        List<User> resultNew;
         try {
             tx.begin();
+            /** Using old method - While using Criteria API to build queries, comparison for not equal to was done using
+                method -  CriteriaBuilder.notEqual()
+            */
             CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
-            CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
-            Root<User> user = criteriaQuery.from(User.class);
-            criteriaQuery.select(user).where(criteriaBuilder.notEqual(user.get("firstName"), "John"));
-	        result = em.createQuery(criteriaQuery).getResultList();
+            CriteriaQuery<User> criteriaQueryOld = criteriaBuilder.createQuery(User.class);
+            Root<User> userOld = criteriaQueryOld.from(User.class);
+            criteriaQueryOld.select(userOld).where(criteriaBuilder.notEqual(userOld.get("firstName"), "John"));
+	        result = em.createQuery(criteriaQueryOld).getResultList();
             assertEquals(4, result.size());
+
+             /** In JPA 3.2, new default method was added to the jakarta.persistence.criteria.Expression 
+                interface:Predicate equalTo(Expression<?> other);
+            */
+            CriteriaQuery<User> criteriaQueryNew= criteriaBuilder.createQuery(User.class);
+            Root<User> userNew = criteriaQueryNew.from(User.class);
+            criteriaQueryNew.where(userNew.get("firstName").notEqualTo("John"));
+	        resultNew = em.createQuery(criteriaQueryNew).getResultList();
+            
+            assertEquals(4, resultNew.size());
+            assertEquals(result, resultNew);
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
@@ -333,12 +348,12 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
      /**
-     * Usage of equal() while building criterias
+     * Usage of equalTo() expression in queries built using criteria api
      *
      * @throws Exception
      */
     @Test
-    public void testEqualInCriteria() throws Exception {
+    public void testEqualToInCriteriaQuery() throws Exception {
         deleteAllEntities(User.class);
 
         User user1 = User.of(1, "John", "Doe");
@@ -360,14 +375,28 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.commit();
        
         List<User> result;
+        List<User> resultNew;
         try {
             tx.begin();
+            /** Using old method - While using Criteria API to build queries, comparison for equal to was done using
+                method  - CriteriaBuilder.equal()
+            */
             CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
-            CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
-            Root<User> user = criteriaQuery.from(User.class);
-            criteriaQuery.select(user).where(criteriaBuilder.equal(user.get("firstName"), "John"));
-	        result = em.createQuery(criteriaQuery).getResultList();
-            assertEquals(3, result.size());
+            CriteriaQuery<User> criteriaQueryOld= criteriaBuilder.createQuery(User.class);
+            Root<User> user = criteriaQueryOld.from(User.class);
+            criteriaQueryOld.select(user).where(criteriaBuilder.equal(user.get("firstName"), "John"));
+	        result = em.createQuery(criteriaQueryOld).getResultList();
+
+            /** In JPA 3.2, new default method was added to the jakarta.persistence.criteria.Expression 
+                interface:Predicate equalTo(Expression<?> other);
+            */
+            CriteriaQuery<User> criteriaQueryNew= criteriaBuilder.createQuery(User.class);
+            Root<User> userNew = criteriaQueryNew.from(User.class);
+            criteriaQueryNew.where(userNew.get("firstName").equalTo("John"));
+	        resultNew = em.createQuery(criteriaQueryNew).getResultList();
+            
+            assertEquals(3, resultNew.size());
+            assertEquals(result, resultNew);
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
