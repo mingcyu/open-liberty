@@ -12,8 +12,10 @@ package io.openliberty.jpa.persistence.tests.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "PersistencePerson")
 public class Person {
     @Id
     public Long id;

@@ -14,17 +14,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import componenttest.app.FATServlet;
-import io.openliberty.jpa.persistence.tests.models.Priority;
-import io.openliberty.jpa.persistence.tests.models.Product;
-import io.openliberty.jpa.persistence.tests.models.Ticket;
-import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -37,6 +34,10 @@ import jakarta.transaction.UserTransaction;
 
 import io.openliberty.jpa.persistence.tests.models.Organization;
 import io.openliberty.jpa.persistence.tests.models.Person;
+import io.openliberty.jpa.persistence.tests.models.Priority;
+import io.openliberty.jpa.persistence.tests.models.Product;
+import io.openliberty.jpa.persistence.tests.models.Ticket;
+import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import io.openliberty.jpa.persistence.tests.models.User;
 
 @SuppressWarnings("serial")
@@ -68,7 +69,6 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.commit();
 
         List<String> unionResult, intersectResult, exceptResult;
-        tx.begin();
         try {
             // UNION
             unionResult = em.createQuery(
@@ -90,16 +90,15 @@ public class JakartaPersistenceServlet extends FATServlet {
                                             "EXCEPT " +
                                             "SELECT o.name FROM Organization o", String.class)
                             .getResultList();
-            tx.commit();
         }
+        
         catch(Exception e) {
-            tx.rollback();
             throw e;
         }
+        Collections.sort(unionResult);
         assertEquals(Arrays.asList("AAA", "BBB", "CCC"), unionResult);
         assertEquals(Arrays.asList("BBB"), intersectResult);
         assertEquals(Arrays.asList("AAA"), exceptResult);
-
     }
 
      /**
