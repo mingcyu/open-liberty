@@ -295,7 +295,7 @@ public class JakartaPersistenceServlet extends FATServlet {
      * @throws Exception
      */
     @Test
-    public void testNotEqualInCriteriaQuery() throws Exception {
+    public void testNotEqualToInCriteriaQuery() throws Exception {
         deleteAllEntities(User.class);
 
         User user1 = User.of(1, "John", "Doe");
@@ -331,7 +331,7 @@ public class JakartaPersistenceServlet extends FATServlet {
             assertEquals(4, result.size());
 
              /** In JPA 3.2, new default method was added to the jakarta.persistence.criteria.Expression 
-                interface:Predicate equalTo(Expression<?> other);
+                interface:Predicate notEqualTo(Expression<?> other);
             */
             CriteriaQuery<User> criteriaQueryNew= criteriaBuilder.createQuery(User.class);
             Root<User> userNew = criteriaQueryNew.from(User.class);
