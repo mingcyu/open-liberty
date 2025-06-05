@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package io.openliberty.microprofile.openapi40.internal.impl;
+package io.openliberty.microprofile.openapi41.internal.services.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ import io.smallrye.openapi.api.OpenApiConfig.OperationIdStrategy;
 import io.smallrye.openapi.api.SmallRyeOASConfig;
 
 @Component(configurationPolicy = ConfigurationPolicy.IGNORE)
-public class ConfigFieldProvider40Impl implements ConfigFieldProvider {
+public class ConfigFieldProvider41Impl implements ConfigFieldProvider {
 
     // Package protected for unit testing
     enum ConfigField40 implements ConfigField {
@@ -85,7 +85,8 @@ public class ConfigFieldProvider40Impl implements ConfigFieldProvider {
         AUTO_INHERITANCE("getAutoInheritance", SmallRyeOASConfig.AUTO_INHERITANCE, OpenApiConfig::getAutoInheritance, AutoInheritance::name),
         SCAN_COMPOSITION_EXCLUDE_PACKAGES("getScanCompositionExcludePackages", SmallRyeOASConfig.SCAN_COMPOSITION_EXCLUDE_PACKAGES,
                                           OpenApiConfig::getScanCompositionExcludePackages, ConfigField::serializeSet),
-        MERGE_SCHEMA_EXAMPLES("mergeSchemaExamples", SmallRyeOASConfig.SMALLRYE_MERGE_SCHEMA_EXAMPLES, c -> Boolean.toString(c.mergeSchemaExamples()));
+        MERGE_SCHEMA_EXAMPLES("mergeSchemaExamples", SmallRyeOASConfig.SMALLRYE_MERGE_SCHEMA_EXAMPLES, c -> Boolean.toString(c.mergeSchemaExamples())),
+        SORTED_PARAMETERS_ENABLE("sortedParametersEnable", SmallRyeOASConfig.SMALLRYE_SORTED_PARAMETERS_ENABLE, c -> Boolean.toString(c.sortedParametersEnable()));
 
         Function<OpenApiConfig, String> function;
         String methodName;
