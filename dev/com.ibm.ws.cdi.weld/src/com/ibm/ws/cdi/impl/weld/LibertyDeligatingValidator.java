@@ -27,7 +27,11 @@ import org.jboss.weld.exceptions.DefinitionException;
 import org.jboss.weld.logging.MessageCallback;
 import org.jboss.weld.manager.BeanManagerImpl;
 
+import com.ibm.websphere.ras.Tr;
+import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.cdi.impl.weld.validation.LibertyDeligatingValidatorConstructor;
+import com.ibm.ws.cdi.internal.archive.liberty.ExtensionArchiveImpl;
+import com.ibm.ws.cdi.internal.interfaces.CDIArchive;
 import com.ibm.ws.cdi.internal.interfaces.WebSphereBeanDeploymentArchive;
 import com.ibm.ws.cdi.internal.interfaces.WebSphereCDIDeployment;
 
@@ -41,6 +45,8 @@ import com.ibm.ws.cdi.internal.interfaces.WebSphereCDIDeployment;
 //signature.
 public class LibertyDeligatingValidator extends LibertyDeligatingValidatorConstructor {
 
+    private static final TraceComponent tc = Tr.register(LibertyDeligatingValidator.class);
+
     private final Validator deligate;
     private final Set<BeanManager> filteredBeanManagers = new HashSet<BeanManager>();
 
@@ -48,7 +54,15 @@ public class LibertyDeligatingValidator extends LibertyDeligatingValidatorConstr
         WebSphereCDIDeploymentImpl deployment = (WebSphereCDIDeploymentImpl) webSphereCDIDeployment;
         this.deligate = deligate;
         for (WebSphereBeanDeploymentArchive bda : deployment.getRuntimeExtensionBDAs()) {
-            filteredBeanManagers.add(bda.getBeanManager());
+
+            CDIArchive archive = bda.getArchive();
+            if (archive instanceof ExtensionArchiveImpl &&
+                ((ExtensionArchiveImpl) archive).applicationBDAsVisible()) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "<init>", "BeanManager {0} will not be validated", bda.getBeanManager());
+                }
+                filteredBeanManagers.add(bda.getBeanManager());
+            }
         }
     }
 
@@ -91,6 +105,8 @@ public class LibertyDeligatingValidator extends LibertyDeligatingValidatorConstr
     public void validateDeployment(BeanManagerImpl manager, BeanDeployment deployment) {
         if (!filteredBeanManagers.contains(manager)) {
             deligate.validateDeployment(manager, deployment);
+        } else if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "validateDeployment", "Skipping BeanManager {0}", manager);
         }
     }
 
