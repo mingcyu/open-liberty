@@ -222,6 +222,8 @@ public class TestContainerSuite {
         //Always use internal testcontainer images from alternative sources (where possible)
         tcProps.setProperty("tinyimage.container.image", "public.ecr.aws/docker/library/alpine:3.17");
         tcProps.setProperty("ryuk.container.image", "ghcr.io/testcontainers/ryuk:0.12.0");
+        tcProps.setProperty("vncrecorder.container.image", "ghcr.io/testcontainers/vnc-recorder:1.4.0");
+//        tcProps.setProperty("sshd.container.image", "ghcr.io/testcontainers/sshd:1.3.0"); TODO
 
         try {
             tcProps.store(new FileOutputStream(configSource.toFile()), "Modified by FAT framework");
