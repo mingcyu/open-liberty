@@ -27,6 +27,7 @@ import componenttest.custom.junit.runner.FATRunner;
 import componenttest.rules.repeater.CheckpointRule;
 import componenttest.rules.repeater.CheckpointRule.ServerMode;
 import componenttest.rules.repeater.RepeatTests;
+import org.junit.rules.RuleChain;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
 import componenttest.topology.utils.FATServletClient;
@@ -50,7 +51,10 @@ public class TelemetryAuditCheckpointTest extends FATServletClient {
     //I chose this one because TelemetryMessages is core to this bucket
     // Will re-enable in follow-on issue.
     @ClassRule
-    public static RepeatTests rt = TelemetryActions.telemetry20Repeats();
+    public static RepeatTests rt = TelemetryActions.telemetry21andLatest20Repeats(SERVER_NAME);
+
+    @ClassRule
+    public static RuleChain chain = RuleChain.outerRule(rt).around(checkpointRule);
 
     private static LibertyServer server;
 
