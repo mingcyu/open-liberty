@@ -279,7 +279,7 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to open (first time)",
-                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
+                      server.waitForMultipleStringsInLogUsingMark(2, "CWWKO0219I:.*-ssl"));
 
         // Hit the servlet on the SSL port
         hitServer(KEYSTORE, PASSWORD, TRUSTSTORE, PASSWORD);
@@ -291,7 +291,7 @@ public class SSLOptionsTest{
 
         // Requires info trace
         assertNotNull("We need to wait for the SSL port to start (again)",
-                      server.waitForStringInLogUsingMark("CWWKO0219I:.*-ssl"));
+                      server.waitForMultipleStringsInLogUsingMark(2, "CWWKO0219I:.*-ssl"));
 
         // Hit the servlet on the SSL port
         hitServer(KEYSTORE, PASSWORD, ALTERNATE_TRUSTSTORE, PASSWORD);
