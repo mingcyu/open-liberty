@@ -16,8 +16,10 @@ import java.io.StringReader;
 import javax.servlet.annotation.WebServlet;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Dispatch;
 import javax.xml.ws.Service;
+import javax.xml.ws.WebServiceRef;
 import javax.xml.ws.soap.SOAPBinding;
 
 import org.junit.Test;
@@ -31,7 +33,12 @@ import componenttest.app.FATServlet;
 @WebServlet(urlPatterns = "/SpecialCharacterTestServlet")
 public class SpecialCharacterTestServlet extends FATServlet {
     
-    /*
+    @WebServiceRef(name="service/WebServiceWithSpecialCharacters")
+    WebServiceWithSpecialCharacters wSWSC;
+    
+    private static final String ENDPOINT_ADDRESS = new StringBuilder().append("http://localhost:").append(Integer.getInteger("bvt.prop.HTTP_default")).append("/specialcharacters/WebServiceWithSpecialCharacters").toString();
+                    
+     /*
      *  Not having IllegalArgumentException is enough for this test to pass 
      */
     @Test
@@ -41,9 +48,12 @@ public class SpecialCharacterTestServlet extends FATServlet {
         port.sc("Test");
     }
     
+    /*
+     *  Not having IllegalArgumentException is enough for this test to pass 
+     */
     @Test
     public void SpecialCharacterSkipTestDispatch() throws Exception {
-        URL WSDL_URL = new URL(new StringBuilder().append("http://localhost:").append(Integer.getInteger("bvt.prop.HTTP_default")).append("/specialcharacters/WebServiceWithSpecialCharacters?wsdl").toString());
+        URL WSDL_URL = new URL(ENDPOINT_ADDRESS + "?wsdl");
 
         //dispatch client --no need stubs
                               
@@ -69,5 +79,15 @@ public class SpecialCharacterTestServlet extends FATServlet {
         }
 
         dispatch.invoke(new StreamSource(new StringReader(msgString)));
+    }
+    
+    /*
+     *  Not having IllegalArgumentException is enough for this test to pass 
+     */
+    @Test
+    public void SpecialCharacterSkipTestWebServiceRef() throws Exception {
+        WebServiceWithSpecialCharactersPortType port = wSWSC.getPort(WebServiceWithSpecialCharactersPortType.class);
+        ((BindingProvider) port).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, ENDPOINT_ADDRESS);
+        port.sc("Test");
     }
 }
