@@ -18,9 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.ibm.websphere.simplicity.config.HttpEndpoint;
-import com.ibm.websphere.simplicity.config.ServerConfiguration;
-
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.custom.junit.runner.Mode;
@@ -32,9 +29,9 @@ import componenttest.topology.impl.LibertyServer;
  */
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
-public class SoReuseAddrTests {
+public class SoReuseAddrTest {
 
-    private static final String CLASS_NAME = SoReuseAddrTests.class.getName();
+    private static final String CLASS_NAME = SoReuseAddrTest.class.getName();
     static final Logger LOG = Logger.getLogger(CLASS_NAME);
 
     @Server("SoReuseAddr")
@@ -43,7 +40,7 @@ public class SoReuseAddrTests {
     @BeforeClass
     public static void setup() throws Exception {
         // Start the server and use the class name so we can find logs easily.
-        server.startServer(SoReuseAddrTests.class.getSimpleName() + ".log");
+        server.startServer(SoReuseAddrTest.class.getSimpleName() + ".log");
     }
 
     @AfterClass
@@ -55,33 +52,22 @@ public class SoReuseAddrTests {
     }
 
     /**
-     * The test will set soReuseAddr to a value of false and validate in the trace file that
+     * The test will have soReuseAddr set to false and validate in the trace file that
      * the correct value is being used.
      *
-     * The below configuration will be used to set soReuseAddr to false:
+     * The below configuration will be used:
      * <tcpOptions soReuseAddr="false"/>
      *
      * @throws Exception
      */
     @Test
     public void testSoReuseAddr_nonDefault() throws Exception {
-        ServerConfiguration configuration = server.getServerConfiguration();
-        LOG.info("Server configuration that the test started with: " + configuration);
-
-        HttpEndpoint httpEndpoint = configuration.getHttpEndpoints().getById("defaultHttpEndpoint");
-        httpEndpoint.getTcpOptions().setSoReuseAddr(false);
-
-        server.setMarkToEndOfLog();
-        server.setTraceMarkToEndOfDefaultTrace();
-        server.updateServerConfiguration(configuration);
-        server.waitForConfigUpdateInLogUsingMark(null);
-
         // CWWKO0219I: TCP Channel defaultHttpEndpoint has been started and is now listening for requests on host *  (IPv6) port 8010.
         // We should wait for the TCP Channel to start before checking the trace. If we don't it is possible we try to start shutting down
         // the server before we even have finished starting up causing quiesce issues.
-        server.waitForStringInLogUsingMark("CWWKO0219I");
+        server.waitForStringInLog("CWWKO0219I");
 
         // Validate that soReuseAddr is set to false.
-        assertNotNull("The configured value of soReuseAddr was not false!", server.waitForStringInTraceUsingMark("soReuseAddr: false"));
+        assertNotNull("The configured value of soReuseAddr was not false!", server.waitForStringInTrace("soReuseAddr: false"));
     }
 }
