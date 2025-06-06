@@ -14,18 +14,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import io.openliberty.jpa.persistence.tests.models.User;
-
-import java.util.List;
-
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import componenttest.app.FATServlet;
-import io.openliberty.jpa.persistence.tests.models.Priority;
-import io.openliberty.jpa.persistence.tests.models.Product;
-import io.openliberty.jpa.persistence.tests.models.Ticket;
-import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -35,6 +31,14 @@ import jakarta.persistence.criteria.Nulls;
 import jakarta.persistence.criteria.Root;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.UserTransaction;
+
+import io.openliberty.jpa.persistence.tests.models.Organization;
+import io.openliberty.jpa.persistence.tests.models.Person;
+import io.openliberty.jpa.persistence.tests.models.Priority;
+import io.openliberty.jpa.persistence.tests.models.Product;
+import io.openliberty.jpa.persistence.tests.models.Ticket;
+import io.openliberty.jpa.persistence.tests.models.TicketStatus;
+import io.openliberty.jpa.persistence.tests.models.User;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = "/JakartaPersistence32")
@@ -46,30 +50,55 @@ public class JakartaPersistenceServlet extends FATServlet {
     private UserTransaction tx;
 
     @Test
-    public void testSetOperationsJPQL() {
-        // UNION
-        List<String> unionResult = em.createQuery(
-                                                  "SELECT p.name FROM Person p " +
-                                                  "UNION " +
-                                                  "SELECT o.name FROM Organization o", String.class)
-                        .getResultList();
-        assertNotNull(unionResult);
+    public void testSetOperationsJPQL() throws Exception{
+        deleteAllEntities(Person.class);
+        deleteAllEntities(Organization.class);
 
-        // INTERSECT
-        List<String> intersectResult = em.createQuery(
-                                                      "SELECT p.name FROM Person p " +
-                                                      "INTERSECT " +
-                                                      "SELECT o.name FROM Organization o", String.class)
-                        .getResultList();
-        assertNotNull(intersectResult);
+        Person person1 = Person.of(1L, "AAA");
+        Person person2 = Person.of(2L, "BBB");
+        tx.begin();
+        em.persist(person1);
+        em.persist(person2);
+        tx.commit();
 
-        // EXCEPT
-        List<String> exceptResult = em.createQuery(
-                                                   "SELECT p.name FROM Person p " +
-                                                   "EXCEPT " +
-                                                   "SELECT o.name FROM Organization o", String.class)
-                        .getResultList();
-        assertNotNull(exceptResult);
+        Organization org1 = Organization.of(3L, "BBB");
+        Organization org2 = Organization.of(4L, "CCC");
+        tx.begin();
+        em.persist(org1);
+        em.persist(org2);
+        tx.commit();
+
+        List<String> unionResult, intersectResult, exceptResult;
+        try {
+            // UNION
+            unionResult = em.createQuery(
+                                            "SELECT p.name FROM Person p " +
+                                            "UNION " +
+                                            "SELECT o.name FROM Organization o", String.class)
+                            .getResultList();
+
+            // INTERSECT
+            intersectResult = em.createQuery(
+                                            "SELECT p.name FROM Person p " +
+                                            "INTERSECT " +
+                                            "SELECT o.name FROM Organization o", String.class)
+                            .getResultList();
+            
+            // EXCEPT
+            exceptResult = em.createQuery(
+                                            "SELECT p.name FROM Person p " +
+                                            "EXCEPT " +
+                                            "SELECT o.name FROM Organization o", String.class)
+                            .getResultList();
+        }
+        
+        catch(Exception e) {
+            throw e;
+        }
+        Collections.sort(unionResult);
+        assertEquals(Arrays.asList("AAA", "BBB", "CCC"), unionResult);
+        assertEquals(Arrays.asList("BBB"), intersectResult);
+        assertEquals(Arrays.asList("AAA"), exceptResult);
     }
 
      /**
