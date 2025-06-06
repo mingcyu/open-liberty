@@ -33,9 +33,10 @@ public class StartupCheckUpAfterSecondQuery implements HealthCheck {
         /*
          * Return up after first check.
          */
-        if ((counter++) != 0) {
+        if (counter != 0) {
             return HealthCheckResponse.named("secondUP-startup-check").up().build();
         } else {
+            counter++;
             return HealthCheckResponse.named("secondUP-startup-check").down().build();
         }
 
