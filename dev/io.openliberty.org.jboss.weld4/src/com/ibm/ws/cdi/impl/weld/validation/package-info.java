@@ -12,7 +12,4 @@
  * @version 1.0
  */
 @org.osgi.annotation.versioning.Version("1.0")
-@TraceOptions(traceGroup = "JCDI", messageBundle = "com.ibm.ws.cdi.internal.resources.CDI")
 package com.ibm.ws.cdi.impl.weld.validation;
-
-import com.ibm.websphere.ras.annotation.TraceOptions;

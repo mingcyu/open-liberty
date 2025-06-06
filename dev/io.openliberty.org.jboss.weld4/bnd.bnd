@@ -25,7 +25,6 @@ instrument.disabled: true
 -buildpath: \
 	org.jboss.weld:weld-osgi-bundle;version='4.0.3',\
 	com.ibm.ws.org.osgi.annotation.versioning;version=latest,\
-	com.ibm.websphere.appserver.spi.logging,\
 	io.openliberty.jakarta.cdi.3.0
 
 -testpath: \

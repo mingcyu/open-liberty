@@ -26,5 +26,4 @@ instrument.ffdc: false
 	org.jboss.weld:weld-osgi-bundle;version='2.4.8.Final',\
 	com.ibm.websphere.javaee.servlet.3.1;version=latest,\
 	com.ibm.ws.org.osgi.annotation.versioning;version=latest,\
-	org.jboss.classfilewriter:jboss-classfilewriter;version='1.2.5.Final',\
-	com.ibm.websphere.appserver.spi.logging
+	org.jboss.classfilewriter:jboss-classfilewriter;version='1.2.5.Final'
