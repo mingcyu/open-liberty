@@ -119,9 +119,20 @@ public class SessionCacheConfigTestServlet extends FATServlet {
      * Obtains the session id for the current session and writes it to the servlet response
      */
     public void getSessionId(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String sessionId = request.getSession().getId();
-        System.out.println("session id is " + sessionId);
-        response.getWriter().write("session id: [" + sessionId + "]");
+        HttpSession session = request.getSession();
+        if (session == null) {
+            // Retry getSession(), most likely due to SESN0307E: Unable to start JGroups Channel
+            System.out.println("Sleep 5 seconds due to session return null ...");
+            TimeUnit.SECONDS.sleep(5);
+            session = request.getSession();
+        }
+        if (session != null) {
+            String sessionId = session.getId();
+            System.out.println("session id is " + sessionId);
+            response.getWriter().write("session id: [" + sessionId + "]");            
+        } else {
+            System.out.println("Unable to get session from the servlet request, most likely due to exception occurred when initializing the cache. Return instead of NPE, please check the logs.");
+        }
     }
 
     /**
