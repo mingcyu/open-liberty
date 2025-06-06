@@ -29,6 +29,11 @@ public abstract class LibertyDelegatingValidator extends Validator {
 
     private final Validator delegate;
 
+    public LibertyDelegatingValidator(Validator delegate) {
+        super();
+        this.delegate = delegate;
+    }
+
     @Override
     public void cleanup() {
         delegate.cleanup();
@@ -122,10 +127,5 @@ public abstract class LibertyDelegatingValidator extends Validator {
     @Override
     public void validateBeanNames(BeanManagerImpl beanManager) {
         delegate.validateBeanNames(beanManager);
-    }
-
-    public LibertyDelegatingValidator(Validator delegate) {
-        super();
-        this.delegate = delegate;
     }
 }

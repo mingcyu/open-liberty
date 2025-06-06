@@ -29,6 +29,11 @@ public abstract class LibertyDelegatingValidator extends Validator {
 
     protected final Validator delegate;
 
+    public LibertyDelegatingValidator(Validator delegate) {
+        super(null, null);
+        this.delegate = delegate;
+    }
+
     @Override
     public boolean equals(Object o) {
         return delegate.equals(o);
@@ -132,11 +137,6 @@ public abstract class LibertyDelegatingValidator extends Validator {
     @Override
     public void clearResolved() {
         delegate.clearResolved();
-    }
-
-    public LibertyDelegatingValidator(Validator delegate) {
-        super(null, null);
-        this.delegate = delegate;
     }
 
 }
