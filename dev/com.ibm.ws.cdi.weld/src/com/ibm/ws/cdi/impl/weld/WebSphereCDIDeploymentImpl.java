@@ -76,7 +76,7 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
     private final Map<String, WebSphereBeanDeploymentArchive> deploymentDBAs = new HashMap<String, WebSphereBeanDeploymentArchive>();
     private final Set<WebSphereBeanDeploymentArchive> applicationBDAs = new HashSet<WebSphereBeanDeploymentArchive>();
     private final Map<String, WebSphereBeanDeploymentArchive> extensionBDAs = new HashMap<String, WebSphereBeanDeploymentArchive>();
-    private final Set<WebSphereBeanDeploymentArchive> reuntimeExtensionBDAs = new HashSet<WebSphereBeanDeploymentArchive>();
+    private final Set<WebSphereBeanDeploymentArchive> runtimeExtensionBDAs = new HashSet<WebSphereBeanDeploymentArchive>();
 
     private final List<WebSphereBeanDeploymentArchive> orderedBDAs = new ArrayList<WebSphereBeanDeploymentArchive>();
     private WeldBootstrap bootstrap;
@@ -612,7 +612,7 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
         if (type != ArchiveType.RUNTIME_EXTENSION) {
             applicationBDAs.add(bda);
         } else {
-            reuntimeExtensionBDAs.add(bda);
+            runtimeExtensionBDAs.add(bda);
         }
     }
 
@@ -702,7 +702,7 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
 
             this.deploymentDBAs.clear();
             this.applicationBDAs.clear();
-            this.reuntimeExtensionBDAs.clear();
+            this.runtimeExtensionBDAs.clear();
             this.extensionBDAs.clear();
             this.orderedBDAs.clear();
             this.classloader = null;
@@ -821,6 +821,6 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
     }
 
     public Set<WebSphereBeanDeploymentArchive> getRuntimeExtensionBDAs() {
-        return this.reuntimeExtensionBDAs;
+        return this.runtimeExtensionBDAs;
     }
 }

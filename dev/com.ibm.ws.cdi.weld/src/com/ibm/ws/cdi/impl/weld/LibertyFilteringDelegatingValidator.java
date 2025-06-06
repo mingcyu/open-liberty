@@ -32,16 +32,16 @@ import com.ibm.ws.cdi.internal.interfaces.WebSphereCDIDeployment;
 //needs to call its constructor.
 //
 //The method signature for the constructor changed across versions of weld, so we extend
-//LibertyDeligatingValidatorConstructor which is in the versioned bundles. That class
+//LibertyDelegatingValidatorConstructor which is in the versioned bundles. That class
 //has a no-args constructor which calls Validator's constructor with the correct method
 //signature.
-public class LibertyFilteringDeligatingValidator extends LibertyDelegatingValidator {
+public class LibertyFilteringDelegatingValidator extends LibertyDelegatingValidator {
 
-    private static final TraceComponent tc = Tr.register(LibertyFilteringDeligatingValidator.class);
+    private static final TraceComponent tc = Tr.register(LibertyFilteringDelegatingValidator.class);
 
     private final Set<BeanManager> filteredBeanManagers = new HashSet<BeanManager>();
 
-    public LibertyFilteringDeligatingValidator(Validator delegate, WebSphereCDIDeployment webSphereCDIDeployment) {
+    public LibertyFilteringDelegatingValidator(Validator delegate, WebSphereCDIDeployment webSphereCDIDeployment) {
         super(delegate);
         WebSphereCDIDeploymentImpl deployment = (WebSphereCDIDeploymentImpl) webSphereCDIDeployment;
         for (WebSphereBeanDeploymentArchive bda : deployment.getRuntimeExtensionBDAs()) {

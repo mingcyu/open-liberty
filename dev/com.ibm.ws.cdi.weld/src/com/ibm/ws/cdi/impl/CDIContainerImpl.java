@@ -45,7 +45,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.cdi.CDIException;
 import com.ibm.ws.cdi.CDIService;
 import com.ibm.ws.cdi.impl.weld.BDAFactory;
-import com.ibm.ws.cdi.impl.weld.LibertyFilteringDeligatingValidator;
+import com.ibm.ws.cdi.impl.weld.LibertyFilteringDelegatingValidator;
 import com.ibm.ws.cdi.impl.weld.WebSphereCDIDeploymentImpl;
 import com.ibm.ws.cdi.impl.weld.WebSphereEEModuleDescriptor;
 import com.ibm.ws.cdi.internal.interfaces.Application;
@@ -182,7 +182,7 @@ public class CDIContainerImpl implements CDIContainer, InjectionMetaDataListener
                 //have identical beans and one of our features can see all application classes
                 ServiceRegistry serviceRegistry = webSphereCDIDeployment.getServices();
                 Validator weldValidator = serviceRegistry.get(Validator.class);
-                LibertyFilteringDeligatingValidator libertyValidator = new LibertyFilteringDeligatingValidator(weldValidator, webSphereCDIDeployment);
+                LibertyFilteringDelegatingValidator libertyValidator = new LibertyFilteringDelegatingValidator(weldValidator, webSphereCDIDeployment);
                 serviceRegistry.add(Validator.class, libertyValidator);
 
                 weldBootstrap.deployBeans();
