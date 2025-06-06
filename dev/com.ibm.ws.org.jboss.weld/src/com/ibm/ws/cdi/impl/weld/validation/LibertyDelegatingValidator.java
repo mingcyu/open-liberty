@@ -27,12 +27,7 @@ import org.jboss.weld.manager.BeanManagerImpl;
 
 public abstract class LibertyDelegatingValidator extends Validator {
 
-    protected final Validator delegate;
-
-    public LibertyDelegatingValidator(Validator delegate) {
-        super();
-        this.delegate = delegate;
-    }
+    private final Validator delegate;
 
     @Override
     public void cleanup() {
@@ -127,5 +122,10 @@ public abstract class LibertyDelegatingValidator extends Validator {
     @Override
     public void validateBeanNames(BeanManagerImpl beanManager) {
         delegate.validateBeanNames(beanManager);
+    }
+
+    public LibertyDelegatingValidator(Validator delegate) {
+        super();
+        this.delegate = delegate;
     }
 }

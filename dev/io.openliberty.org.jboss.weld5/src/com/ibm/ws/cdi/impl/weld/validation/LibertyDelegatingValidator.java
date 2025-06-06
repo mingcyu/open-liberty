@@ -27,12 +27,7 @@ import jakarta.enterprise.inject.spi.Producer;
 
 public abstract class LibertyDelegatingValidator extends Validator {
 
-    protected final Validator delegate;
-
-    public LibertyDelegatingValidator(Validator delegate) {
-        super(null, null);
-        this.delegate = delegate;
-    }
+    private final Validator delegate;
 
     @Override
     public void cleanup() {
@@ -137,6 +132,11 @@ public abstract class LibertyDelegatingValidator extends Validator {
     @Override
     public void validateBeanNames(BeanManagerImpl beanManager) {
         delegate.validateBeanNames(beanManager);
+    }
+
+    public LibertyDelegatingValidator(Validator delegate) {
+        super(null, null);
+        this.delegate = delegate;
     }
 
 }

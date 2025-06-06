@@ -27,7 +27,7 @@ import jakarta.enterprise.inject.spi.Producer;
 
 public abstract class LibertyDelegatingValidator extends Validator {
 
-    protected final Validator delegate;
+    private final Validator delegate;
 
     public LibertyDelegatingValidator(Validator delegate) {
         super(null, null);

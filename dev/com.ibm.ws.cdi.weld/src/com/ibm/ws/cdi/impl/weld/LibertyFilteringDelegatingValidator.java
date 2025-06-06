@@ -47,6 +47,8 @@ public class LibertyFilteringDelegatingValidator extends LibertyDelegatingValida
         for (WebSphereBeanDeploymentArchive bda : deployment.getRuntimeExtensionBDAs()) {
 
             CDIArchive archive = bda.getArchive();
+            //The check for applicationBDAsVisible is necessary to avoid inadvertently filtering out LiteExtensions
+            //as they are registered through a runtime extension containing the LiteExtensionTranslator.
             if (archive instanceof ExtensionArchiveImpl &&
                 ((ExtensionArchiveImpl) archive).applicationBDAsVisible()) {
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
@@ -60,7 +62,7 @@ public class LibertyFilteringDelegatingValidator extends LibertyDelegatingValida
     @Override
     public void validateDeployment(BeanManagerImpl manager, BeanDeployment deployment) {
         if (!filteredBeanManagers.contains(manager)) {
-            delegate.validateDeployment(manager, deployment);
+            super.validateDeployment(manager, deployment);
         } else if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(this, tc, "validateDeployment", "Skipping BeanManager {0}", manager);
         }

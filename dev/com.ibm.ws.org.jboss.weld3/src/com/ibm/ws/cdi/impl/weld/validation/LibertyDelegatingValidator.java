@@ -27,7 +27,7 @@ import org.jboss.weld.manager.BeanManagerImpl;
 
 public abstract class LibertyDelegatingValidator extends Validator {
 
-    protected final Validator delegate;
+    private final Validator delegate;
 
     public LibertyDelegatingValidator(Validator delegate) {
         super(null, null);
@@ -40,6 +40,11 @@ public abstract class LibertyDelegatingValidator extends Validator {
     }
 
     @Override
+    public void clearResolved() {
+        delegate.clearResolved();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         return delegate.equals(obj);
     }
@@ -47,11 +52,6 @@ public abstract class LibertyDelegatingValidator extends Validator {
     @Override
     public int hashCode() {
         return delegate.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return delegate.toString();
     }
 
     @Override
@@ -75,11 +75,6 @@ public abstract class LibertyDelegatingValidator extends Validator {
     }
 
     @Override
-    public void validateInjectionPointForDeploymentProblems(InjectionPoint ij, Bean<?> bean, BeanManagerImpl beanManager) {
-        delegate.validateInjectionPointForDeploymentProblems(ij, bean, beanManager);
-    }
-
-    @Override
     public void validateProducers(Collection<Producer<?>> producers, BeanManagerImpl beanManager) {
         delegate.validateProducers(producers, beanManager);
     }
@@ -95,13 +90,33 @@ public abstract class LibertyDelegatingValidator extends Validator {
     }
 
     @Override
-    public void validateInterceptorDecoratorInjectionPointPassivationCapable(InjectionPoint ij, Bean<?> resolvedBean, BeanManagerImpl beanManager, Bean<?> bean) {
-        delegate.validateInterceptorDecoratorInjectionPointPassivationCapable(ij, resolvedBean, beanManager, bean);
+    public void validateDeployment(BeanManagerImpl manager, BeanDeployment deployment) {
+        delegate.validateDeployment(manager, deployment);
     }
 
     @Override
-    public void validateDeployment(BeanManagerImpl manager, BeanDeployment deployment) {
-        delegate.validateDeployment(manager, deployment);
+    public void validateDecorators(Collection<? extends Decorator<?>> decorators, BeanManagerImpl manager) {
+        delegate.validateDecorators(decorators, manager);
+    }
+
+    @Override
+    public boolean isResolved(Bean<?> bean) {
+        return delegate.isResolved(bean);
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
+    }
+
+    @Override
+    public void validateInjectionPointForDeploymentProblems(InjectionPoint ij, Bean<?> bean, BeanManagerImpl beanManager) {
+        delegate.validateInjectionPointForDeploymentProblems(ij, bean, beanManager);
+    }
+
+    @Override
+    public void validateInterceptorDecoratorInjectionPointPassivationCapable(InjectionPoint ij, Bean<?> resolvedBean, BeanManagerImpl beanManager, Bean<?> bean) {
+        delegate.validateInterceptorDecoratorInjectionPointPassivationCapable(ij, resolvedBean, beanManager, bean);
     }
 
     @Override
@@ -120,12 +135,8 @@ public abstract class LibertyDelegatingValidator extends Validator {
     }
 
     @Override
-    public void validateDecorators(Collection<? extends Decorator<?>> decorators, BeanManagerImpl manager) {
-        delegate.validateDecorators(decorators, manager);
-    }
-
-    @Override
     public void validateBeanNames(BeanManagerImpl beanManager) {
         delegate.validateBeanNames(beanManager);
     }
+
 }
