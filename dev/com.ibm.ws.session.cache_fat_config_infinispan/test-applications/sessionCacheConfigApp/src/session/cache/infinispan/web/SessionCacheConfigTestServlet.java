@@ -121,9 +121,12 @@ public class SessionCacheConfigTestServlet extends FATServlet {
     public void getSessionId(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession();
         if (session == null) {
-            // Retry getSession(), most likely due to SESN0307E: Unable to start JGroups Channel
-            System.out.println("Sleep 5 seconds due to session return null ...");
-            TimeUnit.SECONDS.sleep(5);
+            try {
+                // Retry getSession(), most likely due to SESN0307E: Unable to start JGroups Channel
+                System.out.println("Sleep 5 seconds due to session return null ...");
+                TimeUnit.SECONDS.sleep(5);                
+            } catch (Exception e) {
+            }
             session = request.getSession();
         }
         if (session != null) {
@@ -420,6 +423,11 @@ public class SessionCacheConfigTestServlet extends FATServlet {
         if (session == null) {
             // Retry getSession() as request.getSession(true) can not be null in the production world
             System.out.println("Sleep 5 seconds due to session return null");
+            try {
+                
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
             TimeUnit.SECONDS.sleep(5);
             session = request.getSession(true);
         }
