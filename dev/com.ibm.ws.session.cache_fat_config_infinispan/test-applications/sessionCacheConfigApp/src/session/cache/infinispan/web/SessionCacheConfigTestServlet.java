@@ -421,14 +421,12 @@ public class SessionCacheConfigTestServlet extends FATServlet {
 
         HttpSession session = request.getSession(true);
         if (session == null) {
-            // Retry getSession() as request.getSession(true) can not be null in the production world
-            System.out.println("Sleep 5 seconds due to session return null");
             try {
-                
+                // Retry getSession() as request.getSession(true) can not be null in the production world
+                System.out.println("Sleep 5 seconds due to session return null");
+                TimeUnit.SECONDS.sleep(5);                
             } catch (Exception e) {
-                // TODO: handle exception
             }
-            TimeUnit.SECONDS.sleep(5);
             session = request.getSession(true);
         }
         session.setAttribute(attrName, value);
