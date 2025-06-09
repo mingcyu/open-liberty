@@ -469,14 +469,6 @@ public class JakartaPersistenceServlet extends FATServlet {
             throw new RuntimeException("Query failed unexpectedly", e);
         }
 
-        // Debugging output for test failures
-        if (!results.isEmpty()) {
-            System.out.println("Unexpected results found:");
-            for (Participant p : results) {
-                System.out.println("  -> " + p);
-            }
-        }
-
         // Assertions
         assertNotNull("Results list should not be null", results);
         assertTrue("Expected empty results for non-matching last name", results.isEmpty());
