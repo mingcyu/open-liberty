@@ -545,7 +545,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertNull(p5.getName().getFirst()); // Null first name correctly stored
     }
 
-@Test // Verifies that a JPQL query using an alias returns the correct hexadecimal value for a persisted AsciiCharacter
+    @Test // Verifies that a JPQL query using an alias returns the correct hexadecimal value for a persisted AsciiCharacter
     public void testAsciiCharacterQueryReturnsHexadecimalWithAlias() {
         int id = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
         AsciiCharacter character = new AsciiCharacter();
@@ -635,7 +635,6 @@ public class JakartaPersistenceServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
-
         assertEquals(character.getHexadecimal(), result);
     }
 
@@ -683,9 +682,6 @@ public class JakartaPersistenceServlet extends FATServlet {
                                               String.class)
                         .setParameter(1, character.getThisCharacter())
                         .getResultList();
-
-        System.out.println("Query result: " + results);
-
         // Assert that no result was returned
         assertTrue("Expected no results, but got: " + results, results.isEmpty());
     }
