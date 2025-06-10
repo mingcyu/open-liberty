@@ -33,6 +33,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.UserTransaction;
 
 import io.openliberty.jpa.persistence.tests.models.Organization;
+import io.openliberty.jpa.persistence.tests.models.Participant;
 import io.openliberty.jpa.persistence.tests.models.Person;
 import io.openliberty.jpa.persistence.tests.models.Priority;
 import io.openliberty.jpa.persistence.tests.models.Product;
@@ -432,6 +433,108 @@ public class JakartaPersistenceServlet extends FATServlet {
             throw e;
         }
        
+    }
+  
+    @Test
+    public void testRecordAsEmbeddable_NoMatchAndOrdering() throws Exception {
+        // Clean up any existing data
+        tx.begin();
+        em.createQuery("DELETE FROM Participant").executeUpdate();
+        tx.commit();
+
+        // Setup test data
+        Participant p1 = Participant.of("Anna", "Brown", 4);
+        Participant p2 = Participant.of("Zach", "Taylor", 5);
+        Participant p3 = Participant.of("Mark", "Lee", 6);
+
+        tx.begin();
+        em.persist(p1);
+        em.persist(p2);
+        em.persist(p3);
+        tx.commit();
+
+        List<Participant> results = Collections.emptyList(); // Ensure it's never null
+
+        // Query with a last name that doesn't exist
+        tx.begin();
+        try {
+            results = em.createQuery(
+                                     "SELECT o FROM Participant o WHERE o.name.last = ?1 ORDER BY o.name.first, o.id",
+                                     Participant.class)
+                            .setParameter(1, "Doe")
+                            .getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw new RuntimeException("Query failed unexpectedly", e);
+        }
+
+        // Assertions
+        assertNotNull("Results list should not be null", results);
+        assertTrue("Expected empty results for non-matching last name", results.isEmpty());
+    }
+
+    @Test
+    public void testRecordAsEmbeddable_NullEdgeCaseAndOrdering() throws Exception {
+        // Setup test data with null, empty, and edge case values
+        Participant p1 = Participant.of("Anna", null, 13); // Null last name (should be excluded)
+        Participant p2 = Participant.of("Mike", "Green", 14); // Valid
+        Participant p3 = Participant.of("Laura", "Blue", 15); // Different last name (excluded)
+        Participant p4 = Participant.of("Zoe", "Green", 16); // Valid
+        Participant p5 = Participant.of(null, "Green", 17); // Null first name
+        Participant p6 = Participant.of("John", "Green", 18); // Valid
+        Participant p7 = Participant.of("", "Green", 19); // Empty first name
+
+        // Persist participants
+        tx.begin();
+        try {
+            em.persist(p1);
+            em.persist(p2);
+            em.persist(p3);
+            em.persist(p4);
+            em.persist(p5);
+            em.persist(p6);
+            em.persist(p7);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+
+        // Query for participants with the last name 'Green'
+        List<Participant> results;
+        tx.begin();
+        try {
+            results = em.createQuery(
+                                     "SELECT o FROM Participant o WHERE o.name.last = :lastName " +
+                                     "ORDER BY " +
+                                     "CASE WHEN o.name.first IS NULL THEN 1 ELSE 0 END, " +
+                                     "CASE WHEN o.name.first = '' THEN 1 ELSE 0 END, " +
+                                     "o.name.first, o.id",
+                                     Participant.class)
+                            .setParameter("lastName", "Green")
+                            .getResultList();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+
+        // Validate results
+        assertNotNull(results);
+        assertEquals(5, results.size()); // 5 participants with last name "Green"
+
+        // Expected order: John (18), Mike (14), Zoe (16), "" (19), null (17)
+        assertEquals("John", results.get(0).getName().getFirst());
+        assertEquals("Mike", results.get(1).getName().getFirst());
+        assertEquals("Zoe", results.get(2).getName().getFirst());
+        assertEquals("", results.get(3).getName().getFirst());
+        assertNull(results.get(4).getName().getFirst());
+
+        // Additional validation for excluded/edge cases
+        assertNull(p1.getName().getLast()); // Null last name should be excluded from query
+        assertEquals("", p7.getName().getFirst()); // Empty first name correctly stored
+        assertNull(p5.getName().getFirst()); // Null first name correctly stored
     }
 
     /**
