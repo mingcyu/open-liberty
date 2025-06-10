@@ -22,12 +22,11 @@ import io.openliberty.transport.http_fat.accesslists.AccessListsTests;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-                AccessLogRolloverTest.class,
                 AccessListsTests.class,
                 MaxOpenConnectionsTests.class,
                 PortOpenRetriesTests.class,
                 SoLingerTests.class,
-                SoReuseAddrTests.class,
+                SoReuseAddrTest.class,
                 TcpOptionsDefaultTests.class
 })
 

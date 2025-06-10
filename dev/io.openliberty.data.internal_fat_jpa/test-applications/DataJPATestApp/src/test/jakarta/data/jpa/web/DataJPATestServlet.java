@@ -795,6 +795,27 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Cursor-based pagination using the version and id as key elements,
+     * referring to the version with the query language, VERSION(THIS),
+     * and the id with the query language, ID(THIS).
+     */
+    @Test
+    public void testCursorKeyIncludesVersion() {
+        Order<City> order = Order.by(Sort.asc("VERSION(THIS)"),
+                                     Sort.asc("ID(THIS)"));
+        CursoredPage<City> page;
+        page = cities.findByStateNameGreaterThan("Iowa",
+                                                 PageRequest.ofSize(4),
+                                                 order);
+        assertEquals(4, page.content().size());
+
+        page = cities.findByStateNameGreaterThan("Iowa",
+                                                 page.nextPageRequest(),
+                                                 order);
+        assertEquals(4, page.content().size());
+    }
+
+    /**
      * Demonstrates inconsistency and wrong behavior in how EclipseLink returns an
      * entity attribute that is an ElementCollection vs an entity attribute of the
      * same type that is not an ElementCollection. Note that the former is not
@@ -4230,7 +4251,7 @@ public class DataJPATestServlet extends FATServlet {
      * Repository method that queries for the IdClass using id(this)
      * and sorts based on the attributes of the IdClass.
      */
-    // @Test // TODO enable once #29073 is fixed
+    @Test
     public void testSelectIdClass() {
         assertEquals(List.of("Illinois:Springfield",
                              "Kansas:Kansas City",
@@ -4242,7 +4263,9 @@ public class DataJPATestServlet extends FATServlet {
                              "Ohio:Springfield",
                              "Oregon:Springfield"),
                      cities.ids()
-                                     .map(id -> id.getStateName() + ":" + id.name)
+                                     .map(id -> id[0] + ":" + id[1])
+                                     // TODO replace above with the following #29073 is fixed
+                                     //.map(id -> id.getStateName() + ":" + id.name)
                                      .collect(Collectors.toList()));
     }
 

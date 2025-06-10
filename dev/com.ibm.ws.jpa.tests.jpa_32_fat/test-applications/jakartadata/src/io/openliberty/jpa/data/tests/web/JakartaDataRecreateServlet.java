@@ -80,6 +80,10 @@ import io.openliberty.jpa.data.tests.models.Store;
 import io.openliberty.jpa.data.tests.models.StreetAddress;
 import io.openliberty.jpa.data.tests.models.Triangle;
 import io.openliberty.jpa.data.tests.models.Vehicle;
+import io.openliberty.jpa.data.tests.models.Door;
+import io.openliberty.jpa.data.tests.models.Garage;
+import io.openliberty.jpa.data.tests.models.House;
+import io.openliberty.jpa.data.tests.models.Kitchen;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -886,7 +890,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     }
 
     @Test
-    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29073")
+    // @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29073")
     public void testOLGH29073() throws Exception {
         deleteAllEntities(City.class);
 
@@ -921,6 +925,39 @@ public class JakartaDataRecreateServlet extends FATServlet {
         assertEquals(2, rochesters.size());
         assertEquals("New York", rochesters.get(0).getStateName());
         assertEquals("Minnesota", rochesters.get(1).getStateName());
+    }
+
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29073")
+    public void testOLGH29073_WHERECLAUSE() throws Exception {
+        deleteAllEntities(City.class);
+
+        City RochesterMN = City.of("Rochester", "Minnesota", 121878, Set.of(55901, 55902, 55903, 55904, 55906));
+        City RochesterNY = City.of("Rochester", "New York", 209352, Set.of(14601, 14602, 14603, 14604, 14606));
+
+        // List<CityId> rochesters;
+
+        tx.begin();
+        em.persist(RochesterMN);
+        em.persist(RochesterNY);
+        tx.commit();
+
+        tx.begin();
+        try {
+            //This one failed
+            long version1 = em.createQuery("SELECT VERSION(c) FROM City c WHERE ID(c) = ?1", Long.class)
+                     .setParameter(1,new CityId("Rochester","Minnesota")).getSingleResult();
+
+             //This one failed
+            long version2 = em.createQuery("SELECT VERSION(THIS) FROM City  WHERE ID(THIS) = ?1", Long.class)
+                     .setParameter(1,new CityId("Rochester","Minnesota")).getSingleResult();
+            //This one passed
+                          long rochesters = em.createQuery("SELECT VERSION(THIS) FROM City", Long.class)
+                     .getSingleResult();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
     }
 
     @Test
@@ -1187,7 +1224,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     }
 
     @Test
-    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/24926")
+    //Reference issue: https://github.com/OpenLiberty/open-liberty/issues/24926
     public void testOLGH24926() throws Exception {
         Line unitRadius = Line.of(0, 0, 1, 1);
 
@@ -2131,6 +2168,146 @@ public class JakartaDataRecreateServlet extends FATServlet {
         // This cannot be avoided even when setting standard_conforming_strings=on
         // EclipseLink should handle this case by adding in additional escapes to the bound parameters where PostgreSQL uses the default escape character `\`
         assertEquals(27.97f, totals.get(0), 0.01);
+
+    }
+    
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30789")
+    public void testOLGH30789() throws Exception {
+        try {
+            deleteAllEntities(House.class);
+
+            House h1 = new House();
+            h1.setArea(1800);
+
+            h1.setGarage(new Garage());
+            h1.getGarage().setArea(200);
+            h1.getGarage().setDoor(new Door());
+            h1.getGarage().getDoor().setHeight(8);
+            h1.getGarage().getDoor().setWidth(10);
+            h1.getGarage().setType(Garage.Type.Attached);
+
+            h1.setKitchen(new Kitchen());
+            h1.getKitchen().setLength(15);
+            h1.getKitchen().setWidth(12);
+            h1.setLotSize(0.19f);
+            h1.setNumBedrooms(4);
+            h1.setParcelId("TestEmbeddable-104-2288-60");
+            h1.setPurchasePrice(162000);
+            h1.setSold(false);
+
+            House h2 = new House();
+            h2.setArea(2000);
+
+            h2.setGarage(new Garage());
+            h2.getGarage().setArea(220);
+            h2.getGarage().setDoor(new Door());
+            h2.getGarage().getDoor().setHeight(8);
+            h2.getGarage().getDoor().setWidth(12);
+            h2.getGarage().setType(Garage.Type.Detached);
+
+            h2.setKitchen(new Kitchen());
+            h2.getKitchen().setLength(16);
+            h2.getKitchen().setWidth(13);
+            h2.setLotSize(0.18f);
+            h2.setNumBedrooms(4);
+            h2.setParcelId("TestEmbeddable-204-2992-20");
+            h2.setPurchasePrice(188000);
+            h2.setSold(false);
+
+            // Persist the house entity
+            tx.begin();
+
+            em.persist(h1);
+            em.persist(h2);
+
+            tx.commit();
+
+            tx.begin();
+
+            em.createQuery("UPDATE House o SET o.garage=?2, o.area = o.area + ?3, o.kitchen.length=o.kitchen.length+?4, o.numBedrooms = ?5 WHERE o.parcelId = ?1", House.class)
+                            .setParameter(1, h1.getParcelId())
+                            .setParameter(2, null)
+                            .setParameter(3, 50.0)
+                            .setParameter(4, 2.0)
+                            .setParameter(5, 4)
+                            .executeUpdate();
+
+            tx.commit();
+
+            tx.begin();
+
+            House updatedHouse = em.createQuery("SELECT this from House o WHERE o.parcelId = ?1", House.class)
+                            .setParameter(1, h1.getParcelId())
+                            .getSingleResult();
+
+            assertEquals(null, updatedHouse.getGarage());
+            assertEquals(4, h1.getNumBedrooms());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
+
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/31558")
+    public void testOLGH31558() throws Exception {
+        deleteAllEntities(ShippingAddress.class);
+
+        ShippingAddress a1 = new ShippingAddress();
+        a1.id = 1001L;
+        a1.city = "Rochester";
+        a1.state = "Minnesota";
+        a1.streetAddress = new StreetAddress(2800, "37th St NW", List.of("Receiving Dock", "Building 040-1"));
+        a1.zipCode = 55901;
+
+        ShippingAddress a2 = new ShippingAddress();
+        a2.id = 1002L;
+        a2.city = "Rochester";
+        a2.state = "Minnesota";
+        a2.streetAddress = new StreetAddress(201, "4th St SE");
+        a2.zipCode = 55904;
+
+        ShippingAddress a3 = new ShippingAddress();
+        a3.id = 1003L;
+        a3.city = "Rochester";
+        a3.state = "Minnesota";
+        a3.streetAddress = new StreetAddress(200, "1st Ave SW");
+        a3.zipCode = 55902;
+
+        ShippingAddress a4 = new ShippingAddress();
+        a4.id = 1004L;
+        a4.city = "Rochester";
+        a4.state = "Minnesota";
+        a4.streetAddress = new StreetAddress(151, "4th St SE");
+        a4.zipCode = 55904;
+
+        tx.begin();
+        em.persist(a1);
+        em.persist(a2);
+        em.persist(a3);
+        em.persist(a4);
+        tx.commit();
+
+        tx.begin();
+        try {
+            List<ShippingAddress> found = em.createQuery("SELECT o FROM ShippingAddress o WHERE (o.streetAddress.recipientInfo IS NOT EMPTY)")
+                           .getResultList();
+            tx.commit();
+            assertEquals(1, found.size());
+            ShippingAddress a = found.get(0);
+            assertEquals(a1.id, a.id);
+            assertEquals(a1.city, a.city);
+            assertEquals(a1.state, a.state);
+            assertEquals(a1.zipCode, a.zipCode);
+            assertEquals(a1.streetAddress.houseNumber, a.streetAddress.houseNumber);
+            assertEquals(a1.streetAddress.streetName, a.streetAddress.streetName);
+            assertEquals(a1.streetAddress.recipientInfo, a.streetAddress.recipientInfo);
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
 
     }
 
