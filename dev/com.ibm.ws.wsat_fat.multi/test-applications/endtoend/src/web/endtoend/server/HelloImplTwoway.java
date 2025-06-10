@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ package web.endtoend.server;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 import javax.jws.WebService;
 import javax.transaction.RollbackException;
@@ -25,6 +26,7 @@ import javax.xml.ws.BindingProvider;
 import com.ibm.tx.jta.ExtendedTransactionManager;
 import com.ibm.tx.jta.TransactionManagerFactory;
 import com.ibm.tx.jta.XAResourceNotAvailableException;
+import com.ibm.tx.jta.ut.util.TxTestUtils;
 import com.ibm.tx.jta.ut.util.XAResourceFactoryImpl;
 import com.ibm.tx.jta.ut.util.XAResourceImpl;
 import com.ibm.tx.jta.ut.util.XAResourceInfoFactory;
@@ -112,10 +114,11 @@ public class HelloImplTwoway{
 				HelloImplTwowayService service = new HelloImplTwowayService(
 						wsdlLocation);
 				web.endtoend.client.endtoend.HelloImplTwoway proxy = service.getHelloImplTwowayPort();
-				BindingProvider bind = (BindingProvider) proxy;
-				bind.getRequestContext().put(
+                                final Map<String, Object> requestContext = ((BindingProvider) proxy).getRequestContext();
+                                requestContext.put(
 						"javax.xml.ws.service.endpoint.address",
 						URL + "/endtoend/HelloImplTwowayService");
+                                TxTestUtils.setTimeouts(requestContext);
 				String response = proxy.sayHello(vote2, expectedDirection);
 				System.out.println("Reply from the second call: "
 						+ response);

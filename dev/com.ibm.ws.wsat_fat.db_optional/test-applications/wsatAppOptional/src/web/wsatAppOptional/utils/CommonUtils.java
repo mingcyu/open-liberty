@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -37,6 +37,7 @@ import javax.transaction.UserTransaction;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 
+import com.ibm.tx.jta.ut.util.TxTestUtils;
 import com.ibm.websphere.uow.UOWSynchronizationRegistry;
 import web.wsatAppOptional.client.Hello;
 import web.wsatAppOptional.client.HelloImplPortProxy;
@@ -98,11 +99,12 @@ public class CommonUtils {
 						LOCAL_SERVICE_WSDL_ADDRESS, new QName(
 								"http://server.wsatAppOptional.web/",
 								"HelloImplService"));
-				Hello helloPort = helloService.getHelloImplPort();
-				((BindingProvider) helloPort).getRequestContext().put(
+                                final Hello helloPort = helloService.getHelloImplPort();
+                final Map<String, Object> requestContext = ((BindingProvider) helloPort).getRequestContext();
+                                requestContext.put(
 						BindingProvider.ENDPOINT_ADDRESS_PROPERTY,
 						SERVICE_ADDRESS);
-
+                                TxTestUtils.setTimeouts(requestContext);
 				helloPort.sayHelloToOther(method, servername);
 			} else if (type.equals("m")) {
 				// Use local wsdl way with userTransaction setRollbackOnly
@@ -123,11 +125,12 @@ public class CommonUtils {
 						LOCAL_SERVICE_WSDL_ADDRESS, new QName(
 								"http://server.wsatAppOptional.web/",
 								"HelloImplService"));
-				Hello helloPort = helloService.getHelloImplPort();
-				((BindingProvider) helloPort).getRequestContext().put(
+                                final Hello helloPort = helloService.getHelloImplPort();
+                final Map<String, Object> requestContext = ((BindingProvider) helloPort).getRequestContext();
+                                requestContext.put(
 						BindingProvider.ENDPOINT_ADDRESS_PROPERTY,
 						SERVICE_ADDRESS);
-
+                                TxTestUtils.setTimeouts(requestContext);
 				helloPort.sayHelloToOther(method, servername);
 
 				userTransaction.setRollbackOnly();

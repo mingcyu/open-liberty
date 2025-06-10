@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -86,13 +86,12 @@ public class EndToEndClientServlet extends HttpServlet {
 					+ "/endtoend/HelloImplTwowayService?wsdl");
 			HelloImplTwowayService service = new HelloImplTwowayService(
 					wsdlLocation);
-			HelloImplTwoway proxy = service.getHelloImplTwowayPort();
-			BindingProvider bind = (BindingProvider) proxy;
-			Map<String, Object> requestContext = bind.getRequestContext();
+                        final HelloImplTwoway proxy = service.getHelloImplTwowayPort();
+                        final Map<String, Object> requestContext = ((BindingProvider) proxy).getRequestContext();
 			requestContext.put(
 					"javax.xml.ws.service.endpoint.address",
 					BASE_URL + "/endtoend/HelloImplTwowayService");
-			TxTestUtils.setTimeouts(requestContext, 300000);
+                        TxTestUtils.setTimeouts(requestContext);
 			if (type.equals("testTwoServerCommit") || type.equals("testFeatureDynamic")) {
 				userTransaction.begin();
 				boolean result = enlistXAResource("commit", XAResourceImpl.DIRECTION_COMMIT);

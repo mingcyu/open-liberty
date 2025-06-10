@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ package web.assertion.client.assertion;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Enumeration;
+import java.util.Map;
 import java.io.IOException;
 import java.net.URL;
 
@@ -26,6 +27,8 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.UserTransaction;
 import javax.xml.ws.BindingProvider;
+
+import com.ibm.tx.jta.ut.util.TxTestUtils;
 
 @WebServlet({ "/AssertionClientServlet" })
 public class AssertionClientServlet extends HttpServlet {
@@ -85,10 +88,12 @@ public class AssertionClientServlet extends HttpServlet {
 			} else {
 				return "<html><header></header><body>Test type error.</body></html>";
 			}
-			BindingProvider bind = (BindingProvider) proxy;
-			bind.getRequestContext().put(
+                        final BindingProvider bind = (BindingProvider) proxy;
+                        final Map<String, Object> requestContext = bind.getRequestContext();
+                        requestContext.put(
 					"javax.xml.ws.service.endpoint.address",
 					BASE_URL + "/assertion/" + endpointAddress);
+                        TxTestUtils.setTimeouts(requestContext);
 			System.out.println("Reply from server: " + proxy.sayHello());
 			output = "<html><header></header><body> Reply from server: "
 							+ proxy.sayHello() + "</body></html>";
@@ -122,10 +127,12 @@ public class AssertionClientServlet extends HttpServlet {
 				} else {
 					return "<html><header></header><body>Test type error.</body></html>";
 				}
-				BindingProvider bind = (BindingProvider) proxy;
-				bind.getRequestContext().put(
+                                final BindingProvider bind = (BindingProvider) proxy;
+                                final Map<String, Object> requestContext = bind.getRequestContext();
+                                requestContext.put(
 						"javax.xml.ws.service.endpoint.address",
 						BASE_URL + "/assertion/" + endpointAddress);
+                                TxTestUtils.setTimeouts(requestContext);
 				System.out.println("Reply from server: " + proxy.sayHello());
 				System.out.println("client user transaction commit");
 				output = "<html><header></header><body> Reply from server: "

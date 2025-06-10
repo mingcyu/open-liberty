@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -130,6 +130,12 @@ public class TxTestUtils {
 			System.out.println("setTestResourcesFile: "+XAResourceImpl.STATE_FILE);
 		}
 	}
+
+        private static final int DEFAULT_REQUEST_TIMEOUT = 300000;
+
+        public static void setTimeouts(Map<String, Object> requestContext) {
+                setTimeouts(requestContext, DEFAULT_REQUEST_TIMEOUT);
+        }
 
 	public static void setTimeouts(Map<String, Object> requestContext, int timeout) {
 		requestContext.put("com.sun.xml.ws.connect.timeout", timeout);
