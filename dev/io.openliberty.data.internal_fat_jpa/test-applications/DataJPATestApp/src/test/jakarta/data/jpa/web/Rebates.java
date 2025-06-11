@@ -124,4 +124,8 @@ public interface Rebates { // Do not allow this interface to inherit from other 
 
     @Query("WHERE EXTRACT(DATE FROM updatedAt) = ?1 ORDER BY amount DESC")
     Stream<Rebate> updatedOn(LocalDate date);
+
+    @Query("SELECT EXTRACT(YEAR FROM updatedAt)" +
+           " ORDER BY EXTRACT(YEAR FROM updatedAt) DESC")
+    List<Integer> yearUpdated();
 }

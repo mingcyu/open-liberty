@@ -2173,6 +2173,51 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Verify that JPQL SELECT and ORDER BY clauses can EXTRACT the YEAR from a
+     * LocalDateTime.
+     */
+    @Test
+    public void testExtractYearInSelectAndOrderBy() {
+        rebates.reset();
+
+        Rebate r1 = new Rebate(525001, //
+                        10.00f, //
+                        "testExtractYearInSelectAndOrderBy-1", //
+                        LocalTime.now(), //
+                        LocalDate.of(2024, Month.APRIL, 5), //
+                        Rebate.Status.PAID, //
+                        LocalDateTime.of(2024, Month.JULY, 10, 9, 15, 00), //
+                        3);
+
+        Rebate r2 = new Rebate(525002, //
+                        2.50f, //
+                        "TestExtractYearInSelectAndOrderBy-2", //
+                        LocalTime.now(), //
+                        LocalDate.of(2022, Month.SEPTEMBER, 22), //
+                        Rebate.Status.DENIED, //
+                        LocalDateTime.of(2022, Month.OCTOBER, 5, 15, 01, 00), //
+                        4);
+
+        Rebate r3 = new Rebate(525003, //
+                        3.75f, //
+                        "TestExtractYearInSelectAndOrderBy-3", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 18), //
+                        Rebate.Status.SUBMITTED, //
+                        LocalDateTime.of(2025, Month.JUNE, 11, 14, 59, 53), //
+                        2);
+
+        rebates.addAll(r1, r2, r3);
+
+        assertEquals(List.of(2025,
+                             2024,
+                             2022),
+                     rebates.yearUpdated());
+
+        rebates.reset();
+    }
+
+    /**
      * Verify the EXTRACT WEEK function to compare the week-of-year part of a date.
      */
     @OnlyIfSysProp(DB_Not_Default) // Derby doesn't support a WEEK function in SQL
