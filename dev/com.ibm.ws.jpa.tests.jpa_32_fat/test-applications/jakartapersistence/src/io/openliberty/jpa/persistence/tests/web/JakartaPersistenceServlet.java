@@ -554,7 +554,6 @@ public class JakartaPersistenceServlet extends FATServlet {
         character.setHexadecimal("50");
         character.setNumericValue(80);
         character.setControl(false);
-
         try {
             tx.begin();
             em.createQuery("DELETE FROM AsciiCharacter a WHERE a.thisCharacter = :char")
@@ -570,13 +569,10 @@ public class JakartaPersistenceServlet extends FATServlet {
             }
             throw new RuntimeException("Transaction failed during testOLGH28913QueryHexadecimalWithAlias", e);
         }
-
         TypedQuery<String> query = em.createQuery(
                                                   "SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.thisCharacter = :char", String.class);
         query.setParameter("char", character.getThisCharacter());
-
         List<String> results = query.getResultList();
-
         assertNotNull("Query result should not be null", results);
         assertFalse("Query result should not be empty", results.isEmpty());
         assertTrue("Expected hexadecimal value not found in results", results.contains(character.getHexadecimal()));
@@ -616,20 +612,15 @@ public class JakartaPersistenceServlet extends FATServlet {
     @Test
     public void testAsciiCharacterwithSpecialCharacter() throws Exception {
         AsciiCharacter character = AsciiCharacter.of(42); // *
-
         String result;
-
         tx.begin();
-
         try {
             em.persist(character);
-
             result = em.createQuery(
                                     "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
                                     String.class)
                             .setParameter(1, character.getThisCharacter())
                             .getSingleResult();
-
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
@@ -641,18 +632,14 @@ public class JakartaPersistenceServlet extends FATServlet {
     @Test(expected = AssertionError.class)
     public void testAsciiCharacterNullCharacter() throws Exception {
         AsciiCharacter character = null;
-
         tx.begin();
-
         try {
             em.persist(character);
-
             em.createQuery(
                            "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
                            String.class)
                             .setParameter(1, character.getThisCharacter())
                             .getSingleResult();
-
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
@@ -665,9 +652,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         AsciiCharacter character = new AsciiCharacter();
         character.setThisCharacter((char) 200); // Choose a code outside standard ASCII (0-127)
         character.setHexadecimal(null); // set to null
-
         tx.begin();
-
         try {
             em.persist(character);
             tx.commit();
@@ -675,7 +660,6 @@ public class JakartaPersistenceServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
-
         // filters out null hexadecimal values
         List<String> results = em.createQuery(
                                               "SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.hexadecimal IS NOT NULL AND c.thisCharacter = ?1",
@@ -689,15 +673,11 @@ public class JakartaPersistenceServlet extends FATServlet {
     @Test
     public void testAsciiCharWithNullHexadecimalUsingDefaultConstructor() throws Exception {
         deleteAllEntities(AsciiCharacter.class);
-
         AsciiCharacter character = new AsciiCharacter();
         character.setThisCharacter('P'); // char for ASCII 80
         character.setHexadecimal(null);
-
         String result;
-
         tx.begin();
-
         try {
             em.persist(character);
 
@@ -715,7 +695,6 @@ public class JakartaPersistenceServlet extends FATServlet {
             tx.rollback();
             throw e;
         }
-
         assertNull(result);
     }
 
