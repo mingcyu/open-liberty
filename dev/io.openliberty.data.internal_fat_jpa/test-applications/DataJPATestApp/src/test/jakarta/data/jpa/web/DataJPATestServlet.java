@@ -2004,6 +2004,51 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Verify that JPQL can be used to EXTRACT the DATE from a LocalDateTime.
+     */
+    // TODO enable once EclipseLink bug #31802 is fixed
+    //@Test
+    public void testExtractDate() {
+        rebates.reset();
+
+        Rebate r1 = new Rebate(54001, //
+                        1.40f, //
+                        "TestExtractDate-1", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 21), //
+                        Rebate.Status.SUBMITTED, //
+                        LocalDateTime.of(2025, Month.JUNE, 11, 13, 06, 00), //
+                        1);
+
+        Rebate r2 = new Rebate(54002, //
+                        2.30f, //
+                        "TestExtractDate-2", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 14), //
+                        Rebate.Status.SUBMITTED, //
+                        LocalDateTime.of(2025, Month.JUNE, 12, 12, 30, 00), //
+                        1);
+
+        Rebate r3 = new Rebate(54003, //
+                        3.20f, //
+                        "TestExtractDate-3", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 15), //
+                        Rebate.Status.PAID, //
+                        LocalDateTime.of(2025, Month.JUNE, 11, 8, 45, 00), //
+                        1);
+
+        rebates.addAll(r1, r2, r3);
+
+        assertEquals(List.of("TestExtractDate-3", "TestExtractDate-1"),
+                     rebates.updatedOn(LocalDate.of(2025, Month.JUNE, 11))
+                                     .map(Rebate::customerId)
+                                     .collect(Collectors.toList()));
+
+        rebates.reset();
+    }
+
+    /**
      * Verify EXTRACT YEAR/QUARTER/MONTH/DAY functions to compare different parts
      * of a date.
      */
@@ -2080,6 +2125,51 @@ public class DataJPATestServlet extends FATServlet {
                      creditCards.findByIssuedOnWithDayBetween(20, 29)
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
+    }
+
+    /**
+     * Verify that JPQL can be used to EXTRACT the TIME from a LocalDateTime.
+     */
+    // TODO enable once EclipseLink bug #31802 is fixed
+    //@Test
+    public void testExtractTime() {
+        rebates.reset();
+
+        Rebate r1 = new Rebate(520001, //
+                        10.00f, //
+                        "TestExtractTime-1", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 10), //
+                        Rebate.Status.PAID, //
+                        LocalDateTime.of(2025, Month.JUNE, 6, 11, 34, 30), //
+                        3);
+
+        Rebate r2 = new Rebate(520002, //
+                        2.50f, //
+                        "TestExtractTime-2", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 12), //
+                        Rebate.Status.SUBMITTED, //
+                        LocalDateTime.of(2025, Month.JUNE, 6, 12, 38, 00), //
+                        1);
+
+        Rebate r3 = new Rebate(520003, //
+                        3.75f, //
+                        "TestExtractTime-3", //
+                        LocalTime.now(), //
+                        LocalDate.of(2025, Month.MAY, 14), //
+                        Rebate.Status.DENIED, //
+                        LocalDateTime.of(2025, Month.JUNE, 7, 9, 55, 20), //
+                        2);
+
+        rebates.addAll(r1, r2, r3);
+
+        assertEquals(List.of(LocalTime.of(12, 38, 00),
+                             LocalTime.of(9, 55, 20),
+                             LocalTime.of(11, 34, 30)),
+                     rebates.timeUpdated());
+
+        rebates.reset();
     }
 
     /**
