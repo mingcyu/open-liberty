@@ -14,31 +14,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import componenttest.app.FATServlet;
-import jakarta.annotation.Resource;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Nulls;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.TypedQuery;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.transaction.HeuristicMixedException;
-import jakarta.transaction.HeuristicRollbackException;
-import jakarta.transaction.NotSupportedException;
-import jakarta.transaction.RollbackException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.UserTransaction;
+import org.junit.Test;
 
+import componenttest.app.FATServlet;
 import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
 import io.openliberty.jpa.persistence.tests.models.Organization;
 import io.openliberty.jpa.persistence.tests.models.Participant;
@@ -48,6 +31,22 @@ import io.openliberty.jpa.persistence.tests.models.Product;
 import io.openliberty.jpa.persistence.tests.models.Ticket;
 import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import io.openliberty.jpa.persistence.tests.models.User;
+import jakarta.annotation.Resource;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Nulls;
+import jakarta.persistence.criteria.Root;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.UserTransaction;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = "/JakartaPersistence32")
@@ -563,9 +562,9 @@ public class JakartaPersistenceServlet extends FATServlet {
             try {
                 tx.rollback();
             } catch (SystemException se) {
-                throw new RuntimeException("Rollback failed during testOLGH28913QueryHexadecimalWithAlias", se);
+                throw new RuntimeException("Rollback failed during testAsciiCharacterQueryReturnsHexadecimalWithAlias", se);
             }
-            throw new RuntimeException("Transaction failed during testOLGH28913QueryHexadecimalWithAlias", e);
+            throw new RuntimeException("Transaction failed during testAsciiCharacterQueryReturnsHexadecimalWithAlias", e);
         }
         TypedQuery<String> query = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.thisCharacter = :char", String.class);
         query.setParameter("char", character.getThisCharacter());
@@ -597,7 +596,7 @@ public class JakartaPersistenceServlet extends FATServlet {
             em.persist(AsciiCharacter.of(66)); // 'B'
             tx.commit();
         } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-            throw new RuntimeException("Transaction failed during testOLGH28913MultipleResultsQuery", e);
+            throw new RuntimeException("Transaction failed during testAsciiCharacterMultipleResultsQuery", e);
         }
         List<String> results = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.hexadecimal IS NOT NULL", String.class).getResultList();
         assertTrue("Expected hex value 41 not found", results.contains("41")); // 65 in hex
@@ -611,7 +610,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.begin();
         try {
             em.persist(character);
-            result = em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class).getSingleResult();
+            result = em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class)
+                            .setParameter(1, character.getThisCharacter())
+                            .getSingleResult();
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
