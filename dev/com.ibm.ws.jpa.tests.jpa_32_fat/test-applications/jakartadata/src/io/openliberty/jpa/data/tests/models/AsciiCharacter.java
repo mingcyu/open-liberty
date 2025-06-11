@@ -14,11 +14,11 @@ import java.io.Serializable;
 /**
  * Recreate from Jakarta Data TCK
  */
-@jakarta.persistence.Entity
+@Entity
 public class AsciiCharacter implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @jakarta.persistence.Id
+    @Id
     private long id;
 
     private int numericValue;
