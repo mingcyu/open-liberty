@@ -13,7 +13,8 @@
 package com.ibm.wsspi.threading;
 
 /**
- * This spi allows disabling the usage of VirtualThreads within the control of the Managed Executor framework
+ * This SPI allows disabling the creation of virtual threads within the control of Liberty.
+ * When creation of virtual threads is disabled, Liberty will create platform threads instead.
  */
 public interface VTOverrideService {
 
