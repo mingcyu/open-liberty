@@ -19,7 +19,7 @@ package com.ibm.wsspi.threading;
 public interface VTOverrideService {
 
     /**
-     * This gives the extension the ability to allow or dis-allow usage of Virtual Threads within Liberty's control
+     * This gives the extension the ability to allow or disallow creation of virtual threads within Liberty's control
      */
     public boolean allowManagedExecutorVirtualThreads();
 }
