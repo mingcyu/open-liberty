@@ -17,10 +17,12 @@ import java.util.concurrent.ThreadFactory;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.propertytypes.SatisfyingConditionTarget;
 import org.osgi.service.condition.Condition;
 
 import com.ibm.ws.kernel.service.util.JavaInfo;
+import com.ibm.wsspi.threading.VTOverrideService;
 
 import io.openliberty.threading.virtual.VirtualThreadOps;
 
@@ -33,6 +35,13 @@ import io.openliberty.threading.virtual.VirtualThreadOps;
            service = VirtualThreadOps.class)
 @SatisfyingConditionTarget("(&(" + Condition.CONDITION_ID + "=" + JavaInfo.CONDITION_ID + ")(" + JavaInfo.CONDITION_ID + ">=21))")
 public class VirtualThreadOperations implements VirtualThreadOps {
+
+    private VTOverrideService overrideService;
+
+    @Reference
+    protected void setOverrideService(VTOverrideService vtos) {
+        overrideService = vtos;
+    }
 
     @Override
     public ThreadFactory createFactoryOfVirtualThreads(String namePrefix,
@@ -63,6 +72,9 @@ public class VirtualThreadOperations implements VirtualThreadOps {
 
     @Override
     public boolean isSupported() {
-        return true;
+        if (overrideService != null)
+            return overrideService.allowManagedExecutorVirtualThreads();
+        else
+            return true;
     }
 }

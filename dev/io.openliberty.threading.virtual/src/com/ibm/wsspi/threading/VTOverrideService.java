@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -10,8 +10,15 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-/**
- * @version 1.1
- */
-@org.osgi.annotation.versioning.Version("1.2")
 package com.ibm.wsspi.threading;
+
+/**
+ * This spi allows disabling the usage of VirtualThreads within the control of the Managed Executor framework
+ */
+public interface VTOverrideService {
+
+    /**
+     * This gives the extension the ability to allow or dis-allow usage of Virtual Threads within Liberty's control
+     */
+    public boolean allowManagedExecutorVirtualThreads();
+}
