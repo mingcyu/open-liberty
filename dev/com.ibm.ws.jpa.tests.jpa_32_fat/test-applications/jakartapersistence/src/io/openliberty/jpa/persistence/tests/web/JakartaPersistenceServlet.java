@@ -556,9 +556,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         character.setControl(false);
         try {
             tx.begin();
-            em.createQuery("DELETE FROM AsciiCharacter a WHERE a.thisCharacter = :char")
-                            .setParameter("char", character.getThisCharacter())
-                            .executeUpdate();
+            em.createQuery("DELETE FROM AsciiCharacter a WHERE a.thisCharacter = :char").setParameter("char", character.getThisCharacter()).executeUpdate();
             em.persist(character);
             tx.commit();
         } catch (Exception e) {
@@ -569,8 +567,7 @@ public class JakartaPersistenceServlet extends FATServlet {
             }
             throw new RuntimeException("Transaction failed during testOLGH28913QueryHexadecimalWithAlias", e);
         }
-        TypedQuery<String> query = em.createQuery(
-                                                  "SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.thisCharacter = :char", String.class);
+        TypedQuery<String> query = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.thisCharacter = :char", String.class);
         query.setParameter("char", character.getThisCharacter());
         List<String> results = query.getResultList();
         assertNotNull("Query result should not be null", results);
@@ -602,9 +599,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
             throw new RuntimeException("Transaction failed during testOLGH28913MultipleResultsQuery", e);
         }
-        List<String> results = em.createQuery(
-                                              "SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.hexadecimal IS NOT NULL", String.class)
-                        .getResultList();
+        List<String> results = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.hexadecimal IS NOT NULL", String.class).getResultList();
         assertTrue("Expected hex value 41 not found", results.contains("41")); // 65 in hex
         assertTrue("Expected hex value 42 not found", results.contains("42")); // 66 in hex
     }
@@ -616,11 +611,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.begin();
         try {
             em.persist(character);
-            result = em.createQuery(
-                                    "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
-                                    String.class)
-                            .setParameter(1, character.getThisCharacter())
-                            .getSingleResult();
+            result = em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class).getSingleResult();
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
@@ -635,9 +626,7 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.begin();
         try {
             em.persist(character);
-            em.createQuery(
-                           "SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1",
-                           String.class)
+            em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class)
                             .setParameter(1, character.getThisCharacter())
                             .getSingleResult();
             tx.commit();
@@ -661,9 +650,7 @@ public class JakartaPersistenceServlet extends FATServlet {
             throw e;
         }
         // filters out null hexadecimal values
-        List<String> results = em.createQuery(
-                                              "SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.hexadecimal IS NOT NULL AND c.thisCharacter = ?1",
-                                              String.class)
+        List<String> results = em.createQuery("SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.hexadecimal IS NOT NULL AND c.thisCharacter = ?1", String.class)
                         .setParameter(1, character.getThisCharacter())
                         .getResultList();
         // Assert that no result was returned
@@ -680,13 +667,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         tx.begin();
         try {
             em.persist(character);
-
-            result = em.createQuery(
-                                    "SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.thisCharacter = :thisCharacter",
-                                    String.class)
+            result = em.createQuery("SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.thisCharacter = :thisCharacter", String.class)
                             .setParameter("thisCharacter", character.getThisCharacter())
                             .getSingleResult();
-
             tx.commit();
         } catch (NoResultException e) {
             tx.rollback();
