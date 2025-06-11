@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2005 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -44,12 +44,19 @@ public class Utils {
   public static String getFailureMessage (List failure) {
     if (tc.isEntryEnabled()) SibTr.entry(tc, "getFailureMessage", new Object[] { failure });
 
-    int len = failure.size();
-    String[] insert = new String[len-1];
+    int len = 0;
+    String[] insert;
 
-    for (int i=0; i < (len-1); i++) {
-      insert[i] = (String)failure.get(i+1);
-    }
+    if (failure != null) len = failure.size();
+
+    if (len > 0) {
+      insert = new String[len - 1];
+
+      for (int i = 0; i < (len - 1); i++) {
+        insert[i] = (String) failure.get(i + 1);
+      }
+    } else
+      insert = new String[0];
 
     String rc = nls.getFormattedMessage((String)failure.get(0), insert, null);
     
