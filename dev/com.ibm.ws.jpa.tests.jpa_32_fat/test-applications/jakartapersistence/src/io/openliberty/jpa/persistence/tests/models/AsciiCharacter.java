@@ -11,6 +11,9 @@ package io.openliberty.jpa.persistence.tests.models;
 
 import java.io.Serializable;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
 /**
  * Recreate from Jakarta Data TCK
  */
