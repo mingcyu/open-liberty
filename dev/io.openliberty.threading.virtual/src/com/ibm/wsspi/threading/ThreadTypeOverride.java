@@ -16,10 +16,10 @@ package com.ibm.wsspi.threading;
  * This SPI allows disabling the creation of virtual threads within the control of Liberty.
  * When creation of virtual threads is disabled, Liberty will create platform threads instead.
  */
-public interface VTOverrideService {
+public interface ThreadTypeOverride {
 
     /**
      * This gives the extension the ability to allow or disallow creation of virtual threads within Liberty's control
      */
-    public boolean allowManagedExecutorVirtualThreads();
+    public boolean allowVirtualThreadCreation();
 }

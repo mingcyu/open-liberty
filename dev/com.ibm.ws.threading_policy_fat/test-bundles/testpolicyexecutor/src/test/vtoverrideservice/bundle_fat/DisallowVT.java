@@ -12,18 +12,18 @@ package test.vtoverrideservice.bundle_fat;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import com.ibm.wsspi.threading.VTOverrideService;
+import com.ibm.wsspi.threading.ThreadTypeOverride;
 
 /**
  *
  */
 @Component(name = "io.openliberty.threading.virtual.internal.DisallowVT",
            configurationPolicy = ConfigurationPolicy.IGNORE,
-           service = com.ibm.wsspi.threading.VTOverrideService.class)
-public class DisallowVT implements VTOverrideService {
+           service = com.ibm.wsspi.threading.ThreadTypeOverride.class)
+public class DisallowVT implements ThreadTypeOverride {
 
     @Override
-    public boolean allowManagedExecutorVirtualThreads() {
+    public boolean allowVirtualThreadCreation() {
 
         return false;
     }
