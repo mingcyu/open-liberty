@@ -14,25 +14,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import componenttest.app.FATServlet;
-import jakarta.annotation.Resource;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Nulls;
-import jakarta.persistence.criteria.Root;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.transaction.UserTransaction;
+import org.junit.Test;
 
+import componenttest.app.FATServlet;
+import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
 import io.openliberty.jpa.persistence.tests.models.Organization;
 import io.openliberty.jpa.persistence.tests.models.Participant;
 import io.openliberty.jpa.persistence.tests.models.Person;
@@ -41,6 +31,23 @@ import io.openliberty.jpa.persistence.tests.models.Product;
 import io.openliberty.jpa.persistence.tests.models.Ticket;
 import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import io.openliberty.jpa.persistence.tests.models.User;
+import jakarta.annotation.Resource;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Nulls;
+import jakarta.persistence.criteria.Root;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.UserTransaction;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = "/JakartaPersistence32")
@@ -50,6 +57,12 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     @Resource
     private UserTransaction tx;
+    
+    @Test
+    public void testGetNameReturnsPersistenceUnitName() {
+        EntityManagerFactory emf = em.getEntityManagerFactory();
+        assertEquals("JakartaPersistenceUnit", emf.getName());
+    }
 
     @Test
     public void testSetOperationsJPQL() throws Exception{
@@ -320,12 +333,6 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals("Sorted based on 'description' in desc order with NULLS LAST, Expecting last element to be 'product2'", "product2", productsNullLast.get(2).name);
     }
 
-    @Test
-    public void testGetNameReturnsPersistenceUnitName() {
-        EntityManagerFactory emf = em.getEntityManagerFactory();
-        assertEquals("JakartaPersistenceUnit", emf.getName());
-    }
-
     /**
      * Usage of notEqualTo() expression in queries built using criteria api
      *
@@ -542,6 +549,144 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertNull(p1.getName().getLast()); // Null last name should be excluded from query
         assertEquals("", p7.getName().getFirst()); // Empty first name correctly stored
         assertNull(p5.getName().getFirst()); // Null first name correctly stored
+    }
+
+    @Test // Verifies that a JPQL query using an alias returns the correct hexadecimal value for a persisted AsciiCharacter
+    public void testAsciiCharacterQueryReturnsHexadecimalWithAlias() {
+        int id = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
+        AsciiCharacter character = new AsciiCharacter();
+        character.setId(id);
+        character.setThisCharacter('P');
+        character.setHexadecimal("50");
+        character.setNumericValue(80);
+        character.setControl(false);
+        try {
+            tx.begin();
+            em.createQuery("DELETE FROM AsciiCharacter a WHERE a.thisCharacter = :char").setParameter("char", character.getThisCharacter()).executeUpdate();
+            em.persist(character);
+            tx.commit();
+        } catch (Exception e) {
+            try {
+                tx.rollback();
+            } catch (SystemException se) {
+                throw new RuntimeException("Rollback failed during testAsciiCharacterQueryReturnsHexadecimalWithAlias", se);
+            }
+            throw new RuntimeException("Transaction failed during testAsciiCharacterQueryReturnsHexadecimalWithAlias", e);
+        }
+        TypedQuery<String> query = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.thisCharacter = :char", String.class);
+        query.setParameter("char", character.getThisCharacter());
+        List<String> results = query.getResultList();
+        assertNotNull("Query result should not be null", results);
+        assertFalse("Query result should not be empty", results.isEmpty());
+        assertTrue("Expected hexadecimal value not found in results", results.contains(character.getHexadecimal()));
+    }
+
+    @Test
+    public void testInvalidFieldInAsciiCharacterQuery() {
+        try {
+            em.createQuery("SELECT nonExistentField FROM AsciiCharacter", String.class).getResultList();
+        } catch (Exception e) {
+            assertTrue("Expected exception to be thrown due to non-existent field",
+                       e instanceof IllegalArgumentException || e instanceof RuntimeException);
+            assertTrue("Unexpected exception type: " + e.getClass(),
+                       e instanceof IllegalArgumentException || e instanceof RuntimeException);
+            assertTrue("Exception message did not contain 'nonExistentField': " + e.getMessage(),
+                       e.getMessage().contains("nonExistentField") || e.getClass().equals(IllegalArgumentException.class) || e.getClass().equals(RuntimeException.class));
+        }
+    }
+
+    @Test // Verifies that multiple persisted AsciiCharacter entries return correct hexadecimal values via JPQL query
+    public void testAsciiCharacterMultipleResultsQuery() {
+        try {
+            tx.begin();
+            em.persist(AsciiCharacter.of(65)); // 'A'
+            em.persist(AsciiCharacter.of(66)); // 'B'
+            tx.commit();
+        } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
+            throw new RuntimeException("Transaction failed during testAsciiCharacterMultipleResultsQuery", e);
+        }
+        List<String> results = em.createQuery("SELECT a.hexadecimal FROM AsciiCharacter a WHERE a.hexadecimal IS NOT NULL", String.class).getResultList();
+        assertTrue("Expected hex value 41 not found", results.contains("41")); // 65 in hex
+        assertTrue("Expected hex value 42 not found", results.contains("42")); // 66 in hex
+    }
+
+    @Test
+    public void testAsciiCharacterwithSpecialCharacter() throws Exception {
+        AsciiCharacter character = AsciiCharacter.of(42); // *
+        String result;
+        tx.begin();
+        try {
+            em.persist(character);
+            result = em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class)
+                            .setParameter(1, character.getThisCharacter())
+                            .getSingleResult();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertEquals(character.getHexadecimal(), result);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testAsciiCharacterNullCharacter() throws Exception {
+        AsciiCharacter character = null;
+        tx.begin();
+        try {
+            em.persist(character);
+            em.createQuery("SELECT hexadecimal FROM AsciiCharacter WHERE hexadecimal IS NOT NULL AND thisCharacter = ?1", String.class)
+                            .setParameter(1, character.getThisCharacter())
+                            .getSingleResult();
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testAsciiCharacterNonExistentCharacter() throws Exception {
+        AsciiCharacter character = new AsciiCharacter();
+        character.setThisCharacter((char) 200); // Choose a code outside standard ASCII (0-127)
+        character.setHexadecimal(null); // set to null
+        tx.begin();
+        try {
+            em.persist(character);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        // filters out null hexadecimal values
+        List<String> results = em.createQuery("SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.hexadecimal IS NOT NULL AND c.thisCharacter = ?1", String.class)
+                        .setParameter(1, character.getThisCharacter())
+                        .getResultList();
+        // Assert that no result was returned
+        assertTrue("Expected no results, but got: " + results, results.isEmpty());
+    }
+
+    @Test
+    public void testAsciiCharWithNullHexadecimalUsingDefaultConstructor() throws Exception {
+        deleteAllEntities(AsciiCharacter.class);
+        AsciiCharacter character = new AsciiCharacter();
+        character.setThisCharacter('P'); // char for ASCII 80
+        character.setHexadecimal(null);
+        String result;
+        tx.begin();
+        try {
+            em.persist(character);
+            result = em.createQuery("SELECT c.hexadecimal FROM AsciiCharacter c WHERE c.thisCharacter = :thisCharacter", String.class)
+                            .setParameter("thisCharacter", character.getThisCharacter())
+                            .getSingleResult();
+            tx.commit();
+        } catch (NoResultException e) {
+            tx.rollback();
+            result = null;
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+        assertNull(result);
     }
 
     /**
