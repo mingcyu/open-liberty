@@ -133,13 +133,13 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     public static final ClientHeadersRequestFilter HEADERS_REQUEST_FILTER = new ClientHeadersRequestFilter();
 
     private static final Class<?> FT_ANNO_CLASS = getFTAnnotationClass();
-    private static final ClassLoader myClassLoader; // liberty change
-    private static final boolean isOSGiEnv; // liberty change
+    private static final ClassLoader myClassLoader; // Liberty change
+    private static final boolean isOSGiEnv; // Liberty change
 
     static ResteasyProviderFactory PROVIDER_FACTORY;
     
     static {
-        // liberty change start
+        // Liberty Change Start
         myClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override
             public ClassLoader run() {
@@ -153,7 +153,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
             // not running in an OSGi environment
         }
         isOSGiEnv = isOSGi;
-        // liberty change end
+        // Liberty Change End
     }
 
     public static void setProviderFactory(ResteasyProviderFactory providerFactory) {
