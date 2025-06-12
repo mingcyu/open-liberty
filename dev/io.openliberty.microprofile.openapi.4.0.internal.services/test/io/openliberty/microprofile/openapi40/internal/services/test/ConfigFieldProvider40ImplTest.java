@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package io.openliberty.microprofile.openapi40.internal.impl.test;
+package io.openliberty.microprofile.openapi40.internal.services.test;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -27,7 +27,7 @@ import java.util.List;
 import org.junit.Test;
 
 import io.openliberty.microprofile.openapi20.internal.services.ConfigField;
-import io.openliberty.microprofile.openapi40.internal.impl.ConfigFieldProvider40Impl;
+import io.openliberty.microprofile.openapi40.internal.services.impl.ConfigFieldProvider40Impl;
 import io.smallrye.openapi.api.OpenApiConfig;
 
 public class ConfigFieldProvider40ImplTest {
