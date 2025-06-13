@@ -9,9 +9,7 @@
  *******************************************************************************/
 package com.ibm.ws.microprofile.rest.client.fat;
 
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
@@ -22,11 +20,7 @@ import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
 import componenttest.annotation.Server;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
-import componenttest.custom.junit.runner.RepeatTestFilter;
-import componenttest.custom.junit.runner.Mode.TestMode;
 import componenttest.rules.repeater.JakartaEEAction;
-import componenttest.rules.repeater.MicroProfileActions;
-import componenttest.rules.repeater.RepeatActions;
 import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
@@ -40,7 +34,7 @@ import io.openliberty.mprestclient.fat.myrestclient.servlet.MyRestClientTestServ
 public class RESTClientUserFeatureTest extends FATServletClient {
     
     private static final String appName = "MyRestClient";
-    private static final String bundleName = "MyRESTClientBundle";
+    private static final String bundleName = "MyRestClientBundle";
     private static final String serverName = "MyRESTClientServer";
 
     @ClassRule
@@ -80,12 +74,6 @@ public class RESTClientUserFeatureTest extends FATServletClient {
             server.uninstallUserBundle(bundleName);
         }
     }
-
-    @Before
-    public void beforeTest() {}
-
-    @After
-    public void afterTest() {}
     
     private static String getUserFeatureFile() throws Exception {
         if (JakartaEEAction.isEE9OrLaterActive()) {
