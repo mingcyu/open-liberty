@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -307,6 +308,19 @@ public class Util {
         }
 
         return validReturnTypes;
+    }
+
+    /**
+     * Returns a String containing the names of classes delimited by commas.
+     *
+     * @param classes Java classes.
+     * @return the names of classes delimited by commas.
+     */
+    public static String names(Collection<Class<?>> classes) {
+        StringBuilder b = new StringBuilder();
+        for (Class<?> c : classes)
+            b.append(b.isEmpty() ? "" : ", ").append(c.getName());
+        return b.toString();
     }
 
     /**
