@@ -486,7 +486,7 @@ public class Simple2PCCloudServlet extends Base2PCCloudServlet {
 
         boolean tablesExist = true;
         final String[] types = { "TABLE" };
-        final List<String> tables = Arrays.asList("WAS_TRAN_LOGCLOUD0021", "WAS_PARTNER_LOGCLOUD0021", "WAS_JON_LOGCLOUD0021");
+        final List<String> tables = Arrays.asList("WAS_TRAN_LOGCLOUD0021", "WAS_PARTNER_LOGCLOUD0021");
 
         while (tablesExist) {
             try (Connection con = getConnection(dsTranLog)) {
