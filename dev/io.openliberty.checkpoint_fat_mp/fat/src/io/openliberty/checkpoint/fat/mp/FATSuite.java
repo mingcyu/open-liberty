@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -139,6 +140,18 @@ public class FATSuite {
         File serverEnvFile = new File(server.getFileFromLibertyServerRoot("server.env").getAbsolutePath());
         try (OutputStream out = new FileOutputStream(serverEnvFile)) {
             serverEnvProperties.store(out, "");
+        }
+    }
+
+    /*
+     * Deletes contents of server.env
+     */
+    static void emptyEnvVariable(LibertyServer server) throws Exception {
+        File serverEnvFile = new File(server.getFileFromLibertyServerRoot("server.env").getAbsolutePath());
+        if (serverEnvFile.isFile()) {
+            FileWriter fw = new FileWriter(serverEnvFile);
+            fw.write("");
+            fw.close();
         }
     }
 
