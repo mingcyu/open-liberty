@@ -44,22 +44,17 @@ public class Utils {
   public static String getFailureMessage (List failure) {
     if (tc.isEntryEnabled()) SibTr.entry(tc, "getFailureMessage", new Object[] { failure });
 
-    int len = 0;
-    String[] insert;
+    final String rc;
+    if (null == failure || failure.isEmpty()) {
+      rc = "NULL"; // this is an error and "NULL" is easier to debug than ""
+    } else {
+      int len = failure.size();
+      assert len >= 1;
+      String[] insert = new String[len - 1];
+      for (int i = 1; i < len; i++) insert[i-1] = (String) failure.get(i);
+      rc = nls.getFormattedMessage((String)failure.get(0), insert, null);
+    }
 
-    if (failure != null) len = failure.size();
-
-    if (len > 0) {
-      insert = new String[len - 1];
-
-      for (int i = 0; i < (len - 1); i++) {
-        insert[i] = (String) failure.get(i + 1);
-      }
-    } else
-      insert = new String[0];
-
-    String rc = nls.getFormattedMessage((String)failure.get(0), insert, null);
-    
     if (tc.isEntryEnabled()) SibTr.exit(tc, "getFailureMessage", rc);
     return rc;
   }
