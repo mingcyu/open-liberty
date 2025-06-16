@@ -52,7 +52,7 @@ public class XMLSecurityConstants {
 
     static {
         try {
-            SECURE_RANDOM = CryptoUtils.isFips140_3Enabled() ? new SecureRandom() : SecureRandom.getInstance("SHA1PRNG");
+            SECURE_RANDOM = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? new SecureRandom() : SecureRandom.getInstance("SHA1PRNG");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
