@@ -1160,20 +1160,20 @@ CWWKD1113.server.stopping.useraction=No action is needed.
 CWWKD1114.app.stopping=CWWKD1114I: One or more repositories ({0}) did not \
  initialize because the {1} application is in the {2} state.
 CWWKD1114.app.stopping.explanation=The application is stopping or has stopped \
- and will not attempt to initialize the repositories.
+ and will not try to initialize the repositories.
 CWWKD1114.app.stopping.useraction=Start the application to make the repositories \
  available.
 
 CWWKD1115.app.unavailable=CWWKD1115E: One or more repositories ({0}) did not \
  initialize because the {1} application is not available.
 CWWKD1115.app.unavailable.explanation=The application that defines the \
- repositories is not available. This prevents the repositories from initializing.
+ repositories is not available. The repositories cannot initialize.
 CWWKD1115.app.unavailable.useraction=Start the application to make the \
  repositories available.
 
 CWWKD1116.resource.unavailable=CWWKD1116E: One or more repositories ({0}) did not \
  initialize because the {1} resource did not become available within {2} seconds.
-CWWKD1116.resource.unavailable.explanation=A resource that is required by the \
- repositories did not become available.
+CWWKD1116.resource.unavailable.explanation=A resource that the repositories \
+ require did not become available.
 CWWKD1116.resource.unavailable.useraction=Verify the configuration of resources \
- that are used by the repositories.
+ that the repositories use.
