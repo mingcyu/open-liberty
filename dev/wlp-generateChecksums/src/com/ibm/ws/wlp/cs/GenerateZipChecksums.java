@@ -19,6 +19,7 @@ import java.io.OutputStream;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * GenerateChecksums
@@ -30,7 +31,7 @@ public class GenerateZipChecksums extends Task {
     private final boolean ignoreBinFiles = false;
 
     //the ext name of all the checksum files
-    private static String MD5_FILE_EXT = "md5";
+    private static String MD5_FILE_EXT = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
     private static String SHA2_FILE_EXT = "sha2";
 
     @Override

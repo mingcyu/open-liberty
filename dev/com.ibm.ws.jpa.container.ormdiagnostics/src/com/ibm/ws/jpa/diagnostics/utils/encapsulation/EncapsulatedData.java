@@ -39,10 +39,11 @@ import javax.xml.bind.Unmarshaller;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.EncapsulatedDataType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertiesType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertyType;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class EncapsulatedData {
     public static EncapsulatedData createEncapsulatedData(String name, String id, byte[] data) throws Exception {
-        return createEncapsulatedData(name, id, CompressionType.GZIP, "MD5", data);
+        return createEncapsulatedData(name, id, CompressionType.GZIP, CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5, data);
     }
 
     public static EncapsulatedData createEncapsulatedData(String name, String id, CompressionType ct,
@@ -107,7 +108,7 @@ public class EncapsulatedData {
     public String getHashAlgorithm() {
         String alg = edt.getHashAlgorithm();
         if (alg == null) {
-            return "MD5";
+            return CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
         } else {
             return alg;
         }
@@ -115,7 +116,7 @@ public class EncapsulatedData {
 
     public void setHashAlgorithm(String alg) {
         if (alg == null) {
-            alg = "MD5";
+            alg = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
         }
         edt.setHashAlgorithm(alg);
     }

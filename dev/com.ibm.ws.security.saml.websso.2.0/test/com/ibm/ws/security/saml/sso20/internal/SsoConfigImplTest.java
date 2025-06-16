@@ -597,7 +597,7 @@ public class SsoConfigImplTest {
             e.printStackTrace();
             fail("Unexpected exception was thrown: " + e);
         }
-        SAML_CONFIG_PROPS.put(SsoConfigImpl.KEY_signatureMethodAlgorithm, "SHA256");
+        SAML_CONFIG_PROPS.put(SsoConfigImpl.KEY_signatureMethodAlgorithm, CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256);
 
         String result = ssoConfig.getSignatureMethodAlgorithm();
 

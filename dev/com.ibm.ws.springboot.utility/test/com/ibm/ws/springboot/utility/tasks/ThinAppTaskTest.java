@@ -180,7 +180,7 @@ public class ThinAppTaskTest {
     }
 
     private static String hash(byte[] content) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("sha-256");
+        MessageDigest digest = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256);
         digest.update(content, 0, content.length);
         byte[] digested = digest.digest();
         return convertToHexString(digested);
