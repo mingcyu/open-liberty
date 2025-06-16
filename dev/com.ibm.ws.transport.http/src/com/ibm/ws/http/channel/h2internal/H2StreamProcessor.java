@@ -363,14 +363,14 @@ public class H2StreamProcessor {
                 }
 
                 if (addFrame == null || addFrame == ADDITIONAL_FRAME.FIRST_TIME) {
-                    if (h2rs.isControlRatioExceeded() || h2rs.isInboundResetsInTimeExceeded() || h2rs.isStreamMisbehaving()) {
+                    if (h2rs.isControlRatioExceeded() || h2rs.isResetsInTimeExceeded() || h2rs.isStreamMisbehaving()) {
                         addFrame = ADDITIONAL_FRAME.GOAWAY;
                         if (h2rs.isStreamMisbehaving()) {
                             addFrameException = new EnhanceYourCalmException("too many empty frames received");
                             Tr.debug(tc, "processNextFrame: too many empty frames received on stream " + this.myID + ", sending GOAWAY");
-                        } else if (h2rs.isInboundResetsInTimeExceeded()) {
-                            addFrameException = new EnhanceYourCalmException("too many reset frames received");
-                            Tr.debug(tc, "processNextFrame: too many reset frames received on stream " + this.myID + ", sending GOAWAY");
+                        } else if (h2rs.isResetsInTimeExceeded()) {
+                            addFrameException = new EnhanceYourCalmException("too many reset frames");
+                            Tr.debug(tc, "processNextFrame: too many reset frames sent/received on stream " + this.myID + ", sending GOAWAY");
                         } else {
                             addFrameException = new EnhanceYourCalmException("too many control frames received");
                             Tr.debug(tc, "processNextFrame: too many control frames received on stream " + this.myID + ", sending GOAWAY");
