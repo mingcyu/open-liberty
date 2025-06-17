@@ -13,12 +13,16 @@ import java.net.URL;
 
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
+import io.openliberty.mprestclient.fat.myrestclient.internal.MyRestAPI;
+
 public class MyRESTClient {
     
-    public static MyRestAPI getAPI(URL url) {
-        return RestClientBuilder.newBuilder()
-                        .baseUrl(url)
-                        .build(MyRestAPI.class);
+    public static MyRestAPIWrapper getAPI(URL url) {
+        MyRestAPI restAPI = RestClientBuilder.newBuilder()
+                                .baseUrl(url)
+                                .build(MyRestAPI.class);
+        
+        return new MyRestAPIWrapper(restAPI);
     }
 
 }

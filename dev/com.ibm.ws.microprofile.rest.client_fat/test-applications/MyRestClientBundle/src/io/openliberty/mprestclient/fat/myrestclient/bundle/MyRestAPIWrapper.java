@@ -9,19 +9,18 @@
  *******************************************************************************/
 package io.openliberty.mprestclient.fat.myrestclient.bundle;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import io.openliberty.mprestclient.fat.myrestclient.internal.MyRestAPI;
 
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-
-@RegisterRestClient
-@Path("rest")
-public interface MyRestAPI {
+public class MyRestAPIWrapper {
     
-    @GET
-    @Path("greet")
-    @Produces({ "application/json" })
-    public String greet();
+    private final MyRestAPI restAPI;
+
+    public MyRestAPIWrapper(MyRestAPI restAPI) {
+        this.restAPI = restAPI;
+    }
+
+    public String greet() {
+        return restAPI.greet();
+    }
 
 }

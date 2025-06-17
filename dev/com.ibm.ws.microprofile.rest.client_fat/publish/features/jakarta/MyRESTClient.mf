@@ -11,4 +11,5 @@ Subsystem-Content:
  io.openliberty.mpRestClient-3.0; type="osgi.subsystem.feature"; ibm.tolerates:="4.0",
  io.openliberty.restfulWSClient-3.0; type="osgi.subsystem.feature"; ibm.tolerates:="3.1, 4.0",
  io.openliberty.jsonp-2.0; type="osgi.subsystem.feature"; ibm.tolerates:="2.1"
-IBM-API-Package: io.openliberty.mprestclient.fat.myrestclient.bundle
+IBM-API-Package: 
+ io.openliberty.mprestclient.fat.myrestclient.bundle

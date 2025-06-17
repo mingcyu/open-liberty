@@ -53,7 +53,8 @@ public class RESTClientUserFeatureTest extends FATServletClient {
         /*
          * Build and install the user feature (wlp/usr/extension/lib)
          */
-        ShrinkHelper.defaultUserFeatureArchive(server, bundleName, "io.openliberty.mprestclient.fat.myrestclient.bundle");
+        ShrinkHelper.defaultUserFeatureArchive(server, bundleName, "io.openliberty.mprestclient.fat.myrestclient.bundle",
+                                                                   "io.openliberty.mprestclient.fat.myrestclient.internal");
         server.installUserFeature(getUserFeatureFile());
         Thread.sleep(5000);
 

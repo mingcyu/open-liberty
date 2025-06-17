@@ -3,7 +3,8 @@ Bundle-Name: io.openliberty.mprestclient.fat.myrestclient
 Bundle-SymbolicName: io.openliberty.mprestclient.fat.myrestclient
 Bundle-Version: 1.0.0
 Manifest-Version: 1.0
-Export-Package: io.openliberty.mprestclient.fat.myrestclient.bundle
+Export-Package: 
+ io.openliberty.mprestclient.fat.myrestclient.bundle
 Import-Package: 
  javax.ws.rs,
  javax.ws.rs.core,
