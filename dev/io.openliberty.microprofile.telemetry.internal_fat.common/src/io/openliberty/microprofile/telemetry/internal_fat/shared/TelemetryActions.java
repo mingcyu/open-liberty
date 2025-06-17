@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -186,19 +186,26 @@ public class TelemetryActions {
     }
 
     public static RepeatTests telemetry21Repeats() {
-        return telemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
+        return telemetry21Repeats(FeatureReplacementAction.ALL_SERVERS);
     }
 
-
-    public static RepeatTests telemetry20and21Repeats(String serverName) {
+    public static RepeatTests telemetry21andLatest20Repeats(String serverName) {
         return repeat(serverName, MicroProfileActions.MP71_EE11, MP14_MPTEL21, MP41_MPTEL21, MP50_MPTEL21,
-                      MP50_MPTEL21_JAVA8, MicroProfileActions.MP71_EE10, MicroProfileActions.MP70_EE11, MP14_MPTEL20, MP41_MPTEL20, MP50_MPTEL20,
-                      MP50_MPTEL20_JAVA8, MP61_MPTEL20, MicroProfileActions.MP70_EE10);
+                      MP50_MPTEL21_JAVA8, MicroProfileActions.MP70_EE10);
+    }
+    
+    public static RepeatTests telemetry21andLatest20Repeats() {
+        return telemetry21andLatest20Repeats(FeatureReplacementAction.ALL_SERVERS);
     }
 
-    public static RepeatTests telemetry20and21Repeats() {
-        return telemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
+    public static RepeatTests latestTelemetry21and20Repeats() {
+        return latestTelemetry21and20Repeats(FeatureReplacementAction.ALL_SERVERS);
     }
+
+    public static RepeatTests latestTelemetry21and20Repeats(String serverName) {
+        return repeat(serverName, MicroProfileActions.MP71_EE11, MicroProfileActions.MP71_EE10, MicroProfileActions.MP70_EE11, MicroProfileActions.MP70_EE10);
+    }
+
 
     /*
      * This returns one repeat for every released version of MPTelemetry; the latest 1.0, 1.1, etc.
