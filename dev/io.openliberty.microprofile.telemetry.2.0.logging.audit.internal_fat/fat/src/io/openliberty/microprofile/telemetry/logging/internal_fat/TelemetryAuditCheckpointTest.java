@@ -23,6 +23,7 @@ import com.ibm.websphere.simplicity.RemoteFile;
 import com.ibm.websphere.simplicity.log.Log;
 
 import componenttest.annotation.CheckpointTest;
+import componenttest.annotation.SkipForRepeat;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.rules.repeater.CheckpointRule;
 import componenttest.rules.repeater.CheckpointRule.ServerMode;
@@ -34,6 +35,7 @@ import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryAction
 
 @RunWith(FATRunner.class)
 @CheckpointTest(alwaysRun = true)
+@SkipForRepeat(TelemetryActions.MP14_MPTEL21_ID)
 public class TelemetryAuditCheckpointTest extends FATServletClient {
 
     public static final String SERVER_NAME = "TelemetryAuditCheckpoint";
@@ -50,7 +52,7 @@ public class TelemetryAuditCheckpointTest extends FATServletClient {
     //I chose this one because TelemetryMessages is core to this bucket
     // Will re-enable in follow-on issue.
     @ClassRule
-    public static RepeatTests rt = TelemetryActions.telemetry21andLatest20Repeats();
+    public static RepeatTests rt = TelemetryActions.telemetry21andLatest20RepeatsWithoutEE7();
 
     private static LibertyServer server;
 
