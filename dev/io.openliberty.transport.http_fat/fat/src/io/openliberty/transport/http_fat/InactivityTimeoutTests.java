@@ -565,14 +565,13 @@ public class InactivityTimeoutTests {
      * <tcpOptions inactivityTimeout="5s"/>
      *
      * Also the httpOptions readTimeout will be set back to 60s. This timeout should take priority
-     * over the inactivityTimeout. This is the same test as the one request test but now we're
+     * over the inactivityTimeout. This is the same test as the testInactivityTimeout_one_request test but now we're
      * expecting a response!
      *
      * A socket will be opened.
      *
-     * The test will sleep for 20s which is 4X greater than the inactivityTimeout.
-     * On the initial read the server will retry one time if the timeout is hit. So we need to wait a bit more
-     * than 2 times the inactivityTimeout to ensure the inactivityTimeout is working as expected.
+     * The test will sleep for 20s which is 4X greater than the inactivityTimeout. A timeout should not occur since
+     * the readTimeout should take priority and that is configured to 60 seconds.
      *
      * A request is sent and the initial response is read and validated to be the correct response from the Servlet.
      *
@@ -656,6 +655,7 @@ public class InactivityTimeoutTests {
      * A socket will be opened.
      *
      * The test will sleep for 90 seconds which is longer than any default timeout.
+     * The readTimeout, writeTimeout and inactivityTimeout default to 60 seconds.
      *
      * The goal of the test is to verify that all timeouts are disabled.
      *
@@ -706,7 +706,6 @@ public class InactivityTimeoutTests {
                 server.waitForStringInTraceUsingMark(".*read \\(async\\) requested for local");
             }
 
-            // Sleep 3X the inactivityTimeout since the read is retried one time.
             Thread.sleep(90000);
 
             String line;

@@ -16,7 +16,7 @@
                   httpPort="${bvt.prop.HTTP_default}"
                   httpsPort="${bvt.prop.HTTP_default.secure}">
         <tcpOptions portOpenRetries="60"/>
-        <!--  Set the readTimeout, and writeTimeout to 0 to force the the use of the inactivtyTimeout. -->
+        <!--  Set the readTimeout, and writeTimeout to 0 to force the use of the inactivityTimeout. -->
         <httpOptions readTimeout="0" writeTimeout="0"/>
     </httpEndpoint>
 
