@@ -26,7 +26,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.transaction.UserTransaction;
 
 @SuppressWarnings("serial")
-@WebServlet(urlPatterns = "/JakartaPersistenceRecreate")
+@WebServlet(urlPatterns = "/JakartaPersistence32DataRecreate")
 public class JakartaPersistenceDataRecreateServlet extends FATServlet {
 
     private EntityManager em;
