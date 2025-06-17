@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -44,10 +44,13 @@ import io.openliberty.microprofile.telemetry.internal_fat.apps.telemetry.WithSpa
 import io.openliberty.microprofile.telemetry.internal_fat.apps.telemetry.WithSpanServlet;
 import io.openliberty.microprofile.telemetry.internal_fat.shared.TelemetryActions;
 
+/**
+ * A test that does not have apiTypeVisibility="+third-party"  in the server xml but uses the OpenTelemetry APIS
+ */
 @RunWith(FATRunner.class)
-public class Telemetry10 extends FATServletClient {
+public class TelemetryStableAPIsTest extends FATServletClient {
 
-    public static final String SERVER_NAME = "Telemetry10";
+    public static final String SERVER_NAME = "TelemetryStable";
     public static final String APP_NAME = "TelemetryApp";
 
     @Server(SERVER_NAME)
@@ -55,14 +58,13 @@ public class Telemetry10 extends FATServletClient {
                     @TestServlet(servlet = OpenTelemetryBeanServlet.class, contextRoot = APP_NAME),
                     @TestServlet(servlet = BaggageServlet.class, contextRoot = APP_NAME),
                     @TestServlet(servlet = SpanCurrentServlet.class, contextRoot = APP_NAME),
-                    @TestServlet(servlet = MetricsDisabledServlet.class, contextRoot = APP_NAME),
                     @TestServlet(servlet = WithSpanServlet.class, contextRoot = APP_NAME),
                     @TestServlet(servlet = ConfigServlet.class, contextRoot = APP_NAME),
     })
     public static LibertyServer server;
 
     @ClassRule
-    public static RepeatTests r = TelemetryActions.latestTelemetryRepeatsBefore21(SERVER_NAME);
+    public static RepeatTests r = TelemetryActions.telemetry21Repeats(SERVER_NAME);
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -70,7 +72,6 @@ public class Telemetry10 extends FATServletClient {
                         .addAsResource(OpenTelemetryBeanServlet.class.getResource("microprofile-config.properties"), "META-INF/microprofile-config.properties")
                         .addClasses(OpenTelemetryBeanServlet.class,
                                     BaggageServlet.class,
-                                    MetricsDisabledServlet.class,
                                     SpanCurrentServlet.class,
                                     WithSpanServlet.class,
                                     WithSpanExtension.class,
