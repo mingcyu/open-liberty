@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.ibm.websphere.crypto.PasswordUtil;
 import com.ibm.websphere.ras.Tr;
@@ -79,7 +80,7 @@ public class LTPAKeyInfoManager {
     private final Map<String, byte[]> keyCache = new Hashtable<String, byte[]>();
     private final Map<String, String> realmCache = new Hashtable<String, String>();
 
-    private static List<LTPAValidationKeysInfo> ltpaValidationKeysInfos = new ArrayList<LTPAValidationKeysInfo>();
+    private static CopyOnWriteArrayList<LTPAValidationKeysInfo> ltpaValidationKeysInfos = new CopyOnWriteArrayList<LTPAValidationKeysInfo>();
 
     /**
      * Load the contents of the properties file.
@@ -104,7 +105,8 @@ public class LTPAKeyInfoManager {
             if (is != null)
                 try {
                     is.close();
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                }
         }
         return props;
     }
@@ -126,30 +128,28 @@ public class LTPAKeyInfoManager {
         }
         if (validationKeys != null && !validationKeys.isEmpty()) {
             ltpaValidationKeysInfos.clear();
-            synchronized (validationKeys) {
-                //load validationKeys
-                Iterator<Properties> validationKeysIterator = validationKeys.iterator();
-                while (validationKeysIterator.hasNext()) {
-                    OffsetDateTime validUntilDateOdt = null;
-                    Properties vKeys = validationKeysIterator.next();
-                    String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
-                    if (!this.importFileCache.contains(vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME))) {
-                        String validUntilDate = ((String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_VALID_UNTIL_DATE));
-                        if (validUntilDate != null) {
-                            try {
-                                validUntilDateOdt = OffsetDateTime.parse(validUntilDate);
-                                if (validUntilDateOdt != null && isValidUntilDateExpired(filename, validUntilDateOdt)) {
-                                    continue; //Skip this LTPA validationKeys
-                                }
-                            } catch (Exception e) {
-                                Tr.error(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_INVALID_FORMAT", validUntilDate, filename);
+            //load validationKeys
+            Iterator<Properties> validationKeysIterator = validationKeys.iterator();
+            while (validationKeysIterator.hasNext()) {
+                OffsetDateTime validUntilDateOdt = null;
+                Properties vKeys = validationKeysIterator.next();
+                String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
+                if (!this.importFileCache.contains(vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME))) {
+                    String validUntilDate = ((String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_VALID_UNTIL_DATE));
+                    if (validUntilDate != null) {
+                        try {
+                            validUntilDateOdt = OffsetDateTime.parse(validUntilDate);
+                            if (validUntilDateOdt != null && isValidUntilDateExpired(filename, validUntilDateOdt)) {
                                 continue; //Skip this LTPA validationKeys
                             }
+                        } catch (Exception e) {
+                            Tr.error(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_INVALID_FORMAT", validUntilDate, filename);
+                            continue; //Skip this LTPA validationKeys
                         }
-
-                        byte[] password = getKeyPasswordBytes(vKeys);
-                        loadLtpaKeysFile(locService, filename, password, true, validUntilDateOdt);
                     }
+
+                    byte[] password = getKeyPasswordBytes(vKeys);
+                    loadLtpaKeysFile(locService, filename, password, true, validUntilDateOdt);
                 }
             }
         }
