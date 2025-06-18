@@ -136,11 +136,6 @@ public class MyFacesContainerInitializer implements ServletContainerInitializer
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException
     {
         boolean startDireclty = shouldStartupRegardless(servletContext);
-
-        // DEBUG - CHECK FIPS and, if enabled, set the following
-        // org.apache.myfaces.MAC_ALGORITHM - HmacSHA256
-        // org.apache.myfaces.ALGORITHM - AES
-        // org.apache.myfaces.RANDOM_KEY_IN_VIEW_STATE_SESSION_TOKEN_SECURE_RANDOM_ALGORITM - SHA256DRBG
         
         if (startDireclty)
         {

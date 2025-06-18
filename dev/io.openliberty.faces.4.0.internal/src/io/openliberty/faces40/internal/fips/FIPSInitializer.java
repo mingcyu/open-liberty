@@ -16,10 +16,16 @@ import jakarta.servlet.ServletException;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class FIPSInitializer implements ServletContainerInitializer {
+
+    // Log instance for this class
+    protected static final Logger log = Logger.getLogger("io.openliberty.faces40.internal.fips");
+    private static final String CLASS_NAME = "FIPSInitializer";
 
     private static String MAC_ALGORITHM = "org.apache.myfaces.MAC_ALGORITHM";
     private static String SESSION_ALGORITHM = "org.apache.myfaces.ALGORITHM";
@@ -28,29 +34,33 @@ public class FIPSInitializer implements ServletContainerInitializer {
 
     @Override
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException {
-        System.out.println("FIPSInitializer#entered!");
 
         if (CryptoUtils.isFIPSEnabled()) {
-            // **** Already set as default ***** 
+            // **** Already set as default *****
             // if (servletContext.getInitParameter(MAC_ALGORITHM) == null) {
-            //     servletContext.setInitParameter(MAC_ALGORITHM, "HmacSHA256");
-            //     System.out.println("SET MAC");
+            // servletContext.setInitParameter(MAC_ALGORITHM, "HmacSHA256");
+            // log(MAC_ALGORITHM + " not found. Setting to HmacSHA256.");
             // }
             // if (servletContext.getInitParameter(SESSION_ALGORITHM) == null) {
-            //     servletContext.setInitParameter(SESSION_ALGORITHM, "AES");
-            //     System.out.println("SET VIEWSTATE");
+            // servletContext.setInitParameter(SESSION_ALGORITHM, "AES");
+            // log(SESSION_ALGORITHM + " not found. Setting to AES.");
             // }
             if (servletContext.getInitParameter(VIEWSTATE_ID_ALGORITHM) == null) {
                 servletContext.setInitParameter(VIEWSTATE_ID_ALGORITHM, "SHA256DRBG");
-                System.out.println("SET SESSION");
+                log(VIEWSTATE_ID_ALGORITHM + " not found. Setting to SHA256DRBG.");
             }
-	        if (servletContext.getInitParameter(CSRF_SESSION_ALGORITHM) == null) {
+            if (servletContext.getInitParameter(CSRF_SESSION_ALGORITHM) == null) {
                 servletContext.setInitParameter(CSRF_SESSION_ALGORITHM, "SHA256DRBG");
-                System.out.println("SET CSRF");
+                log(CSRF_SESSION_ALGORITHM + " not found. Setting to SHA256DRBG.");
             }
-	} else {
-            System.out.println("FIPS NOT ENABLED!");
+        } else {
+            log("FIPS not enabled. Skipping FIPSInitializer setup");
         }
-         System.out.println("FIPSInitializer#exitted!");
+    }
+
+    private void log(String message) {
+        if (log.isLoggable(Level.FINE)) {
+            log.logp(Level.FINE, CLASS_NAME, "onStartup", message);
+        }
     }
 }
