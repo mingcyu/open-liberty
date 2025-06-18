@@ -2654,7 +2654,7 @@
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-el-api</artifactId>
-      <version>11.0.6</version>
+      <version>11.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tomcat</groupId>
@@ -2669,7 +2669,7 @@
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-jasper-el</artifactId>
-      <version>11.0.6</version>
+      <version>11.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.wink</groupId>
@@ -5144,7 +5144,7 @@
     <dependency>
       <groupId>commons-beanutils</groupId>
       <artifactId>commons-beanutils</artifactId>
-      <version>1.9.4</version>
+      <version>1.11.0</version>
     </dependency>
     <dependency>
       <groupId>commons-discovery</groupId>

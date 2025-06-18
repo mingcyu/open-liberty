@@ -20,11 +20,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -482,18 +484,37 @@ public class Simple2PCCloudServlet extends Base2PCCloudServlet {
     public void dropServer2Tables(HttpServletRequest request,
                                   HttpServletResponse response) throws Exception {
 
-        try (Connection con = getConnection(dsTranLog)) {
-            con.setAutoCommit(false);
-            try (Statement stmt = con.createStatement()) {
-                String dropTableString = "DROP TABLE WAS_TRAN_LOGCLOUD0021";
-                System.out.println("dropServer2Tables: Drop table using: " + dropTableString);
-                int dropReturn = stmt.executeUpdate(dropTableString);
-                dropTableString = "DROP TABLE WAS_PARTNER_LOGCLOUD0021";
-                System.out.println("dropServer2Tables: Drop table using: " + dropTableString);
-                dropReturn = stmt.executeUpdate(dropTableString);
+        boolean tablesExist = true;
+        final String[] types = { "TABLE" };
+        final List<String> tables = Arrays.asList("WAS_TRAN_LOGCLOUD0021", "WAS_PARTNER_LOGCLOUD0021");
+
+        while (tablesExist) {
+            try (Connection con = getConnection(dsTranLog)) {
+                con.setAutoCommit(false);
+                for (String table : tables) {
+                    final String dropTableString = "DROP TABLE " + table;
+                    try (Statement stmt = con.createStatement()) {
+                        final int dropReturn = stmt.executeUpdate(dropTableString);
+                        System.out.println("dropServer2Tables: " + dropTableString + " returned " + dropReturn);
+                    } catch (SQLSyntaxErrorException e) {
+                        System.out.println("dropServer2Tables: " + dropTableString + " threw " + e);
+                    }
+                }
+
                 con.commit();
-            } catch (Exception ex) {
-                System.out.println("dropServer2Tables: caught exception in testSetup: " + ex);
+
+                final DatabaseMetaData metaData = con.getMetaData();
+                try (ResultSet existing = metaData.getTables(null, null, "WAS_%_LOGCLOUD0021", types)) {
+                    tablesExist = existing.next();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (tablesExist) {
+                System.out.println("dropServer2Tables: Tables still exist. Sleeping.");
+                Thread.sleep(100);
             }
         }
     }

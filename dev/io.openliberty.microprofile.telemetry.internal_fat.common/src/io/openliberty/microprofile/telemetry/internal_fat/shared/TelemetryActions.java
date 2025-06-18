@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -215,10 +215,30 @@ public class TelemetryActions {
     }
 
     /*
-     * This returns one repeat for every released version of MPTelemetry >= 2.0; the latest 2.0, and more to come when they exist.
+     * This returns one repeat for every released version of MPTelemetry >= 2.0; the latest 2.1, and more to come when they exist.
      * It also returns a repeat to cover ongoing development if that is not covered by one of the above.
      */
     public static RepeatTests latestTelemetry20Repeats() {
+        return latestTelemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
+    }
+
+    /*
+     * This returns one repeat for every released version of MPTelemetry before the 2.1 release; the latest 1.0, 1.1, etc.
+     * It also returns a repeat to cover ongoing development if that is not covered by one of the above.
+     */
+    public static RepeatTests latestTelemetryRepeatsBefore21(String serverName) {
+        return repeat(serverName,
+                      MicroProfileActions.MP70_EE11,
+                      MicroProfileActions.MP70_EE10,
+                      MicroProfileActions.MP61,
+                      MicroProfileActions.MP60);
+    }
+
+    /*
+     * This returns one repeat for every released version of MPTelemetry >= 2.0; the latest 2.0, and more to come when they exist.
+     * It also returns a repeat to cover ongoing development if that is not covered by one of the above.
+     */
+    public static RepeatTests latestTelemetryRepeatsBefore21() {
         return latestTelemetry20Repeats(FeatureReplacementAction.ALL_SERVERS);
     }
 

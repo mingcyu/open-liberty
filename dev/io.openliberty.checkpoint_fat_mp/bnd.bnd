@@ -18,6 +18,7 @@ src: \
 	test-applications/timeoutTest/src,\
 	test-applications/mpjwt/src,\
 	test-applications/mphealth/src,\
+	test-applications/mphealthup/src,\
 	test-applications/mpTelemetry/src,\
 	test-applications/jaxrspropagation/src,\
 	test-applications/mpOpenAPIConfig/src
