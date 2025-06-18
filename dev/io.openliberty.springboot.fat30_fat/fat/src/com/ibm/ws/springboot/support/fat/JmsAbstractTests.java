@@ -43,6 +43,7 @@ public abstract class JmsAbstractTests extends AbstractSpringTests {
     private static final String mqVersion = "9.3.2.0-r2";
     private static final int MQ_LISTENER_PORT = 1414;
 
+    @SuppressWarnings("resource")
     @ClassRule
     public static GenericContainer<?> container = new GenericContainer<>("icr.io/ibm-messaging/mq:" + mqVersion)
                     .withExposedPorts(MQ_LISTENER_PORT)
