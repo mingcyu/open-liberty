@@ -47,7 +47,7 @@ public class TelemetryMessagesCheckpointTest extends FATServletClient {
 
     @BeforeClass
     public static void testSetup() throws Exception {
-        if (!RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID)) {
+        if (!RepeatTestFilter.isAnyRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID, TelemetryActions.MP14_MPTEL21_ID)) {
             setupServerApp(LibertyServerFactory.getLibertyServer(SERVER_NAME));
             server.setCheckpoint(CheckpointPhase.AFTER_APP_START);
             server.startServer();
@@ -63,7 +63,7 @@ public class TelemetryMessagesCheckpointTest extends FATServletClient {
      * Ensures Liberty messages are correctly bridged and all attributes are present.
      */
     @Test
-    @SkipForRepeat({ TelemetryActions.MP14_MPTEL20_ID }) //Checkpoint only supports MP4.1 and higher.
+    @SkipForRepeat({ TelemetryActions.MP14_MPTEL20_ID, TelemetryActions.MP14_MPTEL21_ID }) //Checkpoint only supports MP4.1 and higher.
     public void testTelemetryMessagesCheckpoint() throws Exception {
         testTelemetryMessages(server, (linesConsoleLog) -> {
             // for checkpoint we expect to NOT see the message:

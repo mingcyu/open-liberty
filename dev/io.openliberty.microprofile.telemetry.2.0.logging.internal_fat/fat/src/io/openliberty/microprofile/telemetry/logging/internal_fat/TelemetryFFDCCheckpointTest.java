@@ -50,7 +50,7 @@ public class TelemetryFFDCCheckpointTest extends FATServletClient {
 
     @BeforeClass
     public static void initialSetup() throws Exception {
-        if (!RepeatTestFilter.isRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID)) {
+        if (!RepeatTestFilter.isAnyRepeatActionActive(TelemetryActions.MP14_MPTEL20_ID, TelemetryActions.MP14_MPTEL21_ID)) {
             server = installUserFeatureAndApp(getLibertyServer(SERVER_NAME));
 
             server.setCheckpoint(CheckpointPhase.AFTER_APP_START);
@@ -66,7 +66,7 @@ public class TelemetryFFDCCheckpointTest extends FATServletClient {
      */
     @Test
     @ExpectedFFDC({ "java.lang.ArithmeticException" })
-    @SkipForRepeat({ TelemetryActions.MP14_MPTEL20_ID }) //Checkpoint only supports MP4.1 and higher.
+    @SkipForRepeat({ TelemetryActions.MP14_MPTEL20_ID, TelemetryActions.MP14_MPTEL21_ID }) //Checkpoint only supports MP4.1 and higher.
     public void testTelemetryFFDCMessagesCheckpoint() throws Exception {
         testTelemetryFFDCMessages(server, (linesConsoleLog) -> {
             // For checkpoint we expect to NOT see the early ffdc message:
