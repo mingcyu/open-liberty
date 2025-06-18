@@ -311,7 +311,7 @@ public class SpringBootThinUtil implements Closeable {
     protected String hash(JarFile jf, ZipEntry entry) throws IOException, NoSuchAlgorithmException {
         InputStream eis = jf.getInputStream(entry);
         // sha-1 is used temporarily while doing checkpoint/restore for Spring Boot applications until sha-256 is made available by JVM.
-        MessageDigest digest = getDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256, CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1);
+        MessageDigest digest = getDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase(), CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1.toLowerCase());
         byte[] buffer = new byte[4096];
         int read = -1;
 
