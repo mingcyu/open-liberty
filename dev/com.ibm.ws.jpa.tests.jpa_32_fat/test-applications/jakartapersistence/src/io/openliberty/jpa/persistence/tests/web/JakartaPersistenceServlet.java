@@ -33,6 +33,7 @@ import io.openliberty.jpa.persistence.tests.models.TicketStatus;
 import io.openliberty.jpa.persistence.tests.models.User;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -56,6 +57,12 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     @Resource
     private UserTransaction tx;
+    
+    @Test
+    public void testGetNameReturnsPersistenceUnitName() {
+        EntityManagerFactory emf = em.getEntityManagerFactory();
+        assertEquals("JakartaPersistenceUnit", emf.getName());
+    }
 
     @Test
     public void testSetOperationsJPQL() throws Exception{
