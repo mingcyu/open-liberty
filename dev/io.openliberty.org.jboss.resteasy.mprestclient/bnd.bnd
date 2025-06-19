@@ -54,8 +54,7 @@ Import-Package: \
   *
 
 DynamicImport-Package: \
-  com.ibm.ws.microprofile.faulttolerance.cdi,\
-  *
+  com.ibm.ws.microprofile.faulttolerance.cdi
 
 Private-Package: \
   io.openliberty.microprofile.rest.client30.internal
