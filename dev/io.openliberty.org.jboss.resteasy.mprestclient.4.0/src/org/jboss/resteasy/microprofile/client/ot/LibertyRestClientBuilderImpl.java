@@ -58,6 +58,7 @@ import org.jboss.resteasy.spi.ResteasyUriBuilder;
 
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
+import io.openliberty.microprofile.rest.client40.internal.LibertyProxyClassLoader;
 import io.openliberty.microprofile.rest.client40.internal.OsgiServices;
 import io.openliberty.restfulWS.client.AsyncClientExecutorService;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -141,7 +142,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     public static final ClientHeadersRequestFilter HEADERS_REQUEST_FILTER = new ClientHeadersRequestFilter();
 
     private static final Class<?> FT_ANNO_CLASS = getFTAnnotationClass(); // Liberty Change
-    private static final ClassLoader myClassLoader; // Liberty change
+    private static final LibertyProxyClassLoader myClassLoader; // Liberty change
     private static final boolean isOSGiEnv; // Liberty change
 
     static ResteasyProviderFactory PROVIDER_FACTORY;
@@ -151,15 +152,15 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         Collections.addAll(IGNORED_METHODS, AutoCloseable.class.getMethods());
         
         // Liberty Change Start
-        myClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        myClassLoader = AccessController.doPrivileged(new PrivilegedAction<LibertyProxyClassLoader>() {
             @Override
-            public ClassLoader run() {
-                return LibertyRestClientBuilderImpl.class.getClassLoader();
+            public LibertyProxyClassLoader run() {
+                return new LibertyProxyClassLoader(LibertyRestClientBuilderImpl.class.getClassLoader());
             }
         });
         boolean isOSGi = false;
         try {
-            isOSGi = myClassLoader instanceof EquinoxClassLoader;
+            isOSGi = myClassLoader.getParent() instanceof EquinoxClassLoader;
         } catch (Throwable t) {
             // not running in an OSGi environment
         }
@@ -495,7 +496,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         final BeanManager beanManager = getBeanManager();
         Map<Method, List<InterceptorInvoker>> interceptorInvokers = initInterceptorInvokers(beanManager, aClass); // Liberty Change
         T proxy = (T) Proxy.newProxyInstance(classLoader, interfaces,
-                new LibertyProxyInvocationHandler(aClass, actualClient, getLocalProviderInstances(), client, beanManager, interceptorInvokers)); // Liberty Change
+                new LibertyProxyInvocationHandler(aClass, actualClient, getLocalProviderInstances(), client, beanManager, interceptorInvokers, classLoader)); // Liberty Change
         ClientHeaderProviders.registerForClass(aClass, proxy, beanManager);
         return proxy;
         // Liberty Change End
@@ -975,6 +976,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         // clazzLoader instanceof EquinoxClassLoader means it is from a Liberty bundle instead of an application
         try {
             if (!isOSGiEnv || clazzLoader == null || clazzLoader instanceof EquinoxClassLoader) {
+                myClassLoader.addLoader(clazzLoader);
                 clazzLoader = myClassLoader;
             }
         } catch (Throwable t) {
