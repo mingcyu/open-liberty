@@ -20,6 +20,7 @@ import jakarta.persistence.Id;
  * Recreate from io.openliberty.data.internal_fat
  */
 @Entity
+@Table(name = "PersistencePrime")
 public class Prime {
     public String binaryDigits;
 

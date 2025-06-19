@@ -15,6 +15,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 @Entity
+@Table(name = "PersistenceAsciiCharacter")
 public class AsciiCharacter implements Serializable {
     private static final long serialVersionUID = 1L;
 
