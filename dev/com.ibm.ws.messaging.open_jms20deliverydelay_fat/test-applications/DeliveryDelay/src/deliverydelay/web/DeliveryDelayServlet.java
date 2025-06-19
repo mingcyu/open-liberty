@@ -353,16 +353,16 @@ public class DeliveryDelayServlet extends HttpServlet {
 
     public void testSetDeliveryDelay(HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
         emptyQueue(jmsQCFBindings, jmsQueue);
-         if (!testSetDeliveryDelay(jmsQCFBindings, jmsQueue, false)) testNotValid(response);;
+         if (!testSetDeliveryDelay(jmsQCFBindings, jmsQueue, false)) testNotValid(response);
     }
 
     public void testSetDeliveryDelay_Tcp(HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
         emptyQueue(jmsQCFTCP, jmsQueue);
-        if (!testSetDeliveryDelay(jmsQCFTCP, jmsQueue, false)) testNotValid(response);;
+        if (!testSetDeliveryDelay(jmsQCFTCP, jmsQueue, false)) testNotValid(response);
     }
 
     public void testSetDeliveryDelayTopic(HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
-        if (!testSetDeliveryDelay(jmsTCFBindings, jmsTopic, false)) testNotValid(response)9;
+        if (!testSetDeliveryDelay(jmsTCFBindings, jmsTopic, false)) testNotValid(response);
     }
 
     public void testSetDeliveryDelayTopic_Tcp(HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
@@ -378,7 +378,6 @@ public class DeliveryDelayServlet extends HttpServlet {
             HttpServletRequest request, HttpServletResponse response) throws JMSException, TestException {
     	boolean valid = testSetDeliveryDelay(jmsTCFTCP, jmsTopic, true);
     }
-    
     
     /**
      * 
@@ -531,9 +530,9 @@ public class DeliveryDelayServlet extends HttpServlet {
     
     public void testSetDeliveryDelayTopicClassicApi(
             HttpServletRequest request, HttpServletResponse response) throws Exception {
-    	
+
     	if (!testSetDeliveryDelayTopicClassicApi(jmsTCFBindings, jmsTopic, false)) testNotValid(response);
-    	
+
     }
     
     public void testSetDeliveryDelayTopicClassicApi_Tcp(
