@@ -25,17 +25,17 @@
 	<keyStore
 		id="rsa_key"
 		password="Liberty"
-		type="PKCS12"
-		location="${server.config.dir}/rsa_key_nohost.p12" />
+		type="jks"
+		location="${server.config.dir}/rsa_key_nohost.jks" />
 
 	<keyStore
 		id="rsa_trust_for_LibertyOP"
 		password="LibertyServer"
-		type="PKCS12"
-		location="${server.config.dir}/rsa_trust_for_LibertyOP.p12" />
+		type="jks"
+		location="${server.config.dir}/rsa_trust_for_LibertyOP.jks" />
 	<keyStore
 		id="rsa_trust"
 		password="LibertyServer"
-		type="PKCS12"
-		location="${server.config.dir}/rsa_trust_nohost.p12" />
+		type="jks"
+		location="${server.config.dir}/rsa_trust_nohost.jks" />
 </server>        

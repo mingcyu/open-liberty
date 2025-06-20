@@ -29,19 +29,19 @@
     <keyStore
 		id="rsa_trust"
 		password="LibertyServer"
-		type="PKCS12"
-		location="${server.config.dir}/rsa_trust.p12" />
+		type="jks"
+		location="${server.config.dir}/rsa_trust.jks" />
          
 	<keyStore
 		id="rsa_key"
 		password="Liberty"
-		type="PKCS12"
-		location="${server.config.dir}/rsa_key.p12" />
+		type="jks"
+		location="${server.config.dir}/rsa_key.jks" />
      
     <keyStore
          id="bad_trust"
          password="LibertyServer"
-         type="PKCS12"
-         location="${server.config.dir}/rsa_badTrust.p12" />
+         type="jks"
+         location="${server.config.dir}/rsa_badTrust.jks" />
 
 </server>     

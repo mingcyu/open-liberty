@@ -19,8 +19,8 @@
 	<keyStore
 		id="samlKeyStore"
 		password="Liberty"
-		type="PKCS12"
-		location="${server.config.dir}/samlKey.p12" />
+		type="jks"
+		location="${server.config.dir}/samlKey.jks" />
 
 	<samlWebSso20
 		id="spOP"

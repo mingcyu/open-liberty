@@ -138,10 +138,10 @@ public class ClientContainerSecurityTest extends CommonTest {
 			ProgramOutput programOutput = commonClientSetUpWithParms("myFileMonitorClient", "CWWKS9702W");
 			String output = programOutput.getStdout();
 
-			boolean sslKeyFileExists = testClient.fileExistsInLibertyClientRoot("resources/security/key.jks");
-			assertTrue("Could not find ssl key.jks file",sslKeyFileExists);
+			boolean sslKeyFileExists = testClient.fileExistsInLibertyClientRoot("resources/security/key.p12");
+			assertTrue("Could not find ssl key.p12 file",sslKeyFileExists);
 			if (sslKeyFileExists) {
-				testClient.deleteFileFromLibertyClientRoot("resources/security/key.jks");
+				testClient.deleteFileFromLibertyClientRoot("resources/security/key.p12");
 			}
 			assertTrue("Client should report it has updated the keystore", output.contains("CWPKI0811I"));
 			assertNoErrMessages(output);

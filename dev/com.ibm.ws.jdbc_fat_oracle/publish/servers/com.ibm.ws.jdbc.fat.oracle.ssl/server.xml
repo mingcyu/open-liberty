@@ -54,8 +54,8 @@
     </dataSource>
     
     <!-- Datasource using oracle wallet JKS auth for ssl connection -->
-    <variable name="oracle.keystore"			value="javax.net.ssl.keyStore=${server.config.dir}/store/client-keystore.p12;javax.net.ssl.keyStoreType=JKS;javax.net.ssl.keyStorePassword=${env.WALLET_PASS};"/>
-    <variable name="oracle.truststore"		  	value="javax.net.ssl.trustStore=${server.config.dir}/store/client-truststore.p12;javax.net.ssl.trustStoreType=JKS;javax.net.ssl.trustStorePassword=${env.WALLET_PASS};"/>
+    <variable name="oracle.keystore"			value="javax.net.ssl.keyStore=${server.config.dir}/store/client-keystore.jks;javax.net.ssl.keyStoreType=JKS;javax.net.ssl.keyStorePassword=${env.WALLET_PASS};"/>
+    <variable name="oracle.truststore"		  	value="javax.net.ssl.trustStore=${server.config.dir}/store/client-truststore.jks;javax.net.ssl.trustStoreType=JKS;javax.net.ssl.trustStorePassword=${env.WALLET_PASS};"/>
     <variable name="oracle.conn.props.p12"      value="${oracle.conn.props}${oracle.truststore}${oracle.keystore}" />
     
     <dataSource id="oracleWalletJKS" jndiName="jdbc/oracleWalletJKS">

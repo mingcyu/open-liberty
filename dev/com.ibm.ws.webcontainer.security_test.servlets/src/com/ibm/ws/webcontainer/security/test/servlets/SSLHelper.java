@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -46,7 +46,7 @@ public class SSLHelper {
      * established and a trust-all policy is assumed.
      *
      * @param client the HttpClient
-     * @param port SSL port
+     * @param port   SSL port
      * @param server the LibertyServer
      */
     public static void establishSSLContext(HttpClient client, int port, LibertyServer server) {
@@ -59,12 +59,12 @@ public class SSLHelper {
      * If the given tsPath is not null, then it is used for trust for the SSL
      * connection.
      *
-     * @param client the HttpClient
-     * @param port SSL port
-     * @param server the LibertyServer
-     * @param ksPath path to the keystore, may be null
+     * @param client     the HttpClient
+     * @param port       SSL port
+     * @param server     the LibertyServer
+     * @param ksPath     path to the keystore, may be null
      * @param ksPassword password for the keystore, may be null
-     * @param tsPath path to the trust store, may be null
+     * @param tsPath     path to the trust store, may be null
      * @param tsPassword password for the truststore, may be null
      */
     public static void establishSSLContext(HttpClient client,
@@ -80,16 +80,16 @@ public class SSLHelper {
     /**
      * Adds an SSL context to the HttpClient. If the given ksPath is not null
      * then adds it to the SSL context for client certificate authentication.
-     * If the given tsPath is not null, then it is used for trust for the SSL
+     * If the given tsPKPath is not null, then it is used for trust for the SSL
      * connection.
      *
-     * @param client the HttpClient
-     * @param port SSL port
-     * @param server the LibertyServer
-     * @param ksPath path to the keystore, may be null
-     * @param ksPassword password for the keystore, may be null
-     * @param tsPath path to the trust store, may be null
-     * @param tsPassword password for the truststore, may be null
+     * @param client      the HttpClient
+     * @param port        SSL port
+     * @param server      the LibertyServer
+     * @param ksPath      path to the keystore, may be null
+     * @param ksPassword  password for the keystore, may be null
+     * @param tsPath      path to the trust store, may be null
+     * @param tsPassword  password for the truststore, may be null
      * @param sslProtocol the protocol to be used for the ssl connection
      */
     public static void establishSSLContext(HttpClient client,
@@ -118,12 +118,12 @@ public class SSLHelper {
                     File ksFile = new File(ksPath);
                     KeyStore keyStore = null;
                     try {
-                        keyStore = KeyStore.getInstance("JKS");
+                        keyStore = KeyStore.getInstance("PKCS12");
                         ksStream = new FileInputStream(ksFile);
                         keyStore.load(ksStream, ksPassword.toCharArray());
                     } catch (Exception e) {
                         try {
-                            keyStore = KeyStore.getInstance("PKCS12");
+                            keyStore = KeyStore.getInstance("JKS");
                             ksStream = new FileInputStream(ksFile);
                             keyStore.load(ksStream, ksPassword.toCharArray());
                         } catch (Exception e1) {
@@ -312,10 +312,12 @@ public class SSLHelper {
         X509TrustManager tm = new X509TrustManager() {
 
             @Override
-            public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {}
+            public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+            }
 
             @Override
-            public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {}
+            public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+            }
 
             @Override
             public X509Certificate[] getAcceptedIssuers() {

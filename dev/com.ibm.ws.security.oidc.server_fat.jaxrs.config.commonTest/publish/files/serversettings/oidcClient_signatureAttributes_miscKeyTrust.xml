@@ -413,12 +413,12 @@
 	<keyStore
 		id="badTrustStore"
 		password="WebAS"
-		type="PKCS12"
-		location="${server.config.dir}/commonDummyServerTrustFile.p12" />
+		type="jks"
+		location="${server.config.dir}/commonDummyServerTrustFile.jks" />
 	<keyStore
 		id="ecKeyStore"
 		password="Liberty"
-		type="PKCS12"
-		location="${server.config.dir}/ec.p12" />
+		type="jks"
+		location="${server.config.dir}/ec.jks" />
 
 </server>

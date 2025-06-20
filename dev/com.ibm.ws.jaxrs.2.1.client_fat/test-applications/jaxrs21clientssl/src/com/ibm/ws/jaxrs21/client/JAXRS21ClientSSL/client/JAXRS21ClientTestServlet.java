@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -366,7 +366,7 @@ public class JAXRS21ClientTestServlet extends HttpServlet {
             ret.append("new KeyStore fails");
             return;
         }
-        String keyStorePath = this.getServletContext().getRealPath("/") + "/clientInvalidTrust.jks";
+        String keyStorePath = this.getServletContext().getRealPath("/") + "/clientInvalidTrust.p12";
 
         try {
             ts.load(new FileInputStream(keyStorePath), "passw0rd".toCharArray());

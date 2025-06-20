@@ -37,13 +37,13 @@
 	<keyStore
 		id="myKeyStore"
 		password="Liberty"
-		type="PKCS12"
-		location="${server.config.dir}/commonBasicKeyStore.p12" />
+		type="jks"
+		location="${server.config.dir}/commonBasicKeyStore.jks" />
 	<keyStore
 		id="myTrustStore"
 		password="WebAS"
-		type="PKCS12"
-		location="${server.config.dir}/commonDummyServerTrustFile.p12" />
+		type="jks"
+		location="${server.config.dir}/commonDummyServerTrustFile.jks" />
 
 	<authorization-roles id="com.ibm.ws.security.oidc10">
 		<security-role name="authenticated">
