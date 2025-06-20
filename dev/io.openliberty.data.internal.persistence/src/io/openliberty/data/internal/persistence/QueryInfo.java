@@ -56,6 +56,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
+import io.openliberty.data.internal.persistence.cdi.RepositoryProducer;
 import io.openliberty.data.internal.version.DataVersionCompatibility;
 import jakarta.data.Limit;
 import jakarta.data.Order;
@@ -186,7 +187,7 @@ public class QueryInfo {
 
     /**
      * For counting the total number of results across all pages.
-     * Null if pagination is not used or only slices are used.
+     * Null if pagination is not used or if pagination without totals is used.
      */
     String jpqlCount;
 
@@ -228,6 +229,11 @@ public class QueryInfo {
      * Null if the query return type limits to single results.
      */
     final Class<?> multiType;
+
+    /**
+     * Producer for the repository bean.
+     */
+    final RepositoryProducer<?> producer;
 
     /**
      * The interface that is annotated with @Repository.
@@ -302,6 +308,7 @@ public class QueryInfo {
     /**
      * Construct partially complete query information.
      *
+     * @param repositoryProducer  producer of the repository bean instance.
      * @param repositoryInterface interface annotated with @Repository.
      * @param method              repository method.
      * @param entityParamType     type of the first parameter if a life cycle method, otherwise null.
@@ -319,7 +326,8 @@ public class QueryInfo {
      *                                which resolves to { CompletionStage.class, Product[].class, Product.class }
      */
     @Trivial
-    public QueryInfo(Class<?> repositoryInterface,
+    public QueryInfo(RepositoryProducer<?> repositoryProducer,
+                     Class<?> repositoryInterface,
                      Method method,
                      Class<?> entityParamType,
                      Class<?> returnArrayType,
@@ -339,6 +347,7 @@ public class QueryInfo {
             Tr.entry(this, tc, "<init>", b.toString(), entityParamType, returnArrayType, returnTypeAtDepth);
         }
 
+        this.producer = repositoryProducer;
         this.repositoryInterface = repositoryInterface;
         this.method = method;
         this.entityParamType = entityParamType;
@@ -406,11 +415,15 @@ public class QueryInfo {
     /**
      * Construct partially complete query information.
      */
-    public QueryInfo(Class<?> repositoryInterface, Method method, Type type) {
+    public QueryInfo(RepositoryProducer<?> repositoryProducer,
+                     Class<?> repositoryInterface,
+                     Method method,
+                     Type type) {
         this.method = method;
         this.entityParamType = null;
         this.multiType = null;
         this.isOptional = false;
+        this.producer = repositoryProducer;
         this.repositoryInterface = repositoryInterface;
         this.returnArrayType = null;
         this.singleType = null;
@@ -443,6 +456,7 @@ public class QueryInfo {
         method = source.method;
         multiType = source.multiType;
         repositoryInterface = source.repositoryInterface;
+        producer = source.producer;
         returnArrayType = source.returnArrayType;
         singleType = source.singleType;
         singleTypeElementType = source.singleTypeElementType;
