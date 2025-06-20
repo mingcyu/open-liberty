@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import componenttest.app.FATServlet;
 import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
@@ -692,6 +693,7 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     @Test
+    @Ignore("Reference issue:https://github.com/OpenLiberty/open-liberty/issues/31884")
     public void testSecondPrecision() throws Exception {
         deleteAllEntities(Event.class);
 
