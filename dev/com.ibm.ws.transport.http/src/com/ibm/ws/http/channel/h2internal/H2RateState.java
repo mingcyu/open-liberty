@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -40,24 +40,16 @@ public class H2RateState {
     private static int maxStreamsRefused = 100;
 
     private volatile long controlFrameCount = 0L;
-    //private volatile int resetCount = 0;
 
     private volatile int emptyFrameReceivedCount = 0;
-    private volatile int combinedResetCount = 0;    //tracks both inbound and outbound resets
+    private volatile int resetFrameCount = 0; //tracks both inbound and outbound resets
     private volatile int refusedStreamCount = 0;
     private volatile long startResetTime = System.nanoTime();
-    //private volatile long outboundResetStartTime = System.nanoTime();
 
     public H2RateState(int maxResetFrames, int resetFrameWindow, int maxStreamsRefused) {
         this.maxResetFrames = maxResetFrames;
         this.resetFrameWindow = resetFrameWindow;
         this.maxStreamsRefused = maxStreamsRefused;
-    }
-
-    // Counting the number of outgoing resets
-    public synchronized void setStreamReset() {
-        //resetCount++;
-        combinedResetCount++;
     }
 
     public synchronized void incrementReadControlFrameCount() {
@@ -98,7 +90,7 @@ public class H2RateState {
      * @return true if the connection is considered to be misbehaving
      */
     public synchronized boolean isControlRatioExceeded() {
-        if ((controlFrameCount > maxReadControlFrameCount) || (combinedResetCount > maxResetFrameCount)) {
+        if ((controlFrameCount > maxReadControlFrameCount) || (resetFrameCount > maxResetFrameCount)) {
             return true;
         }
         return false;
@@ -119,9 +111,9 @@ public class H2RateState {
 
                 if (curResetTime - startResetTime < TimeUnit.MILLISECONDS.toNanos(resetFrameWindow)) {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                        Tr.debug(tc, "number of resets in time is " + combinedResetCount);
+                        Tr.debug(tc, "number of resets in time is " + resetFrameCount);
                     }
-                    if (combinedResetCount >= maxResetFrames) {
+                    if (resetFrameCount >= maxResetFrames) {
                         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                             Tr.debug(tc, "too many resets within time");
                         }
@@ -134,16 +126,16 @@ public class H2RateState {
                         Tr.debug(tc, "restarting reset frame time window " + curResetTime);
                     }
                     startResetTime = curResetTime;
-                    combinedResetCount = 0;
+                    resetFrameCount = 0;
                 }
             } else {
                 // Unlimited time window
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "number of resets in unlimited time is " + combinedResetCount);
+                    Tr.debug(tc, "number of resets in unlimited time is " + resetFrameCount);
                 }
-                if (combinedResetCount >= maxResetFrames) {
+                if (resetFrameCount >= maxResetFrames) {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                        Tr.debug(tc, "reset frames in unlimited window exceeded: " + combinedResetCount);
+                        Tr.debug(tc, "reset frames in unlimited window exceeded: " + resetFrameCount);
                     }
                     return true;
                 }
@@ -163,19 +155,19 @@ public class H2RateState {
             incrementReadNonControlFrameCount();
         }
         if (frame.getFrameType() == FrameTypes.RST_STREAM) {
-            combinedResetCount++;
+            incrementResetFrameCount();
         }
     }
 
-    public synchronized void incrementInboundResetFrameCount() {
-        combinedResetCount++;
+    public synchronized void incrementResetFrameCount() {
+        resetFrameCount++;
     }
 
     /**
      * @return true if the connection is considered to be misbehaving
      */
     public synchronized boolean isInboundControlRatioExceeded(int totalClientStreams) {
-        if (combinedResetCount > maxResetFrameCount) {
+        if (resetFrameCount > maxResetFrameCount) {
             return true;
         }
         return false;
@@ -236,10 +228,8 @@ public class H2RateState {
         result.append(newLine);
         result.append("refusedStreamCount: " + refusedStreamCount);
         result.append(newLine);
-        result.append("combinedResetCount: " + combinedResetCount);
+        result.append("resetFrameCount: " + resetFrameCount);
         result.append(newLine);
-        //result.append("outboundResetCount: " + resetCount);
-        //result.append(newLine);
         result.append("resetTimePeriod: " + getReadableTime(System.nanoTime() - startResetTime));
 
         return result.toString();

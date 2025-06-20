@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1997, 2024 IBM Corporation and others.
+ * Copyright (c) 1997, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -369,7 +369,7 @@ public class H2StreamProcessor {
                             addFrameException = new EnhanceYourCalmException("too many empty frames received");
                             Tr.debug(tc, "processNextFrame: too many empty frames received on stream " + this.myID + ", sending GOAWAY");
                         } else if (h2rs.isResetsInTimeExceeded()) {
-                            addFrameException = new EnhanceYourCalmException("too many reset frames");
+                            addFrameException = new EnhanceYourCalmException("too many reset frames processed");
                             Tr.debug(tc, "processNextFrame: too many reset frames sent/received on stream " + this.myID + ", sending GOAWAY");
                         } else {
                             addFrameException = new EnhanceYourCalmException("too many control frames received");
@@ -637,7 +637,7 @@ public class H2StreamProcessor {
                 writeFrameSync();
             } finally {
                 rstStreamSent = true;
-                muxLink.getH2RateState().setStreamReset();
+                muxLink.getH2RateState().incrementResetFrameCount();
                 this.updateStreamState(StreamState.CLOSED);
                 if (currentFrame.getFrameType() == FrameTypes.GOAWAY) {
                     muxLink.closeConnectionLink(e);
