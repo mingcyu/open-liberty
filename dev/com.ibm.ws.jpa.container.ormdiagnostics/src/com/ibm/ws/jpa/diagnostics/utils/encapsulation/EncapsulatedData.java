@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2022 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -39,6 +39,8 @@ import javax.xml.bind.Unmarshaller;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.EncapsulatedDataType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertiesType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertyType;
+
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class EncapsulatedData {
     public static EncapsulatedData createEncapsulatedData(String name, String id, byte[] data) throws Exception {
@@ -104,20 +106,15 @@ public class EncapsulatedData {
         edt.setCompression((ct == null) ? "NONE" : ct.toString());
     }
 
+
     public String getHashAlgorithm() {
-        String alg = edt.getHashAlgorithm();
-        if (alg == null) {
-            return "MD5";
-        } else {
-            return alg;
-        }
+       return (CryptoUtils.isFips140_3EnabledWithBetaGuard() ? "SHA-256" : "MD5");
     }
 
+   
     public void setHashAlgorithm(String alg) {
-        if (alg == null) {
-            alg = "MD5";
-        }
-        edt.setHashAlgorithm(alg);
+         alg = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? "SHA-256" : "MD5";
+         edt.setHashAlgorithm(alg);     
     }
 
     public String getHashValue() {
