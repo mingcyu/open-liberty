@@ -28,7 +28,6 @@ import org.eclipse.microprofile.rest.client.ext.QueryParamStyle;
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.eclipse.microprofile.rest.client.spi.RestClientListener;
-import org.eclipse.osgi.internal.loader.EquinoxClassLoader;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.cdi.CdiInjectorFactory;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -115,8 +114,6 @@ import java.util.stream.Collectors;
 import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PROXY_HOST;
 import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PROXY_PORT;
 import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PROXY_SCHEME;
-
-import org.eclipse.osgi.internal.loader.EquinoxClassLoader;
 
 /**
  * @author Bill Burke (initial commit according to GitHub history)

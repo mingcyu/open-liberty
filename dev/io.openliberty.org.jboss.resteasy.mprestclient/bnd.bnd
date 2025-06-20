@@ -105,5 +105,4 @@ Include-Resource:\
 	com.ibm.wsspi.org.osgi.service.component.annotations;version=latest,\
 	javax.activation:activation;version='1.1',\
 	com.ibm.websphere.appserver.api.basics,\
-	com.ibm.ws.kernel.service,\
-	org.eclipse.osgi
+	com.ibm.ws.kernel.service

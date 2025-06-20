@@ -106,5 +106,4 @@ Include-Resource:\
 	com.ibm.ws.webcontainer.jakarta;version=latest,\
 	com.ibm.wsspi.org.osgi.service.component.annotations;version=latest,\
 	com.ibm.websphere.appserver.api.basics,\
-	com.ibm.ws.kernel.service,\
-	org.eclipse.osgi
+	com.ibm.ws.kernel.service

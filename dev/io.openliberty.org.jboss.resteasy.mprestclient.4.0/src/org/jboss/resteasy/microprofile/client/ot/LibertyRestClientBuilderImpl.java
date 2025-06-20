@@ -41,7 +41,6 @@ import org.jboss.resteasy.microprofile.client.DefaultMediaTypeFilter;
 import org.jboss.resteasy.microprofile.client.DefaultResponseExceptionMapper;
 import org.jboss.resteasy.microprofile.client.ExceptionMapping;
 import org.jboss.resteasy.microprofile.client.MethodInjectionFilter;
-import org.jboss.resteasy.microprofile.client.ProxyInvocationHandler;
 import org.jboss.resteasy.microprofile.client.RestClientBuilderImpl;
 import org.jboss.resteasy.microprofile.client.RestClientListeners;
 import org.jboss.resteasy.microprofile.client.RestClientProxy;
@@ -110,7 +109,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -123,7 +121,6 @@ import static org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder.PROPERTY_PRO
 
 import org.jboss.resteasy.concurrent.ContextualExecutorService;
 import org.jboss.resteasy.concurrent.ContextualExecutors;
-import org.eclipse.osgi.internal.loader.EquinoxClassLoader;
 
 /**
  * @author Bill Burke (initial commit according to GitHub history)
