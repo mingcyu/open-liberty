@@ -401,6 +401,16 @@ public class RepositoryProducer<R> implements Producer<R>, ProducerFactory<R>, B
     }
 
     /**
+     * Returns the Jakarta Data provider.
+     *
+     * @return the Jakarta Data provider.
+     */
+    @Trivial
+    public DataProvider provider() {
+        return provider;
+    }
+
+    /**
      * Assigns the FutureEMBuilder for this repository producer.
      *
      * @param futureEMBuilder future for an EntityManagerBuilder.

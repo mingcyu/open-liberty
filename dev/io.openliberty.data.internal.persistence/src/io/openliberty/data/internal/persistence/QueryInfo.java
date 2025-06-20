@@ -1216,7 +1216,7 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName(),
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             else
                 throw exc(OptimisticLockingFailureException.class,
                           "CWWKD1052.multi.opt.lock.exc",
@@ -1225,7 +1225,7 @@ public class QueryInfo {
                           numExpected - updateCount,
                           numExpected,
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
 
         Object returnValue = toReturnValue(updateCount, method.getReturnType());
 
@@ -1333,7 +1333,7 @@ public class QueryInfo {
                           repositoryInterface.getName(),
                           e.getClass().getName(),
                           entityProps,
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             }
         } else if (numDeleted > 1) {
             // ought to be unreachable
@@ -1625,10 +1625,9 @@ public class QueryInfo {
                    "CWWKD1011.unknown.method.pattern",
                    method.getName(),
                    repositoryInterface.getName(),
-                   List.of("Delete", "Find", "Insert",
-                           "Query", "Save", "Update"),
-                   List.of("Connection", "DataSource", "EntityManager"),
-                   List.of("count", "delete", "exists", "find"),
+                   Util.operationAnnoNames(producer),
+                   Util.resourceAccessorTypeNames(producer),
+                   Util.methodNamePrefixes(producer),
                    entityInfo.getExampleMethodNames());
     }
 
@@ -2250,7 +2249,7 @@ public class QueryInfo {
                       repositoryInterface.getName(),
                       e.getClass().getName(),
                       entityProps,
-                      Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                      Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
         }
 
         Object returnValue = em.merge(toEntity(e));
@@ -3451,7 +3450,7 @@ public class QueryInfo {
                     lowerName = lowerName.replace("_", "");
                     attributeName = entityInfo.attributeNames.get(lowerName);
                     if (attributeName == null && failIfNotFound) {
-                        if (Util.hasOperationAnno(method))
+                        if (Util.hasOperationAnno(method, producer))
                             throw exc(MappingException.class,
                                       "CWWKD1010.unknown.entity.attr",
                                       name,
@@ -3466,7 +3465,7 @@ public class QueryInfo {
                                       entityInfo.getType().getName(),
                                       method.getName(),
                                       repositoryInterface.getName(),
-                                      Util.OP_ANNOS,
+                                      Util.operationAnnoNames(producer),
                                       entityInfo.attributeTypes.keySet());
                     }
                 }
@@ -5254,7 +5253,7 @@ public class QueryInfo {
                               method.getName(),
                               repositoryInterface.getName(),
                               entityName,
-                              List.of("Insert", "Save", "Update", "Delete"),
+                              Util.lifeCycleAnnoNames(producer),
                               ql);
             }
         } else {
@@ -5703,7 +5702,7 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName(),
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             else
                 throw exc(OptimisticLockingFailureException.class,
                           "CWWKD1052.multi.opt.lock.exc",
@@ -5712,7 +5711,7 @@ public class QueryInfo {
                           numExpected - updateCount,
                           numExpected,
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
 
         Object returnValue = toReturnValue(updateCount, method.getReturnType());
 
