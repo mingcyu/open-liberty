@@ -15,6 +15,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
+import io.openliberty.jpa.persistence.tests.models.Event;
 import io.openliberty.jpa.persistence.tests.models.Organization;
 import io.openliberty.jpa.persistence.tests.models.Participant;
 import io.openliberty.jpa.persistence.tests.models.Person;
@@ -687,6 +689,31 @@ public class JakartaPersistenceServlet extends FATServlet {
             throw e;
         }
         assertNull(result);
+    }
+
+    @Test
+    public void testSecondPrecision() throws Exception {
+        deleteAllEntities(Event.class);
+
+        LocalDateTime original = LocalDateTime.of(2025, 6, 11, 12, 0, 0, 123_456_789); 
+        Event event = new Event(1L, original);
+
+        tx.begin();
+        em.persist(event);
+        tx.commit();
+
+        em.clear(); 
+
+        Event result;
+        try {
+            result = em.createQuery("SELECT e FROM Event e WHERE e.id = :id", Event.class)
+                            .setParameter("id", 1L)
+                            .getSingleResult();
+        } catch (Exception e){
+            throw e;
+        }
+
+        assertEquals(123_450_000, result.timestamp.getNano());
     }
 
     /**
