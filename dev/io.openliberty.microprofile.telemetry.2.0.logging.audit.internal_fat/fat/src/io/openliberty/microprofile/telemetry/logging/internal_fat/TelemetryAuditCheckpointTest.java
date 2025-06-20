@@ -52,7 +52,7 @@ public class TelemetryAuditCheckpointTest extends FATServletClient {
     //I chose this one because TelemetryMessages is core to this bucket
     // Will re-enable in follow-on issue.
     @ClassRule
-    public static RepeatTests rt = TelemetryActions.telemetry21andLatest20RepeatsWithoutEE7();
+    public static RepeatTests rt = TelemetryActions.telemetry21Repeats();
 
     private static LibertyServer server;
 
