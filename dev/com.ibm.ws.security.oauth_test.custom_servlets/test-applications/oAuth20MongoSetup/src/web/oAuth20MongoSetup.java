@@ -503,7 +503,7 @@ public class oAuth20MongoSetup extends HttpServlet {
         String keyLen = (String) clientMetadata.get(HASH_LENGTH);
 
         if (keyLen == null) {
-            return "null_salt";
+            return "null_hash_len";
         }
         return keyLen;
 

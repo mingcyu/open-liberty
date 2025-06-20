@@ -832,7 +832,7 @@ public class oAuth20DerbySetup extends HttpServlet {
 
         if (keyLength == null) {
             System.out.println("getKeyLength: Could not find client " + clientId);
-            return "null_client";
+            return "null_hash_len";
         }
 
         return keyLength;
