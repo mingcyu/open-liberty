@@ -139,6 +139,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     public static final ClientHeadersRequestFilter HEADERS_REQUEST_FILTER = new ClientHeadersRequestFilter();
 
     private static final Class<?> FT_ANNO_CLASS = getFTAnnotationClass(); // Liberty Change
+    private static final ClassLoader thisClassLoader; // Liberty Change 
     private final LibertyProxyClassLoader myClassLoader; // Liberty change
 
     static ResteasyProviderFactory PROVIDER_FACTORY;
@@ -146,6 +147,15 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     static {
         Collections.addAll(IGNORED_METHODS, Closeable.class.getMethods());
         Collections.addAll(IGNORED_METHODS, AutoCloseable.class.getMethods());
+        
+        // Liberty Change Start
+        thisClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return LibertyRestClientBuilderImpl.class.getClassLoader();
+            }
+        });
+        // Liberty Change End
     }
 
     public static void setProviderFactory(ResteasyProviderFactory providerFactory) {
@@ -177,7 +187,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         myClassLoader = AccessController.doPrivileged(new PrivilegedAction<LibertyProxyClassLoader>() {
             @Override
             public LibertyProxyClassLoader run() {
-                return new LibertyProxyClassLoader(LibertyRestClientBuilderImpl.class.getClassLoader());
+                return new LibertyProxyClassLoader(thisClassLoader);
             }
         });
         // Liberty Change End
@@ -958,8 +968,10 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         } else {
             clazzLoader = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader);
         }
-
-        myClassLoader.addLoader(clazzLoader);
+        
+        if (clazzLoader != thisClassLoader) {
+            myClassLoader.addLoader(clazzLoader);
+        }
         
         return myClassLoader;
     }
