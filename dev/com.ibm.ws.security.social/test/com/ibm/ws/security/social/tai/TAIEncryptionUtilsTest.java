@@ -48,6 +48,7 @@ import org.junit.rules.TestName;
 import org.junit.rules.TestRule;
 
 import com.ibm.websphere.ras.annotation.Sensitive;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.security.social.SocialLoginConfig;
 import com.ibm.ws.security.social.error.SocialLoginException;
 import com.ibm.ws.security.social.test.CommonTestClass;

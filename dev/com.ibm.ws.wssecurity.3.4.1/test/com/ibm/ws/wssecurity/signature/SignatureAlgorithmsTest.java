@@ -36,6 +36,8 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.rules.TestRule;
 
+import com.ibm.ws.common.crypto.CryptoUtils;
+
 import test.common.SharedOutputManager;
 
 
