@@ -449,10 +449,9 @@ public class Util {
         Set<Class<?>> types = producer.provider().compat //
                         .resourceAccessorTypes(producer.stateful());
 
-        StringBuilder b = new StringBuilder('[');
-        for (Class<?> type : types)
-            b.append(b.isEmpty() ? "" : ", ").append(type.getSimpleName());
-        return b.append(']').toString();
+        return types.stream()
+                    .map(c -> c.getSimpleName)
+                    .collect(Collectors.joining(", ", "[", "]"));
     }
 
     /**
