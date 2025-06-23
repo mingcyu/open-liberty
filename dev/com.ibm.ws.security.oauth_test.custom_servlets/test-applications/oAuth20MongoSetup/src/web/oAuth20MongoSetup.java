@@ -493,7 +493,7 @@ public class oAuth20MongoSetup extends HttpServlet {
         DBObject dbo = getDBObject(clientId, providerId);
 
         if (dbo == null) {
-            System.out.println("getSalt: Could not find client " + clientId + " providerId " + providerId);
+            System.out.println("getKeyLength: Could not find client " + clientId + " providerId " + providerId);
             return "null_client";
         }
 
