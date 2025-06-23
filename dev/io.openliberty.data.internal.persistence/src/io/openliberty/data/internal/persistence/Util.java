@@ -366,10 +366,9 @@ public class Util {
         Set<Class<? extends Annotation>> annoClasses = producer.provider().compat //
                         .operationAnnoTypes(producer.stateful());
 
-        StringBuilder b = new StringBuilder('[');
-        for (Class<?> annoClass : annoClasses)
-            b.append(b.isEmpty() ? "" : ", ").append(annoClass.getSimpleName());
-        return b.append(']').toString();
+        return annoClasses.stream()
+                           .map(c -> c.getSimpleName)
+                           .collect(Collectors.joining(", ", "[", "]"));
     }
 
     /**
