@@ -19,9 +19,11 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.logging.Level;
 
 import javax.servlet.ServletContext;
@@ -55,7 +57,6 @@ import com.ibm.wsspi.session.IStorer;
 import com.ibm.wsspi.session.ITimer;
 import com.ibm.wsspi.session.SessionAffinityContext;
 
-import io.openliberty.checkpoint.spi.CheckpointHook;
 import io.openliberty.checkpoint.spi.CheckpointPhase;
 
 
