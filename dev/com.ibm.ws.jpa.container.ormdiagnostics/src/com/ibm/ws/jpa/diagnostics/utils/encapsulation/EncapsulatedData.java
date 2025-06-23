@@ -44,7 +44,7 @@ import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class EncapsulatedData {
     public static EncapsulatedData createEncapsulatedData(String name, String id, byte[] data) throws Exception {
-        return createEncapsulatedData(name, id, CompressionType.GZIP, "MD5", data);
+        return createEncapsulatedData(name, id, CompressionType.GZIP, "SHA-256", data);
     }
 
     public static EncapsulatedData createEncapsulatedData(String name, String id, CompressionType ct,
@@ -106,15 +106,20 @@ public class EncapsulatedData {
         edt.setCompression((ct == null) ? "NONE" : ct.toString());
     }
 
-
     public String getHashAlgorithm() {
-       return (CryptoUtils.isFips140_3EnabledWithBetaGuard() ? "SHA-256" : "MD5");
+        String alg = edt.getHashAlgorithm();
+        if (alg == null) {
+            return "SHA-256";
+        } else {
+            return alg;
+        }
     }
-
    
     public void setHashAlgorithm(String alg) {
-         alg = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? "SHA-256" : "MD5";
-         edt.setHashAlgorithm(alg);     
+        if (alg == null) {
+            alg = "SHA-256";
+        }
+        edt.setHashAlgorithm(alg);
     }
 
     public String getHashValue() {
