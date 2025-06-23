@@ -25,6 +25,7 @@ import org.junit.Ignore;
 
 import componenttest.app.FATServlet;
 import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
+import io.openliberty.jpa.persistence.tests.models.Book;
 import io.openliberty.jpa.persistence.tests.models.Event;
 import io.openliberty.jpa.persistence.tests.models.Organization;
 import io.openliberty.jpa.persistence.tests.models.Participant;
@@ -716,6 +717,37 @@ public class JakartaPersistenceServlet extends FATServlet {
         }
 
         assertEquals(123_450_000, result.timestamp.getNano());
+    }
+
+    @Test
+    public void testGetSingleResultOrNull() throws Exception {
+        deleteAllEntities(Book.class);
+
+        Book bookJPA = new Book(1L, "Jakarta Persistence 3.2");
+
+        tx.begin();
+        em.persist(bookJPA);
+        tx.commit();
+
+        Book resultFound, resultNotFound;
+
+        try {
+            resultFound = em.createQuery("SELECT b FROM Book b WHERE b.id = ?1", Book.class)
+                        .setParameter(1, 1L)
+                        .getSingleResultOrNull();
+         } catch (Exception e){
+            throw e;
+        }
+        assertEquals("Jakarta Persistence 3.2", resultFound.title);
+
+        try {
+            resultNotFound = em.createQuery("SELECT b FROM Book b WHERE b.id = ?1", Book.class)
+                        .setParameter(1, 2L) // This ID does not exist
+                        .getSingleResultOrNull();
+         } catch (Exception e){
+            throw e;
+        }
+        assertNull(resultNotFound);
     }
 
     /**
