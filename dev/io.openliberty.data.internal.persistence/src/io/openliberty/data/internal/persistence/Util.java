@@ -287,6 +287,7 @@ public class Util {
 
     /**
      * List of names of repository method life cycle annotations.
+     * Enclosed in brackets and delimited by comma.
      *
      * @param producer producer of the repository bean, from which it can be
      *                     determined if the repository is stateful or stateless.
@@ -296,10 +297,9 @@ public class Util {
         Set<Class<? extends Annotation>> annoClasses = producer.provider().compat //
                         .lifeCycleAnnoTypes(producer.stateful());
 
-        StringBuilder b = new StringBuilder();
-        for (Class<?> annoClass : annoClasses)
-            b.append(b.isEmpty() ? "" : ", ").append(annoClass.getSimpleName());
-        return b.toString();
+        return annoClasses.stream()
+                   .map(c -> c.getSimpleName)
+                   .collect(Collectors.joining(", ", "[", "]"));
     }
 
     /**
