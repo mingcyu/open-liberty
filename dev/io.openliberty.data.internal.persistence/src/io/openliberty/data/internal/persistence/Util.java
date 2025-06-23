@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.util.UUID;
@@ -297,8 +298,8 @@ public class Util {
         Set<Class<? extends Annotation>> annoClasses = producer.provider().compat //
                         .lifeCycleAnnoTypes(producer.stateful());
 
-        return annoClasses.stream()
-                   .map(c -> c.getSimpleName)
+        return annoClasses.stream() //
+                   .map(Class::getSimpleName) //
                    .collect(Collectors.joining(", ", "[", "]"));
     }
 
@@ -366,8 +367,8 @@ public class Util {
         Set<Class<? extends Annotation>> annoClasses = producer.provider().compat //
                         .operationAnnoTypes(producer.stateful());
 
-        return annoClasses.stream()
-                           .map(c -> c.getSimpleName)
+        return annoClasses.stream() //
+                           .map(Class::getSimpleName) //
                            .collect(Collectors.joining(", ", "[", "]"));
     }
 
@@ -449,8 +450,8 @@ public class Util {
         Set<Class<?>> types = producer.provider().compat //
                         .resourceAccessorTypes(producer.stateful());
 
-        return types.stream()
-                    .map(c -> c.getSimpleName)
+        return types.stream() //
+                    .map(Class::getSimpleName) //
                     .collect(Collectors.joining(", ", "[", "]"));
     }
 
