@@ -739,6 +739,15 @@ public class JakartaPersistenceServlet extends FATServlet {
             throw e;
         }
         assertEquals("Jakarta Persistence 3.2", resultFound.title);
+
+        try {
+            resultNotFound = em.createQuery("SELECT b FROM Book b WHERE b.id = ?1", Book.class)
+                        .setParameter(1, 2L) // This ID does not exist
+                        .getSingleResultOrNull();
+         } catch (Exception e){
+            throw e;
+        }
+        assertNull(resultNotFound);
     }
 
     /**
