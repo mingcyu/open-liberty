@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1997, 2024 IBM Corporation and others.
+ * Copyright (c) 1997, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -80,11 +80,11 @@ public class SessionContext {
     protected boolean sessionAttributeListener = false;
     protected boolean sessionListener = false;
 
-    protected ArrayList mHttpSessionAttributeListeners = new ArrayList();
+    protected List<String> mHttpSessionAttributeListeners = Collections.synchronizedList(new ArrayList<>());  
     protected ArrayList mHttpSessionListeners = new ArrayList();
     protected ArrayList mHttpSessionIdListeners = new ArrayList();
 
-    protected ArrayList mHttpSessionAttributeListenersJ2eeNames = new ArrayList();
+    protected List<String> mHttpSessionAttributeListenersJ2eeNames = Collections.synchronizedList(new ArrayList<>()); 
     protected ArrayList mHttpSessionListenersJ2eeNames = new ArrayList();
     protected ArrayList mHttpSessionIdListenersJ2eeNames = new ArrayList();
 
