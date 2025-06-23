@@ -136,8 +136,9 @@ public class RepositoryProducer<R> implements Producer<R>, ProducerFactory<R>, B
 
     /**
      * Indicates if the repository is stateful (true) or stateless (false).
+     * Default: false
      */
-    private boolean stateful;
+    private boolean stateful = false;
 
     /**
      * Construct an instance of RepositoryProducer.
