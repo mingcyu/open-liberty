@@ -19,11 +19,9 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.logging.Level;
 
 import javax.servlet.ServletContext;
@@ -57,6 +55,7 @@ import com.ibm.wsspi.session.IStorer;
 import com.ibm.wsspi.session.ITimer;
 import com.ibm.wsspi.session.SessionAffinityContext;
 
+import io.openliberty.checkpoint.spi.CheckpointHook;
 import io.openliberty.checkpoint.spi.CheckpointPhase;
 
 
@@ -81,11 +80,11 @@ public class SessionContext {
     protected boolean sessionAttributeListener = false;
     protected boolean sessionListener = false;
 
-    protected List<String> mHttpSessionAttributeListeners = Collections.synchronizedList(new ArrayList<>());  
+    protected ArrayList mHttpSessionAttributeListeners = new ArrayList();
     protected ArrayList mHttpSessionListeners = new ArrayList();
     protected ArrayList mHttpSessionIdListeners = new ArrayList();
 
-    protected List<String> mHttpSessionAttributeListenersJ2eeNames = Collections.synchronizedList(new ArrayList<>()); 
+    protected ArrayList mHttpSessionAttributeListenersJ2eeNames = new ArrayList();
     protected ArrayList mHttpSessionListenersJ2eeNames = new ArrayList();
     protected ArrayList mHttpSessionIdListenersJ2eeNames = new ArrayList();
 
@@ -823,9 +822,11 @@ public class SessionContext {
         if (j2eeName != null) {
             addToJ2eeNameList(j2eeName, al.size(), mHttpSessionAttributeListenersJ2eeNames);
         }
-        mHttpSessionAttributeListeners.addAll(al);
-        if (mHttpSessionAttributeListeners.size() > 0) {
-            sessionAttributeListener = true;
+        synchronized (mHttpSessionAttributeListeners) {
+            mHttpSessionAttributeListeners.addAll(al);
+            if (mHttpSessionAttributeListeners.size() > 0) {
+                sessionAttributeListener = true;
+            }
         }
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && LoggingUtil.SESSION_LOGGER_CORE.isLoggable(Level.FINE)) {
             LoggingUtil.SESSION_LOGGER_CORE.exiting(methodClassName, methodNames[ADD_HTTP_SESSION_ATTRIBUTE_LISTENER], "addHttpSessionAttributeListener:" + al);
@@ -1187,8 +1188,10 @@ public class SessionContext {
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && LoggingUtil.SESSION_LOGGER_CORE.isLoggable(Level.FINE)) {
             LoggingUtil.SESSION_LOGGER_CORE.entering(methodClassName, methodNames[ADD_HTTP_SESSION_ATTRIBUTE_LISTENER], "J2EE name is " + J2EEName);
         }
-        mHttpSessionAttributeListeners.add(listener);
-        mHttpSessionAttributeListenersJ2eeNames.add(J2EEName);
+        synchronized (mHttpSessionAttributeListeners) {
+            mHttpSessionAttributeListeners.add(listener);
+            mHttpSessionAttributeListenersJ2eeNames.add(J2EEName);
+        }
         sessionAttributeListener = true;
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && LoggingUtil.SESSION_LOGGER_CORE.isLoggable(Level.FINE)) {
             LoggingUtil.SESSION_LOGGER_CORE.exiting(methodClassName, methodNames[ADD_HTTP_SESSION_ATTRIBUTE_LISTENER]);
