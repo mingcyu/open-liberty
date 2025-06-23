@@ -43,6 +43,7 @@ import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertyType;
 import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class EncapsulatedData {
+    private final String shaDigestAlg = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256;
     public static EncapsulatedData createEncapsulatedData(String name, String id, byte[] data) throws Exception {
         return createEncapsulatedData(name, id, CompressionType.GZIP, "SHA-256", data);
     }
@@ -109,7 +110,7 @@ public class EncapsulatedData {
     public String getHashAlgorithm() {
         String alg = edt.getHashAlgorithm();
         if (alg == null) {
-            return "SHA-256";
+            return shaDigestAlg;
         } else {
             return alg;
         }
@@ -117,7 +118,7 @@ public class EncapsulatedData {
    
     public void setHashAlgorithm(String alg) {
         if (alg == null) {
-            alg = "SHA-256";
+            alg = shaDigestAlg;
         }
         edt.setHashAlgorithm(alg);
     }
