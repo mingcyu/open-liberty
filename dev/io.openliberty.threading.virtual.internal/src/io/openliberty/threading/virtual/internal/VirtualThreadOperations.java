@@ -44,9 +44,14 @@ public class VirtualThreadOperations implements VirtualThreadOps {
     @Reference(
                cardinality = ReferenceCardinality.OPTIONAL,
                policy = ReferencePolicy.DYNAMIC,
-               policyOption = ReferencePolicyOption.GREEDY)
+               policyOption = ReferencePolicyOption.GREEDY,
+               unbind = "unsetOverrideService")
     protected void setOverrideService(ThreadTypeOverride vtos) {
         overrideService = vtos;
+    }
+
+    protected void unsetOverrideService(ThreadTypeOverride vtos) {
+        overrideService = null;
     }
 
     @Override
