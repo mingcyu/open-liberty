@@ -136,7 +136,7 @@ public class MyFacesContainerInitializer implements ServletContainerInitializer
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException
     {
         boolean startDireclty = shouldStartupRegardless(servletContext);
-        
+
         if (startDireclty)
         {
             // if the INITIALIZE_ALWAYS_STANDALONE param was set to true,

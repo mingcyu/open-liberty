@@ -35,7 +35,7 @@ public class FIPSInitializer implements ServletContainerInitializer {
     @Override
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException {
 
-        if (CryptoUtils.isFIPSEnabled()) {
+        if (CryptoUtils.isFips140_3EnabledWithBetaGuard()) {
             // **** Already set as default *****
             // if (servletContext.getInitParameter(MAC_ALGORITHM) == null) {
             // servletContext.setInitParameter(MAC_ALGORITHM, "HmacSHA256");
