@@ -29,6 +29,7 @@ public class FIPSInitializer implements ServletContainerInitializer {
 
     private static String MAC_ALGORITHM = "org.apache.myfaces.MAC_ALGORITHM";
     private static String SESSION_ALGORITHM = "org.apache.myfaces.ALGORITHM";
+    // Note 'ALGORITM' is misspelled, but that's how it's documented.
     private static String VIEWSTATE_ID_ALGORITHM = "org.apache.myfaces.RANDOM_KEY_IN_VIEW_STATE_SESSION_TOKEN_SECURE_RANDOM_ALGORITM";
     private static String CSRF_SESSION_ALGORITHM = "org.apache.myfaces.RANDOM_KEY_IN_CSRF_SESSION_TOKEN_SECURE_RANDOM_ALGORITM";
 
@@ -50,7 +51,7 @@ public class FIPSInitializer implements ServletContainerInitializer {
             }
 	        if (servletContext.getInitParameter(CSRF_SESSION_ALGORITHM) == null) {
                 servletContext.setInitParameter(CSRF_SESSION_ALGORITHM, "SHA256DRBG");
-                log(SESSION_ALGORITHM + " not found. Setting to SHA256DRBG.");
+                log(CSRF_SESSION_ALGORITHM + " not found. Setting to SHA256DRBG.");
             }
         } else {
            log("FIPS not enabled. Skipping FIPSInitializer setup");

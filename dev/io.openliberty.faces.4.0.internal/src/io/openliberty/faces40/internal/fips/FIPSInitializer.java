@@ -29,7 +29,8 @@ public class FIPSInitializer implements ServletContainerInitializer {
 
     private static String MAC_ALGORITHM = "org.apache.myfaces.MAC_ALGORITHM";
     private static String SESSION_ALGORITHM = "org.apache.myfaces.ALGORITHM";
-    private static String VIEWSTATE_ID_ALGORITHM = "org.apache.myfaces.RANDOM_KEY_IN_VIEW_STATE_SESSION_TOKEN_SECURE_RANDOM_ALGORITM";
+    private static String VIEWSTATE_ID_ALGORITHM = "org.apache.myfaces.RANDOM_KEY_IN_VIEW_STATE_SESSION_TOKEN_SECURE_RANDOM_ALGORITHM";
+     // Note 'ALGORITM' is misspelled, but that's how it's documented.
     private static String CSRF_SESSION_ALGORITHM = "org.apache.myfaces.RANDOM_KEY_IN_CSRF_SESSION_TOKEN_SECURE_RANDOM_ALGORITM";
 
     @Override
