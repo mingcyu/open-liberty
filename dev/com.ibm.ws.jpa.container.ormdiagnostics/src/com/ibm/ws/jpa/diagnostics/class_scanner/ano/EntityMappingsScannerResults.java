@@ -29,6 +29,7 @@ import javax.xml.bind.Marshaller;
 import com.ibm.ws.common.crypto.CryptoUtils;
 
 import com.ibm.ws.jpa.diagnostics.class_scanner.ano.jaxb.classinfo10.ClassInformationType;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class EntityMappingsScannerResults {
     private final String shaDigestAlg = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256;

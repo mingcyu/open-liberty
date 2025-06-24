@@ -334,7 +334,7 @@ public class LibertyServer implements LogMonitorClient {
     private String openLibertyVersion;
 
     private String archiveMarker = null;
-    
+
     private boolean serverLevelFipsEnabled = GLOBAL_FIPS_140_3;
 
     /**
@@ -1955,6 +1955,7 @@ public class LibertyServer implements LogMonitorClient {
                     return output;
                 } else {
                     Log.info(c, method, "Response from script is: " + output.getStdout());
+                    Log.info(c, method, "Error output from script is: " + output.getStderr());
                     Log.info(c, method, "Return code from script is: " + rc);
                 }
             } else {
@@ -3547,16 +3548,6 @@ public class LibertyServer implements LogMonitorClient {
                                                      "JsonbRxMessagingServer", //com.ibm.ws.microprofile.reactive.messaging_fat
 
                                                      "mpRestClient10.remoteServer", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient11.async", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.basic", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.collections", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.handleresponses", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.headerPropagation", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient13.ssl", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient12.jsonbContext", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient11.produceConsume", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.props", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient20.sse", //com.ibm.ws.microprofile.rest.client_fat
 
                                                      "opentracingFATServer1", //com.ibm.ws.opentracing.1.x_fat
                                                      "opentracingFATServer3", //com.ibm.ws.opentracing.1.x_fat
@@ -7843,7 +7834,7 @@ public class LibertyServer implements LogMonitorClient {
     public boolean isFIPS140_3EnabledAndSupported(JavaInfo info) throws IOException {
         return isFIPS140_3EnabledAndSupported(info, true);
     }
-    
+
     public void setServerLevelFips(boolean enabled) {
         serverLevelFipsEnabled = enabled;
     }

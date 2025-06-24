@@ -39,6 +39,7 @@ import javax.xml.bind.Unmarshaller;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.EncapsulatedDataType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertiesType;
 import com.ibm.ws.jpa.diagnostics.utils.encapsulation.xsd10.PropertyType;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
