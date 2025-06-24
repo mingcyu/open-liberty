@@ -26,9 +26,12 @@ import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import com.ibm.ws.common.crypto.CryptoUtils;
+
 import com.ibm.ws.jpa.diagnostics.class_scanner.ano.jaxb.classinfo10.ClassInformationType;
 
 public class EntityMappingsScannerResults {
+    private final String shaDigestAlg = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256;
     public static final String KEY_SHA256HASH = "SHA256HASH"; // Value is a String
     public static final String KEY_CITXML = "CITXML";   // Value is byte[]
     
@@ -58,7 +61,7 @@ public class EntityMappingsScannerResults {
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final MessageDigest md = MessageDigest.getInstance("SHA-256");   
+            final MessageDigest md = MessageDigest.getInstance(shaDigestAlg);   
             try (final DigestOutputStream dos = new DigestOutputStream(baos, md)) {
                 marshaller.marshal(cit, baos);
                 
