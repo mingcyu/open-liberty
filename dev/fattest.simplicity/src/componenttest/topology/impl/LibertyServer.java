@@ -4645,11 +4645,36 @@ public class LibertyServer implements LogMonitorClient {
         if (name.contains("/") || name.contains("\\")) {
             path = name;
         } else {
-            path = "publish/bundles/" + name + ".jar";
+            path = getBundlePath(name);
         }
 
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
         copyFileToLibertyInstallRoot("lib/", path);
+    }
+
+    /**
+     * Test bundles have been published in either publish/bundles or publish/files/bundles directory.
+     *
+     * This method tries to find the bundle in publish/bundles and if not find tries in the other.
+     * If not found in either location, returns the publish/bundles path since that is what was the
+     * behavior before.
+     *
+     * @param  bundleName name of the jar bundle file
+     * @return            the path to the bundle file
+     */
+    private String getBundlePath(String bundleName) {
+
+        String bundlePath = "publish/bundles/" + bundleName + ".jar";
+        File bundleFile = new File(bundlePath);
+        if (!bundleFile.exists()) {
+            String bundlePath2 = "publish/files/bundles/" + bundleName + ".jar";
+            bundleFile = new File(bundlePath2);
+            if (bundleFile.exists()) {
+                return bundlePath2;
+            }
+        }
+        return bundlePath;
+
     }
 
     /**
@@ -4697,7 +4722,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /**
      * Install a bundle as a system bundle, assuming the bundle is
-     * to be found in publish/bundles/&lt;name>.jar
+     * to be found in publish/bundles/&lt;name>.jar or publish/files/bundles/&lt;name>.jar
      * <p>
      * To use this most effectively, place your bundle code under test-bundles/bundle.symbolic.name/.
      * The structure under here reflects the structure of a bundle project and uses the same ant
@@ -4708,7 +4733,7 @@ public class LibertyServer implements LogMonitorClient {
     public void installSystemBundle(String name) throws Exception {
         Log.info(c, "installSystemBundle", "Installing system bundle '" + name + "'");
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
-        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/lib", "publish/bundles/" + name + ".jar");
+        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/lib", getBundlePath(name));
     }
 
     /**
@@ -4772,7 +4797,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /**
      * Install a bundle as a user extension bundle, assuming the bundle is
-     * to be found in publish/bundles/&lt;name>.jar
+     * to be found in publish/bundles/&lt;name>.jar or publish/files/bundles/&lt;name>.jar
      * <p>
      * To use this most effectively, place your bundle code under test-bundles/bundle.symbolic.name/.
      * The structure under here reflects the structure of a bundle project and uses the same ant
@@ -4783,7 +4808,7 @@ public class LibertyServer implements LogMonitorClient {
     public void installUserBundle(String name) throws Exception {
         Log.info(c, "installUserBundle", "Installing user bundle '" + name + "'");
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
-        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/usr/extension/lib", "publish/bundles/" + name + ".jar");
+        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/usr/extension/lib", getBundlePath(name));
     }
 
     /**
