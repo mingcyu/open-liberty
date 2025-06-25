@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2021 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -54,6 +54,18 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public JWTTokenBuilder createBuilderWithDefaultClaims() throws Exception {
+        return createBuilderWithDefaultClaims(false);
+    }
+
+    /**
+     * Create a new JWTTokenBuilder and initialize it with default test values
+     *
+     * @return - an initialized JWTTokenBuilder
+     * @throws Exception
+     */
+    public JWTTokenBuilder createBuilderWithDefaultClaims(boolean isFips140_3Enabled) throws Exception {
+
+        String keyMgmtKeyAlg = isFips140_3Enabled ? JwtConstants.KEY_MGMT_KEY_ALG_ES : JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG;
 
         JWTTokenBuilder builder = new JWTTokenBuilder();
         builder.setIssuer("client01");
@@ -66,8 +78,7 @@ public class JwtTokenBuilderUtils {
         builder.setClaim(PayloadConstants.SESSION_ID, randomSessionId());
         builder = builder.setAlorithmHeaderValue(AlgorithmIdentifiers.HMAC_SHA256);
         builder = builder.setHSAKey("mySharedKeyNowHasToBeLongerStrongerAndMoreSecure");
-        //  setup for encryption - tests can override the following values
-        builder = builder.setKeyManagementKeyAlg(JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG);
+        builder = builder.setKeyManagementKeyAlg(keyMgmtKeyAlg);
         builder = builder.setContentEncryptionAlg(JwtConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
         return builder;
     }
@@ -108,7 +119,7 @@ public class JwtTokenBuilderUtils {
     /**
      * Builds a JWE Token with an alternate (Json) Payload
      * We can't use the Liberty builder as it does NOT provide a way to create a simple Json payload
-     *
+     * 
      * @param key - the key to be used for encryption
      * @return - a built JWE Token with a simple Json payload
      * @throws Exception
@@ -121,6 +132,12 @@ public class JwtTokenBuilderUtils {
 
     public String buildAlternatePayloadJWEToken(Key key, List<NameValuePair> extraPayload) throws Exception {
         JWTTokenBuilder builder = createAlternateJWEPayload(populateAlternateJWEToken(key), extraPayload);
+        String jwtToken = builder.buildAlternateJWE();
+        return jwtToken;
+    }
+
+    public String buildAlternatePayloadJWEToken(Key key, boolean isFips140_3Enabled) throws Exception {
+        JWTTokenBuilder builder = createAlternateJWEPayload(populateAlternateJWEToken(key, isFips140_3Enabled));
         String jwtToken = builder.buildAlternateJWE();
         return jwtToken;
     }
@@ -153,7 +170,11 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public String buildJWETokenWithAltHeader(Key key, String type, String contentType) throws Exception {
-        JWTTokenBuilder builder = populateAlternateJWEToken(key);
+        return buildJWETokenWithAltHeader(key, type, contentType, false);
+    }
+
+    public String buildJWETokenWithAltHeader(Key key, String type, String contentType, boolean isFips140_3Enabled) throws Exception {
+        JWTTokenBuilder builder = populateAlternateJWEToken(key, isFips140_3Enabled);
 
         // calling buildJWE will override the payload contents with JWS
         String jwtToken = builder.buildJWE(type, contentType);
@@ -170,7 +191,18 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public JWTTokenBuilder populateAlternateJWEToken(Key key) throws Exception {
-        JWTTokenBuilder builder = createBuilderWithDefaultClaims();
+        return populateAlternateJWEToken(key, false);
+    }
+
+    /**
+     * Create a "test" token builder and popluate with some default values
+     *
+     * @param key - set the key to be used for encryption
+     * @return - a built JWE token
+     * @throws Exception
+     */
+    public JWTTokenBuilder populateAlternateJWEToken(Key key, boolean isFips140_3Enabled) throws Exception {
+        JWTTokenBuilder builder = createBuilderWithDefaultClaims(isFips140_3Enabled);
         builder.setAudience("client01", "client02");
         builder.setIssuer("testIssuer");
         builder.setKeyManagementKey(key);
