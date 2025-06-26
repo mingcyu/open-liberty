@@ -9,11 +9,15 @@
  *******************************************************************************/
 package io.openliberty.jpa.persistence.tests.web;
 
+import static componenttest.annotation.SkipIfSysProp.DB_DB2;
+import static componenttest.annotation.SkipIfSysProp.DB_Oracle;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import componenttest.annotation.SkipIfSysProp;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -489,6 +493,7 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     @Test
+    @SkipIfSysProp(DB_Oracle)
     public void testRecordAsEmbeddable_NullEdgeCaseAndOrdering() throws Exception {
         // Setup test data with null, empty, and edge case values
         Participant p1 = Participant.of("Anna", null, 13); // Null last name (should be excluded)
@@ -645,6 +650,7 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     @Test
+    @SkipIfSysProp({ DB_DB2, DB_Oracle })
     public void testAsciiCharacterNonExistentCharacter() throws Exception {
         AsciiCharacter character = new AsciiCharacter();
         character.setThisCharacter((char) 200); // Choose a code outside standard ASCII (0-127)
