@@ -9,6 +9,7 @@
  *******************************************************************************/
 package io.openliberty.jpa.persistence.tests.web;
 
+import static componenttest.annotation.SkipIfSysProp.DB_SQLServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,6 +24,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.Ignore;
 
+import componenttest.annotation.SkipIfSysProp;
 import componenttest.app.FATServlet;
 import io.openliberty.jpa.persistence.tests.models.AsciiCharacter;
 import io.openliberty.jpa.persistence.tests.models.Book;
@@ -228,6 +230,9 @@ public class JakartaPersistenceServlet extends FATServlet {
      * @throws Exception
      */
     @Test
+    @SkipIfSysProp({
+                     DB_SQLServer //Failing on SQLServer (No mention of NULLS FIRST/LAST keywords in Documentation)
+    })
     public void testNullPrecedenceWithJPQL() throws Exception {
         deleteAllEntities(Product.class);
         Product product1 = Product.of("testSnapshot", "product1", 10.50f);
@@ -284,6 +289,9 @@ public class JakartaPersistenceServlet extends FATServlet {
      * @throws Exception
      */
     @Test
+    @SkipIfSysProp({
+                     DB_SQLServer //Failing on SQLServer (No mention of NULLS FIRST/LAST keywords in Documentation)
+    })
     public void testNullPrecedenceWithCriteriaQuery() throws Exception {
         deleteAllEntities(Product.class);
         Product p1 = Product.of("testSnapshot", "product1", 10.50f);
