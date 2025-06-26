@@ -1027,6 +1027,7 @@ public class BasicSAMLTests extends SAMLCommonTest {
      *
      * @throws Exception
      */
+    // TODO: Test is disabled from running when FIPS 140-3 is enabled, convert chained certificate to use SHA256withRSA signature algorithm
     @SkipJavaSemeruWithFipsEnabledRule
     @AllowedFFDC(value = { "com.ibm.ws.security.saml.error.SamlException" })
     @Mode(TestMode.LITE)
@@ -1073,6 +1074,7 @@ public class BasicSAMLTests extends SAMLCommonTest {
      *
      * @throws Exception
      */
+    // TODO: Test is disabled from running when FIPS 140-3 is enabled, convert chained certificate to use SHA256withRSA signature algorithm
     @SkipJavaSemeruWithFipsEnabledRule
     @AllowedFFDC(value = { "com.ibm.ws.security.saml.error.SamlException" })
     @Test
