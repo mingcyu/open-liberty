@@ -2827,6 +2827,9 @@ public class SQLMultiScopeRecoveryLog implements LogCursorCallback, MultiScopeLo
             ret = specStatement.executeUpdate();
         }
 
+        if (tc.isDebugEnabled())
+            Tr.debug(tc, "{0} now owns the locking row in {1}", _currentProcessServerName, fullTableName);
+
         if (tc.isEntryEnabled())
             Tr.exit(tc, "insertLockingRow", ret);
     }
