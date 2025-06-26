@@ -366,7 +366,7 @@ public class JAXRS21ClientTestServlet extends HttpServlet {
             ret.append("new KeyStore fails");
             return;
         }
-        String keyStorePath = this.getServletContext().getRealPath("/") + "/clientInvalidTrust.p12";
+        String keyStorePath = this.getServletContext().getRealPath("/") + "/clientInvalidTrust.jks";
 
         try {
             ts.load(new FileInputStream(keyStorePath), "passw0rd".toCharArray());
