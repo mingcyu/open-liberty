@@ -296,15 +296,7 @@ CWWKD1026.ignore.case.not.text.useraction=Ensure the sort criteria is applied \
  to the correct entity attribute and remove the instruction to ignore case if the \
  entity attribute does not represent text.
 
-CWWKD1027.anno.missing.attr.name=CWWKD1027E: Parameter {0} of the {1} method of \
- the {2} repository interface is annotated with an {3} annotation that does not \
- specify an entity attribute name as its value. The annotation must either specify \
- the entity attribute name as its value, or the -parameters compile option must be \
- enabled and the parameter must have the same name as the entity attribute.
-CWWKD1027.anno.missing.attr.name.explanation=Parameters of repository update \
- methods must correspond to entity attributes.
-CWWKD1027.anno.missing.attr.name.useraction=Update the repository method to \
- indicate the entity attribute to which the parameter pertains.
+# TODO CWWKD1027 removed prior to GA of data-1.0 and can be reused
 
 CWWKD1028.first.exceeds.max=CWWKD1028E: The {0} method of the {1} repository \
  interface requests the first {2} results, which exceeds the maximum allowed \
@@ -1177,3 +1169,20 @@ CWWKD1116.resource.unavailable.explanation=A resource that the repositories \
  require did not become available.
 CWWKD1116.resource.unavailable.useraction=Verify the configuration of resources \
  that the repositories use.
+
+CWWKD1117.anno.constraint.conflict=CWWKD1117E: Parameter {0} of the {1} method \
+ of the {2} repository interface cannot be annotated with the annotations: {3}. \
+ One or more of the annotations is incompatible with the {4} type of the \
+ repository method parameter.
+CWWKD1117.anno.constraint.conflict.explanation=Constraint and its subtypes \
+ cannot be combined with parameter annotations other than the By annotation.
+CWWKD1117.anno.constraint.conflict.useraction=Remove the conflicting annotation \
+ or specify the entity attribute type instead of a Constraint type.
+
+CWWKD1118.param.anno.conflict=CWWKD1118E: Parameter {0} of the {1} method \
+ of the {2} repository interface cannot be annotated with the annotations: {3}. \
+ Two or more of the annotations conflict with each other.
+CWWKD1118.param.anno.conflict.explanation=The combination of parameter \
+ annotations is not valid.
+CWWKD1118.param.anno.conflict.useraction=Remove one or more of the conflicting \
+ annotations from the repository method parameter.

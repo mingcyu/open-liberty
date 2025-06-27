@@ -1553,6 +1553,50 @@ public class QueryInfo {
     }
 
     /**
+     * Constructs the MappingException for the error where a repository method
+     * parameter lacks an annotation that identifies the corresponding entity
+     * attribute name.
+     *
+     * @return UnsupportedOperationException.
+     */
+    @Trivial
+    private MappingException excMissingParamAnno(int p) {
+        DataVersionCompatibility compat = producer.provider().compat;
+
+        switch (type) {
+            case FIND:
+            case FIND_AND_DELETE:
+                validateParameterPositions();
+                String specParams = type == Type.FIND //
+                                ? compat.specialParamsForFind() //
+                                : compat.specialParamsForFindAndDelete();
+                throw exc(MappingException.class,
+                          "CWWKD1012.fd.missing.param.anno",
+                          p,
+                          method.getName(),
+                          repositoryInterface.getName(),
+                          specParams);
+            case QM_DELETE:
+            case COUNT:
+            case EXISTS:
+                throw exc(MappingException.class,
+                          "CWWKD1013.cde.missing.param.anno",
+                          p,
+                          method.getName(),
+                          repositoryInterface.getName());
+            case QM_UPDATE:
+                throw exc(MappingException.class,
+                          "CWWKD1014.upd.missing.param.anno",
+                          p,
+                          method.getName(),
+                          repositoryInterface.getName(),
+                          compat.paramAnnosForUpdate());
+            default: // should be unreachable
+                throw new IllegalStateException(type.name());
+        }
+    }
+
+    /**
      * Constructs the UnsupportedOperationException for the error where a repository
      * method intermixed named and positional parameters for a query.
      *
@@ -2708,21 +2752,26 @@ public class QueryInfo {
     }
 
     /**
-     * Generates JPQL based on method parameters.
-     * Method annotations Count, Delete, Exists, Find, and Update indicate the respective type of method.
-     * Find methods can have special type parameters (PageRequest, Limit, Order, Sort, Sort[]). Other methods cannot.
+     * Generates JPQL based on repository method parameters.
+     * For each parameter, annotations on the parameter as well as
+     * the parameter class determine a type of constraint or assignment
+     * operation. Repository methods must be annotated with one of:
+     * Count, Delete, Exists, Find, or Update.
+     * Allowed special parameter types vary by method annotation.
      *
-     * @param q          JPQL query to which to append the WHERE clause. Or null to create a new JPQL query.
-     * @param methodAnno Count, Delete, Exists, Find, or Update annotation on the method. Never null.
-     * @param countPages indicates whether or not to count pages. Only applies for find queries.
+     * @param q          JPQL query to which to append a WHERE clause.
+     *                       Or null to create a new JPQL query.
+     * @param methodAnno Count, Delete, Exists, Find, or Update. Never null.
+     * @param countPages indicates whether or not to count pages.
+     *                       Only applies for find queries.
      */
     @Trivial
-    private StringBuilder generateQueryByParameters(StringBuilder q,
-                                                    Annotation methodAnno,
-                                                    boolean countPages) {
+    private StringBuilder generateParamBasedQuery(StringBuilder q,
+                                                  Annotation methodAnno,
+                                                  boolean countPages) {
         boolean trace = TraceComponent.isAnyTracingEnabled();
         if (trace && tc.isEntryEnabled())
-            Tr.entry(this, tc, "generateQueryByParameters",
+            Tr.entry(this, tc, "generateParamBasedQuery",
                      q,
                      methodAnno == null ? null : methodAnno.annotationType().getSimpleName(),
                      countPages);
@@ -2752,24 +2801,84 @@ public class QueryInfo {
         }
 
         Annotation[][] annosForAllParams = method.getParameterAnnotations();
-        boolean[] isUpdateOp = new boolean[annosForAllParams.length];
+
+        // Arrays to be populated per repository method parameter
+        String[] attrNames = new String[numAttributeParams];
+        Object[] constraints = new Object[numAttributeParams]; // TODO 1.1 Class<?>[]
+        char[] updateOps = new char[numAttributeParams];
+        int[] qpStarts = new int[numAttributeParams];
+
+        // p is the repository method parameter number (0-based)
+        // qp is the JPQL query parameter number (1-based)
+        for (int p = 0, qp = 1; p < numAttributeParams; p++) {
+            qpStarts[p] = qp;
+
+            qp = compat.inspectMethodParam(p,
+                                           paramTypes[p],
+                                           annosForAllParams[p],
+                                           attrNames,
+                                           constraints,
+                                           updateOps,
+                                           qp);
+
+            if (qp == DataVersionCompatibility.PARAM_ANNO_CONFLICTS_WITH_CONSTRAINT)
+                throw exc(UnsupportedOperationException.class,
+                          "CWWKD1117.anno.constraint.conflict",
+                          p + 1,
+                          method.getName(),
+                          repositoryInterface.getName(),
+                          Arrays.toString(annosForAllParams[p]),
+                          paramTypes[p].getClass().getName());
+            else if (qp == DataVersionCompatibility.PARAM_ANNOS_CONFLICT)
+                throw exc(UnsupportedOperationException.class,
+                          "CWWKD1118.param.anno.conflict",
+                          p + 1,
+                          method.getName(),
+                          repositoryInterface.getName(),
+                          Arrays.toString(annosForAllParams[p]));
+
+            else if (qp == DataVersionCompatibility.PARAM_CONSTRAINT_DEFERRED)
+                // TODO 1.1
+                throw new IllegalArgumentException("jakarta.data.constraint.Constraint");
+
+            // Determine the entity attribute name, first from @By or an assignment
+            // annotation.
+            String name = attrNames[p];
+            if (name == null || name.length() == 0) {
+                for (Annotation anno : annosForAllParams[p])
+                    if (anno instanceof By)
+                        name = ((By) anno).value();
+            }
+            // Otherwise determine the entity attribute name from the parameter name,
+            if (name == null || name.length() == 0) {
+                if (isNamePresent == null) {
+                    params = method.getParameters();
+                    isNamePresent = params[p].isNamePresent();
+                }
+                if (Boolean.TRUE.equals(isNamePresent))
+                    name = params[p].getName();
+                else
+                    throw excMissingParamAnno(p + 1);
+            }
+            attrNames[p] = getAttributeName(name, true);
+        }
 
         if (q == null)
             // Write new JPQL, starting with UPDATE or SELECT
             if (methodAnno instanceof Update) {
                 type = Type.QM_UPDATE;
-                q = new StringBuilder(250).append("UPDATE ").append(entityInfo.name).append(' ').append(o).append(" SET");
+                q = new StringBuilder(250).append("UPDATE ") //
+                                .append(entityInfo.name).append(' ').append(o) //
+                                .append(" SET");
 
                 boolean first = true;
-                // p is the method parameter number (0-based)
-                // qp is the query parameter number (1-based)
-                for (int p = 0, qp = 1; p < numAttributeParams; p++, qp++) {
-                    String[] attrAndOp = compat.getUpdateAttributeAndOperation(annosForAllParams[p]);
-                    if (attrAndOp != null) {
-                        isUpdateOp[p] = true;
-                        if (entityInfo.idClassAttributeAccessors != null &&
-                            paramTypes[p].equals(entityInfo.idType) &&
-                            !"=".equals(attrAndOp[1])) {
+                // p is the repository method parameter position (0-based)
+                for (int p = 0; p < numAttributeParams; p++) {
+                    char op = updateOps[p];
+                    if (op != Character.MIN_VALUE) {
+                        if (op != '=' &&
+                            entityInfo.idClassAttributeAccessors != null &&
+                            paramTypes[p].equals(entityInfo.idType)) {
                             // IdClass values cannot support operations other than
                             // assignment.
                             // Unreachable in version 1.0 and uncertain what
@@ -2784,26 +2893,7 @@ public class QueryInfo {
                                                        repositoryInterface.getName() +
                                                        " repository when the Id is an IdClass.");
                         } else {
-                            String attribute = attrAndOp[0];
-                            String op = attrAndOp[1];
-
-                            if ("".equals(attribute)) {
-                                if (isNamePresent == null) {
-                                    params = method.getParameters();
-                                    isNamePresent = params[p].isNamePresent();
-                                }
-                                if (Boolean.TRUE.equals(isNamePresent))
-                                    attribute = params[p].getName();
-                                else
-                                    throw exc(MappingException.class,
-                                              "CWWKD1027.anno.missing.attr.name",
-                                              p + 1,
-                                              method.getName(),
-                                              repositoryInterface.getName(),
-                                              "Assign");
-                            }
-
-                            String name = getAttributeName(attribute, true);
+                            String name = attrNames[p];
 
                             q.append(first ? " " : ", ");
                             appendAttributeName(name, q);
@@ -2812,10 +2902,12 @@ public class QueryInfo {
 
                             boolean withFunction = false;
                             switch (op) {
-                                case "=":
+                                case '=':
                                     break;
-                                case "+":
-                                    if (withFunction = CharSequence.class.isAssignableFrom(entityInfo.attributeTypes.get(name)))
+                                case '+':
+                                    Class<?> attrType = entityInfo.attributeTypes.get(name);
+                                    withFunction = CharSequence.class.isAssignableFrom(attrType);
+                                    if (withFunction)
                                         q.append("CONCAT(").append(o_).append(name).append(',');
                                     else
                                         q.append(o_).append(name).append('+');
@@ -2825,7 +2917,7 @@ public class QueryInfo {
                             }
 
                             jpqlParamCount++;
-                            q.append('?').append(qp);
+                            q.append('?').append(qpStarts[p]);
 
                             if (withFunction)
                                 q.append(')');
@@ -2847,77 +2939,40 @@ public class QueryInfo {
                               Update.class.getSimpleName());
             } else {
                 type = Type.FIND;
-                q = generateSelectClause().append(" FROM ").append(entityInfo.name).append(' ').append(o);
+                q = generateSelectClause() //
+                                .append(" FROM ") //
+                                .append(entityInfo.name).append(' ').append(o);
             }
 
         int startIndexForWhereClause = q.length();
 
         // append the WHERE clause
-        // p is the method parameter number (0-based)
-        // qp is the query parameter number (1-based)
-        for (int p = 0, qp = 1; p < numAttributeParams; p++, qp++) {
-            if (!isUpdateOp[p]) {
+        // p is the repository method parameter position (0-based)
+        for (int p = 0; p < numAttributeParams; p++) {
+            if (constraints[p] != null) {
                 if (hasWhere) {
-                    q.append(compat.hasOrAnnotation(annosForAllParams[p]) ? " OR " : " AND ");
+                    q.append(compat.hasOrAnnotation(annosForAllParams[p]) //
+                                    ? " OR " //
+                                    : " AND ");
                 } else {
                     q.append(" WHERE (");
                     hasWhere = true;
                 }
 
-                // Determine the entity attribute name, first from @By("name"), otherwise from the parameter name
-                String attribute = null;
-                for (Annotation anno : annosForAllParams[p])
-                    if (anno instanceof By)
-                        attribute = ((By) anno).value();
+                String name = attrNames[p];
 
-                if (attribute == null) {
-                    if (isNamePresent == null) {
-                        params = method.getParameters();
-                        isNamePresent = params[p].isNamePresent();
-                    }
-                    if (Boolean.TRUE.equals(isNamePresent))
-                        attribute = params[p].getName();
-                    else
-                        switch (type) {
-                            case FIND:
-                            case FIND_AND_DELETE:
-                                validateParameterPositions();
-                                String specParams = type == Type.FIND //
-                                                ? compat.specialParamsForFind() //
-                                                : compat.specialParamsForFindAndDelete();
-                                throw exc(UnsupportedOperationException.class,
-                                          "CWWKD1012.fd.missing.param.anno",
-                                          p + 1,
-                                          method.getName(),
-                                          repositoryInterface.getName(),
-                                          specParams);
-                            case QM_DELETE:
-                            case COUNT:
-                            case EXISTS:
-                                throw exc(UnsupportedOperationException.class,
-                                          "CWWKD1013.cde.missing.param.anno",
-                                          p + 1,
-                                          method.getName(),
-                                          repositoryInterface.getName());
-                            case QM_UPDATE:
-                                throw exc(UnsupportedOperationException.class,
-                                          "CWWKD1014.upd.missing.param.anno",
-                                          p + 1,
-                                          method.getName(),
-                                          repositoryInterface.getName(),
-                                          List.of("By", "Assign"));
-                            default: // should be unreachable
-                                throw new IllegalStateException(type.name());
-                        }
-                }
-
-                String name = getAttributeName(attribute, true);
-
-                boolean isCollection = entityInfo.collectionElementTypes.containsKey(name);
+                boolean isCollection = entityInfo.collectionElementTypes //
+                                .containsKey(name);
 
                 jpqlParamCount++;
 
-                compat.appendCondition(q, qp, method, p, o_, name, isCollection, annosForAllParams[p]);
+                compat.appendConstraint(q,
+                                        o_,
+                                        name,
+                                        constraints[p],
+                                        qpStarts[p],
+                                        isCollection,
+                                        annosForAllParams[p]);
             }
         }
         if (hasWhere)
@@ -2931,7 +2986,7 @@ public class QueryInfo {
             initDynamicSortPositions(paramTypes);
 
         if (trace && tc.isEntryEnabled())
-            Tr.entry(this, tc, "generateQueryByParameters", q);
+            Tr.entry(this, tc, "generateParamBasedQuery", q);
         return q;
     }
 
@@ -4462,7 +4517,7 @@ public class QueryInfo {
         StringBuilder q = null;
 
         if (methodTypeAnno instanceof Find || methodTypeAnno instanceof Update) {
-            q = generateQueryByParameters(null, methodTypeAnno, countPages);
+            q = generateParamBasedQuery(null, methodTypeAnno, countPages);
         } else if (methodTypeAnno instanceof Delete) {
             if (isFindAndDelete()) {
                 type = Type.FIND_AND_DELETE;
@@ -4473,12 +4528,12 @@ public class QueryInfo {
                 q = new StringBuilder(150).append("DELETE FROM ").append(entityInfo.name).append(' ').append(o);
             }
             if (method.getParameterCount() > 0)
-                generateQueryByParameters(q, methodTypeAnno, countPages);
+                generateParamBasedQuery(q, methodTypeAnno, countPages);
         } else if ("Count".equals(methodTypeAnno.annotationType().getSimpleName())) {
             type = Type.COUNT;
             q = new StringBuilder(150).append("SELECT COUNT(").append(o).append(") FROM ").append(entityInfo.name).append(' ').append(o);
             if (method.getParameterCount() > 0)
-                generateQueryByParameters(q, methodTypeAnno, countPages);
+                generateParamBasedQuery(q, methodTypeAnno, countPages);
         } else if ("Exists".equals(methodTypeAnno.annotationType().getSimpleName())) {
             type = Type.EXISTS;
             validateReturnForExists();
@@ -4486,7 +4541,7 @@ public class QueryInfo {
                             .append("SELECT ID(").append(o).append(") FROM ") //
                             .append(entityInfo.name).append(' ').append(o);
             if (method.getParameterCount() > 0)
-                generateQueryByParameters(q, methodTypeAnno, countPages);
+                generateParamBasedQuery(q, methodTypeAnno, countPages);
         } else {
             // unreachable
             throw new IllegalArgumentException(methodTypeAnno.toString());
@@ -4832,7 +4887,11 @@ public class QueryInfo {
 
         if (signatureHasPageReq)
             // NullPointerException is required by BasicRepository.findAll
-            throw new NullPointerException("PageRequest: null");
+            throw exc(NullPointerException.class,
+                      "CWWKD1087.null.param",
+                      PageRequest.class.getName(),
+                      method.getName(),
+                      repositoryInterface.getName());
         else
             throw exc(UnsupportedOperationException.class,
                       "CWWKD1041.rtrn.mismatch.pagereq",
