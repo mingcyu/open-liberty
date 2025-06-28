@@ -564,11 +564,14 @@ serverEnvAndJVMOptions()
 
      # If JAVA_HOME does not appear to be a valid Java installation (missing 'lib' or 'include' directories), display a warning.
      # Split into 3 tests for portability.  As a one-line test, it is problematic for IBM i and possibly other shells.
+     # Need to unset JAVA_HOME when location is not valid, otherwise it causes a hang on the warning message.
      if [ -z "$JAVA_HOME" ]; then
        issueMessage --message:warning.javaHomeNotSet
      elif [ ! -d "$JAVA_HOME/lib" ] && [ ! -d "$JAVA_HOME/jre/lib" ]; then
+       unset JAVA_HOME
        issueMessage --message:warning.javaHomeNotSet
      elif [ ! -d "$JAVA_HOME/include" ]; then
+       unset JAVA_HOME
        issueMessage --message:warning.javaHomeNotSet
      else
        export JAVA_HOME
