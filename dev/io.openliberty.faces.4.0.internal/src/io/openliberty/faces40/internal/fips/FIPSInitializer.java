@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
+// The FIPSInitializer activates FIPS 140-3 compliant algorithms (HmacSHA256, AES, and SHA256DRBG) for faces-4.0 and newer.
 public class FIPSInitializer implements ServletContainerInitializer {
 
     // Log instance for this class
@@ -37,15 +38,11 @@ public class FIPSInitializer implements ServletContainerInitializer {
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException {
 
         if (CryptoUtils.isFips140_3EnabledWithBetaGuard()) {
-            // **** Already set as default *****
-            // if (servletContext.getInitParameter(MAC_ALGORITHM) == null) {
-            // servletContext.setInitParameter(MAC_ALGORITHM, "HmacSHA256");
-            // log(MAC_ALGORITHM + " not found. Setting to HmacSHA256.");
-            // }
-            // if (servletContext.getInitParameter(SESSION_ALGORITHM) == null) {
-            // servletContext.setInitParameter(SESSION_ALGORITHM, "AES");
-            // log(SESSION_ALGORITHM + " not found. Setting to AES.");
-            // }
+            /*
+             * Note: org.apache.myfaces.MAC_ALGORITHM and org.apache.myfaces.ALGORITHM have used HmacSHA256 and AES 
+             * since 3.0.0 and 4.0.0 (see MYFACES-4376). No need to set them here. 
+             */
+
             if (servletContext.getInitParameter(VIEWSTATE_ID_ALGORITHM) == null) {
                 servletContext.setInitParameter(VIEWSTATE_ID_ALGORITHM, "SHA256DRBG");
                 log(VIEWSTATE_ID_ALGORITHM + " not found. Setting to SHA256DRBG.");

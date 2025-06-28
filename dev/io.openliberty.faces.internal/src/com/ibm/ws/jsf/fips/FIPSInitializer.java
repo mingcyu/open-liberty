@@ -21,11 +21,12 @@ import java.util.logging.Logger;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
+// The FIPSInitializer activates FIPS 140-3 compliant algorithms (HmacSHA256, AES, and SHA256DRBG) for jsf-2.3 and faces-3.0.
 public class FIPSInitializer implements ServletContainerInitializer {
 
     // Log instance for this class
     protected static final Logger log = Logger.getLogger("com.ibm.ws.jsf.fips");
-    private static final String CLASS_NAME = "FISInitializer";
+    private static final String CLASS_NAME = FIPSInitializer.class.getName();
 
     private static String MAC_ALGORITHM = "org.apache.myfaces.MAC_ALGORITHM";
     private static String SESSION_ALGORITHM = "org.apache.myfaces.ALGORITHM";
@@ -38,6 +39,12 @@ public class FIPSInitializer implements ServletContainerInitializer {
     public void onStartup(Set<Class<?>> clazzes, ServletContext servletContext) throws ServletException {
 
         if (CryptoUtils.isFips140_3EnabledWithBetaGuard()) {
+
+            /*
+             * In Faces 3.0, org.apache.myfaces.MAC_ALGORITHM and org.apache.myfaces.ALGORITHM already use HmacSHA256 and AES.
+             * However, JSF-2.3 does not (changed in 3.0 during a feaure boundary).  As this is a shared library, we will set
+             * it for both features (even though face-3.0 does require it)
+             */
             if (servletContext.getInitParameter(MAC_ALGORITHM) == null) {
                 servletContext.setInitParameter(MAC_ALGORITHM, "HmacSHA256");
                 log(MAC_ALGORITHM + " not found. Setting to HmacSHA256.");
@@ -46,6 +53,7 @@ public class FIPSInitializer implements ServletContainerInitializer {
                 servletContext.setInitParameter(SESSION_ALGORITHM, "AES");
                 log(SESSION_ALGORITHM + " not found. Setting to AES.");
             }
+
             if (servletContext.getInitParameter(VIEWSTATE_ID_ALGORITHM) == null) {
                 servletContext.setInitParameter(VIEWSTATE_ID_ALGORITHM, "SHA256DRBG");
                 log(VIEWSTATE_ID_ALGORITHM + " not found. Setting to SHA256DRBG.");

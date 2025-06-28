@@ -21,11 +21,12 @@ import java.util.logging.Logger;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
+// The FIPSInitializer activates FIPS 140-3 compliant algorithms (HmacSHA256, AES, and SHA256DRBG) for the JSF 2.2 Feature.
 public class FIPSInitializer implements ServletContainerInitializer {
 
         // Log instance for this class
     protected static final Logger log = Logger.getLogger("com.ibm.ws.jsf");
-    private static final String CLASS_NAME = "com.ibm.ws.jsf.fips.FIPSInitializer";
+    private static final String CLASS_NAME = FIPSInitializer.class.getName();
 
     private static String MAC_ALGORITHM = "org.apache.myfaces.MAC_ALGORITHM";
     private static String SESSION_ALGORITHM = "org.apache.myfaces.ALGORITHM";

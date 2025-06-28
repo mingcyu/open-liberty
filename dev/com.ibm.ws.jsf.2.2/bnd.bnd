@@ -82,7 +82,7 @@ Export-Package: \
   com.ibm.ws.jsf.config.*, \
   com.ibm.ws.jsf.ext, \
   com.ibm.ws.jsf.extprocessor, \
-  com.ibm.ws.jsf.fips.*, \
+  com.ibm.ws.jsf.fips, \
   com.ibm.ws.jsf.spi.*, \
   org.apache.myfaces.application;thread-context=true, \
   org.apache.myfaces.application.viewstate;thread-context=true, \
