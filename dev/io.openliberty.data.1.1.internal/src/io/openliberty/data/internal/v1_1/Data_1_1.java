@@ -32,6 +32,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import io.openliberty.data.internal.version.QueryType;
 import io.openliberty.data.repository.Count;
 import io.openliberty.data.repository.Exists;
 import io.openliberty.data.repository.Is;
@@ -422,6 +423,22 @@ public class Data_1_1 implements DataVersionCompatibility {
         }
 
         return qpNext;
+    }
+
+    @Override
+    @Trivial
+    public boolean isSpecialParamValid(Class<?> paramType,
+                                       QueryType queryType) {
+        return switch (queryType) {
+            case FIND -> true;
+            case FIND_AND_DELETE -> !PageRequest.class.equals(paramType);
+            case COUNT, EXISTS -> Order.class.equals(paramType) ||
+                // TODO 1.1 Restriction.class.equals(paramType) ||
+                                  Sort.class.equals(paramType) ||
+                                  Sort[].class.equals(paramType);
+            case QM_DELETE, QM_UPDATE -> false; // TODO 1.1 Restriction.class.equals(paramType)
+            default -> false;
+        };
     }
 
     @Override

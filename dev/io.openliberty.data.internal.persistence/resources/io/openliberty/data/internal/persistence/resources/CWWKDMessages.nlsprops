@@ -124,7 +124,7 @@ CWWKD1009.lifecycle.param.err=CWWKD1009E: The {0} method of the {1} repository \
 CWWKD1009.lifecycle.param.err.explanation=Lifecycle methods must have a single \
  entity parameter.
 CWWKD1009.lifecycle.param.err.useraction=Update the repository method to have a \
- single parameter that is an entity or an array of List of the entity.
+ single parameter that is an entity or an array or List of the entity.
 
 CWWKD1010.unknown.entity.attr=CWWKD1010E: An entity attribute named {0} is \
  not found on the {1} entity class for the {2} method of the {3} repository \
@@ -174,18 +174,21 @@ CWWKD1013.cde.missing.param.anno.explanation=Parameters of repository count, \
 CWWKD1013.cde.missing.param.anno.useraction=Update the repository method such \
  that all parameters correspond to entity attributes.
 
-CWWKD1014.upd.missing.param.anno=CWWKD1014E: Parameter {0} of the {1} method of \
- the {2} repository interface does not match an entity attribute. Parameters that \
- do not match an entity attribute must have one of the parameter annotations: {3}. \
- To define a condition for the restriction of query results, the parameter must \
- be annotated with the By annotation and the By annotation value must be \
- assigned to be the entity attribute name. Alternatively, enable the \
- -parameters compile option and give the parameter the same name as the entity \
- attribute.
+CWWKD1014.upd.missing.param.anno=CWWKD1014E: The {0} method of the {1} repository \
+ is not a valid lifecycle Update method because the method has {2} parameters. \
+ Repository methods that are annotated with a lifecycle annotation must have \
+ exactly 1 parameter, which must be the entity or an array or List of the entity. \
+ The {0} method is also not a valid parameter-based update operation because \
+ method parameter {3} does not have an annotation ({4}) that indicates the entity \
+ attribute name. Alternatively, enable the -parameters compile option and give the \
+ parameter the same name as the entity attribute.
 CWWKD1014.upd.missing.param.anno.explanation=Parameters of repository update \
- methods must correspond to entity attributes.
+ methods must correspond to entity attributes. Alternatively, lifecycle methods \
+ must have a single entity parameter.
 CWWKD1014.upd.missing.param.anno.useraction=Update the repository method such that \
- all parameters correspond to entity attributes.
+ all parameters correspond to entity attributes. Alternatively, update the \
+ repository method to have a single parameter that is an entity or an array or \
+ List of the entity.
 
 CWWKD1015.null.entity.param=CWWKD1015E: The {0} method of the {1} repository \
  interface cannot accept a null entity.

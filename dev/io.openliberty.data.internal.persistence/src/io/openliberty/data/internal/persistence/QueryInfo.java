@@ -17,6 +17,17 @@ import static io.openliberty.data.internal.persistence.Condition.Not;
 import static io.openliberty.data.internal.persistence.Util.SORT_PARAM_TYPES;
 import static io.openliberty.data.internal.persistence.Util.lifeCycleReturnTypes;
 import static io.openliberty.data.internal.persistence.cdi.DataExtension.exc;
+import static io.openliberty.data.internal.version.QueryType.COUNT;
+import static io.openliberty.data.internal.version.QueryType.EXISTS;
+import static io.openliberty.data.internal.version.QueryType.FIND;
+import static io.openliberty.data.internal.version.QueryType.FIND_AND_DELETE;
+import static io.openliberty.data.internal.version.QueryType.INSERT;
+import static io.openliberty.data.internal.version.QueryType.LC_DELETE;
+import static io.openliberty.data.internal.version.QueryType.LC_UPDATE;
+import static io.openliberty.data.internal.version.QueryType.LC_UPDATE_RET_ENTITY;
+import static io.openliberty.data.internal.version.QueryType.QM_DELETE;
+import static io.openliberty.data.internal.version.QueryType.QM_UPDATE;
+import static io.openliberty.data.internal.version.QueryType.SAVE;
 import static jakarta.data.repository.By.ID;
 
 import java.io.PrintWriter;
@@ -58,6 +69,7 @@ import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
 import io.openliberty.data.internal.persistence.cdi.RepositoryProducer;
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import io.openliberty.data.internal.version.QueryType;
 import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
@@ -87,27 +99,6 @@ import jakarta.persistence.TypedQuery;
  */
 public class QueryInfo {
     private static final TraceComponent tc = Tr.register(QueryInfo.class);
-
-    public static enum Type {
-        COUNT(false), // query method count
-        EXISTS(false), // query method exists
-        FIND(false), // query method find/@Find/@Query(SELECT/FROM/WHERE)
-        FIND_AND_DELETE(true), // query method delete/@Delete with entity result
-        INSERT(true), // life cycle @Insert
-        LC_DELETE(true), // life cycle @Delete
-        LC_UPDATE(true), // life cycle @Update
-        LC_UPDATE_RET_ENTITY(true), // life cycle @Update with entity result
-        QM_DELETE(true), // query method delete/@Delete/@Query(DELETE)
-        QM_UPDATE(true), // query method update/@Update/@Query(UPDATE)
-        RESOURCE_ACCESS(false), // resource accessor method
-        SAVE(true); // life cycle @Save
-
-        final boolean requiresTransaction;
-
-        private Type(boolean requiresTransaction) {
-            this.requiresTransaction = requiresTransaction;
-        }
-    }
 
     /**
      * Placeholder that indicates the entity class needs to be determined
@@ -293,7 +284,7 @@ public class QueryInfo {
     /**
      * Categorization of query type.
      */
-    Type type;
+    QueryType type;
 
     /**
      * Indicates whether or not to validate method parameters, if Jakarta Validation is available.
@@ -418,7 +409,7 @@ public class QueryInfo {
     public QueryInfo(RepositoryProducer<?> repositoryProducer,
                      Class<?> repositoryInterface,
                      Method method,
-                     Type type) {
+                     QueryType type) {
         this.method = method;
         this.entityParamType = null;
         this.multiType = null;
@@ -1553,21 +1544,22 @@ public class QueryInfo {
     }
 
     /**
-     * Constructs the MappingException for the error where a repository method
-     * parameter lacks an annotation that identifies the corresponding entity
-     * attribute name.
+     * Constructs the MappingException or UnsupportedOoperationException for
+     * the error where a repository method parameter lacks an annotation that
+     * identifies the corresponding entity attribute name.
      *
-     * @return UnsupportedOperationException.
+     * @param p position (1-based) of the repository method parameter.
+     * @return MappingException or UnsupportedOperationException.
      */
     @Trivial
-    private MappingException excMissingParamAnno(int p) {
+    private RuntimeException excMissingParamAnno(int p) {
         DataVersionCompatibility compat = producer.provider().compat;
 
         switch (type) {
             case FIND:
             case FIND_AND_DELETE:
                 validateParameterPositions();
-                String specParams = type == Type.FIND //
+                String specParams = type == FIND //
                                 ? compat.specialParamsForFind() //
                                 : compat.specialParamsForFindAndDelete();
                 throw exc(MappingException.class,
@@ -1585,11 +1577,12 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName());
             case QM_UPDATE:
-                throw exc(MappingException.class,
+                throw exc(UnsupportedOperationException.class,
                           "CWWKD1014.upd.missing.param.anno",
-                          p,
                           method.getName(),
                           repositoryInterface.getName(),
+                          method.getParameterCount(),
+                          p,
                           compat.paramAnnosForUpdate());
             default: // should be unreachable
                 throw new IllegalStateException(type.name());
@@ -1937,7 +1930,7 @@ public class QueryInfo {
             jakarta.persistence.Query query = em.createQuery(jpql);
             setParameters(query, args);
 
-            if (type == Type.FIND_AND_DELETE)
+            if (type == FIND_AND_DELETE)
                 query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
 
             int startAt = limit != null //
@@ -1987,7 +1980,7 @@ public class QueryInfo {
                     }
                 }
 
-                if (type == Type.FIND_AND_DELETE)
+                if (type == FIND_AND_DELETE)
                     delete(results, em);
 
                 if (results.isEmpty() && isOptional) {
@@ -2015,7 +2008,7 @@ public class QueryInfo {
                             break;
                         }
                     if (firstNonNullResult == null
-                        || type == Type.FIND_AND_DELETE
+                        || type == FIND_AND_DELETE
                         || returnArrayType != Object.class &&
                            returnArrayType.isInstance(firstNonNullResult)
                         || returnArrayType.isPrimitive() &&
@@ -2674,10 +2667,10 @@ public class QueryInfo {
                         .append("DELETE FROM ").append(entityInfo.name).append(' ').append(o);
 
         if (method.getParameterCount() == 0) {
-            type = Type.QM_DELETE;
+            type = QM_DELETE;
             hasWhere = false;
         } else {
-            setType(Delete.class, Type.LC_DELETE);
+            setType(Delete.class, LC_DELETE);
             hasWhere = true;
 
             q.append(" WHERE (");
@@ -2760,7 +2753,8 @@ public class QueryInfo {
      * Allowed special parameter types vary by method annotation.
      *
      * @param q          JPQL query to which to append a WHERE clause.
-     *                       Or null to create a new JPQL query.
+     *                       Or null in the case of Find/Update methods
+     *                       to create a new JPQL query.
      * @param methodAnno Count, Delete, Exists, Find, or Update. Never null.
      * @param countPages indicates whether or not to count pages.
      *                       Only applies for find queries.
@@ -2780,8 +2774,6 @@ public class QueryInfo {
         String o_ = entityVar_;
         DataVersionCompatibility compat = entityInfo.builder.provider.compat;
 
-        boolean isFindOrDelete = methodAnno instanceof Find ||
-                                 methodAnno instanceof Delete;
         Boolean isNamePresent = null; // unknown
         Parameter[] params = null;
 
@@ -2791,12 +2783,12 @@ public class QueryInfo {
         while (numAttributeParams > 0 &&
                specParamTypes.contains(paramTypes[numAttributeParams - 1])) {
             numAttributeParams--;
-            if (!isFindOrDelete) // special parameter is not allowed
+            if (!compat.isSpecialParamValid(paramTypes[numAttributeParams], type))
                 throw exc(UnsupportedOperationException.class,
                           "CWWKD1020.invalid.param.type",
                           method.getName(),
                           repositoryInterface.getName(),
-                          paramTypes[numAttributeParams - 1].getSimpleName(),
+                          paramTypes[numAttributeParams].getSimpleName(),
                           methodAnno.annotationType().getSimpleName());
         }
 
@@ -2844,13 +2836,14 @@ public class QueryInfo {
             // Determine the entity attribute name, first from @By or an assignment
             // annotation.
             String name = attrNames[p];
-            if (name == null || name.length() == 0) {
+            if (name == null) {
                 for (Annotation anno : annosForAllParams[p])
                     if (anno instanceof By)
                         name = ((By) anno).value();
             }
             // Otherwise determine the entity attribute name from the parameter name,
-            if (name == null || name.length() == 0) {
+            if (name == null ||
+                name.length() == 0 && attrNames[p] != null) { // TODO 1.2 allow the empty string on assign annos?
                 if (isNamePresent == null) {
                     params = method.getParameters();
                     isNamePresent = params[p].isNamePresent();
@@ -2863,86 +2856,80 @@ public class QueryInfo {
             attrNames[p] = getAttributeName(name, true);
         }
 
-        if (q == null)
-            // Write new JPQL, starting with UPDATE or SELECT
-            if (methodAnno instanceof Update) {
-                type = Type.QM_UPDATE;
-                q = new StringBuilder(250).append("UPDATE ") //
-                                .append(entityInfo.name).append(' ').append(o) //
-                                .append(" SET");
+        // Write new JPQL, starting with SELECT or UPDATE
+        if (q == null && type == FIND) { // SELECT
+            q = generateSelectClause() //
+                            .append(" FROM ") //
+                            .append(entityInfo.name).append(' ').append(o);
+        } else if (q == null) { // UPDATE
+            q = new StringBuilder(250).append("UPDATE ") //
+                            .append(entityInfo.name).append(' ').append(o) //
+                            .append(" SET");
 
-                boolean first = true;
-                // p is the repository method parameter position (0-based)
-                for (int p = 0; p < numAttributeParams; p++) {
-                    char op = updateOps[p];
-                    if (op != Character.MIN_VALUE) {
-                        if (op != '=' &&
-                            entityInfo.idClassAttributeAccessors != null &&
-                            paramTypes[p].equals(entityInfo.idType)) {
-                            // IdClass values cannot support operations other than
-                            // assignment.
-                            // Unreachable in version 1.0 and uncertain what
-                            // will be added to the spec. Deferring NLS message
-                            // until then.
-                            throw new MappingException("One or more of the " +
-                                                       Arrays.toString(annosForAllParams[p]) +
-                                                       " annotations specifes an operation" +
-                                                       " that cannot be used on parameter " +
-                                                       (p + 1) + " of the " + method.getName() +
-                                                       " method of the " +
-                                                       repositoryInterface.getName() +
-                                                       " repository when the Id is an IdClass.");
-                        } else {
-                            String name = attrNames[p];
+            boolean first = true;
+            // p is the repository method parameter position (0-based)
+            for (int p = 0; p < numAttributeParams; p++) {
+                char op = updateOps[p];
+                if (op != Character.MIN_VALUE) {
+                    if (op != '=' &&
+                        entityInfo.idClassAttributeAccessors != null &&
+                        paramTypes[p].equals(entityInfo.idType)) {
+                        // TODO 1.1
+                        // IdClass values cannot support operations other than
+                        // assignment.
+                        // Unreachable in version 1.0 and uncertain what
+                        // will be added to the spec. Deferring NLS message
+                        // until then.
+                        throw new MappingException("One or more of the " +
+                                                   Arrays.toString(annosForAllParams[p]) +
+                                                   " annotations specifes an operation" +
+                                                   " that cannot be used on parameter " +
+                                                   (p + 1) + " of the " + method.getName() +
+                                                   " method of the " +
+                                                   repositoryInterface.getName() +
+                                                   " repository when the Id is an IdClass.");
+                    } else {
+                        String name = attrNames[p];
 
-                            q.append(first ? " " : ", ");
-                            appendAttributeName(name, q);
-                            q.append("=");
-                            first = false;
+                        q.append(first ? " " : ", ");
+                        appendAttributeName(name, q);
+                        q.append("=");
+                        first = false;
 
-                            boolean withFunction = false;
-                            switch (op) {
-                                case '=':
-                                    break;
-                                case '+':
-                                    Class<?> attrType = entityInfo.attributeTypes.get(name);
-                                    withFunction = CharSequence.class.isAssignableFrom(attrType);
-                                    if (withFunction)
-                                        q.append("CONCAT(").append(o_).append(name).append(',');
-                                    else
-                                        q.append(o_).append(name).append('+');
-                                    break;
-                                default:
-                                    q.append(o_).append(name).append(op);
-                            }
-
-                            jpqlParamCount++;
-                            q.append('?').append(qpStarts[p]);
-
-                            if (withFunction)
-                                q.append(')');
+                        boolean withFunction = false;
+                        switch (op) {
+                            case '=':
+                                break;
+                            case '+':
+                                Class<?> attrType = entityInfo.attributeTypes.get(name);
+                                withFunction = CharSequence.class.isAssignableFrom(attrType);
+                                if (withFunction)
+                                    q.append("CONCAT(").append(o_).append(name).append(',');
+                                else
+                                    q.append(o_).append(name).append('+');
+                                break;
+                            default:
+                                q.append(o_).append(name).append(op);
                         }
+
+                        jpqlParamCount++;
+                        q.append('?').append(qpStarts[p]);
+
+                        if (withFunction)
+                            q.append(')');
                     }
                 }
-
-                if (first)
-                    // No parameters are annotated to indicate update.
-                    // Raise an error that considers this an invalid life cycle
-                    // operation attempt. In the future, we could raise an error
-                    // that also mentions the possibility of invalid parameter-based
-                    // update operation.
-                    throw exc(UnsupportedOperationException.class,
-                              "CWWKD1009.lifecycle.param.err",
-                              method.getName(),
-                              repositoryInterface.getName(),
-                              method.getParameterCount(),
-                              Update.class.getSimpleName());
-            } else {
-                type = Type.FIND;
-                q = generateSelectClause() //
-                                .append(" FROM ") //
-                                .append(entityInfo.name).append(' ').append(o);
             }
+
+            if (first)
+                // No parameters are annotated to indicate update.
+                throw exc(UnsupportedOperationException.class,
+                          "CWWKD1009.lifecycle.param.err",
+                          method.getName(),
+                          repositoryInterface.getName(),
+                          method.getParameterCount(),
+                          Update.class.getSimpleName());
+        }
 
         int startIndexForWhereClause = q.length();
 
@@ -2978,11 +2965,10 @@ public class QueryInfo {
         if (hasWhere)
             q.append(')');
 
-        if (countPages && type == Type.FIND)
+        if (countPages && type == FIND)
             generateCount(numAttributeParams == 0 ? null : q.substring(startIndexForWhereClause));
 
-        if (type == Type.FIND ||
-            type == Type.FIND_AND_DELETE)
+        if (type == FIND || type == FIND_AND_DELETE)
             initDynamicSortPositions(paramTypes);
 
         if (trace && tc.isEntryEnabled())
@@ -3004,7 +2990,7 @@ public class QueryInfo {
         String[] cols, selections = entityInfo.builder.provider.compat.getSelections(method);
         if (selections.length == 0) {
             cols = null;
-        } else if (type == Type.FIND_AND_DELETE) {
+        } else if (type == FIND_AND_DELETE) {
             // Unreachable in version 1.0 and uncertain what will be added to
             // the spec regarding selections. Deferring NLS message until then.
             throw new UnsupportedOperationException //
@@ -3028,7 +3014,7 @@ public class QueryInfo {
         if (singleType.isPrimitive())
             singleType = Util.wrapperClassIfPrimitive(singleType);
 
-        if (type == Type.FIND_AND_DELETE &&
+        if (type == FIND_AND_DELETE &&
             !(singleType.isAssignableFrom(Util.wrapperClassIfPrimitive(entityInfo.idType)) ||
               singleType.isAssignableFrom(entityInfo.getType()))) {
             throw exc(MappingException.class,
@@ -3302,7 +3288,7 @@ public class QueryInfo {
 
         if (entityInfo.attributeNamesForEntityUpdate != null &&
             Util.UPDATE_COUNT_TYPES.contains(singleType)) {
-            setType(Update.class, Type.LC_UPDATE);
+            setType(Update.class, LC_UPDATE);
 
             q = new StringBuilder(100) //
                             .append("UPDATE ").append(entityInfo.name) //
@@ -3322,7 +3308,7 @@ public class QueryInfo {
             // Update that returns an entity. And also used when an entity
             // has relation attributes that require using em.merge.
             // Perform a find operation first so that em.merge can be used.
-            setType(Update.class, Type.LC_UPDATE_RET_ENTITY);
+            setType(Update.class, LC_UPDATE_RET_ENTITY);
 
             q = new StringBuilder(100) //
                             .append("SELECT ").append(o) //
@@ -3728,9 +3714,9 @@ public class QueryInfo {
                                   repository.primaryEntityInfoFuture,
                                   compat);
             } else if (save != null) { // @Save annotation
-                setType(Save.class, Type.SAVE);
+                setType(Save.class, SAVE);
             } else if (insert != null) { // @Insert annotation
-                setType(Insert.class, Type.INSERT);
+                setType(Insert.class, INSERT);
             } else if (entityParamType != null) {
                 if (update != null) { // @Update annotation
                     q = generateUpdateEntity();
@@ -3753,7 +3739,7 @@ public class QueryInfo {
                     q = initQueryByMethodName(countPages);
                 }
 
-                if (type == Type.FIND_AND_DELETE
+                if (type == FIND_AND_DELETE
                     && multiType != null
                     && Stream.class.isAssignableFrom(multiType)) {
                     throw exc(UnsupportedOperationException.class,
@@ -3769,7 +3755,7 @@ public class QueryInfo {
             // The @OrderBy annotation from Jakarta Data provides sort criteria statically
             if (orderBy.length > 0) {
                 // disallow on incompatible operations
-                if (type != Type.FIND && type != Type.FIND_AND_DELETE)
+                if (type != FIND && type != FIND_AND_DELETE)
                     throw exc(UnsupportedOperationException.class,
                               "CWWKD1096.orderby.incompat",
                               method.getName(),
@@ -3803,7 +3789,7 @@ public class QueryInfo {
 
             // Default to ascending by ID when the repository method that uses
             // pagination does not provide a way to indicate sort criteria.
-            if (type == Type.FIND &&
+            if (type == FIND &&
                 query == null && // do not change the user's Query value
                 sortPositions.length == 0 &&
                 (sorts == null || sorts.isEmpty()) &&
@@ -3905,7 +3891,7 @@ public class QueryInfo {
             if (startAt + 12 < length
                 && ql.regionMatches(true, startAt + 1, "ELETE", 0, 5)
                 && Character.isWhitespace(ql.charAt(startAt + 6))) {
-                type = Type.QM_DELETE;
+                type = QM_DELETE;
                 jpql = ql;
                 startAt += 7; // start of FROM
                 for (; startAt < length && Character.isWhitespace(ql.charAt(startAt)); startAt++);
@@ -3971,7 +3957,7 @@ public class QueryInfo {
             if (startAt + 13 < length
                 && ql.regionMatches(true, startAt + 1, "PDATE", 0, 5)
                 && Character.isWhitespace(ql.charAt(startAt + 6))) {
-                type = Type.QM_UPDATE;
+                type = QM_UPDATE;
                 jpql = ql;
                 startAt += 7; // start of EntityName
                 for (; startAt < length && Character.isWhitespace(ql.charAt(startAt)); startAt++);
@@ -4145,7 +4131,7 @@ public class QueryInfo {
             else if (order0 >= 0 && orderLen == 0)
                 orderLen = length - order0;
 
-            type = Type.FIND;
+            type = FIND;
             entityVar = "this";
             entityVar_ = "";
             hasWhere = whereLen > 0;
@@ -4441,7 +4427,7 @@ public class QueryInfo {
             if (orderBy >= 0)
                 parseOrderBy(orderBy, q);
 
-            type = Type.FIND;
+            type = FIND;
         } else if (methodName.startsWith("delete") || methodName.startsWith("remove")) {
             int orderBy = -1;
             boolean isFindAndDelete = isFindAndDelete();
@@ -4452,11 +4438,11 @@ public class QueryInfo {
                 } else if (by > 0) {
                     orderBy = methodName.indexOf("OrderBy", by + 2);
                 }
-                type = Type.FIND_AND_DELETE;
+                type = FIND_AND_DELETE;
                 q = generateSelectClause().append(" FROM ").append(entityInfo.name).append(' ').append(o);
                 jpqlDelete = generateDeleteById();
             } else { // DELETE
-                type = Type.QM_DELETE;
+                type = QM_DELETE;
                 q = new StringBuilder(150).append("DELETE FROM ").append(entityInfo.name).append(' ').append(o);
             }
 
@@ -4467,23 +4453,23 @@ public class QueryInfo {
             if (orderBy > 0)
                 parseOrderBy(orderBy, q);
 
-            type = type == null ? Type.QM_DELETE : type;
+            type = type == null ? QM_DELETE : type;
         } else if (methodName.startsWith("update")) {
             int c = by < 0 ? 6 : (by + 2);
             q = generateUpdateClause(methodName, c);
-            type = Type.QM_UPDATE;
+            type = QM_UPDATE;
         } else if (methodName.startsWith("count")) {
             q = new StringBuilder(150).append("SELECT COUNT(").append(o).append(") FROM ").append(entityInfo.name).append(' ').append(o);
             if (by > 0 && methodName.length() > by + 2)
                 generateWhereClause(methodName, by + 2, methodName.length(), q);
-            type = Type.COUNT;
+            type = COUNT;
         } else if (methodName.startsWith("exists")) {
             q = new StringBuilder(200) //
                             .append("SELECT ID(").append(o).append(") FROM ") //
                             .append(entityInfo.name).append(' ').append(o);
             if (by > 0 && methodName.length() > by + 2)
                 generateWhereClause(methodName, by + 2, methodName.length(), q);
-            type = Type.EXISTS;
+            type = EXISTS;
             validateReturnForExists();
         } else {
             throw excUnsupportedMethod();
@@ -4516,26 +4502,30 @@ public class QueryInfo {
         String o = entityVar;
         StringBuilder q = null;
 
-        if (methodTypeAnno instanceof Find || methodTypeAnno instanceof Update) {
+        if (methodTypeAnno instanceof Find) {
+            type = FIND;
+            q = generateParamBasedQuery(null, methodTypeAnno, countPages);
+        } else if (methodTypeAnno instanceof Update) {
+            type = QM_UPDATE;
             q = generateParamBasedQuery(null, methodTypeAnno, countPages);
         } else if (methodTypeAnno instanceof Delete) {
             if (isFindAndDelete()) {
-                type = Type.FIND_AND_DELETE;
+                type = FIND_AND_DELETE;
                 q = generateSelectClause().append(" FROM ").append(entityInfo.name).append(' ').append(o);
                 jpqlDelete = generateDeleteById();
             } else { // DELETE
-                type = Type.QM_DELETE;
+                type = QM_DELETE;
                 q = new StringBuilder(150).append("DELETE FROM ").append(entityInfo.name).append(' ').append(o);
             }
             if (method.getParameterCount() > 0)
                 generateParamBasedQuery(q, methodTypeAnno, countPages);
         } else if ("Count".equals(methodTypeAnno.annotationType().getSimpleName())) {
-            type = Type.COUNT;
+            type = COUNT;
             q = new StringBuilder(150).append("SELECT COUNT(").append(o).append(") FROM ").append(entityInfo.name).append(' ').append(o);
             if (method.getParameterCount() > 0)
                 generateParamBasedQuery(q, methodTypeAnno, countPages);
         } else if ("Exists".equals(methodTypeAnno.annotationType().getSimpleName())) {
-            type = Type.EXISTS;
+            type = EXISTS;
             validateReturnForExists();
             q = new StringBuilder(200) //
                             .append("SELECT ID(").append(o).append(") FROM ") //
@@ -5474,7 +5464,8 @@ public class QueryInfo {
      * @param annoClass     Insert, Update, Save, or Delete annotation class.
      * @param operationType corresponding operation type.
      */
-    private void setType(Class<? extends Annotation> annoClass, Type operationType) {
+    private void setType(Class<? extends Annotation> annoClass,
+                         QueryType operationType) {
         type = operationType;
         if (entityParamType == null) {
             int paramCount = method.getParameterCount();
@@ -5682,7 +5673,7 @@ public class QueryInfo {
                       method.getGenericReturnType().getTypeName(),
                       method.getName(),
                       repositoryInterface.getName(),
-                      type == Type.QM_DELETE ? "Delete" : "Update");
+                      type == QM_DELETE ? "Delete" : "Update");
         return result;
     }
 
@@ -5883,9 +5874,9 @@ public class QueryInfo {
         int methodParamCount = method.getParameterCount();
         if (jpql != null &&
             methodParamCount < jpqlParamCount &&
-            type != Type.LC_DELETE &&
-            type != Type.LC_UPDATE &&
-            type != Type.LC_UPDATE_RET_ENTITY)
+            type != LC_DELETE &&
+            type != LC_UPDATE &&
+            type != LC_UPDATE_RET_ENTITY)
             throw exc(UnsupportedOperationException.class,
                       "CWWKD1021.insufficient.params",
                       method.getName(),
@@ -5896,10 +5887,10 @@ public class QueryInfo {
 
         if (jpql != null &&
             jpqlParamCount < methodParamCount &&
-            type != Type.FIND &&
-            type != Type.FIND_AND_DELETE) {
+            type != FIND &&
+            type != FIND_AND_DELETE) {
 
-            if (type == Type.QM_DELETE) {
+            if (type == QM_DELETE) {
                 Class<?>[] paramTypes = method.getParameterTypes();
                 for (int i = jpqlParamCount; i < methodParamCount; i++)
                     if (Util.SORT_PARAM_TYPES.contains(paramTypes[i]) ||
@@ -5920,7 +5911,7 @@ public class QueryInfo {
                       jpql);
         }
 
-        if (type == Type.FIND &&
+        if (type == FIND &&
             CursoredPage.class.equals(multiType)) {
 
             if (!singleType.equals(entityInfo.getType()))

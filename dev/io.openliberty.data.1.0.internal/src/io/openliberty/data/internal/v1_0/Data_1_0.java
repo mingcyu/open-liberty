@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import com.ibm.websphere.ras.annotation.Trivial;
 
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import io.openliberty.data.internal.version.QueryType;
 import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
@@ -180,6 +181,20 @@ public class Data_1_0 implements DataVersionCompatibility {
         // absent any other constraints or annotations.
         constraints[p] = By.class;
         return qpNext + 1;
+    }
+
+    @Override
+    @Trivial
+    public boolean isSpecialParamValid(Class<?> paramType,
+                                       QueryType queryType) {
+        return switch (queryType) {
+            case FIND -> true;
+            case FIND_AND_DELETE -> !PageRequest.class.equals(paramType);
+            case COUNT, EXISTS -> Order.class.equals(paramType) ||
+                                  Sort.class.equals(paramType) ||
+                                  Sort[].class.equals(paramType);
+            default -> false;
+        };
     }
 
     @Override

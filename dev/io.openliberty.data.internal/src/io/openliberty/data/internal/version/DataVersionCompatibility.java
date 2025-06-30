@@ -173,6 +173,17 @@ public interface DataVersionCompatibility {
                            int qpNext);
 
     /**
+     * Determines if the special parameter type is valid for the type of
+     * repository method.
+     *
+     * @param paramType type of special parameter.
+     * @param queryType type of repository method.
+     * @return true if valid. False if not valid.
+     */
+    boolean isSpecialParamValid(Class<?> paramType,
+                                QueryType queryType);
+
+    /**
      * Returns the repository method annotations that represent life cycle
      * operations (such as Delete and Insert) for either a stateful or
      * stateless repository, depending on the parameter.
