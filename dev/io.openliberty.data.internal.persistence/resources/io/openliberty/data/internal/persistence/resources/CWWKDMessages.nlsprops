@@ -124,7 +124,8 @@ CWWKD1009.lifecycle.param.err=CWWKD1009E: The {0} method of the {1} repository \
 CWWKD1009.lifecycle.param.err.explanation=Lifecycle methods must have a single \
  entity parameter.
 CWWKD1009.lifecycle.param.err.useraction=Update the repository method to have a \
- single parameter that is an entity or an array or List of the entity.
+ single parameter that is an entity, an array of the entity, or a List of the \
+ entity.
 
 CWWKD1010.unknown.entity.attr=CWWKD1010E: An entity attribute named {0} is \
  not found on the {1} entity class for the {2} method of the {3} repository \
@@ -187,8 +188,8 @@ CWWKD1014.upd.missing.param.anno.explanation=Parameters of repository update \
  must have a single entity parameter.
 CWWKD1014.upd.missing.param.anno.useraction=Update the repository method such that \
  all parameters correspond to entity attributes. Alternatively, update the \
- repository method to have a single parameter that is an entity or an array or \
- List of the entity.
+ repository method to have a single parameter that is an entity, an array of the \
+ entity, or a List of the entity.
 
 CWWKD1015.null.entity.param=CWWKD1015E: The {0} method of the {1} repository \
  interface cannot accept a null entity.
@@ -1175,7 +1176,7 @@ CWWKD1116.resource.unavailable.useraction=Verify the configuration of resources 
 
 CWWKD1117.anno.constraint.conflict=CWWKD1117E: Parameter {0} of the {1} method \
  of the {2} repository interface cannot be annotated with the annotations: {3}. \
- One or more of the annotations is incompatible with the {4} type of the \
+ One or more of the annotations are incompatible with the {4} type of the \
  repository method parameter.
 CWWKD1117.anno.constraint.conflict.explanation=Constraint and its subtypes \
  cannot be combined with parameter annotations other than the By annotation.
