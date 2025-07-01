@@ -327,6 +327,7 @@ public class ProtocolImpl {
 
         WebClient client = WebClient.getWebClient(part, coord);
         client.rollback();
+        part.waitResponse(WSATConfigServiceImpl.getInstance().getAsyncResponseTimeout(), WSATParticipantState.ABORTED);
     }
 
     private void participantResponse(WSATTransaction tran, String globalId, EndpointReferenceType fromEpr, WSATParticipantState response) throws WSATException {
