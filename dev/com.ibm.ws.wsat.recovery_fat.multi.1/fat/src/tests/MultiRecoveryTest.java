@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2024 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -101,11 +101,15 @@ public class MultiRecoveryTest {
 		FATUtils.stopServers(server1, server2);
 	}
 
-	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServers) throws Exception {
-		recoveryTest(server, server2, id, crashingServers, crashingServers);
+	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServer) throws Exception {
+		recoveryTest(server, server2, id, crashingServer, crashingServer, null, null);
+	}
+
+	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServer, String restartingServer) throws Exception {
+		recoveryTest(server, server2, id, crashingServer, restartingServer, null, null);
 	}
 	
-	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServers, String restartingServers) throws Exception {
+	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServer, String restartingServer, String s1Condition, String s2Condition) throws Exception {
 		final String method = "recoveryTest";
 		String result = null;
 
@@ -117,38 +121,47 @@ public class MultiRecoveryTest {
 		}
 
 		// wait for crashing servers to have gone away
-		if ("both".equals(crashingServers) || crashingServers.equals("server1")) {
+		if ("both".equals(crashingServer) || crashingServer.equals("server1")) {
 			assertNotNull(server.getServerName() + " did not crash", server.waitForStringInTrace(XAResourceImpl.DUMP_STATE));
 			server.resetStarted();
 			server.postStopServerArchive();
 		}
-		if ("both".equals(crashingServers) || crashingServers.equals("server2")) {
+		if ("both".equals(crashingServer) || crashingServer.equals("server2")) {
 			assertNotNull(server2.getServerName() + " did not crash", server2.waitForStringInTrace(XAResourceImpl.DUMP_STATE));
 			server2.resetStarted();
 			server2.postStopServerArchive();
 		}
 
 		// Start the ones that need restarting
-		if (!"none".equals(restartingServers)) {
-			if ("both".equals(restartingServers) || restartingServers.equals("server1")) {
+		if (!"none".equals(restartingServer)) {
+			if ("both".equals(restartingServer) || restartingServer.equals("server1")) {
 				FATUtils.startServers(runner, server);
 			}
-			if ("both".equals(restartingServers) || restartingServers.equals("server2")) {
+			if ("both".equals(restartingServer) || restartingServer.equals("server2")) {
 				FATUtils.startServers(runner, server2);
 			}
 		}
 
 		// Wait for the relevant server to have done its stuff
-		if (crashingServers.equals(restartingServers)) {
+		if (crashingServer.equals(restartingServer)) {
 			// This is traditional recovery and it might have already happened so clear the log marks
-			if ("both".equals(crashingServers) || crashingServers.equals("server1")) {
+			if ("both".equals(crashingServer) || crashingServer.equals("server1")) {
 				server.clearLogMarks();
-				assertNotNull(server.getServerName()+failMsg+server.getServerName(), server.waitForStringInTrace(str+server.getServerName(), FATUtils.LOG_SEARCH_TIMEOUT));
+				if (s1Condition == null) {
+					assertNotNull(server.getServerName()+failMsg+server.getServerName(), server.waitForStringInTrace(str+server.getServerName(), FATUtils.LOG_SEARCH_TIMEOUT));
+				} else {
+					assertNotNull(server.getServerName()+failMsg+server.getServerName(), server.waitForStringInTrace(s1Condition, FATUtils.LOG_SEARCH_TIMEOUT));
+				}
 			}
-			if ("both".equals(crashingServers) || crashingServers.equals("server2")) {
+			if ("both".equals(crashingServer) || crashingServer.equals("server2")) {
 				server2.clearLogMarks();
+				if (s2Condition == null) {
 				assertNotNull(server2.getServerName()+failMsg+server2.getServerName(), server2.waitForStringInTrace(str+server2.getServerName(), FATUtils.LOG_SEARCH_TIMEOUT));
-			}
+				} else {
+					assertNotNull(server2.getServerName()+failMsg+server2.getServerName(), server2.waitForStringInTrace(s2Condition, FATUtils.LOG_SEARCH_TIMEOUT));
+				}
+				}
+				
 
 			try {
 				result = callCheckServlet(id);
@@ -158,7 +171,7 @@ public class MultiRecoveryTest {
 			}
 		} else {
 			// This is peer recovery
-			checkPeerRecovery(server, server2, crashingServers, restartingServers, id);
+			checkPeerRecovery(server, server2, crashingServer, restartingServer, id);
 		}
 
 		Log.info(getClass(), method, "callCheckServlet(" + id + ") returned: " + result);

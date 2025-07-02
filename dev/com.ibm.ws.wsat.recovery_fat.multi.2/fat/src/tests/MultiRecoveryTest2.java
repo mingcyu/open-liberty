@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2024 IBM Corporation and others.
+ * Copyright (c) 2020, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -58,7 +58,7 @@ public class MultiRecoveryTest2 extends MultiRecoveryTest {
 	@Test
 	@AllowedFFDC(value = {"javax.xml.ws.WebServiceException" })
 	public void WSTXMPR004AFVT() throws Exception {
-		recoveryTest(server1, server2, "401","server1");
+		recoveryTest(server1, server2, "401","server1", "server1", "Set response from ACTIVE to ABORTED", null);
 	}
 
 	@Test
