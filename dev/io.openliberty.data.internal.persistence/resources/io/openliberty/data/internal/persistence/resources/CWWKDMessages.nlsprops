@@ -178,7 +178,8 @@ CWWKD1013.cde.missing.param.anno.useraction=Update the repository method such \
 CWWKD1014.upd.missing.param.anno=CWWKD1014E: The {0} method of the {1} repository \
  is not a valid lifecycle Update method because the method has {2} parameters. \
  Repository methods that are annotated with a lifecycle annotation must have \
- exactly 1 parameter, which must be the entity or an array or List of the entity. \
+ exactly 1 parameter, which must be the entity, an array of the entity, or a \
+ List of the entity. \
  The {0} method is also not a valid parameter-based update operation because \
  method parameter {3} does not have an annotation ({4}) that indicates the entity \
  attribute name. Alternatively, enable the -parameters compile option and give the \
