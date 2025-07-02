@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -94,7 +94,7 @@ public class PrivateKeyJwtAuthMethodTest extends CommonTestClass {
         authMethod = new PrivateKeyJwtAuthMethod(configurationId, clientId, tokenEndpointUrl, clientAssertionSigningAlgorithm, null, sslRef, keyAliasName) {
             @Override
             String getX5tForPublicKey() throws Exception {
-                return "x5t_" + testName.getMethodName();
+                return "x5t#S256_" + testName.getMethodName();            
             }
         };
         authMethod.setKeyStoreService(keyStoreService);
@@ -224,8 +224,7 @@ public class PrivateKeyJwtAuthMethodTest extends CommonTestClass {
         JsonWebSignature jws = (JsonWebSignature) JsonWebSignature.fromCompactSerialization(jwt);
         assertEquals("JWT's alg header did not match expected value.", clientAssertionSigningAlgorithm, jws.getAlgorithmHeaderValue());
         assertEquals("JWT's typ header did not match expected value.", "JWT", jws.getHeader("typ"));
-        assertEquals("JWT's x5t header did not match expected value.", "x5t_" + testName.getMethodName(), jws.getHeader("x5t"));
-
+        assertEquals("JWT's x5t#S256 header did not match expected value.", "x5t#S256_" + testName.getMethodName(), jws.getHeader("x5t#S256"));
         String rawPayload = jws.getUnverifiedPayload();
         JSONObject jsonPayload = JSONObject.parse(rawPayload);
         // Verify required claims
