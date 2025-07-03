@@ -13,8 +13,10 @@
 package com.ibm.wsspi.threading;
 
 /**
- * This SPI allows disabling the creation of virtual threads within the control of Liberty.
+ * Provides a mechanism to allow disabling the creation of virtual threads within the control of Liberty.
  * When creation of virtual threads is disabled, Liberty will create platform threads instead.
+ * Note that use of this interface should generally be avoided. The primary use case is for embeddeders who have a specific need to control the creation of Virtual Threads.
+ * This is not a common need, and so careful consideration should be given before registering an implementation.
  */
 public interface ThreadTypeOverride {
 
