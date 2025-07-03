@@ -13,6 +13,7 @@
 package web.vt;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -34,12 +35,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.annotation.Resource;
-
 import com.ibm.ws.threading.PolicyExecutor;
 import com.ibm.ws.threading.PolicyExecutor.MaxPolicy;
 import com.ibm.ws.threading.PolicyExecutorProvider;
 
+import jakarta.annotation.Resource;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -335,6 +335,8 @@ public class PolicyVirtualThreadServlet extends HttpServlet {
      *
      */
     public void testDisableVirtualThreads() throws Exception {
+        boolean thrown = false;
+
         Map<String, Object> config = new TreeMap<>();
         config.put("max", 3);
         config.put("maxPolicy", MaxPolicy.strict.name());
@@ -345,7 +347,13 @@ public class PolicyVirtualThreadServlet extends HttpServlet {
         config.put("runIfQueueFull", false);
 
         PolicyExecutor executor = provider.create("testDisableVirtualThreads");
-        executor.updateConfig(config);
+        //First test is to ensure setting to virtual will throw exception
+        try {
+            executor.updateConfig(config);
+        } catch (IllegalArgumentException e) {
+            thrown = true;
+        }
+        assertTrue(thrown);
 
         Future<Thread> future1 = executor.submit(dummyTask);
 

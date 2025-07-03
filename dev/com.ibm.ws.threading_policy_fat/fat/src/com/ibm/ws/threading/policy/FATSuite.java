@@ -22,7 +22,7 @@ import componenttest.custom.junit.runner.AlwaysPassesTest;
 @SuiteClasses({
                 AlwaysPassesTest.class,
                 PolicyExecutorTest.class,
-                //PolicyExecutorVirtualThreadTest.class,
+                PolicyExecutorVirtualThreadTest.class,
                 VirtualThreadOverrideTest.class
 })
 public class FATSuite {
