@@ -52,7 +52,7 @@ public class DataJPATestCheckpoint extends FATServletClient {
     @BeforeClass
     public static void setUp() throws Exception {
         // Set up server DataSource properties
-        DatabaseContainerUtil.setupDataSourcePropertiesForCheckpoint(server, testContainer);
+        DatabaseContainerUtil.build(server, testContainer).withDriverReplacement().withDatabaseProperties().modify();
 
         WebArchive war = ShrinkHelper.buildDefaultApp("DataJPATestApp", "test.jakarta.data.jpa.web");
         ShrinkHelper.exportAppToServer(server, war);

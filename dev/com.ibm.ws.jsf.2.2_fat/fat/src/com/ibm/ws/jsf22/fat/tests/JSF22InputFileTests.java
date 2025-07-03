@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2023 IBM Corporation and others.
+ * Copyright (c) 2015, 2024 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -193,6 +193,10 @@ public class JSF22InputFileTests {
 
         //Ensure the correct content type is used. 
         assertNotNull("The 'multipart/form-data; boundary=' content type was not found!", jsfTestServer2.waitForStringInTraceUsingMark(".*multipart/form-data; boundary=.*"));
+
+        Log.info(c, name.getMethodName(), page.getPageSource());
+
+        page.waitForCondition(driver -> page.isInPage("File Size: 12"));
 
         page.findElement(By.id("form1:uploadButton")).click();
 

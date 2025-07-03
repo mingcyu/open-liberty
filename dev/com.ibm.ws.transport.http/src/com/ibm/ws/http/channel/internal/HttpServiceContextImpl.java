@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2024 IBM Corporation and others.
+ * Copyright (c) 2004, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution,  and is available at
@@ -302,6 +302,9 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      *
      */
     final public void resetMsgParsedState() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "resetMsgParsedState (0) called for" + this);
+        }
         this.msgParsedState = STATE_NONE;
     }
 
@@ -320,7 +323,7 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      */
     public final void setBodyComplete() {
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "setBodyComplete() called");
+            Tr.debug(tc, "setBodyComplete (3) called");
         }
         this.msgParsedState = STATE_FULL_MESSAGE;
     }
@@ -349,6 +352,9 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      *
      */
     final protected void setMessageSent() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "setHeadersParsed (3) called for " + this);
+        }
         this.msgSentState = STATE_FULL_MESSAGE;
     }
 
@@ -407,6 +413,9 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      *
      */
     final protected void setHeadersSent() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "setHeadersParsed (1) called for " + this);
+        }
         this.msgSentState = STATE_FULL_HEADERS;
     }
 
@@ -425,6 +434,9 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      * @return boolean
      */
     final public boolean headersParsed() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "headersParsed called: msgParsedState -> " + this.msgParsedState);
+        }
         return STATE_FULL_HEADERS <= this.msgParsedState;
     }
 
@@ -433,6 +445,9 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
      *
      */
     final public void setHeadersParsed() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "setHeadersParsed  (1) called for " + this);
+        }
         this.msgParsedState = STATE_FULL_HEADERS;
     }
 
@@ -1971,7 +1986,7 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
                 // if all expected body bytes will be written out, set the end of stream flag
                 addBytesWritten(length);
                 boolean addEndOfStream = false;
-                if (msg.getContentLength() == getNumBytesWritten()) {
+                if (!link.setAndGetIsGrpc() && msg.getContentLength() == getNumBytesWritten()) {
                     addEndOfStream = true;
                 }
 
@@ -2676,9 +2691,26 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
         // check whether we need to pass data through the compression handler
         if (null != this.compressHandler) {
 
+            // Check if this is an SSE response
+            boolean isSSE = false;
+            if (msg.containsHeader(HttpHeaderKeys.HDR_CONTENT_TYPE)) {
+                String contentType = msg.getHeader(HttpHeaderKeys.HDR_CONTENT_TYPE).asString();
+                isSSE = contentType != null && contentType.toLowerCase().contains("text/event-stream");
+            }
+
             List<WsByteBuffer> list = this.compressHandler.compress(buffers);
             if (this.isFinalWrite) {
                 list.addAll(this.compressHandler.finish());
+            } else if (isSSE) {
+                // For SSE, explicitly flush after compression to ensure data is sent
+                // immediately
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Compressing an SSE event");
+                }
+                List<WsByteBuffer> flushedList = this.compressHandler.flush(this.isFinalWrite);
+                if (flushedList != null && !flushedList.isEmpty()) {
+                    list.addAll(flushedList);
+                }
             }
 
             // put any created buffers onto the release list

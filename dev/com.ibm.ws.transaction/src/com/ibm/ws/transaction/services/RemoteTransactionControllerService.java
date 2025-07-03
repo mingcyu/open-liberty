@@ -1,5 +1,5 @@
-/*******************************************************************************
- * Copyright (c) 2015, 2023 IBM Corporation and others.
+/* *****************************************************************************
+ * Copyright (c) 2015, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -9,10 +9,11 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ * *****************************************************************************/
 package com.ibm.ws.transaction.services;
 
 import java.io.Serializable;
+import java.util.Set;
 
 import javax.transaction.HeuristicCommitException;
 import javax.transaction.HeuristicMixedException;
@@ -47,6 +48,8 @@ import com.ibm.ws.Transaction.UOWCoordinator;
 import com.ibm.ws.Transaction.UOWCurrent;
 import com.ibm.ws.Transaction.JTA.HeuristicHazardException;
 import com.ibm.ws.Transaction.JTS.Configuration;
+import com.ibm.ws.ffdc.annotation.FFDCIgnore;
+import com.ibm.ws.recoverylog.spi.RecLogServiceImpl;
 import com.ibm.ws.recoverylog.spi.SharedServerLeaseLog;
 
 /**
@@ -64,6 +67,8 @@ public class RemoteTransactionControllerService implements RemoteTransactionCont
 
     private TransactionManager _tm;
 
+    private RecLogServiceImpl _rls;
+
     @Reference
     protected void setUOWCurrent(UOWCurrent uowc) {
         _uowc = uowc;
@@ -72,6 +77,11 @@ public class RemoteTransactionControllerService implements RemoteTransactionCont
     @Reference
     protected void setTransactionManager(TransactionManager tm) {
         _tm = tm;
+    }
+
+    @Reference
+    protected void setRecLogServiceImpl(RecLogServiceImpl rls) {
+        _rls = rls;
     }
 
     /*
@@ -402,6 +412,7 @@ public class RemoteTransactionControllerService implements RemoteTransactionCont
     }
 
     @Override
+    @FFDCIgnore({ SystemException.class })
     public Object getResource(String globalId) {
         TransactionWrapper tw;
         try {
@@ -463,5 +474,10 @@ public class RemoteTransactionControllerService implements RemoteTransactionCont
         }
 
         return null;
+    }
+
+    @Override
+    public Set<String> getRecoveryIds() {
+        return _rls.getRecoveryIds();
     }
 }

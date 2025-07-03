@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -37,6 +37,7 @@ import io.openliberty.classloading.classpath.test.lib14.Lib14;
 import io.openliberty.classloading.classpath.test.lib15.Lib15;
 import io.openliberty.classloading.classpath.test.lib16.Lib16;
 import io.openliberty.classloading.classpath.test.lib17.Lib17;
+import io.openliberty.classloading.classpath.test.lib18.Lib18;
 import io.openliberty.classloading.classpath.test.lib2.Lib2;
 import io.openliberty.classloading.classpath.test.lib3.Lib3;
 import io.openliberty.classloading.classpath.test.lib4.Lib4;
@@ -50,28 +51,34 @@ import io.openliberty.classloading.classpath.test.war1.ClassPathDefaultLoaderSer
 import io.openliberty.classloading.classpath.test.war2.ClassPathDefaultLoaderServletTest2;
 import io.openliberty.classloading.classpath.test.war3.ClassPathDefaultLoaderServletTest3;
 import io.openliberty.classloading.classpath.util.TestUtils;
+import io.openliberty.classloading.lib.path.test.app.LibPathTestServlet;
 import junit.framework.AssertionFailedError;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+    ClassPathWarLoaderTests.class,
     ClassPathDefaultLoaderDropinsTests.class,
     ClassPathDefaultLoaderTests.class,
     ClassPathEarLoaderTests.class,
     ClassPathDefaultLoaderLibraryTests.class,
-    ClassPathInvalidLoaderTests.class
+    ClassPathInvalidLoaderTests.class,
+    LibraryPathTest.class
 })
 public class FATSuite {
+    static final String CLASSPATH_TEST_WAR_LOADER_SERVER = "classpathTestWarLoader";
     static final String CLASSPATH_TEST_DEFAULT_LOADER_SERVER = "classpathTestDefaultLoader";
     static final String CLASSPATH_TEST_DEFAULT_LOADER_DROPINS_SERVER = "classpathTestDefaultLoaderDropins";
     static final String CLASSPATH_TEST_INVALID_LOADER_SERVER = "classpathTestInvalidLoader";
     static final String CLASSPATH_TEST_EAR_LOADER_SERVER = "classpathTestEarLoader";
     static final String PRIVATE_LIBRARY_TEST_SERVER = "privateLibraryTest";
+    static final String LIB_FILESET_TEST_SERVER = "libPathTest";
 
     // ##### ARCHIVE NAMES #####
     // WAR archive names
     public static final String TEST_CLASS_PATH1_APP = "testClassPath1";
     public static final String TEST_CLASS_PATH2_APP = "testClassPath2";
     public static final String TEST_CLASS_PATH3_APP = "testClassPath3";
+    public static final String TEST_LIB_FILESET_APP = "testLibFileSet";
 
     // EJB archive names
     public static final String TEST_EJB1 = "testEjb1";
@@ -96,6 +103,7 @@ public class FATSuite {
     public static final String TEST_LIB15 = "testLib15";
     public static final String TEST_LIB16 = "testLib16";
     public static final String TEST_LIB17 = "testLib17";
+    public static final String TEST_LIB18 = "testLib18";
 
     // RAR inner jar archive names
     public static final String TEST_RESOURCE_ADAPTOR = "testResourceAdaptor";
@@ -132,6 +140,7 @@ public class FATSuite {
     public static final String LIB15_CLASS_NAME = "io.openliberty.classloading.classpath.test.lib15.Lib15";
     public static final String LIB16_CLASS_NAME = "io.openliberty.classloading.classpath.test.lib16.Lib16";
     public static final String LIB17_CLASS_NAME = "io.openliberty.classloading.classpath.test.lib17.Lib17";
+    public static final String LIB18_CLASS_NAME = "io.openliberty.classloading.classpath.test.lib18.Lib18";
 
     // RAR library class names
     public static final String RAR_LIB1_CLASS_NAME = "io.openliberty.classloading.classpath.test.rar1.RarLib1";
@@ -145,6 +154,7 @@ public class FATSuite {
     static final WebArchive TEST_CLASS_PATH1_WAR;
     static final WebArchive TEST_CLASS_PATH2_WAR;
     static final WebArchive TEST_CLASS_PATH3_WAR;
+    static final WebArchive TEST_LIB_FILESET_WAR;
 
     // EJB archives
     static final JavaArchive TEST_EJB1_JAR;
@@ -169,6 +179,7 @@ public class FATSuite {
     static final JavaArchive TEST_LIB15_JAR;
     static final JavaArchive TEST_LIB16_JAR;
     static final JavaArchive TEST_LIB17_JAR;
+    static final JavaArchive TEST_LIB18_JAR;
 
     // RAR inner JAR archives
     static final JavaArchive TEST_RESOURCE_ADAPTOR_JAR;
@@ -201,6 +212,7 @@ public class FATSuite {
             TEST_LIB15_JAR = ShrinkHelper.buildJavaArchive(TEST_LIB15 + ".jar", Lib15.class.getPackage().getName());
             TEST_LIB16_JAR = ShrinkHelper.buildJavaArchive(TEST_LIB16 + ".jar", Lib16.class.getPackage().getName());
             TEST_LIB17_JAR = ShrinkHelper.buildJavaArchive(TEST_LIB17 + ".jar", Lib17.class.getPackage().getName());
+            TEST_LIB18_JAR = ShrinkHelper.buildJavaArchive(TEST_LIB18 + ".jar", Lib18.class.getPackage().getName());
 
             TEST_EJB1_JAR = ShrinkHelper.buildJavaArchive(TEST_EJB1 + ".jar", InitBean1.class.getPackage().getName());
             TEST_EJB2_JAR = ShrinkHelper.buildJavaArchive(TEST_EJB2 + ".jar", InitBean2.class.getPackage().getName());
@@ -218,6 +230,10 @@ public class FATSuite {
                                                                        TestUtils.class.getPackage().getName())
                             .addAsLibrary(TEST_LIB5_JAR)
                             .add(TEST_LIB11_JAR, "WEB-INF/", ZipExporter.class);
+
+            TEST_LIB_FILESET_WAR = ShrinkHelper.buildDefaultApp(TEST_LIB_FILESET_APP + ".war",
+                                                                        LibPathTestServlet.class.getPackage().getName(),
+                                                                        TestUtils.class.getPackage().getName());
 
             TEST_RESOURCE_ADAPTOR_JAR = ShrinkHelper.buildJavaArchive(TEST_RESOURCE_ADAPTOR + ".jar",
                                                                       TestResourceAdapter.class.getPackage().getName()).
@@ -238,7 +254,7 @@ public class FATSuite {
                             .addAsModule(TEST_CLASS_PATH2_WAR)          // Class-Path: testLib2.jar testLib1.jar
                                                                         //    - includes WEB-INF/lib/testEJB3.jar
 
-                            .addAsModule(TEST_CLASS_PATH3_WAR)          // Class-Path: testLib2.jar testEjb2.jar testLib13.jar
+                            .addAsModule(TEST_CLASS_PATH3_WAR)          // Class-Path: testLib2.jar testEjb2.jar testLib13.jar lib/testLib18.jar
                                                                         //    - includes WEB-INF/lib/testLib5.jar - Class-Path: ../testLib11.jar doesNotExistFrom_testLib5.jar
                                                                         //    - includes WEB-INF/testLib11.jar
 
@@ -253,6 +269,7 @@ public class FATSuite {
 
                             .addAsLibrary(TEST_LIB4_JAR)                // REFERENCED-BY-NOTHING - implicitly included by lib/
                                                                         // Class-Path: ../testLib6.jar doesNotExistFrom_testLib4.jar
+                            .addAsLibrary(TEST_LIB18_JAR)               // REFERENCED-BY testClassPath3.war
 
                             .addAsModule(TEST_LIB6_JAR)                 // REFERENCED-BY  testLib4.jar
                                                                         // Class-Path: doesNotExistFrom_testLib6.jar

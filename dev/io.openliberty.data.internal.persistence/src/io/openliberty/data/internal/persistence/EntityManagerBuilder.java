@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,7 @@ import static jakarta.data.repository.By.ID;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.PrintWriter;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -63,6 +64,12 @@ import jakarta.persistence.metamodel.Type;
  */
 public abstract class EntityManagerBuilder {
     private static final TraceComponent tc = Tr.register(EntityManagerBuilder.class);
+
+    /**
+     * Entity attribute types that have an AttributeConverter.
+     * Only available when invoked by DBStoreEMBuilder. Otherwise null.
+     */
+    Set<Class<?>> convertibleTypes;
 
     /**
      * The dataStore value of the Repository annotation,
@@ -116,14 +123,18 @@ public abstract class EntityManagerBuilder {
      * Invoked by subclass constructors to obtain the EntityInfo for each entity type.
      * After this method completes successfully, the entityInfoMap is populated.
      *
-     * @param entityTypes entity classes as known by the user, not generated.
+     * @param entityTypes      entity classes as known by the user, not generated.
+     * @param convertibleTypes types that have an AttributeConverter. Only available
+     *                             when invoked by DBStoreEMBuilder. Otherwise null.
      * @throws Exception if an error occurs.
      */
     // FFDC is not needed because exceptions are logged to Tr.error
     // and also re-thrown upon CompletableFuture<EntityInfo>.get()
     @FFDCIgnore(Throwable.class)
-    protected void collectEntityInfo(Set<Class<?>> entityTypes) throws Exception {
+    protected void collectEntityInfo(Set<Class<?>> entityTypes,
+                                     Set<Class<?>> convertibleTypes) throws Exception {
         final boolean trace = TraceComponent.isAnyTracingEnabled();
+        this.convertibleTypes = convertibleTypes;
         EntityManager em = createEntityManager();
         try {
             Set<Class<?>> missingEntityTypes = new HashSet<>(entityTypes);
@@ -257,7 +268,7 @@ public abstract class EntityManagerBuilder {
 
                             if (conflictingAttribute != null)
                                 throw exc(MappingException.class,
-                                          "CWWKD1075.entity.prop.conflict",
+                                          "CWWKD1075.entity.attr.conflict",
                                           userEntityClass.getName(),
                                           fullAttributeName,
                                           conflictingAttribute);
@@ -488,5 +499,21 @@ public abstract class EntityManagerBuilder {
     @Trivial
     protected ClassLoader getRepositoryClassLoader() {
         return repositoryClassLoader;
+    }
+
+    /**
+     * Write information about this instance to the introspection file for
+     * Jakarta Data.
+     *
+     * @param writer writes to the introspection file.
+     * @param indent indentation for lines.
+     */
+    public void introspect(PrintWriter writer, String indent) {
+        writer.println(indent + toString());
+        writer.println(indent + "  dataStore: " + dataStore);
+        writer.println(indent + "  repository class loader: " + repositoryClassLoader);
+        writer.println(indent + "  repositories:");
+        for (Class<?> r : repositoryInterfaces)
+            writer.println(indent + "    " + r.getName());
     }
 }

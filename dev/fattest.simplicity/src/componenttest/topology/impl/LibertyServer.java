@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -36,6 +36,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
@@ -62,6 +66,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
@@ -134,6 +139,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /** How frequently we poll the logs when waiting for something to happen */
     protected static final int WAIT_INCREMENT = 300;
+    private static final String SPECIAL_CHARS = "\\`$\"'!&|;()<>*?[]{} ";
 
     boolean runAsAWindowService = false;
 
@@ -240,6 +246,7 @@ public class LibertyServer implements LogMonitorClient {
 
     //FIPS 140-3
     protected static final boolean GLOBAL_FIPS_140_3 = Boolean.parseBoolean(PrivHelper.getProperty("global.fips_140-3", "false"));
+    protected static final boolean GLOBAL_FIPS_140_2 = Boolean.parseBoolean(PrivHelper.getProperty("global.fips_140-2", "false"));
 
     protected static final String GLOBAL_TRACE = PrivHelper.getProperty("global.trace.spec", "").trim();
     protected static final String GLOBAL_JVM_ARGS = PrivHelper.getProperty("global.jvm.args", "").trim();
@@ -327,6 +334,8 @@ public class LibertyServer implements LogMonitorClient {
     private String openLibertyVersion;
 
     private String archiveMarker = null;
+
+    private boolean serverLevelFipsEnabled = GLOBAL_FIPS_140_3;
 
     /**
      * This returns whether or not debugging is "programatically" allowed
@@ -665,7 +674,7 @@ public class LibertyServer implements LogMonitorClient {
          */
         private boolean criuRestoreDisableRecovery = true;
 
-        private Properties checkpointEnv = null;
+        private Properties checkpointEnv = new Properties();
 
         /**
          * Set of regular expressions to match against lines to ignore in the post checkpoint log files. Error / Warning messages found
@@ -1711,25 +1720,22 @@ public class LibertyServer implements LogMonitorClient {
 
             startedWithJavaSecurity = bootstrapHasJava2SecProps;
             if (bootstrapHasJava2SecProps) {
-                if (info.majorVersion() >= 18) {
-                    // If we are running on Java 18+, then we need to explicitly enable the security manager
+                if (info.majorVersion() >= 18 && info.majorVersion() <= 23) {
+                    // If we are running on Java 18 through 23, then we need to explicitly enable the security manager
                     Log.info(c, "startServerWithArgs", "Java 18 + Java2Sec requested, setting -Djava.security.manager=allow");
                     JVM_ARGS += " -Djava.security.manager=allow";
+                } else if (info.majorVersion() >= 24) {
+                    // Security manager not available in Java 24+
+                    LOG.severe("The server is configured to run with Java 2 security enabled, but the security manager is permanently disabled in Java versions 24 and later.  The security manager cannot be set!");
+                    throw new RuntimeException("The security manager is permanently disabled in Java versions 24 and later.  When running FATs, use @MaximumJavaLevel(javaLevel = 23) or disable Java 2 security to prevent this server from failing to start when running in Java 24 or later.");
                 }
             }
         }
 
         //FIPS 140-3
         // if we have FIPS 140-3 enabled, and the matched java/platform, add JVM Arg
-        if (isFIPS140_3EnabledAndSupported()) {
-            Log.info(c, "startServerWithArgs", "Liberty server is running JDK version: " + info.majorVersion() + " and vendor: " + info.VENDOR);
-            Log.info(c, "startServerWithArgs", "FIPS 140-3 global build properties is set for server " + getServerName()
-                                               + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
-
-            JVM_ARGS += " -Xenablefips140-3";
-            JVM_ARGS += " -Dcom.ibm.jsse2.usefipsprovider=true";
-            JVM_ARGS += " -Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS";
-            // JVM_ARGS += " -Djavax.net.debug=all";  // Uncomment as needed for additional debugging
+        if (isFIPS140_3EnabledAndSupported(info) || isFIPS140_2EnabledAndSupported(info)) {
+            JVM_ARGS += getJvmArgString(this.getFipsJvmOptions(info, false));
         }
 
         Properties bootstrapProperties = getBootstrapProperties();
@@ -1805,6 +1811,8 @@ public class LibertyServer implements LogMonitorClient {
         Log.info(c, method, "Using additional env props: " + useEnvVars);
 
         Log.finer(c, method, "Starting Server with command: " + cmd);
+
+        configureLTPAKeys(info);
 
         // Create a marker file to indicate that we're trying to start a server
         createServerMarkerFile();
@@ -1947,6 +1955,7 @@ public class LibertyServer implements LogMonitorClient {
                     return output;
                 } else {
                     Log.info(c, method, "Response from script is: " + output.getStdout());
+                    Log.info(c, method, "Error output from script is: " + output.getStderr());
                     Log.info(c, method, "Return code from script is: " + rc);
                 }
             } else {
@@ -1977,6 +1986,23 @@ public class LibertyServer implements LogMonitorClient {
 
         Log.exiting(c, method);
         return output;
+    }
+
+    /**
+     * @param  fipsOpts, a Map containing jvm argument name/value pairs
+     * @return           A string that starts with a space and contains key/value pairs represented by 'key=value' and separated by spaces
+     */
+    private String getJvmArgString(Map<String, String> fipsOpts) {
+        StringJoiner joiner = new StringJoiner(" ", " ", "");
+        for (String key : fipsOpts.keySet()) {
+            String value = fipsOpts.get(key);
+            if (value != null && !value.isEmpty()) {
+                joiner.add(String.format("%s=%s", key, value));
+            } else {
+                joiner.add(key);
+            }
+        }
+        return joiner.toString();
     }
 
     private String[] checkpointAdjustParams(List<String> parametersList) {
@@ -3497,14 +3523,6 @@ public class LibertyServer implements LogMonitorClient {
     private static final String[] EXEMPT_SERVERS = {
                                                      "cdi20EEServer", //com.ibm.ws.cdi.1.0_fat_EE
 
-                                                     "com.ibm.ws.security.authorization.jacc.dynamic_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.inwar", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mc", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.bindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-
                                                      "EclipseLinkServer", //com.ibm.ws.jpa.tests.eclipselink_jpa_2.1_fat
 
                                                      "com.ibm.ws.jpa.el.defaultds.fat.server", //com.ibm.ws.jpa.tests.jpa_fat
@@ -3530,22 +3548,11 @@ public class LibertyServer implements LogMonitorClient {
                                                      "JsonbRxMessagingServer", //com.ibm.ws.microprofile.reactive.messaging_fat
 
                                                      "mpRestClient10.remoteServer", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient11.async", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.basic", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.collections", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.handleresponses", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.headerPropagation", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient13.ssl", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient12.jsonbContext", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient11.produceConsume", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient10.props", //com.ibm.ws.microprofile.rest.client_fat
-                                                     "mpRestClient20.sse", //com.ibm.ws.microprofile.rest.client_fat
 
                                                      "opentracingFATServer1", //com.ibm.ws.opentracing.1.x_fat
                                                      "opentracingFATServer3", //com.ibm.ws.opentracing.1.x_fat
                                                      "opentracingFATServer4", //com.ibm.ws.opentracing.1.x_fat
 
-                                                     "RequestTimingServer", //com.ibm.ws.request.timing_fat
                                                      "HungRequestTimingServer", //com.ibm.ws.request.timing.hung_fat
 
                                                      "com.ibm.ws.rest.handler.config.fat", //com.ibm.ws.rest.handler.config_fat
@@ -3564,11 +3571,7 @@ public class LibertyServer implements LogMonitorClient {
 
                                                      "com.ibm.ws.ui.fat", //com.ibm.ws.ui_rest_fat
 
-                                                     "com.ibm.ws.webcontainer.security.fat.basicauth.audit", //com.ibm.ws.webcontainer.security.jacc.1.5_fat
-
                                                      "com.ibm.ws.jaxrs.fat.exceptionMappingWithOT", //com.ibm.ws.jaxrs.2.0_fat
-
-                                                     "RequestTimingServer", //com.ibm.ws.request.timing_fat
 
                                                      "MPServer41", //io.openliberty.microprofile41.internal_fat
                                                      "MPServer", //io.openliberty.microprofile.internal_fat
@@ -4632,11 +4635,36 @@ public class LibertyServer implements LogMonitorClient {
         if (name.contains("/") || name.contains("\\")) {
             path = name;
         } else {
-            path = "publish/bundles/" + name + ".jar";
+            path = getBundlePath(name);
         }
 
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
         copyFileToLibertyInstallRoot("lib/", path);
+    }
+
+    /**
+     * Test bundles have been published in either publish/bundles or publish/files/bundles directory.
+     *
+     * This method tries to find the bundle in publish/bundles and if not find tries in the other.
+     * If not found in either location, returns the publish/bundles path since that is what was the
+     * behavior before.
+     *
+     * @param  bundleName name of the jar bundle file
+     * @return            the path to the bundle file
+     */
+    private String getBundlePath(String bundleName) {
+
+        String bundlePath = "publish/bundles/" + bundleName + ".jar";
+        File bundleFile = new File(bundlePath);
+        if (!bundleFile.exists()) {
+            String bundlePath2 = "publish/files/bundles/" + bundleName + ".jar";
+            bundleFile = new File(bundlePath2);
+            if (bundleFile.exists()) {
+                return bundlePath2;
+            }
+        }
+        return bundlePath;
+
     }
 
     /**
@@ -4684,7 +4712,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /**
      * Install a bundle as a system bundle, assuming the bundle is
-     * to be found in publish/bundles/&lt;name>.jar
+     * to be found in publish/bundles/&lt;name>.jar or publish/files/bundles/&lt;name>.jar
      * <p>
      * To use this most effectively, place your bundle code under test-bundles/bundle.symbolic.name/.
      * The structure under here reflects the structure of a bundle project and uses the same ant
@@ -4695,7 +4723,7 @@ public class LibertyServer implements LogMonitorClient {
     public void installSystemBundle(String name) throws Exception {
         Log.info(c, "installSystemBundle", "Installing system bundle '" + name + "'");
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
-        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/lib", "publish/bundles/" + name + ".jar");
+        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/lib", getBundlePath(name));
     }
 
     /**
@@ -4759,7 +4787,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /**
      * Install a bundle as a user extension bundle, assuming the bundle is
-     * to be found in publish/bundles/&lt;name>.jar
+     * to be found in publish/bundles/&lt;name>.jar or publish/files/bundles/&lt;name>.jar
      * <p>
      * To use this most effectively, place your bundle code under test-bundles/bundle.symbolic.name/.
      * The structure under here reflects the structure of a bundle project and uses the same ant
@@ -4770,7 +4798,7 @@ public class LibertyServer implements LogMonitorClient {
     public void installUserBundle(String name) throws Exception {
         Log.info(c, "installUserBundle", "Installing user bundle '" + name + "'");
         Assert.assertFalse("Server should not be started when installing a bundle", isStarted());
-        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/usr/extension/lib", "publish/bundles/" + name + ".jar");
+        LibertyFileManager.copyFileIntoLiberty(machine, installRoot + "/usr/extension/lib", getBundlePath(name));
     }
 
     /**
@@ -5725,11 +5753,21 @@ public class LibertyServer implements LogMonitorClient {
     public RemoteFile getDefaultLogFile() throws Exception {
         //Set path to server log assuming the default setting.
         // ALWAYS RETURN messages.log -- tests assume they can look for INFO+ messages.
-        RemoteFile file = LibertyFileManager.getLibertyFile(machine, messageAbsPath);
-        if (file == null) {
-            throw new IllegalStateException("Unable to find default log file, path=" + messageAbsPath);
+        try {
+            RemoteFile file = LibertyFileManager.getLibertyFile(machine, messageAbsPath);
+            if (file == null) {
+                throw new IllegalStateException("Unable to find default log file, path=" + messageAbsPath);
+            }
+            return file;
+        } catch (FileNotFoundException e) {
+            if (isStarted) {
+                String msg = e.getMessage() + " and the server was started. Has it been left running from a previous repeat?";
+                Exception e2 = new FileNotFoundException(msg);
+                e2.initCause(e);
+                throw e2;
+            }
+            throw e;
         }
-        return file;
     }
 
     public boolean defaultTraceFileExists() throws Exception {
@@ -7791,22 +7829,64 @@ public class LibertyServer implements LogMonitorClient {
         return false;
     }
 
-    //FIPS 140-3
-    public boolean isFIPS140_3EnabledAndSupported() throws Exception {
+    // FIPS 140-3
+    public boolean isFIPS140_3EnabledAndSupported(JavaInfo serverJavaInfo, boolean logOutput) throws IOException {
         String methodName = "isFIPS140_3EnabledAndSupported";
-        JavaInfo serverJavaInfo = JavaInfo.forServer(this);
         boolean isIBMJVM8 = (serverJavaInfo.majorVersion() == 8) && (serverJavaInfo.VENDOR == Vendor.IBM);
-        if (GLOBAL_FIPS_140_3) {
-            Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion() + " and vendor: " + serverJavaInfo.VENDOR);
+        boolean isIBMJVMGreaterOrEqualTo11 = (serverJavaInfo.majorVersion() >= 11) && (serverJavaInfo.VENDOR == Vendor.IBM);
+        if (logOutput && GLOBAL_FIPS_140_3) {
+            Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion()
+                                    + " and vendor: " + serverJavaInfo.VENDOR);
+            Log.info(c, methodName, "Server level fips property is : " + serverLevelFipsEnabled);
             if (isIBMJVM8) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
                                         " and IBM java 8 is available to run with FIPS 140-3 enabled.");
+            } else if (isIBMJVMGreaterOrEqualTo11) {
+                Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
+                                        " and IBM java " + serverJavaInfo.majorVersion() + " is available to run with FIPS 140-3 enabled.");
             } else {
-                Log.info(c, methodName, "The global build properties FIPS_140_3 is set for server " + getServerName() +
-                                        ",  but no IBM java 8 on liberty server to run with FIPS 140-3 enabled.");
+                throw new RuntimeException("The global build properties FIPS_140_3 is set for server " + getServerName() +
+                                           ",  but no IBM java on liberty server to run with FIPS 140-3 enabled.");
             }
         }
-        return GLOBAL_FIPS_140_3 && isIBMJVM8;
+        return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVMGreaterOrEqualTo11) && serverLevelFipsEnabled;
+    }
+
+    public boolean isFIPS140_3EnabledAndSupported() throws IOException {
+        return isFIPS140_3EnabledAndSupported(JavaInfo.forServer(this), true);
+    }
+
+    public boolean isFIPS140_3EnabledAndSupported(JavaInfo info) throws IOException {
+        return isFIPS140_3EnabledAndSupported(info, true);
+    }
+
+    public void setServerLevelFips(boolean enabled) {
+        serverLevelFipsEnabled = enabled;
+    }
+
+    public boolean isFIPS140_2EnabledAndSupported(JavaInfo serverJavaInfo, boolean logOutput) throws IOException {
+        String methodName = "isFIPS140_2EnabledAndSupported";
+        boolean isIBMJVM8 = (serverJavaInfo.majorVersion() == 8) && (serverJavaInfo.VENDOR == Vendor.IBM);
+        if (logOutput && GLOBAL_FIPS_140_2) {
+            Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion()
+                                    + " and vendor: " + serverJavaInfo.VENDOR);
+            if (isIBMJVM8) {
+                Log.info(c, methodName, "global build properties FIPS_140_2 is set for server " + getServerName() +
+                                        " and IBM java 8 is available to run with FIPS 140-2 enabled.");
+            } else {
+                throw new RuntimeException("The global build properties FIPS_140_2 is set for server " + getServerName() +
+                                           ",  but no IBM java 8 on liberty server to run with FIPS 140-2 enabled.");
+            }
+        }
+        return GLOBAL_FIPS_140_2 && (isIBMJVM8);
+    }
+
+    public boolean isFIPS140_2EnabledAndSupported() throws IOException {
+        return isFIPS140_2EnabledAndSupported(JavaInfo.forServer(this), true);
+    }
+
+    public boolean isFIPS140_2EnabledAndSupported(JavaInfo info) throws IOException {
+        return isFIPS140_2EnabledAndSupported(info, true);
     }
 
     /**
@@ -8003,5 +8083,116 @@ public class LibertyServer implements LogMonitorClient {
 
     public String getEnvVar(String var) {
         return envVars.get(var);
+    }
+
+    public void configureLTPAKeys(JavaInfo info) throws IOException, InterruptedException {
+
+        if (isFIPS140_3EnabledAndSupported(info)) {
+            String serverSecurityDir = serverRoot + File.separator + "resources" + File.separator + "security";
+            File ltpaFIPSKeys = new File(serverSecurityDir, "ltpaFIPS.keys");
+            File ltpaKeys = new File(serverSecurityDir, "ltpa.keys");
+            String serverName = getServerName();
+            boolean fipsKeyExists = ltpaFIPSKeys.exists();
+
+            if (!ltpaKeys.exists() && !fipsKeyExists) {
+                Log.info(this.getClass(), "configureLTPAKeys",
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", but neither ltpa.keys nor ltpaFIPS.keys is found in " + serverSecurityDir);
+            } else {
+                Log.info(this.getClass(), "configureLTPAKeys",
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", swapping ltpaFIPS.keys into ltpa.keys");
+            }
+
+            if (fipsKeyExists) {
+                Files.move(ltpaFIPSKeys.toPath(), ltpaKeys.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                // Log.info(this.getClass(), "configureLTPAKeys",
+                //         "Waiting for 2 seconds after updating ltpa.keys ...");
+                // Thread.sleep(2000);
+            }
+            if (ltpaKeys.exists()) {
+                // Log the content of ltpa.keys
+                String content = FileUtils.readFile(ltpaKeys.getAbsolutePath());
+                Log.info(this.getClass(), "configureLTPAKeys", "Content of ltpa.keys: " + content);
+            }
+        }
+    }
+
+    public void configureLTPAKeys() throws IOException, InterruptedException {
+        configureLTPAKeys(JavaInfo.forServer(this));
+    }
+
+    private Map<String, String> getFipsJvmOptions(JavaInfo info, boolean includeGlobalArgs) throws Exception, IOException {
+        Map<String, String> opts = new HashMap<>();
+        if (isFIPS140_3EnabledAndSupported(info, false)) {
+            if (info.majorVersion() >= 11) {
+                Log.info(c, "getFipsJvmOptions",
+                         "FIPS 140-3 global build properties is set for server " + getServerName()
+                                                 + " with IBM Java " + info.majorVersion() + ", adding required JVM arguments to run with FIPS 140-3 enabled");
+                opts.put("-Dsemeru.fips", "true");
+                opts.put("-Dsemeru.customprofile", "OpenJCEPlusFIPS.FIPS140-3-Custom");
+                opts.put("-Djava.security.properties", getSemeruFips140_3CustomProfileLocationAndPrintFileContents());
+            } else if (info.majorVersion() == 8) {
+                Log.info(c, "getFipsJvmOptions", "FIPS 140-3 global build properties is set for server "
+                                                 + getServerName()
+                                                 + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
+                opts.put("-Xenablefips140-3", null);
+                opts.put("-Dcom.ibm.jsse2.usefipsprovider", "true");
+                opts.put("-Dcom.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
+
+            }
+            if (includeGlobalArgs) {
+                opts.put("-Dglobal.fips_140-3", "true");
+                opts.put("-Dcom.ibm.ws.beta.edition", "true");
+            }
+        } else if (isFIPS140_2EnabledAndSupported(info, false)) {
+            if (info.majorVersion() == 8) {
+                Log.info(c, "getFipsJvmOptions", "FIPS 140-2 global build properties is set for server "
+                                                 + getServerName()
+                                                 + " with IBM Java 8, adding required JVM arguments to run with FIPS 140-2 enabled");
+                opts.put("-Dcom.ibm.jsse2.usefipsprovider", "true");
+                opts.put("-Dcom.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
+            }
+            if (includeGlobalArgs) {
+                opts.put("-Dglobal.fips_140-2", "true");
+            }
+        }
+        return opts;
+    }
+
+    private String getSemeruFips140_3CustomProfileLocationAndPrintFileContents() throws Exception {
+        Properties localProperties = getLocalProperties();
+        String basedir = localProperties.getProperty("basedir");
+        String location = basedir + "/semeruFips140_3CustomProfile.properties";
+
+        byte[] fileContents = Files.readAllBytes(Paths.get(location));
+        Log.info(c, "getSemeruFips140_3CustomProfileLocationAndPrintFileContents",
+                 "semeruFips140_3CustomProfile.properties contents:\n" + new String(fileContents, StandardCharsets.UTF_8));
+
+        return location;
+    }
+
+    public Properties getLocalProperties() throws Exception {
+        String localPropertiesLocation = System.getProperty("local.properties");
+        Properties localProperties = new Properties();
+        FileInputStream in = new FileInputStream(localPropertiesLocation);
+        localProperties.load(in);
+        in.close();
+        return localProperties;
+    }
+
+    public void setKeysAndJVMOptsForFips() throws Exception {
+        // Enable FIPS on members via jvm.options file. This way when the controller starts / joins members
+        // the appropriate FIPS jvm arguments will be configured.
+        JavaInfo info = JavaInfo.forServer(this);
+        if (isFIPS140_3EnabledAndSupported(info) || isFIPS140_2EnabledAndSupported(info)) {
+            this.configureLTPAKeys(info);
+            Map<String, String> jvm_opts = this.getJvmOptionsAsMap();
+            Map<String, String> combined = new HashMap(jvm_opts);
+            combined.putAll(this.getFipsJvmOptions(info, true));
+            if (!combined.isEmpty() && !combined.equals(jvm_opts)) {
+                this.setJvmOptions(combined);
+            }
+        }
     }
 }

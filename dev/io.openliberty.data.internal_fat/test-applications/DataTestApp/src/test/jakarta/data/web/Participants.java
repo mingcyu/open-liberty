@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -24,6 +24,8 @@ import jakarta.data.repository.OrderBy;
 import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
 
+import test.jakarta.data.web.Participant.Name;
+
 /**
  * Repository for an unannotated entity with a record attribute
  * that should be interpreted as an embeddable.
@@ -34,7 +36,12 @@ public interface Participants extends DataRepository<Participant, Integer> {
     @Insert
     void add(Participant... p);
 
-    @Query("SELECT name.first WHERE id = ?1")
+    // Using Query by Method Name would require @Select("name"),
+    // which is not available until Data 1.1
+    @Query("SELECT name WHERE pID = ?1")
+    Optional<Name> findNameById(int id);
+
+    @Query("SELECT name.first WHERE pID = ?1")
     Optional<String> getFirstName(int id);
 
     @Delete
@@ -42,6 +49,6 @@ public interface Participants extends DataRepository<Participant, Integer> {
 
     @Find
     @OrderBy("name.first")
-    @OrderBy("id")
+    @OrderBy("pID")
     Stream<Participant> withSurname(@By("name.last") String lastName);
 }

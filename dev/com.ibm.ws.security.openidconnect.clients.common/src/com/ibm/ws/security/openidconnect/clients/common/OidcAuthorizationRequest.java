@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,6 @@ package com.ibm.ws.security.openidconnect.clients.common;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -23,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.common.web.JavaScriptUtils;
 import com.ibm.ws.security.common.web.WebSSOUtils;
 import com.ibm.ws.security.openidconnect.pkce.ProofKeyForCodeExchangeHelper;
@@ -35,6 +33,7 @@ import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 
 import io.openliberty.security.oidcclientcore.authentication.AuthorizationRequest;
 import io.openliberty.security.oidcclientcore.authentication.AuthorizationRequestParameters;
+import io.openliberty.security.oidcclientcore.authentication.AuthorizationRequestUtils;
 import io.openliberty.security.oidcclientcore.exceptions.OidcUrlNotHttpsException;
 import io.openliberty.security.oidcclientcore.storage.CookieBasedStorage;
 import io.openliberty.security.oidcclientcore.storage.CookieStorageProperties;
@@ -44,6 +43,8 @@ import io.openliberty.security.oidcclientcore.storage.StorageProperties;
 public class OidcAuthorizationRequest extends AuthorizationRequest {
 
     public static final TraceComponent tc = Tr.register(OidcAuthorizationRequest.class);
+
+    protected AuthorizationRequestUtils requestUtils = new AuthorizationRequestUtils();
 
     ConvergedClientConfig clientConfig;
     WebSSOUtils webSsoUtils = new WebSSOUtils();
@@ -157,9 +158,6 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
                 storeOriginalRequestUrl(state);
             }
 
-        } catch (UnsupportedEncodingException e) {
-            Tr.error(tc, "OIDC_CLIENT_AUTHORIZE_ERR", new Object[] { clientId, e.getLocalizedMessage(), ClientConstants.CHARSET });
-            return new ProviderAuthenticationResult(AuthResult.SEND_401, HttpServletResponse.SC_UNAUTHORIZED);
         } catch (IOException ioe) {
             Tr.error(tc, "OIDC_CLIENT_AUTHORIZE_ERR", new Object[] { clientId, ioe.getLocalizedMessage(), ClientConstants.CHARSET });
             return new ProviderAuthenticationResult(AuthResult.SEND_401, HttpServletResponse.SC_UNAUTHORIZED);
@@ -188,7 +186,7 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
         return false;
     }
 
-    String buildAuthorizationUrlWithQuery(OidcClientRequest oidcClientRequest, String state, String redirect_url, String acr_values) throws UnsupportedEncodingException {
+    String buildAuthorizationUrlWithQuery(OidcClientRequest oidcClientRequest, String state, String redirect_url, String acr_values) {
         String strResponse_type = Constants.RESPONSE_TYPE_CODE; // default is asking for authorization code
         boolean isImplicit = false;
         if (Constants.IMPLICIT.equals(clientConfig.getGrantType())) {
@@ -205,9 +203,9 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
         return authzParameters.buildRequestUrl();
     }
 
-    void addOptionalParameters(AuthorizationRequestParameters authzParameters, OidcClientRequest oidcClientRequest, String state, String acr_values, boolean isImplicit) throws UnsupportedEncodingException {
+    void addOptionalParameters(AuthorizationRequestParameters authzParameters, OidcClientRequest oidcClientRequest, String state, String acr_values, boolean isImplicit) {
         if (clientConfig.isNonceEnabled() || isImplicit) {
-            String nonceValue = OidcUtil.generateRandom(Constants.STATE_LENGTH);
+            String nonceValue = requestUtils.generateNonceValue();
             storeNonceValue(nonceValue, state);
             authzParameters.addParameter("nonce", nonceValue);
         }
@@ -231,7 +229,7 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
             addImplicitParameters(authzParameters);
         }
         String resources = getResourcesParameter();
-        if (resources != null) {          
+        if (resources != null) {
             authzParameters.addParameter("resource", resources);
         }
 
@@ -241,7 +239,7 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
         // check and see if we have any additional params to forward from the request
         addForwardLoginParams(authzParameters);
     }
-    
+
     private boolean isACRConfigured() {
         boolean isACR = false;
         String acr_values = null;
@@ -256,11 +254,11 @@ public class OidcAuthorizationRequest extends AuthorizationRequest {
         pkceHelper.generateAndAddPkceParametersToAuthzRequest(codeChallengeMethod, state, authzParameters);
     }
 
-    void addImplicitParameters(AuthorizationRequestParameters authzParameters) throws UnsupportedEncodingException {
+    void addImplicitParameters(AuthorizationRequestParameters authzParameters) {
         authzParameters.addParameter("response_mode", "form_post");
     }
 
-    String getResourcesParameter() throws UnsupportedEncodingException {
+    String getResourcesParameter() {
         String resources = OIDCClientAuthenticatorUtil.getResources(clientConfig);
         if (resources != null && !resources.isEmpty()) {
             return resources;

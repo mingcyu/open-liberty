@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2024 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -32,6 +32,7 @@ import com.ibm.websphere.simplicity.config.Fileset;
 import com.ibm.websphere.simplicity.config.JavaPermission;
 import com.ibm.websphere.simplicity.config.Library;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
+import com.ibm.websphere.simplicity.config.Transaction;
 import com.ibm.websphere.simplicity.config.dsprops.Properties;
 import com.ibm.websphere.simplicity.log.Log;
 
@@ -77,6 +78,7 @@ public final class DatabaseContainerUtil {
     private final ServerConfiguration serverClone;
     private final JdbcDatabaseContainer<?> databaseCont;
     private final DatabaseContainerType databaseType;
+   
 
     //Optional fields
     private boolean useGeneric = true;
@@ -88,6 +90,7 @@ public final class DatabaseContainerUtil {
     //Optional updates
     private Map<String, Fileset> libraries = Collections.emptyMap();
     private Set<JavaPermission> permissions = Collections.emptySet();
+    private boolean isModifiable = false;
 
     ///// Constructor /////
     private DatabaseContainerUtil(LibertyServer serv, JdbcDatabaseContainer<?> cont) throws Exception {
@@ -103,6 +106,7 @@ public final class DatabaseContainerUtil {
         if (isDerby) {
             this.datasources = Collections.emptySet();
             this.authDatas = Collections.emptySet();
+            this.isModifiable = false;
             return;
         }
 
@@ -116,7 +120,13 @@ public final class DatabaseContainerUtil {
         for (DatabaseStore dbs : serverClone.getDatabaseStores()) {
             dsSet.addAll(dbs.getDataSources());
         }
-        
+
+        //Get datasources that are nested under transactions
+        Transaction tx = serverClone.getTransaction();
+        if (tx != null) {
+            dsSet.addAll(tx.getDataSources());
+        }
+
         this.datasources = dsSet.stream()
                         .filter(ds -> ds.getFatModify() != null)
                         .filter(ds -> ds.getFatModify().equalsIgnoreCase("true"))
@@ -129,6 +139,9 @@ public final class DatabaseContainerUtil {
                         .collect(Collectors.toSet());
         
         //TODO what about authData elements inside a <databaseStore> element?
+        
+        //If there is nothing to modify, this is not modifiable
+        this.isModifiable |= !this.datasources.isEmpty() || !this.authDatas.isEmpty();
     }
 
     ///// Builder /////
@@ -172,11 +185,13 @@ public final class DatabaseContainerUtil {
         for (Library lib : serverClone.getLibraries())
             for (Fileset fs : lib.getFilesets())
                 if (fs.getIncludes().equals(toReplacementString(DRIVER_KEY)))
-                    libraries.put(getElementId(lib), fs); //Reference library id here since it will be more recognizable
+                    this.libraries.put(getElementId(lib), fs); //Reference library id here since it will be more recognizable
         
         this.permissions = serverClone.getJavaPermissions().stream()
                         .filter(p -> p.getCodeBase().contains(toReplacementString(DRIVER_KEY)))
                         .collect(Collectors.toSet());
+        
+        this.isModifiable |= !this.libraries.isEmpty() || !this.permissions.isEmpty();
 
         return this;
     }
@@ -242,6 +257,15 @@ public final class DatabaseContainerUtil {
 
     ///// Termination /////
     public void modify() throws Exception {
+        
+        final String m = "modify";
+        
+        //Skip modify if there is nothing to modify
+        if (!isModifiable) {
+            Log.info(c, m, "Nothing was found to be modifiable and therefore we will skip the modify step.");
+            return;
+        }
+        
         //If a test suite legitimately wants to call this method outside of the Database Rotation SOE
         //Then we need to fail them on the IBMi SOE to avoid generic errors that arise when trying to infer datasource types.
         if (useGeneric && System.getProperty("os.name").equalsIgnoreCase("OS/400")) {
@@ -295,7 +319,7 @@ public final class DatabaseContainerUtil {
 
             //Update DataSources
             for (DataSource ds : datasources) {
-                Log.info(c, "modify", "FOUND: DataSource to be enlisted in database rotation. ID: " + getElementId(ds));
+                Log.info(c, m, "FOUND: DataSource to be enlisted in database rotation. ID: " + getElementId(ds));
 
                 if(ds.getDataSourceProperties().size() != 1) {
                     throw new RuntimeException("Expected exactly one set of DataSoure properties for DataSource: " + getElementId(ds));
@@ -322,11 +346,11 @@ public final class DatabaseContainerUtil {
         // Modify authDatas
         for (AuthData ad : authDatas) {
             if(!canUpdate(ad)) {
-                Log.info(c, "modify", "SKIP: AuthData cannot be enlisted in database rotation. ID: " + getElementId(ad));
+                Log.info(c, m, "SKIP: AuthData cannot be enlisted in database rotation. ID: " + getElementId(ad));
                 continue;
             }
             
-            Log.info(c, "modify", "FOUND: AuthData to be enlisted in database rotation.  ID: " + getElementId(ad));
+            Log.info(c, m, "FOUND: AuthData to be enlisted in database rotation.  ID: " + getElementId(ad));
 
             ad.setUser(databaseCont.getUsername());
             ad.setPassword(databaseCont.getPassword());
@@ -334,7 +358,7 @@ public final class DatabaseContainerUtil {
 
         // Modify libraries
         for (Map.Entry<String, Fileset> entry : libraries.entrySet()) {
-            Log.info(c, "modify", "FOUND: Library to be enlisted in database rotation.  ID: " + entry.getKey());
+            Log.info(c, m, "FOUND: Library to be enlisted in database rotation.  ID: " + entry.getKey());
             
             //Replace includes with driver name
             entry.getValue().setIncludes(databaseType.getDriverName());
@@ -342,7 +366,7 @@ public final class DatabaseContainerUtil {
         
         // Modify permissions
         for (JavaPermission permission : permissions) {
-            Log.info(c, "modify", "FOUND: Permission to be enlisted in database rotation. ID: " + getElementId(permission));
+            Log.info(c, m, "FOUND: Permission to be enlisted in database rotation. ID: " + getElementId(permission));
             
             String codeBase = permission.getCodeBase();
             permission.setCodeBase(codeBase.replace(toReplacementString(DRIVER_KEY), databaseType.getDriverName()));
@@ -476,4 +500,17 @@ public final class DatabaseContainerUtil {
         
         return authDataElements;
     }
+
+    @Override
+    public String toString() {
+        return "DatabaseContainerUtil"
+                        + System.lineSeparator() + "[server=" + server.getServerName() + ", databaseType=" + databaseType + ", isModifiable=" + isModifiable 
+                        + System.lineSeparator() + "\tdatasources=" + datasources.stream().map(ds -> getElementId(ds)).collect(Collectors.toList())
+                        + System.lineSeparator() + "\tauthDatas=" + authDatas.stream().map(ad -> getElementId(ad)).collect(Collectors.toList()) 
+                        + System.lineSeparator() + "\tlibraries=" + libraries.keySet()
+                        + System.lineSeparator() + "\tpermissions=" + permissions.stream().map(ps -> getElementId(ps)).collect(Collectors.toList())
+                        + System.lineSeparator() + "]";
+    }
+    
+    
 }

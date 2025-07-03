@@ -45,7 +45,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ssl.Constants;
 import com.ibm.websphere.ssl.JSSEHelper;
 import com.ibm.websphere.ssl.SSLConfig;
-import com.ibm.ws.crypto.common.MessageDigestUtils;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.ssl.ConsoleWrapper;
 import com.ibm.ws.ssl.config.KeyStoreManager;
@@ -359,7 +359,7 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
                                                                                                      + ".\n\nHere's the signer information (verify the digest value matches what is displayed at the server):"));
             for (int j = 0; j < chain.length; j++) {
                 stdout.println("");
-                String shaDigest = KeyStoreManager.getInstance().generateDigest(MessageDigestUtils.MESSAGE_DIGEST_ALGORITHM_SHA256, chain[j]);
+                String shaDigest = KeyStoreManager.getInstance().generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256, chain[j]);
                 stdout.println(TraceNLSHelper.getInstance().getString("ssl.trustmanager.signer.prompt.CWPKI0102I", "  Subject DN:    ")
                                + chain[j].getSubjectDN());
                 stdout.println(TraceNLSHelper.getInstance().getString("ssl.trustmanager.signer.prompt.CWPKI0103I", "  Issuer DN:     ")
@@ -439,7 +439,7 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
                     if (tc.isDebugEnabled())
                         Tr.debug(tc, "Adding alias \"" + alias + "\" to truststore \"" + tsFile + "\".");
                     wsks.setCertificateEntry(alias, chain[chain.length - 1]);
-                    String shaDigest = KeyStoreManager.getInstance().generateDigest("SHA-1", chain[chain.length - 1]);
+                    String shaDigest = KeyStoreManager.getInstance().generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1, chain[chain.length - 1]);
 
                     issueMessage("ssl.signer.add.to.local.truststore.CWPKI0308I", new Object[] { alias, tsFile, shaDigest }, "CWPKI0308I: Adding signer alias \"" + alias
                                                                                                                              + "\" to local keystore \"" + tsFile
@@ -987,7 +987,7 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
         String sanInfo = String.join(", ", sanInfoList);
         String output;
         if (Character.isDigit(peerHost.charAt(0)) || doesDnsNameExist) {
-            output = "Subject Alternative Name [" + sanInfo  + "]";
+            output = "Subject Alternative Name [" + sanInfo + "]";
         } else {
             output = "subjectDN [" + certificate.getSubjectDN() + "]";
         }

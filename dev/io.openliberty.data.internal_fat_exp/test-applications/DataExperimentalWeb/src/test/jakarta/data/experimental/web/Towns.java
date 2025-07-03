@@ -85,7 +85,7 @@ public interface Towns {
     @OrderBy("stateName")
     @OrderBy("name")
     Stream<Town> largerThan(@By("population") @Is(GreaterThan) int minPopulation,
-                            @By(ID) @Is(NotIgnoreCase) TownId exceptFor,
+                            @By("name") @Is(NotIgnoreCase) String cityToExclude,
                             @By("stateName") @Is(Prefixed) String statePattern);
 
     @Update
@@ -104,6 +104,13 @@ public interface Towns {
                 @Assign("stateName") String newStateName,
                 @Assign("areaCodes") Set<Integer> newAreaCodes,
                 @Assign("population") int newPopulation);
+
+    // The assignment is intentionally between the other two query parameters
+    // to cover a scenario of intermixing them.
+    @Update
+    boolean setPopulation(@By(ID) TownId id,
+                          @Assign("population") int newPopulation,
+                          @By("population") int oldPopulation);
 
     @Find
     @OrderBy(value = ID, descending = true)

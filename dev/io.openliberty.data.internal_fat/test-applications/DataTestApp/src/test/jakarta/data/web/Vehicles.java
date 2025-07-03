@@ -66,8 +66,6 @@ public interface Vehicles {
 
     boolean updateByVinIdAddPrice(String vin, float priceIncrease);
 
-    // TODO switch to the following once #29893 is fixed
-    //@Query("WHERE LOWER(ID(THIS)) = ?1")
-    @Query("WHERE LOWER(vinId) = ?1")
+    @Query("WHERE LOWER(ID(THIS)) = ?1")
     Optional<Vehicle> withVINLowerCase(String lowerCaseVIN);
 }

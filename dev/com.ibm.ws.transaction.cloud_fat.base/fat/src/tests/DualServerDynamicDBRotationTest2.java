@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2024 IBM Corporation and others.
+ * Copyright (c) 2019, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,8 @@
  *******************************************************************************/
 package tests;
 
+import java.util.Arrays;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -21,10 +23,8 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
-import componenttest.custom.junit.runner.Mode;
 import componenttest.topology.impl.LibertyServer;
 
-@Mode
 @RunWith(FATRunner.class)
 @AllowedFFDC(value = { "java.sql.SQLRecoverableException", "javax.resource.spi.ResourceAllocationException", "java.sql.SQLNonTransientConnectionException",
                        "com.ibm.ws.rsadapter.exceptions.DataStoreAdapterException" })
@@ -60,6 +60,6 @@ public class DualServerDynamicDBRotationTest2 extends DualServerDynamicCoreTest2
 
     @Before
     public void tearDown() throws Exception {
-        serversToCleanup = new LibertyServer[] { s1, s2 };
+        serversToCleanup = Arrays.asList(s1, s2);
     }
 }

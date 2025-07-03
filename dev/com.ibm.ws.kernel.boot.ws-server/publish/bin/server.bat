@@ -409,6 +409,9 @@ goto:eof
   call:serverEnv
   call:serverExists true
   if %RC% == 2 goto:eof
+  if not exist "!WLP_OUTPUT_DIR!\%SERVER_NAME%\logs" (
+     mkdir "!WLP_OUTPUT_DIR!\%SERVER_NAME%\logs"
+  )
   "!WLP_INSTALL_DIR!\bin\tools\win\prunsrv.exe"  //IS//%SERVER_NAME% --Startup=manual --DisplayName="%SERVER_NAME%" --Description="Open Liberty" ++DependsOn=Tcpip --LogPath="!WLP_OUTPUT_DIR!\%SERVER_NAME%\logs" --StdOutput=auto --StdError=auto --StartMode=exe --StartPath="%WLP_INSTALL_DIR%" --StartImage="%WLP_INSTALL_DIR%\bin\server.bat" ++StartParams=start#%SERVER_NAME% --StopMode=exe --StopPath="%WLP_INSTALL_DIR%" --StopImage="%WLP_INSTALL_DIR%\bin\server.bat" ++StopParams=stop#%SERVER_NAME% --ServiceUser=LocalSystem                                                                                                                          
   set RC=!errorlevel!
 goto:eof
@@ -593,6 +596,9 @@ goto:eof
   ) else (
     set SERVER_IBM_JAVA_OPTIONS=!SPECIFIED_JAVA_OPTIONS!
   )
+
+  @REM Add JDK property to improve encryption performance for password utilities
+  set SERVER_IBM_JAVA_OPTIONS=-Djdk.nativePBKDF2=true !SERVER_IBM_JAVA_OPTIONS!
 
   @REM Add -Xquickstart -Xshareclasses:none for client JVMs only.  We don't want 
   @REM shared classes cache created for client operations.

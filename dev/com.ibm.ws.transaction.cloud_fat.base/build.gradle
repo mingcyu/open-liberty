@@ -16,6 +16,9 @@ dependencies {
   requiredLibs (project(":com.ibm.ws.transaction.fat.util")) {
     transitive = false
   }
+  requiredLibs (project(":com.ibm.ws.transaction.test.util")) {
+    transitive = false
+  }
 }
 
 File sharedDir = new File(autoFvtDir, 'publish/shared/resources')

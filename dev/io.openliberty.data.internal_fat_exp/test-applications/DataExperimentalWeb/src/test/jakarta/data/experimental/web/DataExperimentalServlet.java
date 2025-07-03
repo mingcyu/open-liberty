@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.time.Instant;
+import java.time.Month;
+import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.data.Limit;
+import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -52,6 +57,7 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 import junit.framework.AssertionFailedError;
+import test.jakarta.data.experimental.web.Shipment.Instructions;
 
 @SuppressWarnings("serial")
 @WebServlet("/*")
@@ -71,6 +77,9 @@ public class DataExperimentalServlet extends FATServlet {
 
     @Inject
     Towns towns;
+
+    @Inject
+    YearlyTotals yearlyTotals;
 
     public static <T> void assertArrayEquals(T[] expected, T[] actual, Comparator<T> comparator) {
         String errorMessage = "expected: " + Arrays.toString(expected) + " but was: " + Arrays.toString(actual);
@@ -184,6 +193,62 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Run queries that order results based on columns of CharSequence subtypes.
+     * The contents of this test are mostly commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testCharSequence() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JANUARY, 1),
+                                            YearMonth.of(2025, Month.JANUARY),
+                                            "BUF1", "BUILD2", "COM3"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.FEBRUARY, 2),
+                                            YearMonth.of(2024, Month.DECEMBER),
+                                            "BUF3", "BUILD4", "COM2"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 3),
+                                            YearMonth.of(2023, Month.NOVEMBER),
+                                            "BUF4", "BUILD3", "COM4"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.APRIL, 4),
+                                            YearMonth.of(2022, Month.OCTOBER),
+                                            "BUF2", "BUILD1", "COM1"));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuffer
+        //assertEquals(List.of(2025, 2022, 2024, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.buffer.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuilder
+        //assertEquals(List.of(2022, 2025, 2023, 2024),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.builder.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for CharSequence
+        //assertEquals(List.of(2022, 2024, 2025, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.comments.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
+    }
+
+    /**
      * Count the number of matching entries in the database using annotatively defined queries.
      */
     @Test
@@ -264,8 +329,9 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
-     * Test the ElementCount keyword by querying against a collection attribute with different sizes.
-     * Also covers WithMinute and WithSecond.
+     * Test the ElementCount function by querying for a collection attribute of
+     * different sizes. Also covers EXTRACT MINUTE and EXTRACT SECOND in a JPQL
+     * query.
      */
     @Test
     public void testElementCountAndExtract() throws Exception {
@@ -311,37 +377,37 @@ public class DataExperimentalServlet extends FATServlet {
 
         reservations.saveAll(List.of(r1, r2, r3, r4));
 
-        // ElementCount keyword
+        // ElementCount Function
 
         assertEquals(List.of("host1@openliberty.io", "host4@openliberty.io"),
-                     reservations.findByInviteesElementCount(2)
+                     reservations.withInviteeCount(2)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
         assertEquals(Collections.EMPTY_LIST,
-                     reservations.findByInviteesElementCount(0)
+                     reservations.withInviteeCount(0)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
-
-        // ElementCount Function
 
         assertEquals(List.of("host3@openliberty.io"),
                      reservations.withInviteeCount(3)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
-        // WithHour, WithMinute. We cannot compare the hour without knowing which time zone the database stores it in.
+        // EXTRACT HOUR, EXTRACT MINUTE.
+        // We cannot compare the hour without knowing which time zone the database
+        // stores it in. The range of 0 to 23 includes all hours.
 
         assertEquals(List.of(113001L, 213002L),
-                     reservations.findMeetingIdByStartWithHourBetweenAndStartWithMinute(0, 23, 15));
+                     reservations.startingWithin(0, 23, 15));
 
         assertEquals(List.of(313003L),
                      reservations.startsWithinHoursWithMinute(0, 23, 35));
 
-        // WithSecond
+        // EXTRACT SECOND
 
         assertEquals(List.of(313003L),
-                     reservations.findMeetingIdByStopWithSecond(30));
+                     reservations.findMeetingIdStoppingAtSecond(30));
 
         assertEquals(List.of(113001L, 213002L, 413004L),
                      reservations.endsAtSecond(0));
@@ -524,23 +590,6 @@ public class DataExperimentalServlet extends FATServlet {
 
     /**
      * Repository method performing a parameter-based query on a compound entity Id which is an IdClass,
-     * where the method parameter is annotated with By.
-     */
-    // TODO enable once #29893 is fixed. EclipseLink rejects LOWER(id(o)) with:
-    // The encapsulated expression is not a valid expression.
-    //@Test
-    public void testIdClassFindByAnnotatedParameter() {
-
-        assertEquals(List.of("Springfield Massachusetts",
-                             "Rochester Minnesota",
-                             "Kansas City Missouri"),
-                     towns.largerThan(100000, TownId.of("springfield", "missouri"), "M%s")
-                                     .map(c -> c.name + ' ' + c.stateName)
-                                     .collect(Collectors.toList()));
-    }
-
-    /**
-     * Repository method performing a parameter-based query on a compound entity Id which is an IdClass,
      * without annotating the method parameter.
      */
     // TODO enable once #29073 is fixed
@@ -572,7 +621,6 @@ public class DataExperimentalServlet extends FATServlet {
                                      .map(c -> c.name + ' ' + c.stateName)
                                      .collect(Collectors.toList()));
 
-        // TODO enable once LOWER(id(o)) is working in EclipseLink
         assertEquals(List.of("Kansas City Missouri",
                              "Rochester Minnesota",
                              "Springfield Illinois"),
@@ -585,11 +633,10 @@ public class DataExperimentalServlet extends FATServlet {
 
     /**
      * Use cursor-based pagination with the OrderBy annotation on a composite id
-     * that is defined by an IdClass attribute. Also use named parameters, which
-     * means the cursor portion of the query will also need to use named parameters.
+     * that is defined by an IdClass attribute.
      */
     @Test
-    public void testIdClassOrderByAnnotationWithCursorPaginationAndNamedParameters() {
+    public void testIdClassOrderByAnnotationWithCursorPaginations() {
         PageRequest pagination = PageRequest.ofSize(2);
 
         CursoredPage<Town> page1 = towns.sizedWithin(100000, 1000000, pagination);
@@ -713,6 +760,108 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed.
+     */
+    @Test
+    public void testIntermixedParameters() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("Building 25-2, 2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.0581278,-92.5063833");
+        s1.setId(252);
+        s1.setOrderedAt(OffsetDateTime.now().minusHours(6));
+        s1.setStatus("IN_TRANSIT");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("Building 30-2, 2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.057426, -92.5031221");
+        s2.setId(302);
+        s2.setOrderedAt(OffsetDateTime.now().minusHours(1));
+        s2.setStatus("SUBMITTED");
+        shipments.save(s2);
+
+        String newDestination = "Building 50-2, 2800 37th St NW, Rochester, MN 55901";
+        assertEquals(true,
+                     shipments.switchDestination("SUBMITTED",
+                                                 newDestination,
+                                                 302));
+
+        // destination must be updated
+        s2 = shipments.find(302);
+        assertEquals(newDestination,
+                     s2.getDestination());
+        assertEquals("SUBMITTED",
+                     s2.getStatus());
+        assertEquals(302,
+                     s2.getId());
+        assertEquals("44.057426, -92.5031221",
+                     s2.getLocation());
+
+        // destination must not be updated
+        s1 = shipments.find(252);
+        assertEquals("Building 25-2, 2800 37th St NW, Rochester, MN 55901",
+                     s1.getDestination());
+        assertEquals("IN_TRANSIT",
+                     s1.getStatus());
+        assertEquals(252,
+                     s1.getId());
+        assertEquals("44.0581278,-92.5063833",
+                     s1.getLocation());
+
+        shipments.removeEverything();
+    }
+
+    /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed and one of the
+     * parameters is a composite IdClass value.
+     */
+    // TODO enable once #29073 is fixed
+    //@Test
+    public void testIntermixedParametersIncludingIdClass() {
+
+        final int oldPopulation = 121395;
+        final int newPopulation = 122413;
+
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         newPopulation,
+                                         oldPopulation));
+
+        // population must be updated
+        Town rochester;
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(newPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+
+        // restore the old value to avoid interfering with other tests
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         oldPopulation,
+                                         newPopulation));
+
+        // population must be updated
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(oldPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+    }
+
+    /**
      * Test the Not annotation on a parameter-based query.
      */
     @Test
@@ -725,12 +874,81 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Test the NotIgnoreCase enumerated value for a parameter that is
+     * annotated with the By annotation.
+     */
+    @Test
+    public void testNotIgnoreCase() {
+
+        assertEquals(List.of("Rochester Minnesota",
+                             "Kansas City Missouri"),
+                     towns.largerThan(100000, "springfield", "M%s")
+                                     .map(c -> c.name + ' ' + c.stateName)
+                                     .collect(Collectors.toList()));
+    }
+
+    /**
      * Test the Or annotation on a parameter-based query.
      */
     @Test
     public void testOr() {
         assertEquals(List.of(2L, 3L, 5L, 7L, 41L, 43L, 47L),
                      primes.notWithinButBelow(10, 40, 50));
+    }
+
+    /**
+     * Run queries that order results based on columns of type Year, YearMonth,
+     * and MonthDay. Tests for the latter two are commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testPartialDates() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JUNE, 15),
+                                            YearMonth.of(2025, Month.AUGUST),
+                                            "BUF25", "BUILD25", "COM25"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.APRIL, 14),
+                                            YearMonth.of(2024, Month.SEPTEMBER),
+                                            "BUF24", "BUILD24", "COM24"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 31),
+                                            YearMonth.of(2023, Month.MAY),
+                                            "BUF23", "BUILD23", "COM23"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.OCTOBER, 24),
+                                            YearMonth.of(2022, Month.JANUARY),
+                                            "BUF22", "BUILD22", "COM22"));
+
+        assertEquals(List.of(2022, 2023, 2024, 2025),
+                     yearlyTotals.obtain(Order.by(YearlyTotals.year.asc()))
+                                     .map(t -> t.year.getValue())
+                                     .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for MonthDay
+        //assertEquals(List.of(2023, 2024, 2025, 2022),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestDay.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for YearMonth
+        //assertEquals(List.of(2022, 2023, 2024, 2025),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestMonth.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
     }
 
     /**
@@ -827,6 +1045,15 @@ public class DataExperimentalServlet extends FATServlet {
                      primes.lessThanWithSuffixOrBetweenWithSuffix(40L, "even", 30L, 50L, "one")
                                      .map(p -> p.numberId)
                                      .collect(Collectors.toList()));
+    }
+
+    /**
+     * Query method that selects multiple entity attributes and returns a record.
+     */
+    @Test
+    public void testQuerySelectsRecord() {
+        assertEquals(new Hexadecimal("2F", 47L),
+                     primes.toHexadecimal(47L).orElseThrow());
     }
 
     /**
@@ -1382,6 +1609,44 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Find operation that returns an entity attribute that is a record.
+     */
+    @Test
+    public void testReturnRecordAttribute() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.006349, -92.4665299");
+        s1.setId(10);
+        s1.setInstructions(new Instructions(//
+                        "Handle with care", //
+                        "Leave at door, send text alert", //
+                        false));
+        s1.setOrderedAt(OffsetDateTime.now());
+        s1.setStatus("SHIPPED");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.006349,-92.4665299");
+        s2.setId(20);
+        s2.setOrderedAt(OffsetDateTime.now());
+        s2.setStatus("ORDER_RECEIVED");
+        shipments.save(s2);
+
+        // TODO enable once #29460 is fixed
+        //Instructions inst1 = shipments.getInstructions(10).orElseThrow();
+        //assertEquals("Handle with care", inst1.handlingRequirements());
+        //assertEquals("Leave at door, send text alert", inst1.deliveryRequirements());
+        //assertEquals(false, inst1.needsSignature());
+
+        //assertEquals(false, shipments.getInstructions(20).isPresent());
+
+        shipments.removeEverything();
+    }
+
+    /**
      * Use repository methods with annotations for rounding.
      */
     @Test
@@ -1533,14 +1798,16 @@ public class DataExperimentalServlet extends FATServlet {
         assertEquals(40.0f, item.price, 0.01f);
         assertEquals("Item 2 halved", item.description);
 
-        // subtract from price and append to description via Update method with property names inferred from parameters
+        // subtract from price and append to description via Update method
+        // with entity attribute names inferred from parameters
         assertEquals(true, items.shorten(item2.pk, 1.0f, " and reduced $1"));
 
         item = items.get(item2.pk);
         assertEquals(39.0f, item.price, 0.01f);
         assertEquals("Item 2 halved and reduced $1", item.description);
 
-        // subtract from price and append to description via Update method with annotatively specified property names
+        // subtract from price and append to description via Update method
+        // with annotatively specified entity attribute names
         items.shortenBy(2, " and then another $2", item2.pk);
 
         item = items.get(item2.pk);
