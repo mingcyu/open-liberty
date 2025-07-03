@@ -31,10 +31,6 @@ public class MultiRecoveryTest2 extends MultiRecoveryTest {
 	
 	@Test
 	@ExpectedFFDC(value = {"javax.transaction.xa.XAException", "javax.transaction.RollbackException"})
-	// Need Jon Review:
-	// Got Exception WTRN0046E and Warning WTRN0049W, WTRN0094W during test
-	// Expect XAException and RollbackException
-	// Report javax.transaction.SystemException 
 	public void WSTXMPR005BFVT() throws Exception {
 		recoveryTest(server1, server2, "502","server2");
 	}

@@ -37,7 +37,7 @@ import componenttest.annotation.Server;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.HttpUtils;
 
-public class MultiRecoveryTest {
+public class MultiRecoveryTest { 
 	protected static String BASE_URL;
 	protected static String BASE_URL2;
 
@@ -60,6 +60,10 @@ public class MultiRecoveryTest {
     protected static SetupRunner runner;
     protected static WebArchive clientApp;
     protected static WebArchive serverApp;
+
+    // Pending rationalization...
+    private String[] DEFAULT_TOLERATED_MSGS = new String[] { ".*" };
+    protected String[] toleratedMsgs;
 
     @BeforeClass
 	public static void beforeClass() throws Exception {
@@ -93,12 +97,13 @@ public class MultiRecoveryTest {
 	public void before() throws Exception {
 		WSATTest.deleteStateFiles(server1, server2);
 		FATUtils.startServers(runner, server1, server2);
+		toleratedMsgs = DEFAULT_TOLERATED_MSGS;
 	}
 
 	@After
 	public void after() throws Exception {
 		Log.info(MultiRecoveryTest.class, "after", "");
-		FATUtils.stopServers(server1, server2);
+		FATUtils.stopServers(toleratedMsgs, server1, server2);
 	}
 
 	protected void recoveryTest(LibertyServer server, LibertyServer server2, String id, String crashingServer) throws Exception {

@@ -50,11 +50,6 @@ public class MultiRecoveryTest3 extends MultiRecoveryTest {
 	@Test
 	@ExpectedFFDC(value = {"javax.transaction.xa.XAException" })
 	@AllowedFFDC(value = { "com.ibm.ws.Transaction.JTA.HeuristicHazardException" })
-	// Need Jon Review:
-	// javax.transaction.xa.XAException 
-	// Caused by: com.ibm.tx.jta.XAResourceNotAvailableException
-	// Need review on whether it is expected
-	// Report javax.transaction.SystemException
 	// JDK8: Allow HeuristicHazardException
 	public void WSTXMPR007CFVT() throws Exception {
 		recoveryTest(server1, server2, "703","both");
@@ -76,11 +71,6 @@ public class MultiRecoveryTest3 extends MultiRecoveryTest {
 	@Test
 	@ExpectedFFDC(value = {"javax.transaction.xa.XAException" })
 	@AllowedFFDC(value = { "com.ibm.ws.Transaction.JTA.HeuristicHazardException" })
-	// Need Jon Review:
-	// javax.transaction.xa.XAException 
-	// Caused by: com.ibm.tx.jta.XAResourceNotAvailableException
-	// Need review on whether it is expected
-	// Report javax.transaction.SystemException
 	// JDK8: Allow HeuristicHazardException
 	public void WSTXMPR008CFVT() throws Exception {
 		recoveryTest(server1, server2, "803","both");
