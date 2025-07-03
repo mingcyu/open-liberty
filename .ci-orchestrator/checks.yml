@@ -10,7 +10,7 @@ triggers:
   groups: ["LibertyDev"]
   propertyDefinitions:
     - name: githubPRNumber
-      required: true
+      isRequired: true
       description: "PR number to perform delivery requirement verification against e.g. 30188"
 
 steps:
