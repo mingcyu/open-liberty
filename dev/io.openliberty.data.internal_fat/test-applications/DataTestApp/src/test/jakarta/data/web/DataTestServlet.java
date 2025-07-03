@@ -2144,7 +2144,7 @@ public class DataTestServlet extends FATServlet {
                                      .map(p -> p.name)
                                      .collect(Collectors.toList()));
 
-        // Escape characters are not allowed the Query by Method Name keywords:
+        // Escape characters are not allowed with the Query by Method Name keywords:
         // Like, StartsWith, EndsWith, and Contains.
     }
 
