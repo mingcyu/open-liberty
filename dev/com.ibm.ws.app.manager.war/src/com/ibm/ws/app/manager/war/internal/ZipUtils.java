@@ -17,6 +17,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -156,72 +161,131 @@ public class ZipUtils {
         }
     }
 
-    /**
-     * Attempt to recursively delete a file.
+     /**
+     * Deletes the specified file or directory recursively.
+     * <p>
+     * Symbolic links are deleted but never followed. If the target file is a directory,
+     * its contents are deleted recursively. The deletion fails fast: if any file or directory
+     * within the hierarchy cannot be deleted, the process stops immediately and returns
+     * the {@code File} that failed.
+     * </p>
      *
-     * Do not retry in case of a failure.
-     *
-     * A test must be done to verify that the file exists before
-     * invoking this method: If the file does not exist, the
-     * delete operation will fail.
-     *
-     * @param file The file to recursively delete.
-     *
-     * @return Null if the file was deleted.  The first file which
-     *     could not be deleted if the file could not be deleted.
+     * @param file the file or directory to delete; must not be {@code null}
+     * @return {@code null} if the file and all contents were successfully deleted;
+     *         otherwise, returns the {@code File} that failed to be deleted
+     * @throws IllegalArgumentException if {@code file} is {@code null}
      */
-    @Trivial
     public static File delete(File file) {
         String methodName = "delete";
 
-        String filePath;
-        if ( tc.isDebugEnabled() ) {
-            filePath = file.getAbsolutePath();
-        } else {
-            filePath = null;
+        if (file == null) {
+            throw new IllegalArgumentException("File must not be null");
         }
 
-        if ( file.isDirectory() ) {
-            if ( filePath != null ) {
-                Tr.debug(tc, methodName + ": Delete directory [ " + filePath + " ]");
-            }
+        String filePath = tc.isDebugEnabled() ? file.getAbsolutePath() : null;
+        boolean debug = filePath != null;
+        Path path = file.toPath();
 
-            File firstFailure = null;
-
-            File[] subFiles = file.listFiles();
-            if ( subFiles != null ) {
-                for ( File subFile : subFiles ) {
-                    File nextFailure = delete(subFile);
-                    if ( (nextFailure != null) && (firstFailure == null) ) {
-                        firstFailure = nextFailure;
-                    }
-                }
-            }
-
-            if ( firstFailure != null ) {
-                if ( filePath != null ) {
-                    Tr.debug(tc, methodName +
-                        ": Cannot delete [ " + filePath + " ]" +
-                        " Child [ " + firstFailure.getAbsolutePath() + " ] could not be deleted.");
-                }
-                return firstFailure;
-            }
-        } else {
-            if ( filePath != null ) {
-                Tr.debug(tc, methodName + ": Delete simple file [ " + filePath + " ]");
-            }
-        }
-
-        if ( !file.delete() ) {
-            if ( filePath != null ) {
-                Tr.debug(tc, methodName + ": Failed to delete [ " + filePath + " ]");
+        boolean isSymlink = false;
+        try {
+            isSymlink = Files.isSymbolicLink(path);
+        } catch (SecurityException e) {
+            if (debug) {
+                Tr.debug(tc, methodName + ": SecurityException checking symbolic link for [ " + filePath + " ]");
+                Tr.debug(tc, methodName + ": Exception - " + e.getMessage());
             }
             return file;
-        } else {
-            if ( filePath != null ) {
+        }
+
+        if (isSymlink) {
+            if (debug) {
+                Tr.debug(tc, methodName + ": Deleting symlink [ " + filePath + " ]");
+            }
+            if (!file.delete()) {
+                if (debug) {
+                    Tr.debug(tc, methodName + ": Failed to delete symlink [ " + filePath + " ]");
+                }
+                return file;
+            }
+            if (debug) {
+                Tr.debug(tc, methodName + ": Deleted symlink [ " + filePath + " ]");
+            }
+            return null;
+        }
+
+        final File[] failedFile = new File[1]; // to capture failure from inner class
+
+        // Handle directories recursively
+        if (file.isDirectory()) {
+            if (debug) {
+                Tr.debug(tc, methodName + ": Delete directory [ " + filePath + " ]");
+            }
+            try {
+                // Note that Files.walkFileTree does not follow symbolic links by default.
+                // We never want to follow symbolic links.
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path subPath, BasicFileAttributes attrs) throws IOException {
+                        if (debug) {
+                            Tr.debug(tc, methodName + ": Delete simple file [ " + subPath + " ]");
+                        }
+
+                        if (!subPath.toFile().delete()) {
+                            failedFile[0] = subPath.toFile();
+                            throw new IOException("Failed to delete file [ " + subPath + " ]");
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        if (exc != null) {
+                            throw exc;
+                        }
+                        if (!dir.equals(path)) { // Skip deleting root here; it's deleted after walkFileTree completes
+                            if (debug) {
+                                Tr.debug(tc, methodName + ": Delete directory [ " + dir + " ]");
+                            }
+                            if (!dir.toFile().delete()) {
+                                failedFile[0] = dir.toFile();
+                                throw new IOException("Failed to delete directory [ " + dir + " ]");
+                            }
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                if (debug) {
+                    Tr.debug(tc, methodName + ": Exception - " + e.getMessage());
+                }
+                return failedFile[0];
+            }
+        }
+
+        // Delete the root directory or file
+        if (debug) {
+            Tr.debug(tc, methodName + ": Delete " +
+                         (file.isDirectory() ? "directory" : "simple file") + " [ " + filePath + " ]");
+        }
+        try {
+            if (!file.delete()) {
+                if (debug) {
+                    Tr.debug(tc, methodName + ": Failed to delete [ " + filePath + " ]");
+                }
+                return file;
+            }
+
+            if (debug) {
                 Tr.debug(tc, methodName + ": Deleted [ " + filePath + " ]");
             }
             return null;
+
+        } catch (SecurityException e) {
+            if (debug) {
+                Tr.debug(tc, methodName + ": Failed to delete [ " + filePath + " ]");
+                Tr.debug(tc, methodName + ": Exception - " + e.getMessage());
+            }
+            return file;
         }
     }
 
