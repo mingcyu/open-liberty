@@ -1425,6 +1425,7 @@ public class BaseTraceService implements TrService {
     private void scheduleTimeBasedLogRollover(LogProviderConfigImpl config) {
         String rolloverStartTime = config.getRolloverStartTime();
         long rolloverInterval = config.getRolloverInterval();
+        String fileName = config.getTraceFileName();
 
         //if the rollover has already been scheduled, cancel it
         //this is either a reschedule, or a unschedule
@@ -1517,7 +1518,14 @@ public class BaseTraceService implements TrService {
         }
         //schedule rollover
         timedLogRollover_Timer = new Timer(true);
-        TimedLogRoller tlr = new TimedLogRoller(messagesLog, traceLog);
+        TimedLogRoller tlr;
+        if (fileName.equals("stdout")) {
+            // If traceFileName is configured to stdout, that means there will be no trace.log to rollover,
+            // omit the trace.log, when scheduling the rollover.
+            tlr = new TimedLogRoller(messagesLog);
+        } else {
+            tlr = new TimedLogRoller(messagesLog, traceLog);
+        }
         timedLogRollover_Timer.scheduleAtFixedRate(tlr, firstRollover, rolloverInterval * 60000);
         this.isLogRolloverScheduled = true;
     }
@@ -2252,10 +2260,16 @@ public class BaseTraceService implements TrService {
             flhTrace = (FileLogHolder) trace;
         }
 
+        TimedLogRoller(TraceWriter messages) {
+            flhMessages = (FileLogHolder) messages;
+            // This means when traceFileName="stdout", there will be no trace.log file to rollover.
+            flhTrace = null;
+        }
+
         @Override
         public void run() {
             flhMessages.createStream(true);
-            if (TraceComponent.isAnyTracingEnabled()) {
+            if (flhTrace != null && TraceComponent.isAnyTracingEnabled()) {
                 flhTrace.createStream(true);
             }
         }
