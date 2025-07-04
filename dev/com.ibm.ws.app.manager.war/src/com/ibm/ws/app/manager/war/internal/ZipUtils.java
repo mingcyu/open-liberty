@@ -138,18 +138,18 @@ public class ZipUtils {
         // If the first delete attempt failed, try again, up to a limit based on
         // the expected quiesce time of the zip file cache.
 
-        File secondFailure = firstFailure;
+        File retryFailure = firstFailure;
         int tryNo;
-        for (tryNo = 0; (secondFailure != null) && tryNo < RETRY_COUNT; tryNo++) {
+        for (tryNo = 0; (retryFailure != null) && tryNo < RETRY_COUNT; tryNo++) {
             try {
                 Thread.sleep(RETRY_AMOUNT);
             } catch (InterruptedException e) {
                 // FFDC
             }
-            secondFailure = delete(file);
+            retryFailure = delete(file);
         }
 
-        if (secondFailure == null) {
+        if (retryFailure == null) {
             if (filePath != null) {
                 Tr.debug(tc, methodName + ": Successful delete of [ " + filePath + " ] after [ " + tryNo + " ] retries");
             }
@@ -158,7 +158,7 @@ public class ZipUtils {
             if (filePath != null) {
                 Tr.debug(tc, methodName + ": Failed to delete [ " + filePath + " ]. Tried [ " + (tryNo + 1) + " ] times.");
             }
-            return secondFailure;
+            return retryFailure;
         }
     }
 
@@ -176,7 +176,6 @@ public class ZipUtils {
      *         otherwise, returns the first {@link File} that failed to be deleted
      * @throws IllegalArgumentException if {@code file} is {@code null}
      */
-
     public static File delete(File file) {
         String methodName = "delete";
 
@@ -184,22 +183,10 @@ public class ZipUtils {
             throw new IllegalArgumentException("File must not be null");
         }
 
-        String filePath = tc.isDebugEnabled() ? file.getAbsolutePath() : null;
-        boolean debug = filePath != null;
         Path path = file.toPath();
 
-        boolean isSymlink;
-        try {
-            isSymlink = Files.isSymbolicLink(path);
-        } catch (SecurityException e) {
-            if (debug) {
-                Tr.debug(tc, methodName + ": SecurityException checking symbolic link for [ " + filePath + " ]");
-                Tr.debug(tc, methodName + ": Exception - " + e.getMessage());
-            }
-            return file;
-        }
-
-        if (isSymlink) {
+        // If the root file or directory is a symlink, we delete the link and we're done
+        if (Files.isSymbolicLink(path)) {
             if (!file.delete()) {
                 return file;
             }
@@ -210,20 +197,15 @@ public class ZipUtils {
 
         if (file.isDirectory()) {
             try {
+                // Note that Files.walkFileTree does not follow symbolic links by default.
+                // We never want to follow symbolic links.
                 Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
-                    // Note that Files.walkFileTree does not follow symbolic links by default.
-                    // We never want to follow symbolic links.
                     @Override
                     public FileVisitResult visitFile(Path subPath, BasicFileAttributes attrs) {
                         File f = subPath.toFile();
-                        if (!f.delete()) {
-                            if (failedFile[0] == null) {
-                                failedFile[0] = f;
-                            }
-                            if (debug) {
-                                Tr.debug(tc, methodName + ": Failed to delete [ " + subPath + " ]");
-                            }
+                        if (!f.delete() && failedFile[0] == null) {
+                            failedFile[0] = f;
                         }
                         return FileVisitResult.CONTINUE;
                     }
@@ -232,7 +214,7 @@ public class ZipUtils {
                     public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
 
                         // Log the exception if there was one, but don't stop the walk
-                        if (exc != null && debug) {
+                        if (exc != null && tc.isDebugEnabled()) {
                             Tr.debug(tc, methodName + ": Exception while visiting directory [ " + dir + " ]: " + exc.getMessage());
                         }
 
@@ -243,35 +225,37 @@ public class ZipUtils {
                                 failedFile[0] = d;
                             }
                         }
+                        return FileVisitResult.CONTINUE;
+                    }
 
-                        return FileVisitResult.CONTINUE; // Always continue regardless of individual failures
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        if (failedFile[0] == null) {
+                            failedFile[0] = file.toFile();
+                        }
+                        return FileVisitResult.CONTINUE;
                     }
 
                 });
             } catch (IOException e) {
-                if (debug) {
+                // An exception occurred in Files.walkFileTree when trying to access a file.
+                // Here, we do not know which file caused the failure, and the traversal stops.
+                // This is an unlikely event, since we've overridden visitFileFailed.
+                if (failedFile[0] == null) {
+                    failedFile[0] = file; // report root directory by default
+                }
+                if (tc.isDebugEnabled()) {
                     Tr.debug(tc, methodName + ": Exception walking file tree - " + e.getMessage());
                 }
-                // We continue even if walking throws, and return the first failure
             }
         }
 
         // Delete the root directory or file last
-        try {
-            if (!file.delete()) {
-                if (failedFile[0] == null) {
-                    failedFile[0] = file;
-                }
-            }
-        } catch (SecurityException e) {
-            if (debug) {
-                Tr.debug(tc, methodName + ": Exception deleting [ " + filePath + " ] - " + e.getMessage());
-            }
+        if (!file.delete()) {
             if (failedFile[0] == null) {
                 failedFile[0] = file;
             }
         }
-
         return failedFile[0];
     }
 
