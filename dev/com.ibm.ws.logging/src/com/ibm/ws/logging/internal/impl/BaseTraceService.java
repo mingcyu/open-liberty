@@ -1425,16 +1425,17 @@ public class BaseTraceService implements TrService {
     private void scheduleTimeBasedLogRollover(LogProviderConfigImpl config) {
         String rolloverStartTime = config.getRolloverStartTime();
         long rolloverInterval = config.getRolloverInterval();
-        String fileName = config.getTraceFileName();
+        String traceFileName = config.getTraceFileName();
 
-        //if the rollover has already been scheduled, cancel it
-        //this is either a reschedule, or a unschedule
+        // If the rollover has already been scheduled, cancel it
+        // This is either a reschedule, or a unschedule
         if (this.isLogRolloverScheduled) {
             //null and empty rolloverStartTime are the same
             if (rolloverStartTime == null)
                 rolloverStartTime = "";
-            //if neither of the rollover attributes change, return without rescheduling
-            if (this.rolloverStartTime.equals(rolloverStartTime) && this.rolloverInterval == rolloverInterval) {
+            // If neither of the rollover attributes change, return without rescheduling
+            // Also, if the traceFileName is set to "stdout", then we must reschedule the rollover by omitting the trace.log file.
+            if (this.rolloverStartTime.equals(rolloverStartTime) && this.rolloverInterval == rolloverInterval && !traceFileName.equals("stdout")) {
                 return;
             } else {
                 timedLogRollover_Timer.cancel();
@@ -1519,7 +1520,7 @@ public class BaseTraceService implements TrService {
         //schedule rollover
         timedLogRollover_Timer = new Timer(true);
         TimedLogRoller tlr;
-        if (fileName.equals("stdout")) {
+        if (traceFileName.equals("stdout")) {
             // If traceFileName is configured to stdout, that means there will be no trace.log to rollover,
             // omit the trace.log, when scheduling the rollover.
             tlr = new TimedLogRoller(messagesLog);
