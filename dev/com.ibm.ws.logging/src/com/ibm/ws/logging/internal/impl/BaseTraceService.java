@@ -242,6 +242,9 @@ public class BaseTraceService implements TrService {
     /** The maximum FFDC file age before deletion. */
     private volatile long maxFfdcAge = -1;
 
+    /** The trace file name */
+    private volatile String traceFileName = "trace.log";
+
     /** Early msgs issued before MessageRouter is started. */
     protected volatile Queue<RoutedMessage> earlierMessages = new SimpleRotatingSoftQueue<RoutedMessage>(new RoutedMessage[100]);
     protected volatile Queue<RoutedMessage> earlierTraces = new SimpleRotatingSoftQueue<RoutedMessage>(new RoutedMessage[200]);
@@ -1433,9 +1436,9 @@ public class BaseTraceService implements TrService {
             //null and empty rolloverStartTime are the same
             if (rolloverStartTime == null)
                 rolloverStartTime = "";
-            // If neither of the rollover attributes change, return without rescheduling
-            // Also, if the traceFileName is set to "stdout", then we must reschedule the rollover by omitting the trace.log file.
-            if (this.rolloverStartTime.equals(rolloverStartTime) && this.rolloverInterval == rolloverInterval && !traceFileName.equals("stdout")) {
+            // If neither of the rollover attributes change, return without rescheduling.
+            // Also, if the traceFileName attribute value did NOT change, return without rescheduling
+            if (this.rolloverStartTime.equals(rolloverStartTime) && this.rolloverInterval == rolloverInterval && this.traceFileName.equals(traceFileName)) {
                 return;
             } else {
                 timedLogRollover_Timer.cancel();
@@ -1480,6 +1483,7 @@ public class BaseTraceService implements TrService {
 
         this.rolloverStartTime = rolloverStartTime;
         this.rolloverInterval = rolloverInterval;
+        this.traceFileName = traceFileName; // Preserve the previous traceFileName, in order to check if the attribute changed.
 
         //parse startTimeField
         String[] hourMinPair = rolloverStartTime.split(":");
