@@ -15,11 +15,14 @@ package io.openliberty.data.internal.v1_1;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.sql.DataSource;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -29,6 +32,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import io.openliberty.data.internal.version.QueryType;
 import io.openliberty.data.repository.Count;
 import io.openliberty.data.repository.Exists;
 import io.openliberty.data.repository.Is;
@@ -47,10 +51,16 @@ import io.openliberty.data.repository.update.SubtractFrom;
 import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
-import jakarta.data.exceptions.MappingException;
 import jakarta.data.page.PageRequest;
+import jakarta.data.repository.By;
+import jakarta.data.repository.Delete;
 import jakarta.data.repository.Find;
+import jakarta.data.repository.Insert;
+import jakarta.data.repository.Query;
+import jakarta.data.repository.Save;
 import jakarta.data.repository.Select;
+import jakarta.data.repository.Update;
+import jakarta.persistence.EntityManager;
 
 /**
  * Capability that is specific to the version of Jakarta Data.
@@ -82,6 +92,63 @@ public class Data_1_1 implements DataVersionCompatibility {
         FUNCTION_CALLS.put(Extract.Field.YEAR.name(), "EXTRACT (YEAR FROM ");
     }
 
+    /**
+     * Annotations that represent lifecycle operations that are allowed for
+     * methods of a stateful repository.
+     */
+    private static final Set<Class<? extends Annotation>> LIFECYCLE_ANNOS_STATEFUL = //
+                    Set.of(); // TODO 1.1 Detach, Merge, Persist, Refresh, Remove
+
+    /**
+     * Annotations that represent lifecycle operations that are allowed for
+     * methods of a stateless repository.
+     */
+    private static final Set<Class<? extends Annotation>> LIFECYCLE_ANNOS_STATELESS = //
+                    Set.of(Delete.class,
+                           Insert.class,
+                           Update.class,
+                           Save.class);
+
+    /**
+     * Annotations that represent operations that are allowed for methods of a
+     * stateful repository.
+     */
+    private static final Set<Class<? extends Annotation>> OP_ANNOS_STATEFUL = //
+                    Set.of(Find.class,
+                           // TODO 1.1 Merge, Persist, ...
+                           Query.class);
+
+    /**
+     * Annotations that represent operations that are allowed for methods of a
+     * stateless repository.
+     */
+    private static final Set<Class<? extends Annotation>> OP_ANNOS_STATELESS = //
+                    Set.of(Delete.class,
+                           Find.class,
+                           Insert.class,
+                           Query.class,
+                           Save.class,
+                           Update.class);
+
+    /**
+     * Classes that are valid as return types of resource accessor methods for a
+     * stateful repository.
+     */
+    private static final Set<Class<?>> RESOURCE_ACCESSOR_CLASSES_STATEFUL = //
+                    Set.of(Connection.class,
+                           DataSource.class,
+                           EntityManager.class);
+
+    /**
+     * Classes that are valid as return types of resource accessor methods for a
+     * stateless repository.
+     */
+    private static final Set<Class<?>> RESOURCE_ACCESSOR_CLASSES_STATELESS = //
+                    RESOURCE_ACCESSOR_CLASSES_STATEFUL; // TODO 1.1 entity agent
+
+    /**
+     * Types that are valid as repository method special parameters.
+     */
     private static final Set<Class<?>> SPECIAL_PARAM_TYPES = //
                     Set.of(Limit.class, Order.class,
                            Sort.class, Sort[].class,
@@ -90,27 +157,28 @@ public class Data_1_1 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public StringBuilder appendCondition(StringBuilder q, int qp,
-                                         Method method, int p,
-                                         String o_, String attrName,
-                                         boolean isCollection, Annotation[] annos) {
+    public StringBuilder appendConstraint(StringBuilder q,
+                                          String o_,
+                                          String attrName,
+                                          Object constraint,
+                                          int qp,
+                                          boolean isCollection,
+                                          Annotation[] annos) {
         StringBuilder attributeExpr = new StringBuilder();
 
-        Is.Op comparison = Is.Op.Equal;
+        Is.Op comparison = (Is.Op) constraint;
         List<Annotation> functionAnnos = new ArrayList<>();
         for (int a = annos.length - 1; a >= 0; a--) {
-            if (annos[a] instanceof Is) {
-                comparison = ((Is) annos[a]).value();
-            } else {
-                String annoPackage = annos[a].annotationType().getPackageName();
-                if (FUNCTION_ANNO_PACKAGE.equals(annoPackage)) {
-                    functionAnnos.add(annos[a]);
-                    String functionType = annos[a] instanceof Extract ? ((Extract) annos[a]).value().name() //
-                                    : annos[a] instanceof Rounded ? ((Rounded) annos[a]).value().name() //
-                                                    : annos[a].annotationType().getSimpleName();
-                    String functionCall = FUNCTION_CALLS.get(functionType);
-                    attributeExpr.append(functionCall);
-                }
+            String annoPackage = annos[a].annotationType().getPackageName();
+            if (FUNCTION_ANNO_PACKAGE.equals(annoPackage)) {
+                functionAnnos.add(annos[a]);
+                String functionType = annos[a] instanceof Extract //
+                                ? ((Extract) annos[a]).value().name() //
+                                : annos[a] instanceof Rounded //
+                                                ? ((Rounded) annos[a]).value().name() //
+                                                : annos[a].annotationType().getSimpleName();
+                String functionCall = FUNCTION_CALLS.get(functionType);
+                attributeExpr.append(functionCall);
             }
         }
 
@@ -140,7 +208,7 @@ public class Data_1_1 implements DataVersionCompatibility {
             if (ignoreCase ||
                 baseOp != Is.Op.Equal) // TODO also have an operation for collection containing?
                 throw new UnsupportedOperationException("The " + comparison.name() +
-                                                        " comparison that is applied to entity attribute " +
+                                                        " constraint that is applied to entity attribute " +
                                                         attrName +
                                                         " is not supported for collection attributes."); // TODO NLS (future)
 
@@ -206,57 +274,6 @@ public class Data_1_1 implements DataVersionCompatibility {
             default:
                 throw new UnsupportedOperationException(comparison.name());
         }
-
-        return q;
-    }
-
-    @Override
-    @Trivial
-    public StringBuilder appendConditionsForIdClass(StringBuilder q, int qp,
-                                                    Method method, int p,
-                                                    String o_, String[] idClassAttrNames,
-                                                    Annotation[] annos) {
-        boolean ignoreCase = false;
-        for (int a = annos.length - 1; a >= 0; a--) {
-            if (annos[a] instanceof Is) {
-                Is.Op comparison = ((Is) annos[a]).value();
-                if (comparison.base() != Is.Op.Equal)
-                    throw new MappingException("The " + annos[a] +
-                                               " annotation cannot be applied to a parameter of the " +
-                                               method.getName() + " method of the " +
-                                               method.getDeclaringClass().getName() +
-                                               " repository because the parameter type is an IdClass."); // TODO NLS
-                ignoreCase = comparison.ignoreCase();
-                if (comparison.isNegative())
-                    q.append(" NOT ");
-            } else {
-                String annoPackage = annos[a].annotationType().getPackageName();
-                if (FUNCTION_ANNO_PACKAGE.equals(annoPackage))
-                    throw new MappingException("The " + annos[a].annotationType().getSimpleName() +
-                                               " annotation cannot be applied to a parameter of the " +
-                                               method.getName() + " method of the " +
-                                               method.getDeclaringClass().getName() +
-                                               " repository because the parameter type is an IdClass."); // TODO NLS
-            }
-        }
-
-        q.append('(');
-
-        int count = 0;
-        for (String name : idClassAttrNames) {
-            if (count != 0)
-                q.append(" AND ");
-
-            if (ignoreCase)
-                q.append("LOWER(").append(o_).append(name).append(')');
-            else
-                q.append(o_).append(name);
-
-            q.append('=');
-            appendParam(q, ignoreCase, count++ + qp);
-        }
-
-        q.append(')');
 
         return q;
     }
@@ -351,6 +368,108 @@ public class Data_1_1 implements DataVersionCompatibility {
             if (anno instanceof Or)
                 return true;
         return false;
+    }
+
+    @Override
+    public int inspectMethodParam(int p,
+                                  Class<?> paramType,
+                                  Annotation[] paramAnnos,
+                                  String[] attrNames,
+                                  Object[] constraints, // TODO 1.1: Class<?>[]
+                                  char[] updateOps,
+                                  int qpNext) {
+        int qpOriginal = qpNext;
+
+        for (Annotation anno : paramAnnos)
+            if (anno instanceof Is) {
+                constraints[p] = ((Is) anno).value();
+                qpNext++;
+            } else if (anno instanceof Assign) {
+                attrNames[p] = ((Assign) anno).value();
+                updateOps[p] = '=';
+                qpNext++;
+            } else if (anno instanceof Add) {
+                attrNames[p] = ((Add) anno).value();
+                updateOps[p] = '+';
+                qpNext++;
+            } else if (anno instanceof Multiply) {
+                attrNames[p] = ((Multiply) anno).value();
+                updateOps[p] = '*';
+                qpNext++;
+            } else if (anno instanceof Divide) {
+                attrNames[p] = ((Divide) anno).value();
+                updateOps[p] = '/';
+                qpNext++;
+            } else if (anno instanceof SubtractFrom) {
+                attrNames[p] = ((SubtractFrom) anno).value();
+                updateOps[p] = '-';
+                qpNext++;
+            }
+
+        if (qpNext == qpOriginal) { // no annotation indicating a constraint or update
+            if (false) { // TODO 1.1 check if paramType is a Constraint
+                // qpNext increment will vary by Constraint subtype
+                // TODO 1.1: if Constraint.class and generated upfront,
+                // qpNext = PARAM_CONSTRAINT_DEFERRED;
+            } else {
+                constraints[p] = Is.Op.Equal;
+                qpNext++;
+            }
+        } else if (qpNext - qpOriginal > 1) {
+            // TODO possibly allow a redundant Constraint that matches the Is annotation.
+            qpNext = PARAM_ANNOS_CONFLICT;
+        } else if (false) { // TODO 1.1 check if paramType is a Constraint
+            qpNext = PARAM_ANNO_CONFLICTS_WITH_CONSTRAINT;
+        }
+
+        return qpNext;
+    }
+
+    @Override
+    @Trivial
+    public boolean isSpecialParamValid(Class<?> paramType,
+                                       QueryType queryType) {
+        return switch (queryType) {
+            case FIND -> true;
+            case FIND_AND_DELETE -> !PageRequest.class.equals(paramType);
+            case COUNT, EXISTS -> Order.class.equals(paramType) ||
+                // TODO 1.1 Restriction.class.equals(paramType) ||
+                                  Sort.class.equals(paramType) ||
+                                  Sort[].class.equals(paramType);
+            case QM_DELETE, QM_UPDATE -> false; // TODO 1.1 Restriction.class.equals(paramType)
+            default -> false;
+        };
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<? extends Annotation>> lifeCycleAnnoTypes(boolean stateful) {
+        return stateful ? LIFECYCLE_ANNOS_STATEFUL : LIFECYCLE_ANNOS_STATELESS;
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<? extends Annotation>> operationAnnoTypes(boolean stateful) {
+        return stateful ? OP_ANNOS_STATEFUL : OP_ANNOS_STATELESS;
+    }
+
+    @Override
+    @Trivial
+    public String paramAnnosForUpdate() {
+        // TODO 1.1
+        return By.class.getSimpleName() + ", " +
+               Add.class.getSimpleName() + ", " +
+               Assign.class.getSimpleName() + ", " +
+               Divide.class.getSimpleName() + ", " +
+               Multiply.class.getSimpleName() + ", " +
+               SubtractFrom.class.getSimpleName();
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<?>> resourceAccessorTypes(boolean stateful) {
+        return stateful ? RESOURCE_ACCESSOR_CLASSES_STATEFUL //
+                        : RESOURCE_ACCESSOR_CLASSES_STATELESS;
     }
 
     @Override

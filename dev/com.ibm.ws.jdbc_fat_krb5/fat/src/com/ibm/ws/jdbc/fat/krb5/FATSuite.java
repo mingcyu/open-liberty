@@ -14,7 +14,6 @@ package com.ibm.ws.jdbc.fat.krb5;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -37,34 +36,42 @@ import componenttest.custom.junit.runner.AlwaysPassesTest;
 })
 public class FATSuite extends TestContainerSuite {
 
+    static {
+        Log.info(FATSuite.class, "<init>", "Setting overrideDefaultTLS to true, needed for IBM JDK 8 support.");
+        java.lang.System.setProperty("com.ibm.jsse2.overrideDefaultTLS", "true");
+    }
+
     public static Network network;
     public static KerberosContainer krb5;
 
-    @ClassRule
-    public static KerberosPlatformRule krbRule = new KerberosPlatformRule();
-
     @BeforeClass
-    public static void startKerberos() throws Exception {
-        network = Network.newNetwork();
-        krb5 = new KerberosContainer(network);
-        krb5.start();
+    public static void setup() throws Exception {
+        // Manually apply rule so that the AlwaysPassesTest runs since having zero test results is considered an error
+        if (KerberosPlatformRule.shouldRun(null)) {
+            network = Network.newNetwork();
+            krb5 = new KerberosContainer(network);
+            krb5.start();
+        }
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void teardown() throws Exception {
+        if (krb5 == null && network == null) {
+            return; // Nothing to cleanup
+        }
+
         Exception firstError = null;
 
         try {
             krb5.stop();
-            network.close();
         } catch (Exception e) {
-            if (firstError == null)
-                firstError = e;
-            Log.error(FATSuite.class, "tearDown", e);
+            firstError = e;
+            Log.error(FATSuite.class, "teardown", e);
+        } finally {
+            network.close();
         }
 
         if (firstError != null)
             throw firstError;
     }
-
 }

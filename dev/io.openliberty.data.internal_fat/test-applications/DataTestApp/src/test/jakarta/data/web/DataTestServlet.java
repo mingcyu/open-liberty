@@ -1172,6 +1172,52 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Verify that a single JPQL query can use different escape characters
+     * for each LIKE comparison.
+     */
+    @Test
+    public void testDifferentEscapeCharactersInSameQuery() {
+        products.clear();
+
+        Product p1 = new Product();
+        p1.name = "DifferentEscapeCharactersInSameQuery-1";
+        p1.pk = UUID.nameUUIDFromBytes(p1.name.getBytes());
+        p1.price = 150.0f;
+        p1.description = "DISCOUNT$:10";
+        products.save(p1);
+
+        Product p2 = new Product();
+        p2.name = "DifferentEscapeCharactersInSameQuery-2";
+        p2.pk = UUID.nameUUIDFromBytes(p2.name.getBytes());
+        p2.price = 250.0f;
+        p2.description = "DISCOUNT%:20";
+        products.save(p2);
+
+        Product p3 = new Product();
+        p3.name = "DifferentEscapeCharactersInSameQuery-3";
+        p3.pk = UUID.nameUUIDFromBytes(p3.name.getBytes());
+        p3.price = 350.0f;
+        p3.description = "DISCOUNT%:10";
+        products.save(p3);
+
+        Product p4 = new Product();
+        p4.name = "DifferentEscapeCharactersInSameQuery-4";
+        p4.pk = UUID.nameUUIDFromBytes(p4.name.getBytes());
+        p4.price = 450.0f;
+        p4.description = "DISCOUNT$:20";
+        products.save(p4);
+
+        Stream<Product> found = products.discounted10or20Percent();
+
+        assertEquals(List.of("DifferentEscapeCharactersInSameQuery-3",
+                             "DifferentEscapeCharactersInSameQuery-2"),
+                     found.map(p -> p.name)
+                                     .collect(Collectors.toList()));
+
+        products.clear();
+    }
+
+    /**
      * Query-by-Method-Name query with a Contains restriction applied to an
      * ElementCollection.
      */
@@ -1451,31 +1497,26 @@ public class DataTestServlet extends FATServlet {
                                              .map(Arrays::toString)
                                              .collect(Collectors.toList()));
 
-        /*
-         * Update embeddable attributes
-         * TODO enable once #30789 is fixed
-         */
+        // Update embeddable attributes
 
-        //assertEquals(true, houses.updateByParcelIdSetGarageAddAreaAddKitchenLengthSetNumBedrooms("TestEmbeddable-304-3655-30", null, 180, 2, 4));
+        assertEquals(true, houses
+                        .updateByParcelIdSetGarageAddAreaAddKitchenLengthSetNumBedrooms("TestEmbeddable-304-3655-30",
+                                                                                        null,
+                                                                                        180,
+                                                                                        2,
+                                                                                        4));
 
-        //h = houses.findById("TestEmbeddable-304-3655-30");
-        //assertEquals("TestEmbeddable-304-3655-30", h.parcelId);
-        //assertEquals(1880, h.area);
-        // Null embeddables aren't required by JPA, but EclipseLink claims to support it as the default behavior.
-        // See https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Basic_JPA_Development/Entities/Embeddable#Nullable_embedded_values
-        // But it looks like EclipseLink has a bug here in that it only nulls out 1 of the fields of Garage, not all,
-        // JPQL: UPDATE House o SET o.garage=?2, o.area=o.area+?3, o.kitchen.length=o.kitchen.length+?4, o.numBedrooms=?5 WHERE (o.parcelId=?1)
-        // SQL:  UPDATE WLPHouse SET NUMBEDROOMS = 4, AREA = (AREA + 180), GARAGEAREA = NULL, KITCHENLENGTH = (KITCHENLENGTH + 2) WHERE (PARCELID = 'TestEmbeddable-304-3655-30')
-        // This causes the following assertion to fail:
-        // assertEquals(null, h.garage);
-        // TODO re-enable the above if EclipseLink bug #24926 is fixed
-        //assertNotNull(h.kitchen);
-        //assertEquals(16, h.kitchen.length);
-        //assertEquals(12, h.kitchen.width);
-        //assertEquals(0.17f, h.lotSize, 0.001f);
-        //assertEquals(4, h.numBedrooms);
-        //assertEquals(153000f, h.purchasePrice, 0.001f);
-        //assertEquals(Year.of(2018), h.sold);
+        h = houses.findById("TestEmbeddable-304-3655-30");
+        assertEquals("TestEmbeddable-304-3655-30", h.parcelId);
+        assertEquals(1880, h.area);
+        assertEquals(null, h.garage);
+        assertNotNull(h.kitchen);
+        assertEquals(16, h.kitchen.length);
+        assertEquals(12, h.kitchen.width);
+        assertEquals(0.17f, h.lotSize, 0.001f);
+        assertEquals(4, h.numBedrooms);
+        assertEquals(153000f, h.purchasePrice, 0.001f);
+        assertEquals(Year.of(2018), h.sold);
 
         assertEquals(2, houses.dropAll());
     }
@@ -2103,8 +2144,8 @@ public class DataTestServlet extends FATServlet {
                                      .map(p -> p.name)
                                      .collect(Collectors.toList()));
 
-        // Escape characters are not possible for the repository Like keyword, however,
-        // consider using JPQL escape characters and ESCAPE '\' clause for StartsWith, EndsWith, and Contains
+        // Escape characters are not allowed with the Query by Method Name keywords:
+        // Like, StartsWith, EndsWith, and Contains.
     }
 
     /**

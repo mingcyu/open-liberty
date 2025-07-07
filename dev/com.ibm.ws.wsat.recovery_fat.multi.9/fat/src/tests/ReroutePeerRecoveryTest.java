@@ -1,5 +1,5 @@
 /* =============================================================================
- * Copyright (c) 2023, 2024 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -40,6 +40,7 @@ import componenttest.topology.utils.HttpUtils;
 
 @AllowedFFDC(value = { "com.ctc.wstx.exc.WstxIOException",
                        "javax.xml.stream.XMLStreamException",
+                       "javax.xml.ws.WebServiceException",
                        "com.ibm.tx.jta.ut.util.AlreadyDumpedException",
                        "javax.transaction.SystemException",
                        "javax.transaction.xa.XAException",
@@ -119,19 +120,21 @@ public class ReroutePeerRecoveryTest extends MultiRecoveryTest {
 		ShrinkHelper.exportDropinAppToServer(server5, clientApp);
 		ShrinkHelper.exportDropinAppToServer(server3, serverApp);
 		ShrinkHelper.exportDropinAppToServer(server5, serverApp);
+
+		FATUtils.startServers(runner, server4, server6);
 	}
 
 	@After
 	public void after() throws Exception {
 		Log.info(ReroutePeerRecoveryTest.class, "after", "");
-		FATUtils.stopServers(allowedMsgs, server1, server2, server3, server4, server5, server6);
+		FATUtils.stopServers(allowedMsgs, server1, server2, server3, server5);
 	}
 
 	@Before
 	public void before() throws Exception {
 		Log.info(ReroutePeerRecoveryTest.class, "before", "");
 		WSATTest.deleteStateFiles(server3, server5);
-		FATUtils.startServers(runner, server1, server2, server3, server4, server5, server6);
+		FATUtils.startServers(runner, server1, server2, server3, server5);
 		server3.setTraceMarkToEndOfDefaultTrace();
 		server5.setTraceMarkToEndOfDefaultTrace();
 	}
@@ -141,6 +144,7 @@ public class ReroutePeerRecoveryTest extends MultiRecoveryTest {
 	@AfterClass
 	public static void afterClass() throws Exception {
 		Log.info(ReroutePeerRecoveryTest.class, "afterClass", "");
+		FATUtils.stopServers(server4, server6);
 	}
 
 	@Override

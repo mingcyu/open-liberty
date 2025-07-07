@@ -382,4 +382,16 @@ public interface ConfigurationProvider {
      * @return
      */
     public boolean isThrowCheckedExceptions();
+
+    /**
+     * Size of threadpool for sending protocol messages
+     */
+    public int getAsyncResponseThreadpoolSize();
+
+    /**
+     * Whether UserTransaction methods are reenabled according to spec
+     *
+     * @return
+     */
+    public boolean isUTAsSpecified();
 }

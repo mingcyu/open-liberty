@@ -16,7 +16,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.time.Instant;
+import java.time.Month;
+import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.data.Limit;
+import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -72,6 +77,9 @@ public class DataExperimentalServlet extends FATServlet {
 
     @Inject
     Towns towns;
+
+    @Inject
+    YearlyTotals yearlyTotals;
 
     public static <T> void assertArrayEquals(T[] expected, T[] actual, Comparator<T> comparator) {
         String errorMessage = "expected: " + Arrays.toString(expected) + " but was: " + Arrays.toString(actual);
@@ -182,6 +190,62 @@ public class DataExperimentalServlet extends FATServlet {
                      primes.whereNameLengthWithin(4, 6)
                                      .map(p -> p.name)
                                      .collect(Collectors.toList()));
+    }
+
+    /**
+     * Run queries that order results based on columns of CharSequence subtypes.
+     * The contents of this test are mostly commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testCharSequence() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JANUARY, 1),
+                                            YearMonth.of(2025, Month.JANUARY),
+                                            "BUF1", "BUILD2", "COM3"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.FEBRUARY, 2),
+                                            YearMonth.of(2024, Month.DECEMBER),
+                                            "BUF3", "BUILD4", "COM2"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 3),
+                                            YearMonth.of(2023, Month.NOVEMBER),
+                                            "BUF4", "BUILD3", "COM4"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.APRIL, 4),
+                                            YearMonth.of(2022, Month.OCTOBER),
+                                            "BUF2", "BUILD1", "COM1"));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuffer
+        //assertEquals(List.of(2025, 2022, 2024, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.buffer.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuilder
+        //assertEquals(List.of(2022, 2025, 2023, 2024),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.builder.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for CharSequence
+        //assertEquals(List.of(2022, 2024, 2025, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.comments.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
     }
 
     /**
@@ -696,6 +760,108 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed.
+     */
+    @Test
+    public void testIntermixedParameters() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("Building 25-2, 2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.0581278,-92.5063833");
+        s1.setId(252);
+        s1.setOrderedAt(OffsetDateTime.now().minusHours(6));
+        s1.setStatus("IN_TRANSIT");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("Building 30-2, 2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.057426, -92.5031221");
+        s2.setId(302);
+        s2.setOrderedAt(OffsetDateTime.now().minusHours(1));
+        s2.setStatus("SUBMITTED");
+        shipments.save(s2);
+
+        String newDestination = "Building 50-2, 2800 37th St NW, Rochester, MN 55901";
+        assertEquals(true,
+                     shipments.switchDestination("SUBMITTED",
+                                                 newDestination,
+                                                 302));
+
+        // destination must be updated
+        s2 = shipments.find(302);
+        assertEquals(newDestination,
+                     s2.getDestination());
+        assertEquals("SUBMITTED",
+                     s2.getStatus());
+        assertEquals(302,
+                     s2.getId());
+        assertEquals("44.057426, -92.5031221",
+                     s2.getLocation());
+
+        // destination must not be updated
+        s1 = shipments.find(252);
+        assertEquals("Building 25-2, 2800 37th St NW, Rochester, MN 55901",
+                     s1.getDestination());
+        assertEquals("IN_TRANSIT",
+                     s1.getStatus());
+        assertEquals(252,
+                     s1.getId());
+        assertEquals("44.0581278,-92.5063833",
+                     s1.getLocation());
+
+        shipments.removeEverything();
+    }
+
+    /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed and one of the
+     * parameters is a composite IdClass value.
+     */
+    // TODO enable once #29073 is fixed
+    //@Test
+    public void testIntermixedParametersIncludingIdClass() {
+
+        final int oldPopulation = 121395;
+        final int newPopulation = 122413;
+
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         newPopulation,
+                                         oldPopulation));
+
+        // population must be updated
+        Town rochester;
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(newPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+
+        // restore the old value to avoid interfering with other tests
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         oldPopulation,
+                                         newPopulation));
+
+        // population must be updated
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(oldPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+    }
+
+    /**
      * Test the Not annotation on a parameter-based query.
      */
     @Test
@@ -728,6 +894,61 @@ public class DataExperimentalServlet extends FATServlet {
     public void testOr() {
         assertEquals(List.of(2L, 3L, 5L, 7L, 41L, 43L, 47L),
                      primes.notWithinButBelow(10, 40, 50));
+    }
+
+    /**
+     * Run queries that order results based on columns of type Year, YearMonth,
+     * and MonthDay. Tests for the latter two are commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testPartialDates() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JUNE, 15),
+                                            YearMonth.of(2025, Month.AUGUST),
+                                            "BUF25", "BUILD25", "COM25"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.APRIL, 14),
+                                            YearMonth.of(2024, Month.SEPTEMBER),
+                                            "BUF24", "BUILD24", "COM24"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 31),
+                                            YearMonth.of(2023, Month.MAY),
+                                            "BUF23", "BUILD23", "COM23"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.OCTOBER, 24),
+                                            YearMonth.of(2022, Month.JANUARY),
+                                            "BUF22", "BUILD22", "COM22"));
+
+        assertEquals(List.of(2022, 2023, 2024, 2025),
+                     yearlyTotals.obtain(Order.by(YearlyTotals.year.asc()))
+                                     .map(t -> t.year.getValue())
+                                     .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for MonthDay
+        //assertEquals(List.of(2023, 2024, 2025, 2022),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestDay.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for YearMonth
+        //assertEquals(List.of(2022, 2023, 2024, 2025),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestMonth.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
     }
 
     /**

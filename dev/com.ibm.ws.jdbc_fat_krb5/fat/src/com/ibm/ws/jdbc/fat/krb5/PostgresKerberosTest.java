@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.ws.jdbc.fat.krb5.containers.PostgresKerberosContainer;
+import com.ibm.ws.jdbc.fat.krb5.rules.KerberosPlatformRule;
 
 import componenttest.annotation.Server;
 import componenttest.annotation.TestServlet;
@@ -58,7 +59,7 @@ public class PostgresKerberosTest extends FATServletClient {
                                     .fullFATOnly());
 
     @ClassRule
-    public static RuleChain chain = RuleChain.outerRule(postgresql).around(repeat);
+    public static RuleChain chain = RuleChain.outerRule(KerberosPlatformRule.instance()).around(postgresql).around(repeat);
 
     @BeforeClass
     public static void setUp() throws Exception {

@@ -922,6 +922,15 @@ public class JTMConfigurationProvider extends DefaultConfigurationProvider imple
         return (Boolean) _props.get("enableLogLocking");
     }
 
+    @Override
+    @Trivial
+    public int getAsyncResponseThreadpoolSize() {
+        final Number num = (Number) _props.get("asyncResponseThreadpoolSize");
+        if (tc.isDebugEnabled())
+            Tr.debug(tc, "asyncResponseThreadpoolSize: {0}", num);
+        return num.intValue();
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -1189,6 +1198,15 @@ public class JTMConfigurationProvider extends DefaultConfigurationProvider imple
         final boolean b = _throwCheckedExceptionsProperty || (Boolean) _props.get("throwCheckedExceptions");
         if (tc.isDebugEnabled())
             Tr.debug(tc, "isThrowCheckedExceptions {0}", b);
+        return b;
+    }
+
+    @Override
+    @Trivial
+    public boolean isUTAsSpecified() {
+        final boolean b = (Boolean) _props.get("enableUserTransactionAsSpecified");
+        if (tc.isDebugEnabled())
+            Tr.debug(tc, "isUTAsSpecified {0}", b);
         return b;
     }
 

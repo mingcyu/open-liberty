@@ -505,4 +505,14 @@ public class DefaultConfigurationProvider implements ConfigurationProvider {
     public boolean isThrowCheckedExceptions() {
         return _throwCheckedExceptionsProperty;
     }
+
+    @Override
+    public int getAsyncResponseThreadpoolSize() {
+        return 2;
+    }
+
+    @Override
+    public boolean isUTAsSpecified() {
+        return false;
+    }
 }

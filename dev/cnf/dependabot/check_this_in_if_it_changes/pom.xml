@@ -159,7 +159,7 @@
     <dependency>
       <groupId>com.github.mwiede</groupId>
       <artifactId>jsch</artifactId>
-      <version>0.2.18</version>
+      <version>2.27.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
@@ -1374,7 +1374,7 @@
     <dependency>
       <groupId>io.smallrye</groupId>
       <artifactId>smallrye-open-api-core</artifactId>
-      <version>4.1.0-alpha3</version>
+      <version>4.1.0</version>
     </dependency>
     <dependency>
       <groupId>io.smallrye</groupId>
@@ -1389,7 +1389,7 @@
     <dependency>
       <groupId>io.smallrye</groupId>
       <artifactId>smallrye-open-api-jaxrs</artifactId>
-      <version>4.1.0-alpha3</version>
+      <version>4.1.0</version>
     </dependency>
     <dependency>
       <groupId>io.smallrye</groupId>
@@ -1399,7 +1399,7 @@
     <dependency>
       <groupId>io.smallrye</groupId>
       <artifactId>smallrye-open-api-model</artifactId>
-      <version>4.1.0-alpha3</version>
+      <version>4.1.0</version>
     </dependency>
     <dependency>
       <groupId>io.zipkin.reporter2</groupId>
@@ -2654,7 +2654,7 @@
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-el-api</artifactId>
-      <version>11.0.6</version>
+      <version>11.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tomcat</groupId>
@@ -2669,7 +2669,7 @@
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-jasper-el</artifactId>
-      <version>11.0.6</version>
+      <version>11.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.wink</groupId>
@@ -3002,6 +3002,11 @@
       <version>8.2.0.v20160908</version>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jnosql.mapping</groupId>
+      <artifactId>jnosql-mapping-semistructured</artifactId>
+      <version>1.1.4</version>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.microprofile.config</groupId>
       <artifactId>microprofile-config-api</artifactId>
       <version>1.1</version>
@@ -3234,7 +3239,7 @@
     <dependency>
       <groupId>org.eclipse.microprofile.openapi</groupId>
       <artifactId>microprofile-openapi-api</artifactId>
-      <version>4.1-RC1</version>
+      <version>4.1</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.microprofile.opentracing</groupId>
@@ -3364,12 +3369,12 @@
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.core</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.core</artifactId>
-      <version>5.0.0-B07</version>
+      <version>5.0.0-B08</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
@@ -3384,12 +3389,12 @@
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa.jpql</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa.jpql</artifactId>
-      <version>5.0.0-B07</version>
+      <version>5.0.0-B08</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
@@ -3404,12 +3409,12 @@
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
-      <version>5.0.0-B07</version>
+      <version>5.0.0-B08</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
@@ -3424,27 +3429,22 @@
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.jpa</artifactId>
-      <version>5.0.0-B07</version>
+      <version>5.0.0-B08</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.json</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.json</artifactId>
-      <version>5.0.0-B07</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.platform</groupId>
-      <artifactId>org.eclipse.osgi</artifactId>
-      <version>3.23.0</version>
+      <version>5.0.0-B08</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.transformer</groupId>
@@ -3744,7 +3744,7 @@
     <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator-cdi</artifactId>
-      <version>9.0.0.Beta3</version>
+      <version>9.0.0.Final</version>
     </dependency>
     <dependency>
       <groupId>org.hibernate.validator</groupId>
@@ -3759,7 +3759,7 @@
     <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
-      <version>9.0.0.Beta3</version>
+      <version>9.0.0.Final</version>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
@@ -4883,6 +4883,16 @@
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
+      <artifactId>spring-jms</artifactId>
+      <version>5.3.39</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jms</artifactId>
+      <version>6.1.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
       <artifactId>spring-orm</artifactId>
       <version>5.3.39</version>
     </dependency>
@@ -4964,57 +4974,57 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>database-commons</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>db2</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>jdbc</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>kafka</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mongodb</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mssqlserver</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>oracle-free</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>oracle-xe</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>selenium</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>1.20.3</version>
+      <version>1.21.0</version>
     </dependency>
     <dependency>
       <groupId>org.testng</groupId>
@@ -5134,7 +5144,7 @@
     <dependency>
       <groupId>commons-beanutils</groupId>
       <artifactId>commons-beanutils</artifactId>
-      <version>1.9.4</version>
+      <version>1.11.0</version>
     </dependency>
     <dependency>
       <groupId>commons-discovery</groupId>
