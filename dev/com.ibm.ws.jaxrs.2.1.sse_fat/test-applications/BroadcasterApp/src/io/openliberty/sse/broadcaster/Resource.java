@@ -132,8 +132,8 @@ public class Resource extends Application {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @Path("/closedSinkTest")
     public void registerForClosedSinkTest(@Context Sse sse, @Context SseEventSink sink) {  
-        register(sse, sink);
         synchronized (closeAfterRegister) {
+            register(sse, sink);
             if (closeAfterRegister.getAndSet(!closeAfterRegister.get())) {
                 //automatically close every other client sink
                 _log.info("registerForClosedSinkTest - closing new sink: " + sink);
