@@ -51,7 +51,8 @@ public class VirtualThreadOperations implements VirtualThreadOps {
     }
 
     protected void unsetOverrideService(ThreadTypeOverride vtos) {
-        overrideService = null;
+        if (overrideService == vtos)
+            overrideService = null;
     }
 
     @Override
@@ -83,9 +84,12 @@ public class VirtualThreadOperations implements VirtualThreadOps {
 
     @Override
     public boolean isSupported() {
-        if (overrideService != null)
-            return overrideService.allowVirtualThreadCreation();
-        else
-            return true;
+        return true;
+    }
+
+    @Override
+    public boolean isVirtualThreadCreationEnabled() {
+        ThreadTypeOverride override = overrideService;
+        return override == null ? true : override.allowVirtualThreadCreation();
     }
 }

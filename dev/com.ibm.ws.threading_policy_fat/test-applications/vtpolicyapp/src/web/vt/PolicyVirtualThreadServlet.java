@@ -13,7 +13,6 @@
 package web.vt;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -335,7 +334,6 @@ public class PolicyVirtualThreadServlet extends HttpServlet {
      *
      */
     public void testDisableVirtualThreads() throws Exception {
-        boolean thrown = false;
 
         Map<String, Object> config = new TreeMap<>();
         config.put("max", 3);
@@ -347,13 +345,6 @@ public class PolicyVirtualThreadServlet extends HttpServlet {
         config.put("runIfQueueFull", false);
 
         PolicyExecutor executor = provider.create("testDisableVirtualThreads");
-        //First test is to ensure setting to virtual will throw exception
-        try {
-            executor.updateConfig(config);
-        } catch (IllegalArgumentException e) {
-            thrown = true;
-        }
-        assertTrue(thrown);
 
         Future<Thread> future1 = executor.submit(dummyTask);
 

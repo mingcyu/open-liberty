@@ -12,11 +12,11 @@
  -->
 <server>
 	<featureManager>
-	    <feature>componenttest-2.0</feature>
-		<feature>concurrent-3.1</feature>
-	    <feature>policyExecutorUser-1.0</feature>
-	    <feature>vtOverrideUser-1.0</feature>
-		<feature>servlet-6.1</feature>
+        <feature>componenttest-2.0</feature>
+        <feature>concurrent-3.1</feature>
+        <feature>policyExecutorUser-1.0</feature>
+        <feature>vtOverrideUser-1.0</feature>
+        <feature>servlet-6.1</feature>
     </featureManager>
 
     <include location="../fatTestPorts.xml"/>
