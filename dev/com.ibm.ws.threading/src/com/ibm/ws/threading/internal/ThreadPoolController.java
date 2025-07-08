@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2024 IBM Corporation and others.
+ * Copyright (c) 2012, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -744,10 +744,8 @@ public final class ThreadPoolController {
             setPoolSize(coreThreads);
         }
         // The controller cycle will always run, even if (coreThreads == maxThreads), to enable trace to show the pool stats
-        if (activeTask == null && !paused) {
-            activeTask = new IntervalTask(this);
-            timer.schedule(activeTask, interval, interval);
-        }
+        activeTask = new IntervalTask(this);
+        timer.schedule(activeTask, interval, interval);
 
         targetPoolSize = coreThreads;
         resetStatistics(true);
@@ -1429,6 +1427,7 @@ public final class ThreadPoolController {
      * Evaluate the throughput for the current interval and apply heuristics
      * to modify the thread pool size in an attempt to maximize throughput.
      */
+    @Trivial
     synchronized String evaluateInterval() {
         // During shutdown, threadpool may have been nulled out. In that case, don't bother analyzing.
         // (We could log this in FFDC, but it isn't clear that it's worth doing so.)
@@ -1467,20 +1466,12 @@ public final class ThreadPoolController {
         double throughput = 1000.0 * deltaCompleted / deltaTime;
         queueDepth = threadPool.getQueue().size();
         activeThreads = threadPool.getActiveCount();
-        boolean queueEmpty = (queueDepth <= 0);
-        // Count the number of consecutive times we've seen an empty queue
-        if (!queueEmpty) {
-            consecutiveQueueEmptyCount = 0;
-        } else if (lastAction != LastAction.SHRINK) { // 9/5/2012
-            consecutiveQueueEmptyCount++;
-        }
 
-        ThroughputDistribution currentStats = getThroughputDistribution(poolSize, true);
-
-        double forecast = currentStats.getMovingAverage();
+        double forecast = 0;
         double shrinkScore = 0;
         double growScore = 0;
         int poolAdjustment = 0;
+        LastAction traceLastAction = lastAction;
 
         try {
             // Only do the work of figuring out how to adjust the pool size if the size is adjustable
@@ -1537,6 +1528,14 @@ public final class ThreadPoolController {
                     }
                 }
 
+                boolean queueEmpty = (queueDepth <= 0);
+                // Count the number of consecutive times we've seen an empty queue
+                if (!queueEmpty) {
+                    consecutiveQueueEmptyCount = 0;
+                } else if (lastAction != LastAction.SHRINK) { // 9/5/2012
+                    consecutiveQueueEmptyCount++;
+                }
+
                 deepQueue = (queueDepth > deepQueueMultiple * poolIncrement);
                 // Count the number of consecutive times we've seen a deep queue
                 if (deepQueue) {
@@ -1581,6 +1580,7 @@ public final class ThreadPoolController {
                 }
 
                 controllerCycle++;
+                ThroughputDistribution currentStats = getThroughputDistribution(poolSize, true);
 
                 // handleOutliers will mark this 'true' if it resets the distribution
                 distributionReset = false;
@@ -1609,6 +1609,7 @@ public final class ThreadPoolController {
 
                 setPoolIncrementDecrement(poolSize);
 
+                forecast = currentStats.getMovingAverage();
                 shrinkScore = getShrinkScore(poolSize, forecast, throughput, cpuHigh, lowActivity, systemCpuNA);
                 growScore = getGrowScore(poolSize, forecast, throughput, cpuHigh, lowActivity, systemCpuNA);
 
@@ -1636,16 +1637,16 @@ public final class ThreadPoolController {
                 targetPoolSize = adjustPoolSize(poolSize, poolAdjustment);
             }
 
+            // Format an event level trace point with some useful data
+            if (tc.isEventEnabled()) {
+                Tr.event(tc, "Interval data", toIntervalData(throughput, forecast, deltaCompleted, shrinkScore, growScore,
+                                                             poolSize, poolAdjustment, traceLastAction));
+            }
+
         } finally {
             lastTimerPop = currentTime;
             previousCompleted = completedWork;
             previousThroughput = throughput;
-        }
-
-        // Format an event level trace point with some useful data
-        if (tc.isEventEnabled()) {
-            Tr.event(tc, "Interval data", toIntervalData(throughput, forecast, deltaCompleted, shrinkScore, growScore,
-                                                         poolSize, poolAdjustment));
         }
 
         return "";
@@ -1656,8 +1657,10 @@ public final class ThreadPoolController {
      */
     @Trivial
     private String toIntervalData(double throughput, double forecast, long deltaCompleted, double shrinkScore,
-                                  double growScore, int poolSize, int poolAdjustment) {
+                                  double growScore, int poolSize, int poolAdjustment, LastAction lastAction) {
         final int RANGE = 25;
+
+        boolean fixedSize = (coreThreads == maxThreads);
 
         StringBuilder sb = new StringBuilder();
         sb.append("\nThroughput:");
@@ -1668,18 +1671,22 @@ public final class ThreadPoolController {
 
         sb.append("\nHeuristics:");
         sb.append(String.format(" queueDepth = %8d", Integer.valueOf(queueDepth)));
-        sb.append(String.format(" consecutiveQueueEmptyCount = %2d", Integer.valueOf(consecutiveQueueEmptyCount)));
-        sb.append(String.format(" consecutiveDeepQueueCycles = %2d", Integer.valueOf(consecutiveDeepQueueCycles)));
-        sb.append(String.format(" consecutiveNoAdjustment = %2d", Integer.valueOf(consecutiveNoAdjustment)));
+        if (!fixedSize) {
+            sb.append(String.format(" consecutiveQueueEmptyCount = %2d", Integer.valueOf(consecutiveQueueEmptyCount)));
+            sb.append(String.format(" consecutiveDeepQueueCycles = %2d", Integer.valueOf(consecutiveDeepQueueCycles)));
+            sb.append(String.format(" consecutiveNoAdjustment = %2d", Integer.valueOf(consecutiveNoAdjustment)));
+        }
 
-        sb.append("\nOutliers:  ");
-        sb.append(String.format(" consecutiveOutlierAfterAdjustment = %2d", Integer.valueOf(consecutiveOutlierAfterAdjustment)));
-        sb.append(String.format(" hangBufferPoolSize = %2d", Integer.valueOf(hangBufferPoolSize)));
+        if (!fixedSize) {
+            sb.append("\nOutliers:  ");
+            sb.append(String.format(" consecutiveOutlierAfterAdjustment = %2d", Integer.valueOf(consecutiveOutlierAfterAdjustment)));
+            sb.append(String.format(" hangBufferPoolSize = %2d", Integer.valueOf(hangBufferPoolSize)));
 
-        sb.append("\nAttraction:");
-        sb.append(String.format(" shrinkScore = %.6f", Double.valueOf(shrinkScore)));
-        sb.append(String.format(" growScore = %.6f", Double.valueOf(growScore)));
-        sb.append(String.format(" lastAction = %s", lastAction));
+            sb.append("\nAttraction:");
+            sb.append(String.format(" shrinkScore = %.6f", Double.valueOf(shrinkScore)));
+            sb.append(String.format(" growScore = %.6f", Double.valueOf(growScore)));
+            sb.append(String.format(" lastAction = %s", lastAction));
+        }
 
         sb.append("\nCPU:");
         sb.append(String.format(" cpuUtil = %.2f", Double.valueOf(cpuUtil)));
@@ -1689,51 +1696,57 @@ public final class ThreadPoolController {
         sb.append("\nIncrement:");
         sb.append(String.format(" poolSize = %2d", Integer.valueOf(poolSize)));
         sb.append(String.format(" activeThreads = %2d", Integer.valueOf(activeThreads)));
-        sb.append(String.format(" poolIncrement = %2d", Integer.valueOf(poolIncrement)));
-        sb.append(String.format(" poolDecrement = %2d", Integer.valueOf(poolDecrement)));
-        sb.append(String.format(" poolAdjustment = %2d", Integer.valueOf(poolAdjustment)));
-        sb.append(String.format(" compareRange = %2d", Integer.valueOf(compareRange)));
+        if (!fixedSize) {
+            sb.append(String.format(" poolIncrement = %2d", Integer.valueOf(poolIncrement)));
+            sb.append(String.format(" poolDecrement = %2d", Integer.valueOf(poolDecrement)));
+            sb.append(String.format(" poolAdjustment = %2d", Integer.valueOf(poolAdjustment)));
+            sb.append(String.format(" compareRange = %2d", Integer.valueOf(compareRange)));
+        }
 
         sb.append("\nConfig:");
         sb.append(String.format(" coreThreads = %2d", Integer.valueOf(coreThreads)));
         sb.append(String.format(" maxThreads = %2d", Integer.valueOf(maxThreads)));
-        sb.append(String.format(" currentMinimumPoolSize = %2d", Integer.valueOf(currentMinimumPoolSize)));
-
-        sb.append("\nStatistics:\n");
-
-        Integer[] poolSizes = new Integer[2 * RANGE + 1];
-        ThroughputDistribution[] tputDistros = new ThroughputDistribution[2 * RANGE + 1];
-        Integer poolSizeInteger = Integer.valueOf(poolSize);
-        int start = RANGE;
-        int end = RANGE;
-        poolSizes[RANGE] = poolSizeInteger;
-        tputDistros[RANGE] = getThroughputDistribution(poolSize, false);
-        Integer prior = threadStats.lowerKey(poolSizeInteger);
-        Integer next = threadStats.higherKey(poolSizeInteger);
-        for (int i = 1; i <= RANGE; i++) {
-            if (prior != null) {
-                start--;
-                poolSizes[start] = prior;
-                tputDistros[start] = getThroughputDistribution(prior, false);
-                prior = threadStats.lowerKey(prior);
-            }
-            if (next != null) {
-                end++;
-                poolSizes[end] = next;
-                tputDistros[end] = getThroughputDistribution(next, false);
-                next = threadStats.higherKey(next);
-            }
-        }
-        for (int i = start; i <= end; i++) {
-            sb.append(String.format("%s%3d threads: %s%n", (poolSizes[i] == poolSizeInteger) ? "-->" : "   ", poolSizes[i], String.valueOf(tputDistros[i])));
+        if (!fixedSize) {
+            sb.append(String.format(" currentMinimumPoolSize = %2d", Integer.valueOf(currentMinimumPoolSize)));
         }
 
-        if (poolAdjustment == 0) {
-            sb.append("### No pool adjustment ###");
-        } else if (poolAdjustment < 0) {
-            sb.append("--- Shrinking to " + (poolSize + poolAdjustment) + " ---");
-        } else {
-            sb.append("+++ Growing to " + (poolSize + poolAdjustment) + " +++");
+        if (!fixedSize) {
+            sb.append("\nStatistics:\n");
+
+            Integer[] poolSizes = new Integer[2 * RANGE + 1];
+            ThroughputDistribution[] tputDistros = new ThroughputDistribution[2 * RANGE + 1];
+            Integer poolSizeInteger = Integer.valueOf(poolSize);
+            int start = RANGE;
+            int end = RANGE;
+            poolSizes[RANGE] = poolSizeInteger;
+            tputDistros[RANGE] = getThroughputDistribution(poolSize, false);
+            Integer prior = threadStats.lowerKey(poolSizeInteger);
+            Integer next = threadStats.higherKey(poolSizeInteger);
+            for (int i = 1; i <= RANGE; i++) {
+                if (prior != null) {
+                    start--;
+                    poolSizes[start] = prior;
+                    tputDistros[start] = getThroughputDistribution(prior, false);
+                    prior = threadStats.lowerKey(prior);
+                }
+                if (next != null) {
+                    end++;
+                    poolSizes[end] = next;
+                    tputDistros[end] = getThroughputDistribution(next, false);
+                    next = threadStats.higherKey(next);
+                }
+            }
+            for (int i = start; i <= end; i++) {
+                sb.append(String.format("%s%3d threads: %s%n", (poolSizes[i] == poolSizeInteger) ? "-->" : "   ", poolSizes[i], String.valueOf(tputDistros[i])));
+            }
+
+            if (poolAdjustment == 0) {
+                sb.append("### No pool adjustment ###");
+            } else if (poolAdjustment < 0) {
+                sb.append("--- Shrinking to " + (poolSize + poolAdjustment) + " ---");
+            } else {
+                sb.append("+++ Growing to " + (poolSize + poolAdjustment) + " +++");
+            }
         }
 
         return sb.toString();
