@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2025 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-2.0/
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
 /*
  * JBoss, Home of Professional Open Source.
  *
@@ -247,7 +256,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
         interfaces[0] = resourceInterface;
         final Object proxy = Proxy.newProxyInstance(getClassLoader(resourceInterface), interfaces,
                 new ProxyInvocationHandler(resourceInterface, target, Set.copyOf(providers), client));
-        ClientHeaderProviders.registerForClass(resourceInterface, proxy, beanManager);
+        // ClientHeaderProviders.registerForClass(resourceInterface, proxy, beanManager); // Liberty change since done in LibertyRestClientBuilderImpl
         return proxy;
     }
 

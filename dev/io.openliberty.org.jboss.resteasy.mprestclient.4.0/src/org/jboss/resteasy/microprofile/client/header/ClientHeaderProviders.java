@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2025 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-2.0/
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
 /*
  * JBoss, Home of Professional Open Source.
  *
@@ -44,8 +53,10 @@ import org.jboss.resteasy.microprofile.client.CdiConstructorInjector;
 public class ClientHeaderProviders {
     private static final ClientHeadersFactory defaultHeadersFactory = new DefaultClientHeadersFactoryImpl();
 
-    private static final Map<Method, ClientHeaderProvider> providersForMethod = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, ClientHeadersFactory> headerFactoriesForClass = new ConcurrentHashMap<>();
+    // Liberty change start
+    private final Map<Method, ClientHeaderProvider> providersForMethod = new ConcurrentHashMap<>();
+    private final Map<Class<?>, ClientHeadersFactory> headerFactoriesForClass = new ConcurrentHashMap<>();
+    // Liberty change end
 
     private static final HeaderFillerFactory fillerFactory;
 
@@ -56,7 +67,7 @@ public class ClientHeaderProviders {
      *
      * @return the provider responsible for setting the headers
      */
-    public static Optional<ClientHeaderProvider> getProvider(Method method) {
+    public Optional<ClientHeaderProvider> getProvider(Method method) { // Liberty change
         return Optional.ofNullable(providersForMethod.get(method));
     }
 
@@ -67,7 +78,7 @@ public class ClientHeaderProviders {
      *
      * @return the factory used to adjust the headers
      */
-    public static Optional<ClientHeadersFactory> getFactory(Class<?> aClass) {
+    public Optional<ClientHeadersFactory> getFactory(Class<?> aClass) { // Liberty change
         return Optional.ofNullable(headerFactoriesForClass.get(aClass));
     }
 
@@ -81,7 +92,7 @@ public class ClientHeaderProviders {
      * @deprecated use {@link #registerForClass(Class, Object, BeanManager)}
      */
     @Deprecated
-    public static void registerForClass(Class<?> clientClass, Object clientProxy) {
+    public void registerForClass(Class<?> clientClass, Object clientProxy) { // Liberty change
         registerForClass(clientClass, clientProxy, null);
     }
 
@@ -93,13 +104,13 @@ public class ClientHeaderProviders {
      * @param clientProxy proxy of the clientClass, used to handle the default methods
      * @param beanManager the bean manager used to construct CDI beans
      */
-    public static void registerForClass(Class<?> clientClass, Object clientProxy, BeanManager beanManager) {
+    public void registerForClass(Class<?> clientClass, Object clientProxy, BeanManager beanManager) { // Liberty change
         Stream.of(clientClass.getMethods())
                 .forEach(m -> registerForMethod(m, clientProxy));
         registerHeaderFactory(clientClass, beanManager);
     }
 
-    private static void registerHeaderFactory(Class<?> aClass, BeanManager beanManager) {
+    private void registerHeaderFactory(Class<?> aClass, BeanManager beanManager) { // Liberty change
         RegisterClientHeaders annotation = aClass.getAnnotation(RegisterClientHeaders.class);
         if (annotation != null) {
             Optional<ClientHeadersFactory> clientHeadersFactory = getCustomHeadersFactory(annotation, aClass, beanManager);
@@ -108,7 +119,7 @@ public class ClientHeaderProviders {
         }
     }
 
-    private static Optional<ClientHeadersFactory> getCustomHeadersFactory(RegisterClientHeaders annotation,
+    private Optional<ClientHeadersFactory> getCustomHeadersFactory(RegisterClientHeaders annotation, // Liberty change
             Class<?> source, BeanManager beanManager) {
         Class<? extends ClientHeadersFactory> factoryClass = annotation.value();
         try {
@@ -121,12 +132,12 @@ public class ClientHeaderProviders {
         }
     }
 
-    private static void registerForMethod(Method method, Object clientProxy) {
+    private void registerForMethod(Method method, Object clientProxy) { // Liberty change
         ClientHeaderProvider.forMethod(method, clientProxy, fillerFactory).ifPresent(
                 provider -> providersForMethod.put(method, provider));
     }
 
-    private static ClientHeadersFactory construct(final Class<? extends ClientHeadersFactory> factory,
+    private ClientHeadersFactory construct(final Class<? extends ClientHeadersFactory> factory, // Liberty change
             final BeanManager manager)
             throws IllegalAccessException, InstantiationException {
         if (manager != null) {
@@ -162,6 +173,6 @@ public class ClientHeaderProviders {
         }
     }
 
-    private ClientHeaderProviders() {
+    public ClientHeaderProviders() { // Liberty change
     }
 }

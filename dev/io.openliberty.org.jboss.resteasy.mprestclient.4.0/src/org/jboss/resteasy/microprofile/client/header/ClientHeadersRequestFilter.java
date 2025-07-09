@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2025 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-2.0/
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
 /*
  * JBoss, Home of Professional Open Source.
  *
@@ -52,12 +61,7 @@ public class ClientHeadersRequestFilter implements ClientRequestFilter {
 
     private final MultivaluedMap<String, Object> defaultHeaders;
 
-    /**
-     * Creates a new filter.
-     */
-    public ClientHeadersRequestFilter() {
-        this.defaultHeaders = new Headers<>();
-    }
+    private final ClientHeaderProviders headerProviders; // Liberty change
 
     /**
      * Creates a new filter which will add each default header by default to the request headers. Note the values of
@@ -65,9 +69,10 @@ public class ClientHeadersRequestFilter implements ClientRequestFilter {
      *
      * @param defaultHeaders the default headers to add
      */
-    public ClientHeadersRequestFilter(final MultivaluedMap<String, Object> defaultHeaders) {
+    public ClientHeadersRequestFilter(final MultivaluedMap<String, Object> defaultHeaders, ClientHeaderProviders headerProviders) { // Liberty Change
         this.defaultHeaders = new Headers<>();
         this.defaultHeaders.putAll(defaultHeaders);
+        this.headerProviders = new ClientHeaderProviders(); // Liberty Change
     }
 
     @Override
@@ -76,10 +81,10 @@ public class ClientHeadersRequestFilter implements ClientRequestFilter {
 
         MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 
-        Optional<ClientHeaderProvider> handler = ClientHeaderProviders.getProvider(method);
+        Optional<ClientHeaderProvider> handler = headerProviders.getProvider(method); // Liberty change
         handler.ifPresent(h -> h.addHeaders(headers));
 
-        Optional<ClientHeadersFactory> factory = ClientHeaderProviders
+        Optional<ClientHeadersFactory> factory = headerProviders // Liberty change
                 .getFactory(ClientRequestContextUtils.getDeclaringClass(requestContext));
 
         requestContext.getHeaders().forEach(
