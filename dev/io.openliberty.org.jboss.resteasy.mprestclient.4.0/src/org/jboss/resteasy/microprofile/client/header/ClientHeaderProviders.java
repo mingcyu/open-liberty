@@ -7,6 +7,8 @@
  * 
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+// https://github.com/resteasy/resteasy-microprofile/blob/3.0.0.Final/rest-client-base/src/main/java/org/jboss/resteasy/microprofile/client/header/ClientHeaderProviders.java
+// https://repo.maven.apache.org/maven2/org/jboss/resteasy/microprofile/microprofile-rest-client-base/3.0.0.Final/microprofile-rest-client-base-3.0.0.Final-sources.jar
 /*
  * JBoss, Home of Professional Open Source.
  *
