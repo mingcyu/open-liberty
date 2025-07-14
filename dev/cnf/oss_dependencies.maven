@@ -735,10 +735,7 @@ org.glassfish.jersey.inject:jersey-hk2:2.26
 org.glassfish.web:jakarta.servlet.jsp.jstl:2.0.0
 org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1
 org.glassfish:jakarta.faces:3.0.1
-org.glassfish:jakarta.json:2.0.1
 org.glassfish:javax.faces:2.3.9
-org.glassfish:javax.json:1.0.4
-org.glassfish:javax.json:1.1.4
 org.hamcrest:hamcrest-all:1.3
 org.hdrhistogram:HdrHistogram:2.1.12
 org.hibernate.common:hibernate-commons-annotations:5.1.0.Final
