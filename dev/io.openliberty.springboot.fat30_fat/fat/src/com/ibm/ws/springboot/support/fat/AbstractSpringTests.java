@@ -47,10 +47,14 @@ import com.ibm.websphere.simplicity.config.VirtualHost;
 import com.ibm.websphere.simplicity.config.WebApplication;
 
 import componenttest.containers.TestContainerSuite;
+import componenttest.rules.SkipJavaSemeruWithFipsEnabled;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
 
 public abstract class AbstractSpringTests extends TestContainerSuite {
+
+    @Rule
+    public static final SkipJavaSemeruWithFipsEnabled skipJavaSemeruWithFipsEnabled = new SkipJavaSemeruWithFipsEnabled("SpringBootTests");
 
     // All current FAT application names.
     public static final String SPRING_BOOT_30_APP_ACTUATOR = "io.openliberty.springboot.fat30.actuator.app-0.0.1-SNAPSHOT.jar";
