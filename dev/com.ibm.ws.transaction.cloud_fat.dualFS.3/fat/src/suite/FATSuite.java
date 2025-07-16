@@ -20,23 +20,19 @@ import org.junit.runners.Suite.SuiteClasses;
 import componenttest.custom.junit.runner.AlwaysPassesTest;
 import componenttest.rules.repeater.FeatureReplacementAction;
 import componenttest.rules.repeater.RepeatTests;
-import tests.DualServerDynamicFSTest1;
-import tests.DualServerDynamicFSTest2;
 import tests.DualServerDynamicFSTest3;
 
 @RunWith(Suite.class)
 @SuiteClasses({
                 AlwaysPassesTest.class,
-                DualServerDynamicFSTest1.class,
-                DualServerDynamicFSTest2.class,
                 DualServerDynamicFSTest3.class,
 })
 public class FATSuite {
     @ClassRule
     public static RepeatTests r = RepeatTests.withoutModificationInFullMode()
-                    .andWith(FeatureReplacementAction.EE8_FEATURES().fullFATOnly().forServers(DualServerDynamicFSTest1.serverNames))
+                    .andWith(FeatureReplacementAction.EE8_FEATURES().fullFATOnly().forServers(DualServerDynamicFSTest3.serverNames))
                     .andWith(FeatureReplacementAction.EE9_FEATURES()
                                     .conditionalFullFATOnly(FeatureReplacementAction.GREATER_THAN_OR_EQUAL_JAVA_11)
-                                    .forServers(DualServerDynamicFSTest1.serverNames))
-                    .andWith(FeatureReplacementAction.EE10_FEATURES().forServers(DualServerDynamicFSTest1.serverNames));
+                                    .forServers(DualServerDynamicFSTest3.serverNames))
+                    .andWith(FeatureReplacementAction.EE10_FEATURES().forServers(DualServerDynamicFSTest3.serverNames));
 }
