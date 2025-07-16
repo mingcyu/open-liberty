@@ -17,36 +17,42 @@
             <package name="org.eclipse.microprofile.rest.client.tck.*"/>
         </packages>
         <classes>
-        <class name="org.eclipse.microprofile.rest.client.tck.sse.BasicReactiveStreamsTest">
-            <methods>
+          <class name="org.eclipse.microprofile.rest.client.tck.sse.BasicReactiveStreamsTest">
+             <methods>
                 <exclude name=".*" />
-            </methods>
-        </class>
-        <class name="org.eclipse.microprofile.rest.client.tck.sse.ReactiveStreamsPublisherTckTest">
-            <methods>
+             </methods>
+          </class>
+          <class name="org.eclipse.microprofile.rest.client.tck.sse.ReactiveStreamsPublisherTckTest">
+             <methods>
                 <exclude name=".*" />
-            </methods>
-        </class>
-        <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslContextTest">
-            <methods>
+             </methods>
+          </class>
+          <!-- ******Begin of Fips-related excludes****** 
+               The keystore using old PBE algorithm is no longer supported with FIPS 140-3, 
+               the related tests from *.tck.ssl.* are temporarily excluded until the issue is fixed, 
+               which is currently tracked under https://github.com/microprofile/microprofile-rest-client/issues/399. 
+          -->
+          <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslContextTest">
+             <methods>
                 <exclude name="shouldSucceedMutualSslWithValidSslContext" />
-            </methods>
+             </methods>
           </class>
           <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslHostnameVerifierTest">
-            <methods>
+             <methods>
                 <exclude name=".*" />
-            </methods>
+             </methods>
           </class>
           <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslMutualTest">
-            <methods>
+             <methods>
                 <exclude name=".*" />
-            </methods>
+             </methods>
           </class>
           <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslTrustStoreTest">
-            <methods>
+             <methods>
                 <exclude name=".*" />
-            </methods>
+             </methods>
           </class>
-    </classes>
+          <!-- ******End of Fips-related excludes****** -->
+        </classes>
     </test>
 </suite>

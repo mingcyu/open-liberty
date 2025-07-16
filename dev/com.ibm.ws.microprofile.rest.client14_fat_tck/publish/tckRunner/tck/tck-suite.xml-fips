@@ -16,6 +16,11 @@
         <packages>
             <package name="org.eclipse.microprofile.rest.client.tck.*"></package>
         </packages>
+        <!-- ******Begin of Fips-related excludes****** 
+             The keystore using old PBE algorithm is no longer supported with FIPS 140-3, 
+             the related tests from *.tck.ssl.* are temporarily excluded until the issue is fixed, 
+             which is currently tracked under https://github.com/microprofile/microprofile-rest-client/issues/399. 
+        -->
         <classes>
           <class name="org.eclipse.microprofile.rest.client.tck.ssl.SslContextTest">
             <methods>
@@ -38,5 +43,6 @@
             </methods>
           </class>
         </classes>
+        <!-- ******End of Fips-related excludes****** -->
     </test>
 </suite>
