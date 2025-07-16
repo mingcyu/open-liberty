@@ -12,7 +12,6 @@ package test.jakarta.data.experimental.web;
 
 import static io.openliberty.data.repository.Is.Op.GreaterThan;
 import static io.openliberty.data.repository.Is.Op.GreaterThanEqual;
-import static io.openliberty.data.repository.Is.Op.IgnoreCase;
 import static io.openliberty.data.repository.Is.Op.LessThanEqual;
 import static io.openliberty.data.repository.Is.Op.Not;
 import static io.openliberty.data.repository.Is.Op.NotIgnoreCase;
@@ -65,17 +64,6 @@ public interface Towns {
 
     @Find
     Optional<Town> findById(@By(ID) TownId id);
-
-    @Find
-    @OrderBy("name")
-    Stream<Town> findByIdIsOneOf(@By(ID) TownId id1,
-                                 @Or @By(ID) @Is(IgnoreCase) TownId id2,
-                                 @Or @By(ID) TownId id3);
-
-    @Find
-    @OrderBy("stateName")
-    Stream<Town> findByNameButNotId(@By("name") String townName,
-                                    @By(ID) @Is(Not) TownId exceptFor);
 
     @Exists
     boolean isBiggerThan(@By("population") @Is(GreaterThan) int minPopulation,
