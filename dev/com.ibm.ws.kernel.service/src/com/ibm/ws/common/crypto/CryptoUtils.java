@@ -144,7 +144,7 @@ public class CryptoUtils {
     // FIPS recommended iteration count
     public static final int FIPS1403_PBKDF2_ITERATIONS = PBKDF2HMACSHA512_ITERATIONS;
 
-    private static boolean isEnhancedSecurity = useEnhancedSecurityAlgorithm();
+    private static boolean isEnhancedSecurity = useEnhancedSecurityAlgorithms();
     private static boolean fips140_3Enabled = isFips140_3Enabled();
     private static boolean fipsEnabled = fips140_3Enabled;
 
@@ -412,13 +412,13 @@ public class CryptoUtils {
         return "true".equals(getPropertyLowerCase("semeru.fips", "false"));
     }
 
-    private static boolean useEnhancedSecurityAlgorithm() {
+    protected static boolean useEnhancedSecurityAlgorithms() {
         if (isEnhancedSecurityChecked) {
             return isEnhancedSecurity;
         } else {
-            isEnhancedSecurity = Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
+            isEnhancedSecurity = isRunningBetaMode() && Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Internal property " + PROPERTY_USE_ENHANCED_SECURITY_ALG + ": " + isEnhancedSecurity);
+                Tr.debug(tc, "isEnhancedSecurity: " + (isEnhancedSecurity ? "enabled" : "disabled"));
             }
         }
         isEnhancedSecurityChecked = true;
@@ -426,7 +426,7 @@ public class CryptoUtils {
     }
 
     public static boolean isFips140_3EnabledWithBetaGuard() {
-        return (isRunningBetaMode() && isFips140_3Enabled()) || useEnhancedSecurityAlgorithm();
+        return (isRunningBetaMode() && isFips140_3Enabled()) || useEnhancedSecurityAlgorithms();
     }
 
     private static boolean isRunningBetaMode() {
@@ -462,7 +462,7 @@ public class CryptoUtils {
             }
 
             if (!fips140_3Enabled) {
-                fips140_3Enabled = useEnhancedSecurityAlgorithm();
+                fips140_3Enabled = useEnhancedSecurityAlgorithms();
                 if (fips140_3Enabled) {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                         Tr.debug(tc, "isFips140_3Enabled set to true by useEnhancedSecurityAlgorithm()");

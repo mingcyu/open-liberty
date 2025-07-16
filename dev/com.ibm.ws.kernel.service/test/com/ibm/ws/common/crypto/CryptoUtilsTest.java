@@ -37,6 +37,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::isIBMJCEPlusFIPSAvailable, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -59,6 +60,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::isOpenJCEPlusFIPSAvailable, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -83,6 +85,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::isIBMJCEPlusFIPSProviderAvailable, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -109,6 +112,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::isOpenJCEPlusFIPSProviderAvailable, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -144,6 +148,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -174,6 +180,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -204,6 +212,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -232,6 +241,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -260,6 +270,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -282,6 +294,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -304,6 +317,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -326,6 +340,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -346,6 +361,7 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
             mock.verifyNoMoreInteractions();
         }
     }
@@ -366,6 +382,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -394,6 +412,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -416,6 +436,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -438,6 +460,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -458,6 +482,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -478,6 +504,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -505,6 +533,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -527,6 +557,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -549,6 +581,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getFipsProviderName, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -569,6 +603,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
@@ -589,6 +625,8 @@ public class CryptoUtilsTest {
             mock.verify(CryptoUtils::getUseFipsProvider, Mockito.times(1));
             mock.verify(CryptoUtils::isFips140_3Enabled, Mockito.times(2));
             mock.verify(CryptoUtils::isFips140_2Enabled, Mockito.times(1));
+            mock.verify(CryptoUtils::useEnhancedSecurityAlgorithms, Mockito.times(1));
+
             mock.verifyNoMoreInteractions();
         }
     }
