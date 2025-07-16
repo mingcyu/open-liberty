@@ -570,13 +570,15 @@ public class DataExperimentalServlet extends FATServlet {
      * Repository method with the Count keyword that counts how many matching entities there are.
      */
     // TODO enable once #29073 is fixed
-    // SELECT COUNT(o) FROM Town o WHERE (o.stateName=?1 AND id(o)<>?2 OR id(o)<>?3 AND o.name=?4)
+    // SELECT COUNT(o) FROM Town o WHERE (o.stateName=?1 AND id(o)<>?2)
     // is wrongly interpreted as:
-    // SELECT COUNT(STATENAME) FROM Town WHERE (((STATENAME = ?) AND (STATENAME <> ?)) OR ((STATENAME <> ?) AND (NAME = ?)))
-    // @Test
+    // SELECT COUNT(STATENAME) FROM Town WHERE (((STATENAME = ?) AND (STATENAME <> ?)))
+    //@Test
     public void testIdClassCountKeyword() {
-        assertEquals(2L, towns.countByStateButNotTown_Or_NotTownButWithTownName("Missouri", TownId.of("Kansas City", "Missouri"),
-                                                                                TownId.of("Rochester", "New York"), "Rochester"));
+        assertEquals(1L,
+                     towns.countByStateButNotTown("Missouri",
+                                                  TownId.of("Kansas City",
+                                                            "Missouri")));
     }
 
     /**

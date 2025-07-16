@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023,2024 IBM Corporation and others.
+ * Copyright (c) 2023,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -35,7 +35,6 @@ import jakarta.data.repository.Update;
 import io.openliberty.data.repository.Count;
 import io.openliberty.data.repository.Exists;
 import io.openliberty.data.repository.Is;
-import io.openliberty.data.repository.Or;
 import io.openliberty.data.repository.update.Assign;
 
 /**
@@ -50,10 +49,8 @@ public interface Towns {
     boolean areFoundIn(@By("stateName") String state);
 
     @Count
-    long countByStateButNotTown_Or_NotTownButWithTownName(@By("stateName") String state,
-                                                          @By(ID) @Is(Not) TownId exceptForInState,
-                                                          @Or @By(ID) @Is(Not) TownId exceptForTown,
-                                                          @By("name") String town);
+    long countByStateButNotTown(@By("stateName") String state,
+                                @By(ID) @Is(Not) TownId exceptForInState);
 
     @Delete
     TownId[] deleteWithinPopulationRange(@By("population") @Is(GreaterThanEqual) int min,

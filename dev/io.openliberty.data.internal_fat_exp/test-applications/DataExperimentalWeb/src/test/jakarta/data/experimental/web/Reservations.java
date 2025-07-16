@@ -134,7 +134,6 @@ public interface Reservations extends BasicRepository<Reservation, Long> {
                                             OffsetDateTime start1,
                                             OffsetDateTime start2);
 
-    @Find
     @Select("meetingID")
     LongStream findByStopOrStartOrStartOrStart(OffsetDateTime stop,
                                                OffsetDateTime start1,
