@@ -30,10 +30,10 @@ import com.ibm.ws.kernel.service.util.JavaInfo;
 
 public class CryptoUtils {
     /**
-     * When set true, property 'use.enhanced.security.alg' will enable the FIPS algorithms
+     * When set true, property 'use.enhanced.security.algorithms' will enable the FIPS algorithms
      * even when FIPS isn't enabled at the JVM level.
      */
-    private static final String PROPERTY_USE_ENHANCED_SECURITY_ALG = "use.enhanced.security.alg";
+    private static final String PROPERTY_USE_ENHANCED_SECURITY_ALG = "use.enhanced.security.algorithms";
 
     private static final TraceComponent tc = Tr.register(CryptoUtils.class);
 
@@ -64,7 +64,6 @@ public class CryptoUtils {
     public static boolean unitTest = false;
     public static boolean fipsChecked = false;
     public static boolean fips140_3Checked = false;
-    public static boolean isEnhancedSecurityChecked = false;
 
     public static boolean javaVersionChecked = false;
     public static boolean isJava11orHigher = false;
@@ -144,7 +143,6 @@ public class CryptoUtils {
     // FIPS recommended iteration count
     public static final int FIPS1403_PBKDF2_ITERATIONS = PBKDF2HMACSHA512_ITERATIONS;
 
-    private static boolean isEnhancedSecurity = useEnhancedSecurityAlgorithms();
     private static boolean fips140_3Enabled = isFips140_3Enabled();
     private static boolean fipsEnabled = fips140_3Enabled;
 
@@ -413,20 +411,15 @@ public class CryptoUtils {
     }
 
     protected static boolean useEnhancedSecurityAlgorithms() {
-        if (isEnhancedSecurityChecked) {
-            return isEnhancedSecurity;
-        } else {
-            isEnhancedSecurity = isRunningBetaMode() && Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "isEnhancedSecurity: " + (isEnhancedSecurity ? "enabled" : "disabled"));
-            }
+        boolean isEnhancedSecurity = isRunningBetaMode() && Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "isEnhancedSecurity: " + (isEnhancedSecurity ? "enabled" : "disabled"));
         }
-        isEnhancedSecurityChecked = true;
         return isEnhancedSecurity;
     }
 
     public static boolean isFips140_3EnabledWithBetaGuard() {
-        return (isRunningBetaMode() && isFips140_3Enabled()) || useEnhancedSecurityAlgorithms();
+        return isRunningBetaMode() && isFips140_3Enabled();
     }
 
     private static boolean isRunningBetaMode() {
@@ -465,7 +458,7 @@ public class CryptoUtils {
                 fips140_3Enabled = useEnhancedSecurityAlgorithms();
                 if (fips140_3Enabled) {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                        Tr.debug(tc, "isFips140_3Enabled set to true by useEnhancedSecurityAlgorithm()");
+                        Tr.debug(tc, "fips140_3Enabled set to true by useEnhancedSecurityAlgorithms()");
                     }
                 }
             }
