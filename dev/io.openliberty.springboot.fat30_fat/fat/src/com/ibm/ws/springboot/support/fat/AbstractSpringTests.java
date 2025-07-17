@@ -39,11 +39,11 @@ import org.junit.rules.TestName;
 
 import com.ibm.websphere.simplicity.RemoteFile;
 import com.ibm.websphere.simplicity.config.HttpEndpoint;
-import com.ibm.websphere.simplicity.config.KeyStore;
 import com.ibm.websphere.simplicity.config.SSL;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.config.SpringBootApplication;
 import com.ibm.websphere.simplicity.config.VirtualHost;
+import com.ibm.websphere.simplicity.config.KeyStore;
 import com.ibm.websphere.simplicity.config.WebApplication;
 
 import componenttest.containers.TestContainerSuite;
@@ -71,6 +71,7 @@ public abstract class AbstractSpringTests extends TestContainerSuite {
     public static final String SPRING_BOOT_30_APP_JMS = "io.openliberty.springboot.fat30.jms.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_30_APP_CONCURRENCY = "io.openliberty.springboot.fat30.concurrency.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_30_APP_VALIDATION = "io.openliberty.springboot.fat30.validation.app-0.0.1-SNAPSHOT.war";
+    public static final String SPRING_BOOT_30_APP_AOP = "io.openliberty.springboot.fat30.aop.app-0.0.1-SNAPSHOT.war";
 
     // Various spring configuration property fragments.
     public static final String ID_VIRTUAL_HOST = "springBootVirtualHost-";
