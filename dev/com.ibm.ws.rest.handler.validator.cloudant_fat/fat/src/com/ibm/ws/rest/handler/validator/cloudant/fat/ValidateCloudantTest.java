@@ -39,13 +39,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
-import org.testcontainers.utility.DockerImageName;
 
 import com.ibm.websphere.simplicity.log.Log;
 
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.Server;
-import componenttest.containers.ImageBuilder;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.utils.FATServletClient;
@@ -66,7 +64,7 @@ public class ValidateCloudantTest extends FATServletClient {
     private static String CLOUDANT_URL;
     private static String databaseURI;
 
-    private static final DockerImageName CLOUDANT_DEV = ImageBuilder.build("cloudant-dev:2.0.1").getDockerImageName();
+    //private static final DockerImageName CLOUDANT_DEV = ImageBuilder.build("cloudant-dev:2.0.1").getDockerImageName();
 
     @ClassRule //FIXME the cloudant-developer image is deprecated consider using CouchDB
     public static GenericContainer<?> cloudant = new GenericContainer<>(CLOUDANT_DEV)
