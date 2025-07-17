@@ -38,6 +38,7 @@ public class PatchTest extends FATServletClient {
     public static void setUp() throws Exception {
         ShrinkHelper.defaultDropinApp(server, appName, "jaxrs21.fat.patch");
         server.startServer();
+        server.waitForSSLStart();
     }
 
     @AfterClass
