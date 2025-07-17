@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,10 +12,11 @@ package io.openliberty.http.monitor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.Enumeration;
 
 import javax.servlet.UnavailableException;
 
+import com.ibm.websphere.monitor.annotation.Monitor;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.servlet.error.ServletErrorReport;
@@ -52,7 +53,6 @@ public class ServletFilter implements Filter {
 	@FFDCIgnore(value = { IOException.class, ServletException.class, Exception.class })
 	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
 			throws IOException, ServletException {
-
 
 		if (!MonitorAppStateListener.isHTTPEnabled()) {
 			/*
@@ -125,7 +125,14 @@ public class ServletFilter implements Filter {
 					//SRTServletRequest allows us to get the WebAppDispatcher
 					SRTServletRequest srtServletRequest = (SRTServletRequest) servletRequest;
 					
-					httpRoute = resolveHttpRoute(srtServletRequest, contextPath);
+					//do spring check
+					if (MonitorAppStateListener.isSpringFeatureEnabled() && srtServletRequest.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingPattern") != null) {
+
+						//preprocess to send in an empty string, if it is null or already empty to begin with (easier for logic later)
+						httpRoute = resolveHttpRouteSpring(srtServletRequest, (contextPath == null || contextPath.trim().isEmpty() ) ? "" : contextPath);
+					} else {
+						httpRoute = resolveHttpRoute(srtServletRequest, contextPath);
+					}
 				} else {
 					//This shouldn't happen.
 					if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()){
@@ -257,8 +264,45 @@ public class ServletFilter implements Filter {
         return status;
 	}
 	
+	
+	private String resolveHttpRouteSpring(SRTServletRequest srtServletRequest, String contextPath) {
+		
+		String httpRoute = (String) srtServletRequest.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingPattern");
+		
+		if (httpRoute == null || httpRoute.trim().isEmpty()) {
+			// If somehow this is null or is empty, default to a /* 
+			httpRoute = "/*";
+		} else {
+			httpRoute = httpRoute.trim();
+			
+			/*
+			 * Now need to check if we 4xx code. (If so, we're likely to have been provided an /error path, which isn't useful.
+			 * We will turn it into a "/*"!
+			 */
+			Object jakartaServletErrorStatusCode = srtServletRequest.getAttribute("jakarta.servlet.error.status_code");
+			Object javaxServletErrorStatusCode = srtServletRequest.getAttribute("javax.servlet.error.status_code");
+			
+			if ((jakartaServletErrorStatusCode != null  && Integer.valueOf(jakartaServletErrorStatusCode.toString().trim()) % 400 <= 99) 
+				|| (javaxServletErrorStatusCode != null  && Integer.valueOf(javaxServletErrorStatusCode.toString().trim()) % 400 <= 99 )) {
+				httpRoute =  "/*";
+			}
+		}
+
+		/*
+		 * Loading static html pages may result in a /**
+		 * Trim it down to just /*
+		 */
+		if (httpRoute.equals("/**")) {
+			httpRoute =  "/*";
+		}
+		
+		//Apply context path if available
+		return contextPath + httpRoute;
+	}
+	
 	private String resolveHttpRoute(SRTServletRequest srtServletRequest, String contextPath) {
 		String httpRoute = null;		
+	
 		
 		String pathInfo = srtServletRequest.getPathInfo();
 		pathInfo = (pathInfo == null ) ? null : pathInfo.trim();
