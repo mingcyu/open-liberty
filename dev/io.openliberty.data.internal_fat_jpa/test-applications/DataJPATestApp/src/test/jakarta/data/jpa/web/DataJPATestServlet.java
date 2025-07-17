@@ -2575,6 +2575,40 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Repository method with a Query based on multiple IdClass parameters.
+     */
+    // TODO enable once #29073 is fixed
+    // SELECT o FROM City o WHERE (o.name=?1 AND id(o)<>?2) ORDER BY o.stateName
+    // is wrongly interpreted as:
+    // SELECT STATENAME, NAME, AREACODES, CHANGECOUNT, POPULATION FROM City
+    //  WHERE ((NAME = ?) AND (STATENAME <> ?)) ORDER BY STATENAME
+    //@Test
+    public void testIdClassInQuery() {
+
+        assertEquals(List.of("Springfield Illinois",
+                             "Springfield Massachusetts",
+                             "Springfield Missouri",
+                             "Springfield Ohio"),
+                     cities.byNameButNotId("Springfield",
+                                           CityId.of("Springfield",
+                                                     "Oregon"))
+                                     .map(c -> c.name + ' ' + c.stateName)
+                                     .collect(Collectors.toList()));
+
+        assertEquals(List.of("Kansas City Missouri",
+                             "Rochester Minnesota",
+                             "Springfield Illinois"),
+                     cities.whereIdIsOneOf(CityId.of("Rochester",
+                                                     "Minnesota"),
+                                           CityId.of("springfield",
+                                                     "illinois"),
+                                           CityId.of("Kansas City",
+                                                     "Missouri"))
+                                     .map(c -> c.name + ' ' + c.stateName)
+                                     .collect(Collectors.toList()));
+    }
+
+    /**
      * Use the OrderBy annotation on a composite id that is defined by an IdClass attribute.
      */
     @Test
