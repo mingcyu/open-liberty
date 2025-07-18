@@ -53,8 +53,8 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.app.manager.springboot.container.ApplicationError;
 import com.ibm.ws.app.manager.springboot.container.ApplicationTr.Type;
-import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.ws.common.crypto.CryptoUtils;
+import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
 /**
  * A utility class for thinning an uber jar by separating application code in a separate jar
@@ -311,7 +311,9 @@ public class SpringBootThinUtil implements Closeable {
     protected String hash(JarFile jf, ZipEntry entry) throws IOException, NoSuchAlgorithmException {
         InputStream eis = jf.getInputStream(entry);
         // sha-1 is used temporarily while doing checkpoint/restore for Spring Boot applications until sha-256 is made available by JVM.
-        MessageDigest digest = getDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase(), CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1.toLowerCase());
+        String[] allowedAlgorithms = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? new String[] { CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase() } : new String[] { CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase(),
+                                                                                                                                                                                  CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1.toLowerCase() };
+        MessageDigest digest = getDigest(allowedAlgorithms);
         byte[] buffer = new byte[4096];
         int read = -1;
 
