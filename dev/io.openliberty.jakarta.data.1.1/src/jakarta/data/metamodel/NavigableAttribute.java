@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023,2025 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,34 +12,26 @@
  *******************************************************************************/
 package jakarta.data.metamodel;
 
-import jakarta.data.Sort;
-import jakarta.data.expression.TextExpression;
+import jakarta.data.expression.NavigableExpression;
 
 /**
  * Method signatures are copied from Jakarta Data.
  */
-public interface TextAttribute<T> extends ComparableAttribute<T, String>, TextExpression<T> {
-
-    default Sort<T> ascIgnoreCase() {
-        return Sort.ascIgnoreCase(name());
-    }
+public interface NavigableAttribute<T, U> //
+                extends Attribute<T>, NavigableExpression<T, U> {
 
     @Override
-    default Class<String> attributeType() {
-        return String.class;
-    }
+    Class<U> attributeType();
 
-    default Sort<T> descIgnoreCase() {
-        return Sort.descIgnoreCase(name());
-    }
+    static <T, U> NavigableAttribute<T, U> of(Class<T> entityClass,
+                                              String name,
+                                              Class<U> attributeType) {
 
-    static <T> TextAttribute<T> of(Class<T> entityClass,
-                                   String name) {
         if (entityClass == null ||
-            name == null)
+            name == null ||
+            attributeType == null)
             throw new NullPointerException();
 
-        return new TextAttributeRecord<>(entityClass, name);
+        return new NavigableAttributeRecord<>(entityClass, name, attributeType);
     }
-
 }

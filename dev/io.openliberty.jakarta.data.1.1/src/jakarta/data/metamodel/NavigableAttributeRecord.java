@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024,2025 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -10,14 +10,19 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package jakarta.data.metamodel.impl;
-
-import jakarta.data.metamodel.TextAttribute;
+package jakarta.data.metamodel;
 
 /**
  * Method signatures are copied from Jakarta Data.
  */
-@Deprecated(since = "1.1")
-public record TextAttributeRecord<T>(String name) implements TextAttribute<T> {
+record NavigableAttributeRecord<T, U>(
+                Class<T> declaringType,
+                String name,
+                Class<U> attributeType)
+                implements NavigableAttribute<T, U> {
 
+    @Override
+    public String toString() {
+        return declaringType.getSimpleName().toLowerCase() + '.' + name;
+    }
 }
