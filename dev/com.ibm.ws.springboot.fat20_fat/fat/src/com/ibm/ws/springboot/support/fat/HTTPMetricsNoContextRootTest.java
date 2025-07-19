@@ -180,6 +180,8 @@ public class HTTPMetricsNoContextRootTest extends HTTPMetricsAbstractTests {
         String requestMethod = HTTPRequestMethod.GET.toString();
 
         HttpURLConnection conn = HttpUtils.getHttpConnection(server, route);
+        //Need to set Accept header to text/html, otherwise may encounter a 500 instead. Maybe JDK dependant.
+        conn.setRequestProperty("Accept", "text/html");
         Assert.assertTrue(String.format("Expected %d, but got %d", intResponseStatus, conn.getResponseCode()), conn.getResponseCode() == intResponseStatus);
         conn.disconnect();
 
@@ -199,6 +201,8 @@ public class HTTPMetricsNoContextRootTest extends HTTPMetricsAbstractTests {
         String requestMethod = HTTPRequestMethod.GET.toString();
 
         HttpURLConnection conn = HttpUtils.getHttpConnection(server, route);
+        //Need to set Accept header to text/html, otherwise may encounter a 500 instead. Maybe JDK dependant.
+        conn.setRequestProperty("Accept", "text/html");
         Assert.assertTrue(String.format("Expected %d, but got %d", intResponseStatus, conn.getResponseCode()), conn.getResponseCode() == intResponseStatus);
         conn.disconnect();
 
@@ -221,6 +225,8 @@ public class HTTPMetricsNoContextRootTest extends HTTPMetricsAbstractTests {
         String requestMethod = HTTPRequestMethod.POST.toString();
 
         HttpURLConnection conn = HttpUtils.getHttpConnection(HttpUtils.createURL(server, route), HttpUtils.DEFAULT_TIMEOUT, HTTPRequestMethod.POST);
+        //Need to set Accept header to text/html, otherwise may encounter a 500 instead. Maybe JDK dependant.
+        conn.setRequestProperty("Accept", "text/html");
         Assert.assertTrue(String.format("Expected %d, but got %d", intResponseStatus, conn.getResponseCode()), conn.getResponseCode() == intResponseStatus);
         conn.disconnect();
 
