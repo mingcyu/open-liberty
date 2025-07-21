@@ -23,8 +23,7 @@ Export-Package: \
   io.smallrye.mutiny.jakarta.streams.operators; version="2.7.0", \
   io.smallrye.mutiny.jakarta.streams.spi; version="2.7.0", \
   io.smallrye.mutiny.jakarta.streams.stages; version="2.7.0", \
-  io.smallrye.mutiny.jakarta.streams.utils; version="2.7.0", \
-  org.jctools.queues.atomic.unpadded; version="4.0.5"
+  io.smallrye.mutiny.jakarta.streams.utils; version="2.7.0"
 
 WS-TraceGroup: REACTIVESTREAMS
 

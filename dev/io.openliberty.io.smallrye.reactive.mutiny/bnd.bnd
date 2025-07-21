@@ -36,4 +36,5 @@ instrument.disabled: true
   io.smallrye.reactive:mutiny;version=2.7.0,\
   io.smallrye.reactive:mutiny-zero-flow-adapters;version=1.1.1,\
   com.ibm.websphere.org.osgi.core;version=latest,\
-  com.ibm.ws.logging.core;version=latest
+  com.ibm.ws.logging.core;version=latest,\
+  io.openliberty.org.jctools;version=latest
