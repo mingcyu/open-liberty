@@ -12,7 +12,7 @@
 		}
 	},
 	"paths": {
-        "/bar": {
+        "/bar1": {
             "get": {
                 "summary": "openapi.json - Get test data",
                 "responses": {

@@ -665,6 +665,7 @@ public class MergeConfigServerXMLTest {
 
     //This test creates an openAPI doc with a map containing values from two apps, and checks they preserve their ordering
     @Test
+
     public void testMergePreservesMapOrdering() throws Exception {
         setMergeConfig(list("test2", "test3"), null, null);
 
@@ -688,7 +689,7 @@ public class MergeConfigServerXMLTest {
         JsonNode openapiNode = OpenAPITestUtil.readYamlTree(doc).get("paths");
         String openAPIText = openapiNode.toPrettyString().replaceAll("\\R", " ");
 
-        Pattern p = Pattern.compile(".*foo.*foo2.*foo3.*bar.*bar2.*bar3.*");
+        Pattern p = Pattern.compile(".*foo1.*foo2.*foo3.*bar1.*bar2.*bar3.*");
         Matcher m = p.matcher(openAPIText);
 
         Assert.assertTrue("Could not find the regex " + p.toString() + " in " + openAPIText, m.matches());
