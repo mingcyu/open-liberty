@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.ibm.ws.transaction.fat.util.PostgresqlContainerSuite;
 import com.ibm.ws.transaction.fat.util.TxTestContainerSuite;
 
 import componenttest.containers.SimpleLogConsumer;
@@ -30,10 +31,10 @@ import tests.DBRerouteTest;
 @SuiteClasses({
 	DBRerouteTest.class,
 })
-public class FATSuite extends TxTestContainerSuite {
+public class FATSuite extends PostgresqlContainerSuite {
 
     static {
-        testContainer = new PostgreSQLContainer(POSTGRES_SSL)
+        testContainer = new PostgreSQLContainer(getPostgresqlImageName())
                         .withDatabaseName(POSTGRES_DB)
                         .withUsername(POSTGRES_USER)
                         .withPassword(POSTGRES_PASS)
