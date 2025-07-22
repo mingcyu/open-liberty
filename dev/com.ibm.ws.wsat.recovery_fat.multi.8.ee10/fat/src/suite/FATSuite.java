@@ -33,9 +33,9 @@ public class FATSuite extends PostgresqlContainerSuite {
 
 	static {
 	    testContainer = new PostgreSQLContainer(getPostgresqlImageName())
-	                    .withDatabaseName(PostgresqlContainerSuite.POSTGRES_DB)
-	                    .withUsername(PostgresqlContainerSuite.POSTGRES_USER)
-	                    .withPassword(PostgresqlContainerSuite.POSTGRES_PASS)
+	                    .withDatabaseName(POSTGRES_DB)
+	                    .withUsername(POSTGRES_USER)
+	                    .withPassword(POSTGRES_PASS)
 	                    .withSSL()
 	                    .withLogConsumer(new SimpleLogConsumer(DBRerouteRecoveryTest.class, "postgre-ssl"));
 
