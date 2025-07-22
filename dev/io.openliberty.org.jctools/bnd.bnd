@@ -1,5 +1,5 @@
 #*******************************************************************************
-# Copyright (c) 2023, 2025 IBM Corporation and others.
+# Copyright (c) 2025 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -16,25 +16,21 @@ javac.target: 11
 
 Require-Capability: osgi.ee; filter:="(&(osgi.ee=JavaSE)(version=11))"
 
-Bundle-SymbolicName: io.openliberty.io.smallrye.reactive.mutiny; singleton:=true
-                     
+Bundle-SymbolicName: io.openliberty.org.jctools; singleton:=true
+                  
+jctoolsVersion=4.0.5   
 
 Export-Package: \
-  io.smallrye.mutiny.*; version="2.7.0", \
-  mutiny.zero.flow.adapters.*; version="1.1.1"
+  org.jctools.counters; version=${jctoolsVersion}, \
+  org.jctools.maps; version=${jctoolsVersion}, \
+  org.jctools.queues; version=${jctoolsVersion}, \
+  org.jctools.queues.atomic; version=${jctoolsVersion}, \
+  org.jctools.queues.atomic.unpadded; version=${jctoolsVersion}, \
+  org.jctools.queues.unpadded; version=${jctoolsVersion}, \
+  org.jctools.util; version=${jctoolsVersion}
 
-Private-Package: \
-  io.openliberty.mutiny.internal
-
-Bundle-Activator: io.openliberty.mutiny.internal.MutinyActivator
-
-WS-TraceGroup: REACTIVESTREAMS
 
 instrument.disabled: true
 
 -buildpath: \
-  io.smallrye.reactive:mutiny;version=2.7.0,\
-  io.smallrye.reactive:mutiny-zero-flow-adapters;version=1.1.1,\
-  com.ibm.websphere.org.osgi.core;version=latest,\
-  com.ibm.ws.logging.core;version=latest,\
-  io.openliberty.org.jctools;version=latest
+  org.jctools:jctools-core;version=latest
