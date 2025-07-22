@@ -570,13 +570,15 @@ public class DataExperimentalServlet extends FATServlet {
      * Repository method with the Count keyword that counts how many matching entities there are.
      */
     // TODO enable once #29073 is fixed
-    // SELECT COUNT(o) FROM Town o WHERE (o.stateName=?1 AND id(o)<>?2 OR id(o)<>?3 AND o.name=?4)
+    // SELECT COUNT(o) FROM Town o WHERE (o.stateName=?1 AND id(o)<>?2)
     // is wrongly interpreted as:
-    // SELECT COUNT(STATENAME) FROM Town WHERE (((STATENAME = ?) AND (STATENAME <> ?)) OR ((STATENAME <> ?) AND (NAME = ?)))
-    // @Test
+    // SELECT COUNT(STATENAME) FROM Town WHERE (((STATENAME = ?) AND (STATENAME <> ?)))
+    //@Test
     public void testIdClassCountKeyword() {
-        assertEquals(2L, towns.countByStateButNotTown_Or_NotTownButWithTownName("Missouri", TownId.of("Kansas City", "Missouri"),
-                                                                                TownId.of("Rochester", "New York"), "Rochester"));
+        assertEquals(1L,
+                     towns.countByStateButNotTown("Missouri",
+                                                  TownId.of("Kansas City",
+                                                            "Missouri")));
     }
 
     /**
@@ -600,35 +602,6 @@ public class DataExperimentalServlet extends FATServlet {
     public void testIdClassFindByParametersUnannotated() {
         assertEquals(true, towns.isBiggerThan(100000, TownId.of("Rochester", "Minnesota")));
         assertEquals(false, towns.isBiggerThan(500000, TownId.of("Rochester", "Minnesota")));
-    }
-
-    /**
-     * Repository method with the Find keyword that queries based on multiple IdClass parameters.
-     */
-    // TODO enable once #29073 is fixed
-    // SELECT o FROM Town o WHERE (o.name=?1 AND id(o)<>?2) ORDER BY o.stateName
-    // is wrongly interpreted as:
-    // SELECT STATENAME, NAME, AREACODES, CHANGECOUNT, POPULATION FROM Town
-    //  WHERE ((NAME = ?) AND (STATENAME <> ?)) ORDER BY STATENAME
-    //@Test
-    public void testIdClassFindKeyword() {
-
-        assertEquals(List.of("Springfield Illinois",
-                             "Springfield Massachusetts",
-                             "Springfield Missouri",
-                             "Springfield Ohio"),
-                     towns.findByNameButNotId("Springfield", TownId.of("Springfield", "Oregon"))
-                                     .map(c -> c.name + ' ' + c.stateName)
-                                     .collect(Collectors.toList()));
-
-        assertEquals(List.of("Kansas City Missouri",
-                             "Rochester Minnesota",
-                             "Springfield Illinois"),
-                     towns.findByIdIsOneOf(TownId.of("Rochester", "Minnesota"),
-                                           TownId.of("springfield", "illinois"),
-                                           TownId.of("Kansas City", "Missouri"))
-                                     .map(c -> c.name + ' ' + c.stateName)
-                                     .collect(Collectors.toList()));
     }
 
     /**
@@ -760,6 +733,108 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed.
+     */
+    @Test
+    public void testIntermixedParameters() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("Building 25-2, 2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.0581278,-92.5063833");
+        s1.setId(252);
+        s1.setOrderedAt(OffsetDateTime.now().minusHours(6));
+        s1.setStatus("IN_TRANSIT");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("Building 30-2, 2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.057426, -92.5031221");
+        s2.setId(302);
+        s2.setOrderedAt(OffsetDateTime.now().minusHours(1));
+        s2.setStatus("SUBMITTED");
+        shipments.save(s2);
+
+        String newDestination = "Building 50-2, 2800 37th St NW, Rochester, MN 55901";
+        assertEquals(true,
+                     shipments.switchDestination("SUBMITTED",
+                                                 newDestination,
+                                                 302));
+
+        // destination must be updated
+        s2 = shipments.find(302);
+        assertEquals(newDestination,
+                     s2.getDestination());
+        assertEquals("SUBMITTED",
+                     s2.getStatus());
+        assertEquals(302,
+                     s2.getId());
+        assertEquals("44.057426, -92.5031221",
+                     s2.getLocation());
+
+        // destination must not be updated
+        s1 = shipments.find(252);
+        assertEquals("Building 25-2, 2800 37th St NW, Rochester, MN 55901",
+                     s1.getDestination());
+        assertEquals("IN_TRANSIT",
+                     s1.getStatus());
+        assertEquals(252,
+                     s1.getId());
+        assertEquals("44.0581278,-92.5063833",
+                     s1.getLocation());
+
+        shipments.removeEverything();
+    }
+
+    /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed and one of the
+     * parameters is a composite IdClass value.
+     */
+    // TODO enable once #29073 is fixed
+    //@Test
+    public void testIntermixedParametersIncludingIdClass() {
+
+        final int oldPopulation = 121395;
+        final int newPopulation = 122413;
+
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         newPopulation,
+                                         oldPopulation));
+
+        // population must be updated
+        Town rochester;
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(newPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+
+        // restore the old value to avoid interfering with other tests
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         oldPopulation,
+                                         newPopulation));
+
+        // population must be updated
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(oldPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+    }
+
+    /**
      * Test the Not annotation on a parameter-based query.
      */
     @Test
@@ -783,15 +858,6 @@ public class DataExperimentalServlet extends FATServlet {
                      towns.largerThan(100000, "springfield", "M%s")
                                      .map(c -> c.name + ' ' + c.stateName)
                                      .collect(Collectors.toList()));
-    }
-
-    /**
-     * Test the Or annotation on a parameter-based query.
-     */
-    @Test
-    public void testOr() {
-        assertEquals(List.of(2L, 3L, 5L, 7L, 41L, 43L, 47L),
-                     primes.notWithinButBelow(10, 40, 50));
     }
 
     /**
@@ -931,18 +997,6 @@ public class DataExperimentalServlet extends FATServlet {
         assertEquals(2, shipments.statusBasedRemoval("CANCELED"));
 
         assertEquals(3, shipments.removeEverything());
-    }
-
-    /**
-     * Use a repository method that has both AND and OR keywords.
-     * The AND keywords should take precedence over OR and be computed first.
-     */
-    @Test
-    public void testPrecedenceOfAndOverOr() {
-        assertEquals(List.of(41L, 37L, 31L, 11L, 7L),
-                     primes.lessThanWithSuffixOrBetweenWithSuffix(40L, "even", 30L, 50L, "one")
-                                     .map(p -> p.numberId)
-                                     .collect(Collectors.toList()));
     }
 
     /**
@@ -1294,32 +1348,49 @@ public class DataExperimentalServlet extends FATServlet {
                                      .sorted()
                                      .collect(Collectors.toList()));
 
+        OffsetDateTime stop1;
+        OffsetDateTime stop2;
+        OffsetDateTime stop3;
+        OffsetDateTime start1;
+        OffsetDateTime start2;
+        OffsetDateTime start3;
+
+        stop1 = OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT);
+        start1 = OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT);
+        start2 = OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT);
         assertEquals(List.of("030-2 E314", "050-2 B125", "050-2 G105"),
-                     reservations.findByStopOrStartAtAnyOf(OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT),
-                                                           OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT),
-                                                           OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT))
+                     reservations.findByStopOrStartOrStart(stop1,
+                                                           start1,
+                                                           start2)
                                      .parallel()
                                      .sorted()
                                      .collect(Collectors.toList()));
 
+        stop1 = OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT);
+        start1 = OffsetDateTime.of(2022, 5, 25, 7, 30, 0, 0, CDT);
+        start2 = OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT);
+        start3 = OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT);
         assertEquals(List.of(10030004L, 10030005L, 10030006L, 10030009L),
-                     reservations.findByStopOrStartAtAnyOf(OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT),
-                                                           OffsetDateTime.of(2022, 5, 25, 7, 30, 0, 0, CDT),
-                                                           OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT),
-                                                           OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT))
+                     reservations.findByStopOrStartOrStartOrStart(stop1,
+                                                                  start1,
+                                                                  start2,
+                                                                  start3)
                                      .parallel()
                                      .sorted()
                                      .boxed()
                                      .collect(Collectors.toList()));
 
+        stop1 = OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT);
+        stop2 = OffsetDateTime.of(2022, 5, 25, 15, 0, 0, 0, CDT);
+        stop3 = OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT);
         assertEquals(List.of(OffsetDateTime.of(2022, 5, 25, 10, 0, 0, 0, CDT).toInstant(),
                              OffsetDateTime.of(2022, 5, 25, 10, 0, 0, 0, CDT).toInstant(),
                              OffsetDateTime.of(2022, 5, 25, 13, 0, 0, 0, CDT).toInstant(),
                              OffsetDateTime.of(2022, 5, 25, 13, 0, 0, 0, CDT).toInstant(),
                              OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT).toInstant()),
-                     reservations.findByStoppingAtAnyOf(OffsetDateTime.of(2022, 5, 25, 14, 0, 0, 0, CDT),
-                                                        OffsetDateTime.of(2022, 5, 25, 15, 0, 0, 0, CDT),
-                                                        OffsetDateTime.of(2022, 5, 25, 11, 0, 0, 0, CDT))
+                     reservations.findByStopOrStopOrStop(stop1,
+                                                         stop2,
+                                                         stop3)
                                      .map(r -> r.start().toInstant())
                                      .sorted()
                                      .collect(Collectors.toList()));

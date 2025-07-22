@@ -1172,6 +1172,52 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Verify that a single JPQL query can use different escape characters
+     * for each LIKE comparison.
+     */
+    @Test
+    public void testDifferentEscapeCharactersInSameQuery() {
+        products.clear();
+
+        Product p1 = new Product();
+        p1.name = "DifferentEscapeCharactersInSameQuery-1";
+        p1.pk = UUID.nameUUIDFromBytes(p1.name.getBytes());
+        p1.price = 150.0f;
+        p1.description = "DISCOUNT$:10";
+        products.save(p1);
+
+        Product p2 = new Product();
+        p2.name = "DifferentEscapeCharactersInSameQuery-2";
+        p2.pk = UUID.nameUUIDFromBytes(p2.name.getBytes());
+        p2.price = 250.0f;
+        p2.description = "DISCOUNT%:20";
+        products.save(p2);
+
+        Product p3 = new Product();
+        p3.name = "DifferentEscapeCharactersInSameQuery-3";
+        p3.pk = UUID.nameUUIDFromBytes(p3.name.getBytes());
+        p3.price = 350.0f;
+        p3.description = "DISCOUNT%:10";
+        products.save(p3);
+
+        Product p4 = new Product();
+        p4.name = "DifferentEscapeCharactersInSameQuery-4";
+        p4.pk = UUID.nameUUIDFromBytes(p4.name.getBytes());
+        p4.price = 450.0f;
+        p4.description = "DISCOUNT$:20";
+        products.save(p4);
+
+        Stream<Product> found = products.discounted10or20Percent();
+
+        assertEquals(List.of("DifferentEscapeCharactersInSameQuery-3",
+                             "DifferentEscapeCharactersInSameQuery-2"),
+                     found.map(p -> p.name)
+                                     .collect(Collectors.toList()));
+
+        products.clear();
+    }
+
+    /**
      * Query-by-Method-Name query with a Contains restriction applied to an
      * ElementCollection.
      */
@@ -2098,8 +2144,8 @@ public class DataTestServlet extends FATServlet {
                                      .map(p -> p.name)
                                      .collect(Collectors.toList()));
 
-        // Escape characters are not possible for the repository Like keyword, however,
-        // consider using JPQL escape characters and ESCAPE '\' clause for StartsWith, EndsWith, and Contains
+        // Escape characters are not allowed with the Query by Method Name keywords:
+        // Like, StartsWith, EndsWith, and Contains.
     }
 
     /**
@@ -3896,6 +3942,19 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * Test the Or keyword on a Query by Method Name query.
+     */
+    @Test
+    public void testOrKeyword() {
+        List<Long> l;
+        l = primes.findByNumberIdLessThanOrNumberIdGreaterThanAndNumberIdLessThan(10,
+                                                                                  40,
+                                                                                  50);
+        assertEquals(List.of(2L, 3L, 5L, 7L, 41L, 43L, 47L),
+                     l);
+    }
+
+    /**
      * Repository method where the page request type (Prime entity) differs
      * from the data type of the page that is returned (String) due to the use
      * of query language that asks for results to be returned a String
@@ -4144,6 +4203,19 @@ public class DataTestServlet extends FATServlet {
 
         assertEquals(List.of("forty-one", "thirty-seven"), // ordered by name
                      primes.matchAnyExceptLiteralValueThatLooksLikeANamedParameter("thirty-seven", 41));
+    }
+
+    /**
+     * Use a repository method that has both AND and OR keywords.
+     * The AND keywords should take precedence over OR and be computed first.
+     */
+    @Test
+    public void testPrecedenceOfAndOverOr() {
+        assertEquals(List.of(41L, 37L, 31L, 11L, 7L),
+                     primes.findByNumberIdLessThanAndNameEndsWithOrNumberIdGreaterThanEqualAndNumberIdLessThanEqualAndNameEndsWith//
+                     (40L, "even", 30L, 50L, "one")
+                                     .map(p -> p.numberId)
+                                     .collect(Collectors.toList()));
     }
 
     /**

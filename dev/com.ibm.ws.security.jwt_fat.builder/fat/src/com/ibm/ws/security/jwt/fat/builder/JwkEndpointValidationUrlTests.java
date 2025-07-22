@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -56,6 +56,8 @@ import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.custom.junit.runner.Mode;
 import componenttest.custom.junit.runner.Mode.TestMode;
+import componenttest.rules.SkipJavaSemeruWithFipsEnabled;
+import componenttest.rules.SkipJavaSemeruWithFipsEnabled.SkipJavaSemeruWithFipsEnabledRule;
 import componenttest.topology.impl.JavaInfo;
 import componenttest.topology.impl.LibertyServer;
 
@@ -70,6 +72,9 @@ public class JwkEndpointValidationUrlTests extends CommonSecurityFat {
 
     @Rule
     public static final TestRule conditIgnoreRule = new ConditionalIgnoreRule();
+
+    @Rule
+    public static final SkipJavaSemeruWithFipsEnabled skipJavaSemeruWithFipsEnabled = new SkipJavaSemeruWithFipsEnabled("com.ibm.ws.security.jwt_fat.builder");
 
     public static class skipIfAddressDoesNotResolve extends MySkipRule {
 
@@ -439,6 +444,7 @@ public class JwkEndpointValidationUrlTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
+    @SkipJavaSemeruWithFipsEnabledRule
     @ConditionalIgnoreRule.ConditionalIgnore(condition = skipIfAddressDoesNotResolve.class)
     public void JwkEndpointValidationUrlTests_jwkSigningKeySize_1024() throws Exception {
 
