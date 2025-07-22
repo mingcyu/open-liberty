@@ -1432,14 +1432,14 @@ public class DataJPATestServlet extends FATServlet {
                 throw x;
         }
 
-        // TODO report EclipseLink bug that occurs on the following
+        // TODO enable once issue #32204 is fixed in EclipseLink
         if (false)
             assertIterableEquals(List.of(345003450L, 678006780L),
                                  taxpayers.findByBankAccountsContains(AccountId.of(26122300, 410224))
                                                  .map(t -> t.ssn)
                                                  .collect(Collectors.toList()));
 
-        // TODO also fails with EclipseLink error
+        // TODO enable once issue #31558 is fixed in EclipseLink
         if (false)
             assertIterableEquals(List.of(789007890L),
                                  taxpayers.findByBankAccountsNotEmpty()
