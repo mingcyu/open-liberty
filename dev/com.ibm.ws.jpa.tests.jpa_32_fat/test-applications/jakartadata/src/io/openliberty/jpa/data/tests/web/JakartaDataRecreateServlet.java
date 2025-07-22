@@ -2374,7 +2374,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
         }
     }
     @Test
-    //@Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/32204")
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/32204")
     public void testOLGH32204() throws Exception {
         deleteAllEntities(TaxPayer.class);
 
