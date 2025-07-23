@@ -32,6 +32,7 @@ public class ThreadLocalStorage
 	private static MessageDigest createMsgDigest(){
 		MessageDigest digester = null;
 		try {
+			//Based on whether fips is enabled or not
 			digester = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256) : MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
 			_msgDigest.set( digester);
 		} catch (NoSuchAlgorithmException e) {

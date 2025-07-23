@@ -409,6 +409,7 @@ public class DigestUtils {
         MessageDigest digester = ThreadLocalStorage.getMessageDigest();
         String A1 = createA1MD5Sess(ha1, nonce, cnonce, digester);	
 
+		//if fips is enabled
 		if (CryptoUtils.isFips140_3EnabledWithBetaGuard() && algorithm != null && algorithm.equals(DigestConstants.ALG_SHA256_SESS)) {
         	A1 = createA1SHA256Sess(ha1, nonce, cnonce, digester);
 		}
