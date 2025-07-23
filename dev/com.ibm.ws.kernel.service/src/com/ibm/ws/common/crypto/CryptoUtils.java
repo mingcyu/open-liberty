@@ -376,7 +376,9 @@ public class CryptoUtils {
         MessageDigest md1 = null;
         try {
             if (fipsEnabled) {
-                if (isSemeruFips()) {
+                if (useEnhancedSecurityAlgorithms()) {
+                    md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA_512);
+                } else if (isSemeruFips()) {
                     md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA_512,
                                                     OPENJCE_PLUS_FIPS_NAME);
                 } else {
@@ -423,7 +425,7 @@ public class CryptoUtils {
         if (isEnhancedSecurityChecked) {
             return isEnhancedSecurity;
         } else {
-            isEnhancedSecurity = Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
+            isEnhancedSecurity = isRunningBetaMode() && Boolean.valueOf(getPropertyLowerCase(PROPERTY_USE_ENHANCED_SECURITY_ALG, "false"));
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "isEnhancedSecurity: " + (isEnhancedSecurity ? "enabled" : "disabled"));
             }
