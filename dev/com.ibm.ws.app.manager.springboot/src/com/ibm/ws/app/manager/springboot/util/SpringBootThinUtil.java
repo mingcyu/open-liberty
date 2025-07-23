@@ -54,7 +54,6 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.app.manager.springboot.container.ApplicationError;
 import com.ibm.ws.app.manager.springboot.container.ApplicationTr.Type;
 import com.ibm.ws.common.crypto.CryptoUtils;
-import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
 /**
  * A utility class for thinning an uber jar by separating application code in a separate jar
@@ -310,10 +309,7 @@ public class SpringBootThinUtil implements Closeable {
 
     protected String hash(JarFile jf, ZipEntry entry) throws IOException, NoSuchAlgorithmException {
         InputStream eis = jf.getInputStream(entry);
-        // sha-1 is used temporarily while doing checkpoint/restore for Spring Boot applications until sha-256 is made available by JVM.
-        String[] allowedAlgorithms = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? new String[] { CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase() } : new String[] { CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256.toLowerCase(),
-                                                                                                                                                                                  CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1.toLowerCase() };
-        MessageDigest digest = getDigest(allowedAlgorithms);
+        MessageDigest digest = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256);
         byte[] buffer = new byte[4096];
         int read = -1;
 
@@ -322,25 +318,6 @@ public class SpringBootThinUtil implements Closeable {
         }
         byte[] digested = digest.digest();
         return convertToHexString(digested);
-    }
-
-    @FFDCIgnore(NoSuchAlgorithmException.class)
-    private static MessageDigest getDigest(String... algorithms) throws NoSuchAlgorithmException {
-        NoSuchAlgorithmException error = null;
-        for (String algorithm : algorithms) {
-            try {
-                return MessageDigest.getInstance(algorithm);
-            } catch (NoSuchAlgorithmException suppressed) {
-                // Algorithm not available, save the error and try the next one.
-                if (error != null) {
-                    error.addSuppressed(suppressed);
-                } else {
-                    error = suppressed;
-                }
-
-            }
-        }
-        throw error;
     }
 
     private static String convertToHexString(byte[] digested) {

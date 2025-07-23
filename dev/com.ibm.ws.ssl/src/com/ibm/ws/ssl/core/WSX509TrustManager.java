@@ -439,7 +439,8 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
                     if (tc.isDebugEnabled())
                         Tr.debug(tc, "Adding alias \"" + alias + "\" to truststore \"" + tsFile + "\".");
                     wsks.setCertificateEntry(alias, chain[chain.length - 1]);
-                    String messageDigestAlgorithm = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256 : CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1;
+                    // FIPS 140-3: Replaced deprecated algorithm with modern, FIPS compliant equivalent: SHA-1 to SHA-256.
+                    String messageDigestAlgorithm = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256;
                     String shaDigest = KeyStoreManager.getInstance().generateDigest(messageDigestAlgorithm, chain[chain.length - 1]);
                     String defaultMsg = "CWPKI0308I: Adding signer alias \"" + alias + "\" to local keystore \"" + tsFile + "\" with the following "
                                         + messageDigestAlgorithm + " digest: " + shaDigest;
