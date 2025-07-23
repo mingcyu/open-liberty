@@ -25,7 +25,7 @@ configurations {
     'net.sourceforge.htmlunit:htmlunit:2.44.0',
     'net.sourceforge.htmlunit:neko-htmlunit:2.44.0',
     'net.sourceforge.htmlunit:webdriver:2.6',
-    project(':com.ibm.ws.org.apache.commons.lang3'),,
+    project(':com.ibm.ws.org.apache.commons.lang3'),
     'org.apache.httpcomponents:httpmime:4.3.1',
     'org.apache.tomcat.embed:tomcat-embed-websocket:8.5.23',
     'org.brotli:dec:0.1.2',
