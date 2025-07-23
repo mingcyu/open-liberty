@@ -99,6 +99,7 @@ src: \
     org.eclipse.jetty.websocket:websocket-common;version=9.4.5.v20170502,\
     org.eclipse.jetty:jetty-util;version=9.4.7.RC0,\
     org.eclipse.microprofile.jwt;version=latest,\
+    com.ibm.ws.org.glassfish.json.1.0;version=latest,\
     org.jboss.shrinkwrap:shrinkwrap-api;version=1.2.3,\
     org.seleniumhq.webdriver:webdriver-common;version=0.9.7376
 	

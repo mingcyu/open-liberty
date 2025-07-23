@@ -165,6 +165,7 @@ Include-Resource: \
     com.ibm.ws.webcontainer;version=latest,\
     com.ibm.wsspi.org.osgi.service.component.annotations;version=latest,\
     com.ibm.ws.security.openidconnect.clients.common;version=latest,\
+    com.ibm.ws.org.glassfish.json.1.0;version=latest,\
     io.openliberty.security.oidcclientcore.internal;version=latest
 
 -testpath: \
@@ -185,5 +186,4 @@ Include-Resource: \
     com.ibm.ws.kernel.boot.logging;version=latest, \
     com.ibm.ws.kernel.security.thread;version=latest, \
     com.ibm.ws.container.service.compat;version=latest, \
-    com.ibm.ws.kernel.boot;version=latest, \
-    com.ibm.ws.org.glassfish.json.1.0;version=latest
+    com.ibm.ws.kernel.boot;version=latest

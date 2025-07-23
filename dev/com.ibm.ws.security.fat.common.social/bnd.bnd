@@ -56,7 +56,8 @@ generate.replacement: true
     com.ibm.websphere.security;version=latest, \
     com.ibm.ws.security.token;version=latest, \
     com.ibm.ws.security.jwt;version=latest, \
-    com.ibm.websphere.javaee.jsonp.1.0;version=latest
+    com.ibm.websphere.javaee.jsonp.1.0;version=latest, \
+    com.ibm.ws.org.glassfish.json.1.0;version=latest
 
 -testpath: \
     org.jmock:jmock-legacy;version=2.5.0, \
@@ -69,7 +70,6 @@ generate.replacement: true
     com.ibm.ws.kernel.boot;version=latest, \
     com.ibm.ws.security.test.common;version=latest, \
     io.openliberty.org.apache.commons.logging;version=latest, \
-    com.ibm.ws.org.apache.commons.io;version=latest, \
-    com.ibm.ws.org.glassfish.json.1.0;version=latest
+    com.ibm.ws.org.apache.commons.io;version=latest
 
 
