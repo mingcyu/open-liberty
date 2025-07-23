@@ -23,6 +23,7 @@ import javax.servlet.sip.SipServletResponse;
 import com.ibm.sip.util.log.Log;
 import com.ibm.sip.util.log.LogMgr;
 import com.ibm.sip.util.log.Situation;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.sip.container.servlets.SipServletMessageImpl;
 import com.ibm.ws.sip.container.servlets.SipServletRequestImpl;
 import com.ibm.ws.sip.container.servlets.SipServletResponseImpl;
@@ -259,6 +260,7 @@ class AuthHeader {
 	 * @param uri The request URI
 	 * @param algorithm The algorithm requested in the challange 
 	 * (either 'MD5' or 'MD5-SESS').
+	 * (either 'SHA256' or 'SHA256-SESS') for fips
 	 * @param opaque An opaque value from the challange response, to be embeded 
 	 * in the header. null for none.
 	 * @param body The message body. Only needed if qop="auth-int"
@@ -301,7 +303,8 @@ class AuthHeader {
 	 * @param cnonce The client-side nonce
 	 * @param uri The request URI
 	 * @param algorithm The algorithm requested in the challange 
-	 * (either 'MD5' or 'MD5-SESS').
+	 * (either 'MD5' or 'MD5-SESS') 
+	 * (either 'SHA256' or 'SHA256-SESS') for fips
 	 * @param opaque An opaque value from the challange response, to be embeded 
 	 * in the header. null for none.
 	 * @param body The message body. Only needed if qop="auth-int"
@@ -325,7 +328,15 @@ class AuthHeader {
 		addParam(header, DigestConstants.PROPERTY_USER_NAME, _username, true);
 		addParam(header, DigestConstants.PROPERTY_URI, uri, true);
 		addParam(header, DigestConstants.PROPERTY_NONCE, nonce, true);
-		algorithm = (algorithm == null ? DigestConstants.ALG_MD5 : algorithm);
+
+		if (CryptoUtils.isFips140_3EnabledWithBetaGuard()){
+		algorithm = (algorithm == null ? DigestConstants.ALG_SHA256 : algorithm);
+		}
+		else{
+			algorithm = (algorithm == null ? DigestConstants.ALG_MD5 : algorithm);
+		}
+
+
 		addParam(header, DigestConstants.PROPERTY_ALGORITHM, algorithm, true);
 		if (qop != null) {
 			addParam(header, DigestConstants.PROPERTY_QOP, qop, true);
@@ -357,6 +368,7 @@ class AuthHeader {
 	 * @param uri The request URI
 	 * @param algorithm The algorithm requested in the challange 
 	 * (either 'MD5' or 'MD5-SESS').
+	 * (either 'SHA256' or 'SHA256-SESS') for fips
 	 * @param body The message body. Only needed if qop="auth-int"
 	 * @return the calculated digest
 	 */

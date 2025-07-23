@@ -32,7 +32,7 @@ public class ThreadLocalStorage
 	private static MessageDigest createMsgDigest(){
 		MessageDigest digester = null;
 		try {
-			digester = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
+			digester = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256) : MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
 			_msgDigest.set( digester);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
