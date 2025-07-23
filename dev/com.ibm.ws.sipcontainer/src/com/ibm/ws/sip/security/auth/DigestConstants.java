@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003,2004 IBM Corporation and others.
+ * Copyright (c) 2003,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,7 @@ package com.ibm.ws.sip.security.auth;
 
 import com.ibm.ws.common.crypto.CryptoUtils;
 
-public interface DigestConstants {
+public interface DigestConstants{
 	public static final short DIGEST_LENGTH=6;
 	public static final String DIGEST = "Digest";
 	public static final String DIGEST_REALM = "realm=";
