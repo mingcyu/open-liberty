@@ -131,8 +131,7 @@ public class SSLConfig extends Properties {
 
         JSSEProvider defaultProvider = JSSEProviderFactory.getInstance();
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "JSSEProvider default: " + defaultProvider.toString());
-            Tr.debug(tc, "JSSEProvider default: " + defaultProvider.getClass().getName());
+            Tr.debug(tc, "Defafult JSSEProvider: " + defaultProvider.toString());
         }
 
         if (getProperty(Constants.SSLPROP_KEY_MANAGER) == null)
@@ -144,7 +143,7 @@ public class SSLConfig extends Properties {
 
         if (getProperty(Constants.SSLPROP_PROTOCOL) == null) {
             setProperty(Constants.SSLPROP_PROTOCOL, defaultProvider.getDefaultProtocol());
-            Tr.debug(tc, "Protocol default: " + defaultProvider.getDefaultProtocol());
+            Tr.debug(tc, "Default protocol: " + defaultProvider.getDefaultProtocol());
         }
         if (getProperty(Constants.SSLPROP_CLIENT_AUTHENTICATION) == null)
             setProperty(Constants.SSLPROP_CLIENT_AUTHENTICATION, Constants.FALSE);
