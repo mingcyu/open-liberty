@@ -56,6 +56,9 @@ task validateNLS {
           include(name: '**/*Resource.nlsprops')
           exclude(name: '**/TraceLocalizationResource.nlsprops')
           exclude(name: '**/*Resource_*.nlsprops')
+          exclude(name: '**/LoggingLocalizationResource.nlsprops')    // Remove with B10
+          exclude(name: '**/ExceptionLocalizationResource.nlsprops') //  Remove with B10
+          exclude(name: '**/QueryExceptionResource.nlsprops')       //   Remove with B10 
         
         }
       }
@@ -67,6 +70,9 @@ task validateNLS {
           include(name: '**/*Resource.nlsprops')
           exclude(name: '**/TraceLocalizationResource.nlsprops')
           exclude(name: '**/*Resource_*.nlsprops')
+          exclude(name: '**/LoggingLocalizationResource.nlsprops')    // Remove with B10
+          exclude(name: '**/ExceptionLocalizationResource.nlsprops') //  Remove with B10
+          exclude(name: '**/QueryExceptionResource.nlsprops')       //   Remove with B10 
          
         }
       }
@@ -79,6 +85,9 @@ task validateNLS {
           include(name: '**/*Resource.nlsprops')
           exclude(name: '**/TraceLocalizationResource.nlsprops')
           exclude(name: '**/*Resource_*.nlsprops')
+          exclude(name: '**/LoggingLocalizationResource.nlsprops')    // Remove with B10
+          exclude(name: '**/ExceptionLocalizationResource.nlsprops') //  Remove with B10
+          exclude(name: '**/QueryExceptionResource.nlsprops')       //   Remove with B10 
         
         }
       }
@@ -90,7 +99,9 @@ task validateNLS {
           include(name: '**/*Resource.nlsprops')
           exclude(name: '**/TraceLocalizationResource.nlsprops')
           exclude(name: '**/*Resource_*.nlsprops')
-          
+          exclude(name: '**/LoggingLocalizationResource.nlsprops')    // Remove with B10
+          exclude(name: '**/ExceptionLocalizationResource.nlsprops') //  Remove with B10
+          exclude(name: '**/QueryExceptionResource.nlsprops')       //   Remove with B10  
         }
       }
     }
