@@ -586,6 +586,8 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
         if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256.equalsIgnoreCase(signatureMethodAlgorithm)) {
             return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
         } else if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA1.equalsIgnoreCase(signatureMethodAlgorithm)) {
+         // FIPS 140-3: Algorithm assessment complete; no changes required.
+         // FIPS users should have have SHA-1 signatures configured, if they do this is expected to fail.
             return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1;
         }
         return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;

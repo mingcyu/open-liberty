@@ -36,6 +36,7 @@ public class Constants {
 
     @Trivial
     public static enum SignatureMethodAlgorithm {
+     // FIPS 140-3: Algorithm assessment complete; no changes required.
         none, SHA256, SHA1
     }
 

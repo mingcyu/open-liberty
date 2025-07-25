@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -18,6 +18,8 @@ import java.io.IOException;
 /**
  * Replaced by HashUtils
  */
+//FIPS 140-3: Algorithm assessment complete; no changes required.
+// This is a deprecated API, the HashUtils replacement has a SHA-256 method available.
 @Deprecated
 public class MD5Utils {
 
