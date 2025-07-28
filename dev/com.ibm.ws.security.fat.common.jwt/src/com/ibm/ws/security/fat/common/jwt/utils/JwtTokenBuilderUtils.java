@@ -58,7 +58,7 @@ public class JwtTokenBuilderUtils {
     }
 
     /**
-     * Create a new JWTTokenBuilder and initialize it with default test values
+     * Create a new JWTTokenBuilder and initialize it with default test values, based on FIPS 140-3 mode
      *
      * @return - an initialized JWTTokenBuilder
      * @throws Exception
@@ -119,7 +119,7 @@ public class JwtTokenBuilderUtils {
     /**
      * Builds a JWE Token with an alternate (Json) Payload
      * We can't use the Liberty builder as it does NOT provide a way to create a simple Json payload
-     * 
+     *
      * @param key - the key to be used for encryption
      * @return - a built JWE Token with a simple Json payload
      * @throws Exception

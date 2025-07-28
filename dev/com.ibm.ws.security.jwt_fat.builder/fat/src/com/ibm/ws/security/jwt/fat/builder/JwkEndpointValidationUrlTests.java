@@ -1061,7 +1061,7 @@ public class JwkEndpointValidationUrlTests extends CommonSecurityFat {
         Page validateResponse = actions.invokeUrl(_testName, url);
         validationUtils.validateResult(validateResponse, validateExpectations);
         // extra validation - make sure that the signature size is correct
-        validationUtils.validateSignatureSize(validateResponse, 256);
+        validationUtils.validateCurve(validateResponse, "P-256");
 
     }
 
@@ -1081,7 +1081,7 @@ public class JwkEndpointValidationUrlTests extends CommonSecurityFat {
         Page validateResponse = actions.invokeUrl(_testName, url);
         validationUtils.validateResult(validateResponse, validateExpectations);
         // extra validation - make sure that the signature size is correct
-        validationUtils.validateSignatureSize(validateResponse, 384);
+        validationUtils.validateCurve(validateResponse, "P-384");
 
     }
 
@@ -1101,7 +1101,7 @@ public class JwkEndpointValidationUrlTests extends CommonSecurityFat {
         Page validateResponse = actions.invokeUrl(_testName, url);
         validationUtils.validateResult(validateResponse, validateExpectations);
         // extra validation - make sure that the signature size is correct
-        validationUtils.validateSignatureSize(validateResponse, 521);
+        validationUtils.validateCurve(validateResponse, "P-521");
 
     }
 

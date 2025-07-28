@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2025 IBM Corporation and others.
+ * Copyright (c) 2019, 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -61,40 +61,14 @@ public class BuilderTestValidationUtils extends TestValidationUtils {
                 continue;
             }
 
-            int calculatedSize = 0;
-            if ("EC".equals(jsonLineItem.getString("kty"))){
-                String crv = jsonLineItem.getString("crv");
-                if (crv == null) {
-                    fail("Size of the signature checking failed as the signature (\"crv\" value) was missing");
-                }
-
-                switch (crv) {
-                    case "P-256": 
-                        calculatedSize = 256;
-                        break;
-                    case "P-384": 
-                        calculatedSize = 384; 
-                        break;
-                    case "P-521": 
-                        calculatedSize = 521; 
-                        break;
-                    default: 
-                        fail("Invalid EC curve is used");
-                }
-
-            } else if ("RSA".equals(jsonLineItem.getString("kty"))) {
-                String n = jsonLineItem.getString("n");
-                if (n == null) {
-                    fail("Size of the signature checking failed as the signature (\"n\" value) was missing");
-                }
-                Log.info(thisClass, thisMethod, "n: " + n);
-                String decoded_n = new String(Base64.decodeBase64(n));
-                Log.info(thisClass, thisMethod, "raw size of n: " + decoded_n.length());
-                calculatedSize = decoded_n.length() * 8;
-            } else {
-                fail("Unknown cryptographic algorithm used to sign key");
+            String n = jsonLineItem.getString("n");
+            if (n == null) {
+                fail("Size of the signature checking failed as the signature (\"n\" value) was missing");
             }
-
+            Log.info(thisClass, thisMethod, "n: " + n);
+            String decoded_n = new String(Base64.decodeBase64(n));
+            Log.info(thisClass, thisMethod, "raw size of n: " + decoded_n.length());
+            int calculatedSize = decoded_n.length() * 8;
             Log.info(thisClass, thisMethod, "Comparing expected size of signature (" + keySize + ") against size (" + calculatedSize + ") calculated from the token");
             assertTrue("The size of the signature in the token (" + calculatedSize + ") did NOT match the expected size (" + keySize + ")", calculatedSize == keySize);
 

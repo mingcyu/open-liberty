@@ -2171,7 +2171,7 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
      * <OL>
      * <LI>Invoke the JWT Builder using a config that specifies encryption.
      * <LI>The Key Management Key Algorithm is missing
-     * <LI>The the es256 public key alias is specified for encryption
+     * <LI>The the rs256/es256 public key alias is specified for encryption
      * <LI>A valid Content Encryption Algorithm is specified
      * <LI>Finally the trustStoreRef is specified to point to the trust store containing the public key used to encrypt
      * </OL>
@@ -2418,22 +2418,6 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
         if (builderServer.isFIPS140_3EnabledAndSupported()) updateDefaultSslSettings(builderServer, "DefaultSSLSettings_RSA");
     }
 
-    // Function to update the server sslDefault configuration
-    public static void updateDefaultSslSettings(LibertyServer server, String sslRef) throws Exception {
-        // Get server settings and change SSL default
-        ServerConfiguration serverConfiguration = server.getServerConfiguration();
-        SSLDefault sslDefault = serverConfiguration.getSSLDefault();
-        sslDefault.setSslRef(sslRef);
-
-        server.setMarkToEndOfLog(server.getDefaultLogFile());
-        server.setMarkToEndOfLog(server.getMostRecentTraceFile());
-        server.updateServerConfiguration(serverConfiguration);
-        //CWWKG0017I: The server configuration was successfully updated in {0} seconds.
-        //CWWKG0018I: The server configuration was not updated. No functional changes were detected.
-        server.waitForStringInLogUsingMark("CWWKG001[7-8]I");
-        Thread.sleep(2000);
-    }
-
     @ExpectedFFDC({ "com.ibm.ws.security.jwt.internal.JwtTokenException" })
     @Test
     public void JwtBuilderAPIConfigTests_encryption_goodKeyMgmtKeyAlg_goodKeyManagementKeyAlias_goodContentEncryptAlg_trustStoreRefInvalid() throws Exception {
@@ -2447,6 +2431,22 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
         Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
         validationUtils.validateResult(response, expectations);
 
+    }
+
+    // Function to update the server sslDefault configuration
+    public static void updateDefaultSslSettings(LibertyServer server, String sslRef) throws Exception {
+        // Get server configuration and change SSL default
+        ServerConfiguration serverConfiguration = server.getServerConfiguration();
+        SSLDefault sslDefault = serverConfiguration.getSSLDefault();
+        sslDefault.setSslRef(sslRef);
+
+        server.setMarkToEndOfLog(server.getDefaultLogFile());
+        server.setMarkToEndOfLog(server.getMostRecentTraceFile());
+        server.updateServerConfiguration(serverConfiguration);
+        //CWWKG0017I: The server configuration was successfully updated in {0} seconds.
+        //CWWKG0018I: The server configuration was not updated. No functional changes were detected.
+        server.waitForStringInLogUsingMark("CWWKG001[7-8]I");
+        Thread.sleep(2000);
     }
 
 }
