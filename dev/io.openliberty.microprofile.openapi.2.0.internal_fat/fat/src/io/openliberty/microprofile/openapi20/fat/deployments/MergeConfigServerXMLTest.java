@@ -12,6 +12,7 @@ package io.openliberty.microprofile.openapi20.fat.deployments;
 import static com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions.DISABLE_VALIDATION;
 import static com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions.SERVER_ONLY;
 import static io.openliberty.microprofile.openapi20.fat.utils.OpenAPITestUtil.assertEqualIgnoringPropertyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -20,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.jboss.shrinkwrap.api.Archive;
@@ -30,7 +29,6 @@ import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -687,10 +685,10 @@ public class MergeConfigServerXMLTest {
         // check that documentation includes all paths in the right order
         String doc = OpenAPIConnection.openAPIDocsConnection(server, false).download();
         JsonNode openapiNode = OpenAPITestUtil.readYamlTree(doc).get("paths");
-        
+
         List<String> pathNames = new ArrayList<>();
         openapiNode.path("paths").fieldNames().forEachRemaining(pathNames::add);
-        
+
         assertThat("Path names not found in expected order in " + doc,
                    pathNames, contains("foo1", "foo2", "foo3", "bar1", "bar2", "bar3"));
     }
