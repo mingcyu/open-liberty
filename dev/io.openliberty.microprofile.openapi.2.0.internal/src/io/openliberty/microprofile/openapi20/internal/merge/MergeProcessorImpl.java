@@ -387,7 +387,7 @@ public class MergeProcessorImpl implements MergeProcessor {
                 return null;
             }
 
-            Map<String, T> newMap = new LinkedHashMap<>(); //We must preserve the order of path items as the order is human visible.
+            Map<String, T> newMap = new LinkedHashMap<>(); //We must preserve the order of components as the order is human visible.
             for (Entry<String, T> entry : componentMap.entrySet()) {
                 String key = entry.getKey();
                 newMap.put(documentNameProcessor.createUniqueName(nameType, key, entry.getValue()), entry.getValue());

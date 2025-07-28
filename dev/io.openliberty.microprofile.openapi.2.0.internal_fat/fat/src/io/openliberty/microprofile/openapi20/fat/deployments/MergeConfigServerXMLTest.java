@@ -687,12 +687,12 @@ public class MergeConfigServerXMLTest {
         // check that documentation includes all paths in the right order
         String doc = OpenAPIConnection.openAPIDocsConnection(server, false).download();
         JsonNode openapiNode = OpenAPITestUtil.readYamlTree(doc).get("paths");
-        String openAPIText = openapiNode.toPrettyString().replaceAll("\\R", " ");
-
-        Pattern p = Pattern.compile(".*foo1.*foo2.*foo3.*bar1.*bar2.*bar3.*");
-        Matcher m = p.matcher(openAPIText);
-
-        Assert.assertTrue("Could not find the regex " + p.toString() + " in " + openAPIText, m.matches());
+        
+        List<String> pathNames = new ArrayList<>();
+        openapiNode.path("paths").fieldNames().forEachRemaining(pathNames::add);
+        
+        assertThat("Path names not found in expected order in " + doc,
+                   pathNames, contains("foo1", "foo2", "foo3", "bar1", "bar2", "bar3"));
     }
 
     private void setMergeConfig(List<String> included, List<String> excluded, MpOpenAPIInfoElement info) throws Exception {
