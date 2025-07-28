@@ -68,7 +68,6 @@ public class ModelCopy {
     private static Map<Object, Object> copyMap(Map<?, ?> copyFrom) {
         Map<Object, Object> copyTo = new LinkedHashMap<>();
         for (Entry<?, ?> entry : copyFrom.entrySet()) {
-            System.out.println("GREP copying map entry " + entry.getKey().toString() + " : " + entry.getValue().toString());
             copyTo.put(entry.getKey(), doCopy(entry.getValue()));
         }
         return copyTo;
