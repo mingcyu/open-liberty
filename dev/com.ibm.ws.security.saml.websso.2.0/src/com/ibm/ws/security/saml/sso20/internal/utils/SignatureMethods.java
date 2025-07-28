@@ -26,6 +26,7 @@ public class SignatureMethods {
 
     static final Map<String, Integer> validMethods = new HashMap<String, Integer>();
     static {
+        // rsa-sha1 is not compatible with FIPS 140-3, disabling only when FIPS 140-3 is enabled.
         if (!CryptoUtils.isFips140_3EnabledWithBetaGuard()) {
             validMethods.put(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1, 1); // "http://www.w3.org/2000/09/xmldsig#rsa-sha1", 1);
         }
