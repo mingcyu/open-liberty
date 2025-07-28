@@ -687,10 +687,10 @@ public class MergeConfigServerXMLTest {
         JsonNode openapiNode = OpenAPITestUtil.readYamlTree(doc).get("paths");
 
         List<String> pathNames = new ArrayList<>();
-        openapiNode.path("paths").fieldNames().forEachRemaining(pathNames::add);
+        openapiNode.fieldNames().forEachRemaining(pathNames::add);
 
         assertThat("Path names not found in expected order in " + doc,
-                   pathNames, contains("foo1", "foo2", "foo3", "bar1", "bar2", "bar3"));
+                   pathNames, contains("/test2/foo1", "/test2/foo2", "/test2/foo3", "/test3/bar1", "/test3/bar2", "/test3/bar3"));
     }
 
     private void setMergeConfig(List<String> included, List<String> excluded, MpOpenAPIInfoElement info) throws Exception {
