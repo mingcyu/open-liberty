@@ -675,8 +675,8 @@ public class LibertyClient {
         // if we have FIPS 140-3 enabled, and the matched java/platform, add JVM arg
         if (isFIPS140_3EnabledAndSupported()) {
             if (GLOBAL_ENHANCED_ALGO) {
-                JVM_ARGS += "-Duse.enhanced.security.algorithms=true";
-                JVM_ARGS += "-Dcom.ibm.ws.beta.edition=true";
+                JVM_ARGS += " -Duse.enhanced.security.algorithms=true";
+                JVM_ARGS += " -Dcom.ibm.ws.beta.edition=true";
             } else {
 
                 Log.info(c, "startClientWithArgs", "The JDK version: " + javaInfo.majorVersion() + " and vendor: " + JavaInfo.Vendor.IBM);
