@@ -87,7 +87,7 @@ public class OIDCJWKRotationTest extends CommonTest {
         WebConversation wc = new WebConversation();
         TestSettings updatedTestSettings = testSettings.copyTestSettings();
 
-        updatedTestSettings.setJwkEndpt(updatedTestSettings.getJwkEndpt().replaceAll("OidcConfigSample", "OidcConfigSample_jwkRotationTime_1s"));
+        updatedTestSettings.setJwkEndpt(updatedTestSettings.getJwkEndpt().replaceAll("OidcConfigSample", "OidcConfigSample_jwkRotationTime_1m"));
 
         List<validationData> expectations = vData.addSuccessStatusCodes(null);
         expectations = vData.addResponseExpectation(expectations, Constants.INVOKE_JWK_ENDPOINT, "Did not find JWKs in the response.", "\"keys\":");
