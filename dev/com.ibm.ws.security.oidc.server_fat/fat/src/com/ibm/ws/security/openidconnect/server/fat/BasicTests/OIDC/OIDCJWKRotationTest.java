@@ -80,7 +80,7 @@ public class OIDCJWKRotationTest extends CommonTest {
         Assert.assertEquals(firstKeys, secondKeys);
     }
 
-    // @Test
+    @Test
     public void testJWKRotation_1m_ValidRotationTime_Success() throws Exception {
         Log.entering(thisClass, _testName);
         // Create the conversation object which will maintain state for us
