@@ -109,7 +109,7 @@ public class OIDCJWKRotationTest extends CommonTest {
         List<String> secondKeys = Json.createReader(new StringReader(AutomationTools.getResponseText(secondResponse)))
                 .readObject().getJsonArray("keys").stream().map(JsonValue::toString).collect(Collectors.toList());
 
-        Assert.assertEquals("Did not get the same number of keys in the second JWK request as the first request. firstKeys.size(), secondKeys.size());
+        Assert.assertEquals("Did not get the same number of keys in the second JWK request as the first request.", firstKeys.size(), secondKeys.size());
         Assert.assertFalse("The first set of JWKs should not have contained the same keys as those from the second JWK request.", firstKeys.containsAll(secondKeys));
         Assert.assertFalse("The second set of JWKs should not have contained the same keys as those from the first JWK request.", secondKeys.containsAll(firstKeys));
     }
