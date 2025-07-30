@@ -59,7 +59,7 @@ tested.features:\
 # Uncomment to use remote docker host to simulate continuous build behavior.
 #fat.test.use.remote.docker: true
 
-fat.test.container.images: otel/opentelemetry-collector-contrib:0.103.0
+fat.test.container.images: otel/opentelemetry-collector:0.127.0
 
 -buildpath: \
 	com.ibm.ws.webcontainer.servlet.4.0.jakarta,\
