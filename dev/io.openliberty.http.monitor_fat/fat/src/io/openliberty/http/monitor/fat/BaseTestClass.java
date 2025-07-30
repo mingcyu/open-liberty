@@ -53,7 +53,7 @@ public abstract class BaseTestClass {
     protected static final String PATH_TO_AUTOFVT_TESTFILES = "lib/LibertyFATTestFiles/";
 
     protected static final String IMAGE_NAME = ImageNameSubstitutor.instance() //
-                    .apply(DockerImageName.parse("otel/opentelemetry-collector:0.127.0")).asCanonicalNameString();
+                    .apply(DockerImageName.parse("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.127.0")).asCanonicalNameString();
 
     protected static void trustAll() throws Exception {
         try {
