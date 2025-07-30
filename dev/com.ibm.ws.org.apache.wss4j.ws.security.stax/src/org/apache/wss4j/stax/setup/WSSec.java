@@ -565,26 +565,26 @@ public class WSSec {
     }
 
     /**
-     * @return If FIPS 140-3 is enabled "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2000/09/xmldsig#rsa-sha1" otherwise.
+     * @return If FIPS 140-3 is enabled "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", "http://www.w3.org/2000/09/xmldsig#rsa-sha1" otherwise.
      */
     private static String getRsaSignatureAlgorithm() {
-        // FIPS 140-3: rsa-sha1 not compliant with FIPS 140-3. If FIPS is enabled then use rsa-sha256 signature algorithm.
-        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XMLDSIG_RSASHA256: WSSConstants.NS_XMLDSIG_RSASHA1;
+        // FIPS 140-3: rsa-sha1 not compliant with FIPS 140-3. If FIPS is enabled then use rsa-sha512 signature algorithm.
+        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XMLDSIG_RSASHA512: WSSConstants.NS_XMLDSIG_RSASHA1;
     }
 
     /**
-     * @return If FIPS 140-3 is enabled "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256", "http://www.w3.org/2000/09/xmldsig#hmac-sha1" otherwise.
+     * @return If FIPS 140-3 is enabled "http://www.w3.org/2001/04/xmldsig-more#hmac-sha512", "http://www.w3.org/2000/09/xmldsig#hmac-sha1" otherwise.
      */
     private static String getHmacSignatureAlgorithm() {
-        // FIPS 140-3: SHA-1 not compliant with FIPS 140-3. If FIPS is enabled then use hmac-sha256 signature algorithm.
-        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XMLDSIG_HMACSHA256 : WSSConstants.NS_XMLDSIG_HMACSHA1;
+        // FIPS 140-3: SHA-1 not compliant with FIPS 140-3. If FIPS is enabled then use hmac-sha512 signature algorithm.
+        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XMLDSIG_HMACSHA512 : WSSConstants.NS_XMLDSIG_HMACSHA1;
     }
 
     /**
-     * @return If FIPS 140-3 is enabled "http://www.w3.org/2000/09/xmldsig#sha256", "http://www.w3.org/2000/09/xmldsig#sha1" otherwise.
+     * @return If FIPS 140-3 is enabled "http://www.w3.org/2000/09/xmldsig#sha512", "http://www.w3.org/2000/09/xmldsig#sha1" otherwise.
      */
     private static String getSignatureDigestAlgorithm() {
-        // FIPS 140-3: SHA-1 not compliant with FIPS 140-3. If FIPS is enabled then use SHA-256 digest.
-        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XENC_SHA256 : WSSConstants.NS_XMLDSIG_SHA1;
+        // FIPS 140-3: SHA-1 not compliant with FIPS 140-3. If FIPS is enabled then use SHA-512 digest.
+        return CryptoUtils.isFips140_3EnabledWithBetaGuard() ? WSSConstants.NS_XENC_SHA512 : WSSConstants.NS_XMLDSIG_SHA1;
     }
 }
