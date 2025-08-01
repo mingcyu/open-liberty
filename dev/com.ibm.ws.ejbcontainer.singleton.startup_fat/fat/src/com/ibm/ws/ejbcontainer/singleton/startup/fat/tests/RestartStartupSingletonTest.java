@@ -232,7 +232,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
                           server.waitForStringInLogUsingMark("CWWKZ0018I.* RestartStartupSingletonEjb"));
             assertNotNull("Did not report EJB module RestartStartupSingletonEjb starting, CNTR4000I",
                           server.waitForStringInLogUsingMark("CNTR4000I.* RestartStartupSingletonEjb"));
-            assertNotNull("Did not report exception from RestartStartupSingletonWarBean, CNTR0020E",
+            assertNotNull("Did not report exception from RestartStartupSingletonJarBean, CNTR0020E",
                           server.waitForStringInLogUsingMark("CNTR0020E.*RestartStartupSingletonJarBean"));
             assertNotNull("Did not report startup singleton failed initialization, CNTR0190E",
                           server.waitForStringInLogUsingMark("CNTR0190E.* RestartStartupSingletonJarBean"));
@@ -295,7 +295,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
                           server.waitForStringInLogUsingMark("CNTR4004I.* RestartStartupSingletonEarEjb"));
             assertNotNull("Did not report application RestartStartupSingletonApp stopped, CWWKZ0009I",
                           server.waitForStringInLogUsingMark("CWWKZ0009I.* RestartStartupSingletonApp"));
-            assertNotNull("Did not report application RestartStartupSingletonWeb starting, CWWKZ0018I",
+            assertNotNull("Did not report application RestartStartupSingletonApp starting, CWWKZ0018I",
                           server.waitForStringInLogUsingMark("CWWKZ0018I.* RestartStartupSingletonApp"));
             assertNotNull("Did not report EJB module RestartStartupSingletonEarEjb starting, CNTR4000I",
                           server.waitForStringInLogUsingMark("CNTR4000I.* RestartStartupSingletonEarEjb"));
@@ -381,7 +381,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
                           server.waitForStringInLogUsingMark("CNTR4004I.* RestartStartupSingletonEarEjb"));
             assertNotNull("Did not report application RestartStartupSingletonApp stopped, CWWKZ0009I",
                           server.waitForStringInLogUsingMark("CWWKZ0009I.* RestartStartupSingletonApp"));
-            assertNotNull("Did not report application RestartStartupSingletonWeb starting, CWWKZ0018I",
+            assertNotNull("Did not report application RestartStartupSingletonApp starting, CWWKZ0018I",
                           server.waitForStringInLogUsingMark("CWWKZ0018I.* RestartStartupSingletonApp"));
             assertNotNull("Did not report EJB module RestartStartupSingletonEarEjb starting, CNTR4000I",
                           server.waitForStringInLogUsingMark("CNTR4000I.* RestartStartupSingletonEarEjb"));
