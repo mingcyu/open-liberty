@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import com.ibm.websphere.simplicity.ShrinkHelper;
 import com.ibm.websphere.simplicity.ShrinkHelper.DeployOptions;
 
+import componenttest.annotation.AllowedFFDC;
 import componenttest.annotation.ExpectedFFDC;
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
@@ -129,8 +130,9 @@ public class RestartStartupSingletonTest extends FATServletClient {
         // CNTR4002E: The * EJB module in the * application failed to start
         // CNTR0201E: The * startup singleton session bean in the * module failed initialization
         // CWWKZ0106E: Could not start web application RestartStartupSingletonApp
+        // CWWKZ0059E: The * application installed from * has been deleted while it is still configured
         if (server != null && server.isStarted()) {
-            server.stopServer("CNTR0020E", "CNTR0190E", "CNTR4002E", "CNTR0201E", "CWWKZ0106E");
+            server.stopServer("CNTR0020E", "CNTR0190E", "CNTR4002E", "CNTR0201E", "CWWKZ0106E", "CWWKZ0059E");
         }
     }
 
@@ -143,8 +145,8 @@ public class RestartStartupSingletonTest extends FATServletClient {
      * bindings and accessed.
      **/
     @Test
-    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
-                    "org.omg.CosNaming.NamingContextPackage.NotFound" })
+    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException" })
+    @AllowedFFDC("org.omg.CosNaming.NamingContextPackage.NotFound")
     public void testRestartSingletonWarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
@@ -210,6 +212,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
      **/
     @Test
     @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException" })
+    @AllowedFFDC("org.omg.CosNaming.NamingContextPackage.NotFound")
     public void testRestartSingletonJarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
@@ -270,8 +273,8 @@ public class RestartStartupSingletonTest extends FATServletClient {
      * bindings and accessed.
      **/
     @Test
-    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
-                    "org.omg.CosNaming.NamingContextPackage.NotFound" })
+    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException" })
+    @AllowedFFDC("org.omg.CosNaming.NamingContextPackage.NotFound")
     public void testRestartSingletonEarWarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
@@ -356,8 +359,8 @@ public class RestartStartupSingletonTest extends FATServletClient {
      * bindings and accessed.
      **/
     @Test
-    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
-                    "org.omg.CosNaming.NamingContextPackage.NotFound" })
+    @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException" })
+    @AllowedFFDC("org.omg.CosNaming.NamingContextPackage.NotFound")
     public void testRestartSingletonEarJarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
