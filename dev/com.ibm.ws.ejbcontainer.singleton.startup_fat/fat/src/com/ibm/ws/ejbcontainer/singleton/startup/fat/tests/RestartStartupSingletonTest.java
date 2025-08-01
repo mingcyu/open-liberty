@@ -145,7 +145,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
     @Test
     @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
                     "org.omg.CosNaming.NamingContextPackage.NotFound" })
-    public void testRestartSingltonWarAfterStartupError() throws Exception {
+    public void testRestartSingletonWarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
 
@@ -210,7 +210,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
      **/
     @Test
     @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException" })
-    public void testRestartSingltonJarAfterStartupError() throws Exception {
+    public void testRestartSingletonJarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
 
@@ -272,7 +272,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
     @Test
     @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
                     "org.omg.CosNaming.NamingContextPackage.NotFound" })
-    public void testRestartSingltonEarWarAfterStartupError() throws Exception {
+    public void testRestartSingletonEarWarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
 
@@ -358,7 +358,7 @@ public class RestartStartupSingletonTest extends FATServletClient {
     @Test
     @ExpectedFFDC({ "javax.ejb.EJBException", "javax.ejb.NoSuchEJBException", "com.ibm.ws.container.service.state.StateChangeException",
                     "org.omg.CosNaming.NamingContextPackage.NotFound" })
-    public void testRestartSingltonEarJarAfterStartupError() throws Exception {
+    public void testRestartSingletonEarJarAfterStartupError() throws Exception {
 
         runTest(server, "RestartStartupSingletonWeb/RestartStartupSingletonServlet", "verify");
 
