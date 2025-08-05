@@ -304,8 +304,8 @@ CWWKD1026.ignore.case.not.text.useraction=Ensure the sort criteria is applied \
 CWWKD1027.datastore.lacks.java.comp=CWWKD1078E: One or more repository interfaces \
  ({0}) from the {1} application artifact specify a {2} data store value that \
  does not match a data source resource reference or persistence unit reference \
- because it lacks a java:comp/env/ namespace prefix. Consider whether the \
- Repository annotation should be corrected to specify {3}.
+ because it lacks a java:comp/env/ namespace prefix. Consider changing the \
+ Repository annotation to specify {3}.
 CWWKD1027.datastore.lacks.java.comp.explanation=JNDI names of data source \
  resource references and persistence unit references must include a java: \
  namespace prefix.
