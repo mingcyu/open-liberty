@@ -510,7 +510,7 @@ public class ExternalTestService {
             return "FYREHUR";
         } else if (serverOrigin.startsWith("10.17.") || serverOrigin.startsWith("10.11.") || serverOrigin.startsWith("10.15.")) {
             return "FYRESVL";
-        } else if (serverOrigin.startsWith("10.21.") || serverOrigin.startsWith("10.26.")) {
+        } else if (serverOrigin.startsWith("10.21.") || serverOrigin.startsWith("10.23.") || serverOrigin.startsWith("10.26.")) {
             return "FYRERTP";
         } else {
             System.out.println("Unknown host/IP address " + serverOrigin
