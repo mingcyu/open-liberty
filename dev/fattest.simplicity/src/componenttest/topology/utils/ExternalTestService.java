@@ -493,24 +493,20 @@ public class ExternalTestService {
         String serverOrigin = System.getProperty(PROP_SERVER_ORIGIN);
         // Attempt to guess where the closest services will be located
         if (serverOrigin.startsWith("9.20.")) {
-            // Hursley
-            return "IBM9UK";
+            return "IBM9UK"; // Hursley
         } else if (serverOrigin.startsWith("9.42.") || serverOrigin.startsWith("9.46.")) {
-            // RTP
-            return "IBM9US";
+            return "IBM9US"; // RTP
         } else if (serverOrigin.startsWith("9.30.")) {
-            // SVL
-            return "IBM9US";
+            return "IBM9US"; // SVL
         } else if (serverOrigin.startsWith("9.57.")) {
-            // POK
-            return "IBM9US";
+            return "IBM9US"; // POK
         } else if (serverOrigin.startsWith("10.34.") || serverOrigin.startsWith("10.36.")) {
             return "HURPROD";
         } else if (serverOrigin.startsWith("10.51.")) {
             return "FYREHUR";
-        } else if (serverOrigin.startsWith("10.17.") || serverOrigin.startsWith("10.11.") || serverOrigin.startsWith("10.15.")) {
+        } else if (serverOrigin.startsWith("10.11.") || serverOrigin.startsWith("10.15.") || serverOrigin.startsWith("10.17.")) {
             return "FYRESVL";
-        } else if (serverOrigin.startsWith("10.21.") || serverOrigin.startsWith("10.23.") || serverOrigin.startsWith("10.26.")) {
+        } else if (serverOrigin.startsWith("10.21.") || serverOrigin.startsWith("10.22.") || serverOrigin.startsWith("10.23.") || serverOrigin.startsWith("10.26.")) {
             return "FYRERTP";
         } else {
             System.out.println("Unknown host/IP address " + serverOrigin
