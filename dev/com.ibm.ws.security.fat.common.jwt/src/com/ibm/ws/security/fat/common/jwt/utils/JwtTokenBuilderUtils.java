@@ -54,18 +54,16 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public JWTTokenBuilder createBuilderWithDefaultClaims() throws Exception {
-        return createBuilderWithDefaultClaims(false);
+        return createBuilderWithDefaultClaims(JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG);
     }
 
     /**
-     * Create a new JWTTokenBuilder and initialize it with default test values, based on FIPS 140-3 mode
+     * Create a new JWTTokenBuilder and initialize it with default test values
      *
      * @return - an initialized JWTTokenBuilder
      * @throws Exception
      */
-    public JWTTokenBuilder createBuilderWithDefaultClaims(boolean isFips140_3Enabled) throws Exception {
-
-        String keyMgmtKeyAlg = isFips140_3Enabled ? JwtConstants.KEY_MGMT_KEY_ALG_ES : JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG;
+    public JWTTokenBuilder createBuilderWithDefaultClaims(String keyMgmtKeyAlg) throws Exception {
 
         JWTTokenBuilder builder = new JWTTokenBuilder();
         builder.setIssuer("client01");
@@ -136,8 +134,8 @@ public class JwtTokenBuilderUtils {
         return jwtToken;
     }
 
-    public String buildAlternatePayloadJWEToken(Key key, boolean isFips140_3Enabled) throws Exception {
-        JWTTokenBuilder builder = createAlternateJWEPayload(populateAlternateJWEToken(key, isFips140_3Enabled));
+    public String buildAlternatePayloadJWEToken(Key key, String keyMgmtKeyAlg) throws Exception {
+        JWTTokenBuilder builder = createAlternateJWEPayload(populateAlternateJWEToken(key, keyMgmtKeyAlg));
         String jwtToken = builder.buildAlternateJWE();
         return jwtToken;
     }
@@ -170,11 +168,11 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public String buildJWETokenWithAltHeader(Key key, String type, String contentType) throws Exception {
-        return buildJWETokenWithAltHeader(key, type, contentType, false);
+        return buildJWETokenWithAltHeader(key, type, contentType, JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG);
     }
 
-    public String buildJWETokenWithAltHeader(Key key, String type, String contentType, boolean isFips140_3Enabled) throws Exception {
-        JWTTokenBuilder builder = populateAlternateJWEToken(key, isFips140_3Enabled);
+    public String buildJWETokenWithAltHeader(Key key, String type, String contentType, String keyMgmtKeyAlg) throws Exception {
+        JWTTokenBuilder builder = populateAlternateJWEToken(key, keyMgmtKeyAlg);
 
         // calling buildJWE will override the payload contents with JWS
         String jwtToken = builder.buildJWE(type, contentType);
@@ -191,7 +189,7 @@ public class JwtTokenBuilderUtils {
      * @throws Exception
      */
     public JWTTokenBuilder populateAlternateJWEToken(Key key) throws Exception {
-        return populateAlternateJWEToken(key, false);
+        return populateAlternateJWEToken(key, JwtConstants.DEFAULT_KEY_MGMT_KEY_ALG);
     }
 
     /**
@@ -201,8 +199,8 @@ public class JwtTokenBuilderUtils {
      * @return - a built JWE token
      * @throws Exception
      */
-    public JWTTokenBuilder populateAlternateJWEToken(Key key, boolean isFips140_3Enabled) throws Exception {
-        JWTTokenBuilder builder = createBuilderWithDefaultClaims(isFips140_3Enabled);
+    public JWTTokenBuilder populateAlternateJWEToken(Key key, String keyMgmtKeyAlg) throws Exception {
+        JWTTokenBuilder builder = createBuilderWithDefaultClaims(keyMgmtKeyAlg);
         builder.setAudience("client01", "client02");
         builder.setIssuer("testIssuer");
         builder.setKeyManagementKey(key);

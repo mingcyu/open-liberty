@@ -1806,29 +1806,46 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
     // JwtConsumerApiConfigTests_goodKeyManagementKeyAlias_goodSslRef same as JwtConsumerApiConfigTests_encryptRS256_decryptRS256
     // JwtConsumerApiConfigTests_nullKeyManagementKeyAlias_goodSslRef same as JwtConsumerApiConfigTests_tokenNotEncrypted_consumerDecrypts
     /**
-     * server.xml has a config that specifies an invalid key management key algorithm - this test ensures that
-     * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
-     * it can't find the certificate to decrypt the token
+     * server.xml has a consumer config that specifies an invalid key management key algorithm - this test ensures that
+     * after building a jwt that is encrypted with the matching public key and a valid key management key algorithm (RSA-OAEP)
+     * we can not decrypt the token because it can't find the certificate to decrypt the token
      *
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_badKeyManagementKeyAlias_goodSslRef() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_badKeyManagementKeyAlias_goodSslRef() throws Exception {
 
-        String builderId = consumerServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256" : "key_encrypt_good_RS256";
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "bad_decrypt_ES256" : "bad_decrypt_RS256";
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_RS256", null);
 
-        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, builderId, null);
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+CertificateException", currentAction, consumerServer, "bad_decrypt_RS256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+CertificateException", currentAction, consumerServer, consumerId);
-
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "bad_decrypt_RS256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key algorithm, but omits the sslRef - the server wide
+     * server.xml has a consumer config that specifies an invalid key management key algorithm - this test ensures that
+     * after building a jwt that is encrypted with the matching public key and a valid key management key algorithm (ECDH-ES)
+     * we can not decrypt the token because it can't find the certificate to decrypt the token
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_badKeyManagementKeyAlias_goodSslRef() throws Exception {
+
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_ES256", null);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+CertificateException", currentAction, consumerServer, "bad_decrypt_ES256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "bad_decrypt_ES256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key algorithm (RSA-OAEP), but omits the sslRef - the server wide
      * SSL config does not use a keystore that contains the alias specifies - this test ensures that
      * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
      * it can't find the certificate to decrypt the token
@@ -1836,22 +1853,20 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_goodKeyManagementKeyAlias_missingSslRef_refMissingFromServerwideSSL() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_goodKeyManagementKeyAlias_missingSslRef_refMissingFromServerwideSSL() throws Exception {      
 
-        String builderID = consumerServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256" : "key_encrypt_good_RS256";
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "missing_sslRef_decrypt_ES256" : "missing_sslRef_decrypt_RS256";         
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_RS256", null);
 
-        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, builderID, null);
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, "missing_sslRef_decrypt_RS256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, consumerId);
-
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "missing_sslRef_decrypt_RS256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key algorithm, but specifies and inavalid sslRef - the server wide
+     * server.xml has a config that specifies a key management key algorithm (ECDH-ES), but omits the sslRef - the server wide
      * SSL config does not use a keystore that contains the alias specifies - this test ensures that
      * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
      * it can't find the certificate to decrypt the token
@@ -1859,36 +1874,94 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_goodKeyManagementKeyAlias_baddSslRef() throws Exception {
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_goodKeyManagementKeyAlias_missingSslRef_refMissingFromServerwideSSL() throws Exception {
 
-        String builderId = consumerServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256" : "key_encrypt_good_RS256";
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "bad_sslRef_decrypt_ES256" : "bad_sslRef_decrypt_RS256";
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_ES256", null);
 
-        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, builderId, null);
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, "missing_sslRef_decrypt_ES256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, consumerId);
-
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "missing_sslRef_decrypt_ES256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key algorithm that is not supported -this test ensures that
+     * server.xml has a config that specifies a key management key algorithm (RSA-OAEP), but specifies and inavalid sslRef - the server wide
+     * SSL config does not use a keystore that contains the alias specifies - this test ensures that
      * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
+     * it can't find the certificate to decrypt the token
+     *
+     * @throws Exception
+     */
+    @Test
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_goodKeyManagementKeyAlias_baddSslRef() throws Exception {
+
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_RS256", null);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, "bad_sslRef_decrypt_RS256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "bad_sslRef_decrypt_RS256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key algorithm (ECDH-ES), but specifies and inavalid sslRef - the server wide
+     * SSL config does not use a keystore that contains the alias specifies - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
+     * it can't find the certificate to decrypt the token
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_goodKeyManagementKeyAlias_baddSslRef() throws Exception {
+
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_ES256", null);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + JwtConsumerMessageConstants.CWWKS6066E_JWE_DECRYPTION_KEY_MISSING, currentAction, consumerServer, "bad_sslRef_decrypt_ES256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "bad_sslRef_decrypt_ES256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key algorithm that is mismatched - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, and we can not decrypt the token because
      * it can't use an EC alg
      *
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_decryptWithUnsupportedAlg() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_encryptWith_RSA_OAEP_decryptWithMismatchAlg() throws Exception {
 
-        String builderId = consumerServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256" : "key_encrypt_good_RS256";
-        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, builderId, null);
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_RS256", null);
 
         Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + "InvalidKeyException", currentAction, consumerServer, "decrypt_ES384");
 
         Page response = actions.invokeJwtConsumer(_testName, consumerServer, "decrypt_ES384", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key algorithm that is mismatched - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, we can not decrypt the token because
+     * it can't use an RSA alg
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_encryptWith_ECDH_ES_decryptWithMismatchAlg() throws Exception {
+
+        String builderId = "key_encrypt_good_ES256";
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_ES256", null);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6056E_CAN_NOT_EXTRACT_JWS_FROM_JWE + ".+" + "InvalidKeyException", currentAction, consumerServer, "good_decrypt_RS384");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_RS384", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
@@ -2192,35 +2265,55 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
     }
 
     /**
-     * server.xml has a config that specifies a key management key alias using an RS256/ES256 Cert - this test ensures that
+     * server.xml has a config that specifies a key management key alias using an RS256 Cert - this test ensures that
      * after building a jwt that is encrypted with the matching public key, but using "A192GCM" as the contentEncryptionAlg,
      * we can use the consumer with the matching private key to "consume" it.
      *
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_encryptOtherContentEncryptionAlg() throws Exception {
-
-        String builderId = consumerServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256" : "key_encrypt_good_RS256";
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "good_decrypt_ES256" : "good_decrypt_RS256";
-        String sigAlg = consumerServer.isFIPS140_3EnabledAndSupported() ? JwtConsumerConstants.SIGALG_ES256 : JwtConsumerConstants.SIGALG_RS256;
-
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_encryptOtherContentEncryptionAlg() throws Exception {
 
         List<NameValuePair> otherBuilderParms = new ArrayList<NameValuePair>();
         otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_CONTENT_ENCRYPT_ALG, JwtConsumerConstants.CONTENT_ENCRYPT_ALG_192));
-        otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_ENCRYPT_KEY, JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, sigAlg)));
+        otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_ENCRYPT_KEY, JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_RS256)));
 
-        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, builderId, otherBuilderParms);
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_RS256", otherBuilderParms);
 
-        Expectations expectations = consumerHelpers.addGoodConsumerAlgExpectations(currentAction, consumerServer, sigAlg);
+        Expectations expectations = consumerHelpers.addGoodConsumerAlgExpectations(currentAction, consumerServer, JwtConsumerConstants.SIGALG_RS256);
 
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_RS256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key alias using an RS256/ES256 Cert - this test ensures that
+     * server.xml has a config that specifies a key management key alias using an ES256 Cert - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, but using "A192GCM" as the contentEncryptionAlg,
+     * we can use the consumer with the matching private key to "consume" it.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_encryptOtherContentEncryptionAlg() throws Exception {
+
+        List<NameValuePair> otherBuilderParms = new ArrayList<NameValuePair>();
+        otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_CONTENT_ENCRYPT_ALG, JwtConsumerConstants.CONTENT_ENCRYPT_ALG_192));
+        otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_ENCRYPT_KEY, JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_ES256)));
+        otherBuilderParms.add(new NameValuePair(JwtConsumerConstants.PARAM_KEY_MGMT_ALG, JwtConsumerConstants.KEY_MGMT_KEY_ALG_ES));
+
+        String jwtToken = actions.getJwtTokenUsingBuilder(_testName, consumerServer, "key_encrypt_good_ES256", otherBuilderParms);
+
+        Expectations expectations = consumerHelpers.addGoodConsumerAlgExpectations(currentAction, consumerServer, JwtConsumerConstants.SIGALG_ES256);
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_ES256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key alias using an RS256 Cert - this test ensures that
      * after building a jwt that is encrypted with the matching public key, but setting a "typ" other than JOSE in the JWE header,
      * we can use the consumer with the matching private key to "consume" it.
      * We will in the end fail processing the JWS payload as the "test" builder sets a different issuer
@@ -2229,23 +2322,43 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_encryptOtherJWEHeader_typ() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_encryptOtherJWEHeader_typ() throws Exception {
 
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "good_decrypt_ES256" : "good_decrypt_RS256";
-        String sigAlg = consumerServer.isFIPS140_3EnabledAndSupported() ? JwtConsumerConstants.SIGALG_ES256 : JwtConsumerConstants.SIGALG_RS256;
+        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_RS256)),
+                "notJOSE", "jwt", JwtConsumerConstants.DEFAULT_KEY_MGMT_KEY_ALG);
 
-        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, sigAlg)),
-                "notJOSE", "jwt", consumerServer.isFIPS140_3EnabledAndSupported());
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6022E_ISSUER_NOT_TRUSTED, currentAction, consumerServer, "good_decrypt_RS256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6022E_ISSUER_NOT_TRUSTED, currentAction, consumerServer, consumerId);
-
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_RS256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key alias using an RS256/ES256 Cert - this test ensures that
+     * server.xml has a config that specifies a key management key alias using an ES256 Cert - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, but setting a "typ" other than JOSE in the JWE header,
+     * we can use the consumer with the matching private key to "consume" it.
+     * We will in the end fail processing the JWS payload as the "test" builder sets a different issuer
+     * This test shows that we don't check the 'typ' in the JWE header
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_encryptOtherJWEHeader_typ() throws Exception {
+
+        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_ES256)),
+                "notJOSE", "jwt", JwtConsumerConstants.KEY_MGMT_KEY_ALG_ES);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6022E_ISSUER_NOT_TRUSTED, currentAction, consumerServer, "good_decrypt_ES256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_ES256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key alias using an RS256 Cert - this test ensures that
      * after building a jwt that is encrypted with the matching public key, but setting a "cty" other than jwt in the JWE header,
      * we can NOT use the consumer with the matching private key to "consume" it.
      * This test shows that we don't allow any value other than 'jwt' in the 'cty' in the JWE header
@@ -2253,23 +2366,42 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_encryptOtherJWEHeader_cty() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_encryptOtherJWEHeader_cty() throws Exception {
 
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "good_decrypt_ES256" : "good_decrypt_RS256";
-        String sigAlg = consumerServer.isFIPS140_3EnabledAndSupported() ? JwtConsumerConstants.SIGALG_ES256 : JwtConsumerConstants.SIGALG_RS256;
+        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_RS256)),
+                "JOSE", "not_jwt", JwtConsumerConstants.DEFAULT_KEY_MGMT_KEY_ALG);
 
-        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, sigAlg)),
-                "JOSE", "not_jwt", consumerServer.isFIPS140_3EnabledAndSupported());
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6057E_BAD_CTY_VALUE, currentAction, consumerServer, "good_decrypt_RS256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6057E_BAD_CTY_VALUE, currentAction, consumerServer, consumerId);
-
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_RS256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
 
     }
 
     /**
-     * server.xml has a config that specifies a key management key alias using an RS256/ES256 Cert - this test ensures that
+     * server.xml has a config that specifies a key management key alias using an ES256 Cert - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, but setting a "cty" other than jwt in the JWE header,
+     * we can NOT use the consumer with the matching private key to "consume" it.
+     * This test shows that we don't allow any value other than 'jwt' in the 'cty' in the JWE header
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_encryptOtherJWEHeader_cty() throws Exception {
+
+        String jwtToken = consumerHelpers.buildJWETokenWithAltHeader(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_ES256)),
+                "JOSE", "not_jwt", JwtConsumerConstants.KEY_MGMT_KEY_ALG_ES);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6057E_BAD_CTY_VALUE, currentAction, consumerServer, "good_decrypt_ES256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_ES256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+
+    }
+
+    /**
+     * server.xml has a config that specifies a key management key alias using an RS256 Cert - this test ensures that
      * after building a jwt that is encrypted with the matching public key, but containing a simple Json payload,
      * we can NOT use the consumer with the matching private key to "consume" it.
      * This test shows that we won't allow a non-JWS payload
@@ -2277,16 +2409,33 @@ public class JwtConsumerApiConfigTests extends CommonSecurityFat {
      * @throws Exception
      */
     @Test
-    public void JwtConsumerApiConfigTests_encryptSimpleJsonPayload() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtConsumerApiConfigTests_RSA_OAEP_KeyMgmtKeyAlg_encryptSimpleJsonPayload() throws Exception {
 
-        String consumerId = consumerServer.isFIPS140_3EnabledAndSupported() ? "good_decrypt_ES256" : "good_decrypt_RS256";
-        String sigAlg = consumerServer.isFIPS140_3EnabledAndSupported() ? JwtConsumerConstants.SIGALG_ES256 : JwtConsumerConstants.SIGALG_RS256;
+        String jwtToken = consumerHelpers.buildAlternatePayloadJWEToken(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_RS256)), JwtConsumerConstants.DEFAULT_KEY_MGMT_KEY_ALG);
 
-        String jwtToken = consumerHelpers.buildAlternatePayloadJWEToken(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, sigAlg)), consumerServer.isFIPS140_3EnabledAndSupported());
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6065E_JWE_DOES_NOT_CONTAIN_JWS, currentAction, consumerServer, "good_decrypt_RS256");
 
-        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6065E_JWE_DOES_NOT_CONTAIN_JWS, currentAction, consumerServer, consumerId);
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_RS256", jwtToken);
+        validationUtils.validateResult(response, currentAction, expectations);
+    }
 
-        Page response = actions.invokeJwtConsumer(_testName, consumerServer, consumerId, jwtToken);
+    /**
+     * server.xml has a config that specifies a key management key alias using an ES256 Cert - this test ensures that
+     * after building a jwt that is encrypted with the matching public key, but containing a simple Json payload,
+     * we can NOT use the consumer with the matching private key to "consume" it.
+     * This test shows that we won't allow a non-JWS payload
+     *
+     * @throws Exception
+     */
+    @Test
+    public void JwtConsumerApiConfigTests_ECDH_ES_KeyMgmtKeyAlg_encryptSimpleJsonPayload() throws Exception {
+
+        String jwtToken = consumerHelpers.buildAlternatePayloadJWEToken(JwtKeyTools.getPublicKeyFromPem(JwtKeyTools.getComplexPublicKeyForSigAlg(consumerServer, JwtConsumerConstants.SIGALG_ES256)), JwtConsumerConstants.KEY_MGMT_KEY_ALG_ES);
+
+        Expectations expectations = consumerHelpers.buildNegativeAttributeExpectations(JwtConsumerMessageConstants.CWWKS6065E_JWE_DOES_NOT_CONTAIN_JWS, currentAction, consumerServer, "good_decrypt_ES256");
+
+        Page response = actions.invokeJwtConsumer(_testName, consumerServer, "good_decrypt_ES256", jwtToken);
         validationUtils.validateResult(response, currentAction, expectations);
     }
 

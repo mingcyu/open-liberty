@@ -2240,8 +2240,8 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
      * Test Purpose:
      * <OL>
      * <LI>Invoke the JWT Builder using a config that specifies encryption.
-     * <LI>A valid Key Management Key Algorithm is specified
-     * <LI>The the rs256/es256 public key alias is specified for encryption
+     * <LI>The RSA-OAEP Key Management Key Algorithm is specified
+     * <LI>The the rs256 public key alias is specified for encryption
      * <LI>A valid Content Encryption Algorithm is specified
      * <LI>Finally the trustStoreRef is specified to point to the trust store containing the public key used to encrypt
      * </OL>
@@ -2254,20 +2254,50 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
      * </OL>
      */
     @Test
-    public void JwtBuilderAPIConfigTests_encryption_goodKeyMgmtKeyAlg_goodRS256Alias_invalidContentEncryptAlg() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtBuilderAPIConfigTests_encryption_RSA_OAEP_KeyMgmtKeyAlg_goodRS256Alias_invalidContentEncryptAlg() throws Exception {
 
-        String builderId = builderServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256_bad_contentEncryptAlg" : "key_encrypt_good_RS256_bad_contentEncryptAlg";
-        String keyMgmtKeyAlg = builderServer.isFIPS140_3EnabledAndSupported() ? JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES : JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG;
-        String sigAlg = builderServer.isFIPS140_3EnabledAndSupported() ? JWTBuilderConstants.SIGALG_ES256 : JWTBuilderConstants.SIGALG_RS256;
-
-        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(keyMgmtKeyAlg, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+        String builderId = "key_encrypt_good_RS256_bad_contentEncryptAlg";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
 
         Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
 
         Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
         validationUtils.validateResult(response, expectations);
 
-        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, sigAlg), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
+        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, JWTBuilderConstants.SIGALG_RS256), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
+
+    }
+
+    /**
+     * Test Purpose:
+     * <OL>
+     * <LI>Invoke the JWT Builder using a config that specifies encryption.
+     * <LI>The ECDH-ES Key Management Key Algorithm is specified
+     * <LI>The the es256 public key alias is specified for encryption
+     * <LI>A valid Content Encryption Algorithm is specified
+     * <LI>Finally the trustStoreRef is specified to point to the trust store containing the public key used to encrypt
+     * </OL>
+     * <P>
+     * Expected Results:
+     * <OL>
+     * <LI>An error about the invalid value is logged during startup.
+     * <LI>e will create a JWE instead of just a JWS using the default value of the content encryption algorithm (the content of
+     * the token will be validated)
+     * </OL>
+     */
+    @Test
+    public void JwtBuilderAPIConfigTests_encryption_ECDH_ES_KeyMgmtKeyAlg_goodES256Alias_invalidContentEncryptAlg() throws Exception {
+
+        String builderId = "key_encrypt_good_ES256_bad_contentEncryptAlg";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+
+        Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
+
+        Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
+        validationUtils.validateResult(response, expectations);
+
+        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, JWTBuilderConstants.SIGALG_ES256), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
 
     }
 
@@ -2276,7 +2306,7 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
      * <OL>
      * <LI>Invoke the JWT Builder using a config that specifies encryption.
      * <LI>A valid Key Management Key Algorithm is specified
-     * <LI>The the rs256/es256 public key alias is specified for encryption
+     * <LI>The the rs256 public key alias is specified for encryption
      * <LI>TheContent Encryption Algorithm is missing
      * <LI>Finally the trustStoreRef is specified to point to the trust store containing the public key used to encrypt
      * </OL>
@@ -2289,20 +2319,50 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
      * </OL>
      */
     @Test
-    public void JwtBuilderAPIConfigTests_encryption_goodKeyMgmtKeyAlg_goodES256Alias_missingContentEncryptAlg() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtBuilderAPIConfigTests_encryption_RSA_OAEP_KeyMgmtKeyAlg_goodRS256Alias_missingContentEncryptAlg() throws Exception {
 
-        String builderId = builderServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256_missing_contentEncryptAlg" : "key_encrypt_good_RS256_missing_contentEncryptAlg";
-        String keyMgmtKeyAlg = builderServer.isFIPS140_3EnabledAndSupported() ? JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES : JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG;
-        String sigAlg = builderServer.isFIPS140_3EnabledAndSupported() ? JWTBuilderConstants.SIGALG_ES256 : JWTBuilderConstants.SIGALG_RS256;
-
-        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(keyMgmtKeyAlg, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+        String builderId = "key_encrypt_good_RS256_missing_contentEncryptAlg";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
 
         Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
 
         Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
         validationUtils.validateResult(response, expectations);
 
-        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, sigAlg), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
+        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, JWTBuilderConstants.SIGALG_RS256), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
+
+    }
+
+    /**
+     * Test Purpose:
+     * <OL>
+     * <LI>Invoke the JWT Builder using a config that specifies encryption.
+     * <LI>The ECDH-ES Key Management Key Algorithm is specified
+     * <LI>The the es256 public key alias is specified for encryption
+     * <LI>TheContent Encryption Algorithm is missing
+     * <LI>Finally the trustStoreRef is specified to point to the trust store containing the public key used to encrypt
+     * </OL>
+     * <P>
+     * Expected Results:
+     * <OL>
+     * <LI>An error about the invalid value is logged during startup.
+     * <LI>We will create a JWE instead of just a JWS using the default value of the content encryption algorithm (the content of
+     * the token will be validated)
+     * </OL>
+     */
+    @Test
+    public void JwtBuilderAPIConfigTests_encryption_ECDH_ES_KeyMgmtKeyAlg_goodES256Alias_missingContentEncryptAlg() throws Exception {
+
+        String builderId = "key_encrypt_good_ES256_missing_contentEncryptAlg";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+
+        Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
+
+        Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
+        validationUtils.validateResult(response, expectations);
+
+        validationUtils.validateJWEToken(response, (String) expectationSettings.get(HeaderConstants.ALGORITHM), JwtKeyTools.getComplexPrivateKeyForSigAlg(builderServer, JWTBuilderConstants.SIGALG_ES256), (String) expectationSettings.get(HeaderConstants.ENCRYPTION));
 
     }
 
@@ -2401,21 +2461,35 @@ public class JwtBuilderAPIConfigTests extends CommonSecurityFat {
     }
 
     @Test
-    public void JwtBuilderAPIConfigTests_encryption_goodKeyMgmtKeyAlg_goodServerWideKeyManagementKeyAlias_goodContentEncryptAlg_trustStoreRefMissing() throws Exception {
+    @SkipJavaSemeruWithFipsEnabledRule
+    public void JwtBuilderAPIConfigTests_encryption_RSA_OAEP_KeyMgmtKeyAlg_goodServerWideKeyManagementKeyAlias_goodContentEncryptAlg_trustStoreRefMissing() throws Exception {
 
-        if (builderServer.isFIPS140_3EnabledAndSupported()) updateDefaultSslSettings(builderServer, "DefaultSSLSettings_EC");
-
-        String builderId = builderServer.isFIPS140_3EnabledAndSupported() ? "key_encrypt_good_ES256_missing_trustStoreRef_userServerWideAlias" : "key_encrypt_good_RS256_missing_trustStoreRef_userServerWideAlias";
-        String keyMgmtKeyAlg = builderServer.isFIPS140_3EnabledAndSupported() ? JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES : JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG;
-
-        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(keyMgmtKeyAlg, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+        String builderId = "key_encrypt_good_RS256_missing_trustStoreRef_userServerWideAlias";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.DEFAULT_KEY_MGMT_KEY_ALG, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
 
         Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
 
         Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
         validationUtils.validateResult(response, expectations);
 
-        if (builderServer.isFIPS140_3EnabledAndSupported()) updateDefaultSslSettings(builderServer, "DefaultSSLSettings_RSA");
+    }
+
+    @Test
+    public void JwtBuilderAPIConfigTests_encryption_ECDH_ES_KeyMgmtKeyAlg_goodServerWideKeyManagementKeyAlias_goodContentEncryptAlg_trustStoreRefMissing() throws Exception {
+
+        // Update the SSL default to the EC configuration for this test case
+        updateDefaultSslSettings(builderServer, "DefaultSSLSettings_EC");
+
+        String builderId = "key_encrypt_good_ES256_missing_trustStoreRef_userServerWideAlias";
+        JSONObject expectationSettings = BuilderHelpers.setDefaultClaimsWithEncryption(JWTBuilderConstants.KEY_MGMT_KEY_ALG_ES, JWTBuilderConstants.DEFAULT_CONTENT_ENCRYPT_ALG);
+
+        Expectations expectations = BuilderHelpers.createGoodBuilderExpectations(JWTBuilderConstants.JWT_BUILDER_SETAPIS_ENDPOINT, expectationSettings, builderServer);
+
+        Page response = actions.invokeJwtBuilder_setApis(_testName, builderServer, builderId);
+        validationUtils.validateResult(response, expectations);
+
+        // Restore default configuration
+        updateDefaultSslSettings(builderServer, "DefaultSSLSettings_RSA");
     }
 
     @ExpectedFFDC({ "com.ibm.ws.security.jwt.internal.JwtTokenException" })
