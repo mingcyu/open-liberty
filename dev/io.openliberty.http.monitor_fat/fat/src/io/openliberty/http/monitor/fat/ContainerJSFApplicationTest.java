@@ -12,6 +12,7 @@ package io.openliberty.http.monitor.fat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.time.Duration;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.FileAsset;
@@ -24,6 +25,7 @@ import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -58,9 +60,11 @@ public class ContainerJSFApplicationTest extends BaseTestClass {
                     .withDockerfileFromBuilder(builder -> builder.from(IMAGE_NAME)
                                     .copy("/etc/otelcol/config.yaml", "/etc/otelcol/config.yaml"))
                     .withFileFromFile("/etc/otelcol/config.yaml", new File(PATH_TO_AUTOFVT_TESTFILES + "config.yaml")))
-                    .withLogConsumer(new SimpleLogConsumer(ContainerServletApplicationTest.class, "opentelemetry-collector-contrib"))
+                    .withLogConsumer(new SimpleLogConsumer(ContainerServletApplicationTest.class, "opentelemetry-collector"))
+                    .withExposedPorts(8888, 8889, 4317)
                     .withNetwork(network)
-                    .withExposedPorts(8888, 8889, 4317);
+                    .withNetworkAliases("otel-collector-metrics")
+                    .waitingFor(new LogMessageWaitStrategy().withRegEx(".*Begin running and processing data.*").withStartupTimeout(Duration.ofMinutes(1)));
 
     @ClassRule
     public static RuleChain chain = RuleChain.outerRule(network)
@@ -87,7 +91,7 @@ public class ContainerJSFApplicationTest extends BaseTestClass {
         ShrinkHelper.exportDropinAppToServer(server, testWAR,
                                              DeployOptions.SERVER_ONLY);
 
-        server.addEnvVar("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://" + container.getHost() + ":" + container.getMappedPort(4317));
+        server.addEnvVar("OTEL_EXPORTER_OTLP_ENDPOINT", "http://" + container.getHost() + ":" + container.getMappedPort(4317));
         server.startServer();
 
         //Read to run a smarter planet
