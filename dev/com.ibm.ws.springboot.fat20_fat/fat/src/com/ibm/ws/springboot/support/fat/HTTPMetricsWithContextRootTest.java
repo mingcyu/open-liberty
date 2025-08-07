@@ -238,7 +238,8 @@ public class HTTPMetricsWithContextRootTest extends HTTPMetricsAbstractTests {
 
         /*
          * Since Spring has established that it needs to serve a context root
-         * a "bad" path from the server would result in a 500.
+         * a "bad" path from the server would result in a 404.
+         * The request is sent to the OpenLiberty server over springboot and this 404 is handled as `/`
          */
 
         String route = "/beepBoop";

@@ -44,6 +44,7 @@ public class ServletFilter implements Filter {
 	
 	private static final String REST_HTTP_ROUTE_ATTR = "REST.HTTP.ROUTE";
 	
+	private static final String SPRING_BEST_MATCHING_PATTERN = "org.springframework.web.servlet.HandlerMapping.bestMatchingPattern";
 	
     @Override
     public void init(FilterConfig config) {
@@ -126,7 +127,7 @@ public class ServletFilter implements Filter {
 					SRTServletRequest srtServletRequest = (SRTServletRequest) servletRequest;
 					
 					//do spring check
-					if (MonitorAppStateListener.isSpringFeatureEnabled() && srtServletRequest.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingPattern") != null) {
+					if (MonitorAppStateListener.isSpringFeatureEnabled() && srtServletRequest.getAttribute(SPRING_BEST_MATCHING_PATTERN) != null) {
 
 						//preprocess to send in an empty string, if it is null or already empty to begin with (easier for logic later)
 						httpRoute = resolveHttpRouteSpring(srtServletRequest, (contextPath == null || contextPath.trim().isEmpty() ) ? "" : contextPath);
@@ -267,7 +268,7 @@ public class ServletFilter implements Filter {
 	
 	private String resolveHttpRouteSpring(SRTServletRequest srtServletRequest, String contextPath) {
 		
-		String httpRoute = (String) srtServletRequest.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingPattern");
+		String httpRoute = (String) srtServletRequest.getAttribute(SPRING_BEST_MATCHING_PATTERN);
 		
 		if (httpRoute == null || httpRoute.trim().isEmpty()) {
 			// If somehow this is null or is empty, default to a /* 
@@ -279,13 +280,14 @@ public class ServletFilter implements Filter {
 			 * Now need to check if we 4xx code. (If so, we're likely to have been provided an /error path, which isn't useful.
 			 * We will turn it into a "/*"!
 			 */
-			Object jakartaServletErrorStatusCode = srtServletRequest.getAttribute("jakarta.servlet.error.status_code");
-			Object javaxServletErrorStatusCode = srtServletRequest.getAttribute("javax.servlet.error.status_code");
 			
-			if ((jakartaServletErrorStatusCode != null  && Integer.valueOf(jakartaServletErrorStatusCode.toString().trim()) % 400 <= 99) 
-				|| (javaxServletErrorStatusCode != null  && Integer.valueOf(javaxServletErrorStatusCode.toString().trim()) % 400 <= 99 )) {
+			//Constant will be transformed for jakarta binaries
+			Object JEEServletErrorStatusCode = srtServletRequest.getAttribute(javax.servlet.RequestDispatcher.ERROR_STATUS_CODE);
+			
+			if (JEEServletErrorStatusCode != null && Integer.valueOf(JEEServletErrorStatusCode.toString().trim()) % 400 <= 99) {
 				httpRoute =  "/*";
 			}
+			
 		}
 
 		/*
