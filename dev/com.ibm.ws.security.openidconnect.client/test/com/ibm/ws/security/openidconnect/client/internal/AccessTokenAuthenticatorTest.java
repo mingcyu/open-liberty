@@ -194,6 +194,32 @@ public class AccessTokenAuthenticatorTest extends CommonTestClass {
     }
 
     @Test
+    public void testIsBearerToken_CaseInsensitive() {
+
+        // Test different case variations of "Bearer" scheme by using getBearerAccessTokenToken
+        // which internally uses the private isBearerToken method
+        
+        // Setup for lowercase "bearer" token
+        withHeaderName(null);
+        withAuthorizationHeader("bearer token123");
+        String result2 = AccessTokenAuthenticator.getBearerAccessTokenToken(req, clientConfig);
+        assertEquals("Lowercase bearer token should be recognized", "token123", result2);
+        
+        // Setup for mixed case "BeArEr" token
+        withHeaderName(null);
+        withAuthorizationHeader("BeArEr token123");
+        String result3 = AccessTokenAuthenticator.getBearerAccessTokenToken(req, clientConfig);
+        assertEquals("Mixed case bearer token should be recognized", "token123", result3);
+        
+        // Setup for uppercase "BEARER" token
+        withHeaderName(null);
+        withAuthorizationHeader("BEARER token123");
+        String result4 = AccessTokenAuthenticator.getBearerAccessTokenToken(req, clientConfig);
+        assertEquals("All caps BEARER token should be recognized", "token123", result4);
+        
+    }
+
+    @Test
     public void testConstructor() {
         try {
             AccessTokenAuthenticator authenticator = new AccessTokenAuthenticator();
