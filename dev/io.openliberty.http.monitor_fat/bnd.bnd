@@ -1,5 +1,5 @@
 #*******************************************************************************
-# Copyright (c) 2024 IBM Corporation and others.
+# Copyright (c) 2024,2025 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -80,4 +80,5 @@ fat.test.container.images: otel/opentelemetry-collector-contrib:0.103.0
 	net.sourceforge.htmlunit:neko-htmlunit;strategy=exact;version=2.44.0,\
 	net.sourceforge.htmlunit:webdriver;version=2.6,\
 	io.openliberty.org.apache.xercesImpl;version=latest,\
-	xml-apis:xml-apis;version=1.4.01
+	xml-apis:xml-apis;version=1.4.01,\
+	com.ibm.ws.org.apache.commons.lang3;version=latest
