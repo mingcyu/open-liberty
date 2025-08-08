@@ -301,7 +301,7 @@ CWWKD1026.ignore.case.not.text.useraction=Ensure the sort criteria is applied \
  to the correct entity attribute and remove the instruction to ignore case if the \
  entity attribute does not represent text.
 
-CWWKD1027.datastore.lacks.java.comp=CWWKD1078E: One or more repository interfaces \
+CWWKD1027.datastore.lacks.java.comp=CWWKD1027E: One or more repository interfaces \
  ({0}) from the {1} application artifact specify a {2} dataStore value that \
  does not match a data source resource reference or persistence unit reference \
  because it lacks a java:comp/env/ namespace prefix. Consider changing the \
