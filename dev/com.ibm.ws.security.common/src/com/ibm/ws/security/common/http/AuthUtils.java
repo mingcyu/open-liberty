@@ -51,7 +51,16 @@ public class AuthUtils {
         }
         if (scheme != null) {
             scheme = scheme.trim();
-            if (rawHeaderValue.startsWith(scheme)) {
+            
+            // Case-insensitive check for "Bearer" token
+            if ("Bearer ".equalsIgnoreCase(scheme.trim()) || "Bearer".equalsIgnoreCase(scheme.trim())) {
+                // Check if rawHeaderValue starts with any case variation of "Bearer "
+                if (rawHeaderValue.toLowerCase().startsWith("bearer ")) {
+                    return rawHeaderValue.substring("bearer ".length()).trim();
+                }
+            }
+            // Original case-sensitive check for other schemes
+            else if (rawHeaderValue.startsWith(scheme)) {
                 return rawHeaderValue.substring(scheme.length()).trim();
             }
         }
