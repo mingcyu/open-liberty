@@ -27,6 +27,7 @@ import static test.jakarta.data.web.Assertions.assertIterableEquals;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -5221,6 +5222,73 @@ public class DataTestServlet extends FATServlet {
         assertEquals(25500f, found.get().price, 0.001f);
 
         vehicles.removeAll();
+    }
+
+    /**
+     * A repository method can also be a Scheduled Asynchronous Method, in which
+     * case the method must run after the next time on the schedule rather than
+     * immediately.
+     */
+    @Test
+    public void testScheduledAsyncMethod() throws ExecutionException, //
+                    InterruptedException, //
+                    TimeoutException {
+
+        participants.remove("TestScheduledAsyncMethod");
+
+        participants.add(Participant.of("Sam", "TestScheduledAsyncMethod", 10),
+                         Participant.of("Samson", "TestScheduledAsyncMethod", 20),
+                         Participant.of("Samuel", "TestScheduledAsyncMethod", 30));
+
+        LocalTime before = LocalTime.now().minusNanos(1);
+
+        // Schedule removal to occur on seconds that end in 5
+        CompletableFuture<Long> future = participants
+                        .scheduledRemoval("Sam", "TestScheduledAsyncMethod");
+
+        LocalTime after = LocalTime.now().plusNanos(1);
+
+        int s = before.getSecond() % 10;
+        if (s < 5)
+            s = 5 - s;
+        else
+            s = 15 - s;
+        LocalTime earliestExpected = before.plusSeconds(s).withNano(0);
+
+        // Ensure the entity is not removed too early
+        boolean found = true;
+        for (; found; TimeUnit.SECONDS.sleep(1)) {
+            found = participants.getFirstName(10).isPresent();
+            LocalTime current = LocalTime.now();
+            if (current.isBefore(earliestExpected))
+                assertEquals("Between " + before + " and " + after + ", we" +
+                             " scheduled removal. Removal must occur no sooner" +
+                             " than " + earliestExpected + ". Prior to that" +
+                             " point, at " + current + ", the entry was already" +
+                             " gone.",
+                             true,
+                             found);
+            else
+                break;
+        }
+
+        // Ensure the entity is removed with a reasonable amount of time
+        long timeout_ns = Duration.ofMinutes(TIMEOUT_MINUTES).toNanos();
+        for (long start = System.nanoTime(); //
+                        System.nanoTime() - start < timeout_ns && found; //
+                        TimeUnit.SECONDS.sleep(1)) {
+            found = participants.getFirstName(10).isPresent();
+        }
+
+        assertEquals(found,
+                     false);
+
+        assertEquals(Long.valueOf(1L),
+                     future.get(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+
+        // 2 entities must remain because 1 of the 3 was removed
+        assertEquals(2L,
+                     participants.remove("TestScheduledAsyncMethod"));
     }
 
     /**
