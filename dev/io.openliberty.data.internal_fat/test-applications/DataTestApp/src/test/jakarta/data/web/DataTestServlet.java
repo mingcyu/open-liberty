@@ -203,6 +203,55 @@ public class DataTestServlet extends FATServlet {
     }
 
     /**
+     * A repository default method that is annotated with the Jakarta Concurrency
+     * Asynchronous annotation must run on the specified executor, which can be
+     * used to constrain concurrency. In the case of this test, the executor must
+     * constraint of the asynchronous operations to 1, such that each reads and
+     * operates on the mostly recently updated value in the database, preventing
+     * operations on stale data.
+     */
+    @Test
+    public void testAsyncDefaultMethod() throws InterruptedException, //
+                    ExecutionException, //
+                    TimeoutException {
+        packages.deleteAll();
+
+        Package p1 = new Package(99001, 100.0f, 15.0f, 30.0f, "Package:99001");
+        Package p2 = new Package(99002, 120.0f, 25.0f, 20.0f, "Package:99002");
+        Package p3 = new Package(99003, 300.0f, 33.3f, 63.0f, "Package:99003");
+        Package p4 = new Package(99004, 240.0f, 40.0f, 54.0f, "Package:99004");
+
+        packages.saveAll(List.of(p1, p2, p3, p4));
+
+        CompletionStage<Boolean> s1 = packages.widen(99002, 2.0f, 0.25f)
+                        .thenCompose(b -> b //
+                                        ? packages.widen(99002, 1.4f, 0.25f) //
+                                        : CompletableFuture.completedStage(false));
+        CompletionStage<Boolean> s2 = packages.widen(99002, 2.5f, 0.5f);
+        CompletionStage<Boolean> s3 = packages.widen(99002, 1.5f, 0.33f);
+
+        CompletableFuture<Boolean> f1 = s1.toCompletableFuture();
+        CompletableFuture<Boolean> f2 = s2.toCompletableFuture();
+        CompletableFuture<Boolean> f3 = s3.toCompletableFuture();
+
+        CompletableFuture.allOf(f1, f2, f3)
+                        .get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+
+        p2 = packages.findById(99002).orElseThrow();
+        assertEquals(99002, p2.id);
+        assertEquals(120.0f, p2.length, 0.01f);
+        assertEquals(26.9f, p2.width, 0.01f);
+        assertEquals(20.0f, p2.height, 0.01f);
+        assertEquals("Package:99002", p2.description);
+
+        assertEquals(Boolean.TRUE, f1.getNow(null));
+        assertEquals(Boolean.TRUE, f2.getNow(null));
+        assertEquals(Boolean.TRUE, f3.getNow(null));
+
+        assertEquals(4, packages.deleteAll());
+    }
+
+    /**
      * Use repository methods that are designated as asynchronous by the Concurrency Asynchronous annotation.
      */
     @Test
