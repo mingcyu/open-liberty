@@ -12,6 +12,7 @@
  *******************************************************************************/
 package suite;
 
+import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -20,6 +21,8 @@ import com.ibm.ws.transaction.fat.util.PostgresqlContainerSuite;
 
 import componenttest.containers.SimpleLogConsumer;
 import componenttest.custom.junit.runner.AlwaysPassesTest;
+import componenttest.rules.repeater.FeatureReplacementAction;
+import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.database.container.DatabaseContainerType;
 import componenttest.topology.database.container.PostgreSQLContainer;
 import tests.DBRotationTest;
@@ -42,4 +45,7 @@ public class FATSuite extends PostgresqlContainerSuite {
 
         beforeSuite(DatabaseContainerType.Postgres);
     }
+
+    @ClassRule
+    public static RepeatTests r = RepeatTests.with(FeatureReplacementAction.EE10_FEATURES().forServers(DBRotationTest.serverNames));
 }
