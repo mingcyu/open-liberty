@@ -24,7 +24,6 @@ public class City {
 //  @Version
 //  long changeCount;
 
-//  TODO use @IdClass when Hibernate supports the usage in it's annotation processor. Bug: https://hibernate.atlassian.net/browse/HHH-18252
     @Id
     public String name;
 
