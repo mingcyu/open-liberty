@@ -295,7 +295,7 @@ public class JaegerQueryClient implements AutoCloseable {
     }
 
     /**
-     * Run an action asynchronously with a timeout, retrying up to three times if it times out.
+     * Run an action asynchronously with a timeout, retrying up to five times if it times out.
      * <p>
      * Useful for methods which use the raw client to talk to Jaeger
      *
@@ -303,7 +303,7 @@ public class JaegerQueryClient implements AutoCloseable {
      * @param action the action to run
      * @param timeout the timeout for each retry
      * @return the result of the action
-     * @throws RuntimeException if the action throws an exception or times out three times
+     * @throws RuntimeException if the action throws an exception or times out five times
      */
     private static <T> T runWithRetryAndTimeout(Callable<T> action, Duration timeout) {
         int retryCount = 0;
@@ -318,8 +318,10 @@ public class JaegerQueryClient implements AutoCloseable {
             try {
                 return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | ExecutionException e1) {
-                future.cancel(true); //interrupt the task if it's still running
-                throw new RuntimeException("Action throw an exception ", e1);
+                if(retryCount == 5){
+                    future.cancel(true); //interrupt the task if it's still running
+                    throw new RuntimeException("Action threw an exception ", e1);
+                }
             } catch (TimeoutException e1) {
                 future.cancel(true);
             } finally {
