@@ -27,7 +27,7 @@
   <include location="../fatTestPorts.xml"/>
 
   <application location="DataJPAHibernateTestApp.war">
-    <classloader commonLibraryRef="HibernateLib, JDBCLibrary"/>
+    <classloader commonLibraryRef="JDBCLibrary"/>
   </application>
 
   <dataSource id="DefaultDataSource" fat.modify="true">
@@ -37,10 +37,7 @@
 
   <library id="JDBCLibrary">
     <fileset dir="${shared.resource.dir}/jdbc" includes="${env.DB_DRIVER}"/>
-  </library>
-  
-  <library id="HibernateLib">
-      <fileset dir="${shared.resource.dir}/jpa32_hibernate" includes="*.jar"/>
+    <fileset dir="${shared.resource.dir}/jpa32_hibernate" includes="*.jar"/>
   </library>
 
   <!-- JDBC driver permissions -->

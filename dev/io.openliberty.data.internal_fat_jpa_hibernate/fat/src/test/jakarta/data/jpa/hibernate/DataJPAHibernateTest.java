@@ -21,7 +21,6 @@ import com.ibm.websphere.simplicity.ShrinkHelper;
 
 import componenttest.annotation.MinimumJavaLevel;
 import componenttest.annotation.Server;
-import componenttest.annotation.SkipIfSysProp;
 import componenttest.annotation.TestServlet;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.database.container.DatabaseContainerUtil;
@@ -31,7 +30,6 @@ import test.jakarta.data.jpa.hibernate.web.DataJPAHibernateTestServlet;
 
 @RunWith(FATRunner.class)
 @MinimumJavaLevel(javaLevel = 17)
-@SkipIfSysProp(SkipIfSysProp.DB_Oracle) //TODO Hibernate fails to load oracle.jdbc.OracleConnection class
 public class DataJPAHibernateTest extends FATServletClient {
     private static final String APP_NAME = "DataJPAHibernateTestApp";
 
