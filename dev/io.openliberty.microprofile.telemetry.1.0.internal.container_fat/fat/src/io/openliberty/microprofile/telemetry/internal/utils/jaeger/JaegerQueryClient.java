@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -310,7 +310,10 @@ public class JaegerQueryClient implements AutoCloseable {
         while (retryCount < 5) {
             Log.info(c, "runWithRetryandTimeout", "retryCount " + retryCount);
             retryCount += 1;
-	@@ -318,8 +317,11 @@ private static <T> T runWithRetryAndTimeout(Callable<T> action, Duration timeout
+            //get executOR
+            ExecutorService e = Executors.newSingleThreadExecutor();
+            Future<T> future = e.submit(action);
+            //
             try {
                 return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | ExecutionException e1) {
