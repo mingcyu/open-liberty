@@ -16,6 +16,11 @@ public interface _City {
 
 	
 	/**
+	 * @see #changeCount
+	 **/
+	String CHANGE_COUNT = "changeCount";
+	
+	/**
 	 * @see #name
 	 **/
 	String NAME = "name";
@@ -30,6 +35,11 @@ public interface _City {
 	 **/
 	String POPULATION = "population";
 
+	
+	/**
+	 * Static metamodel for attribute {@link City#changeCount}
+	 **/
+	SortableAttribute<City> changeCount = new SortableAttributeRecord<>(CHANGE_COUNT);
 	
 	/**
 	 * Static metamodel for attribute {@link City#name}

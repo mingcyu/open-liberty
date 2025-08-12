@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -15,14 +15,14 @@ import java.util.Set;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.Version;
 
 @Entity
 @IdClass(CityId.class)
 public class City {
 
-//  TODO re-enable version for this entity once bug https://hibernate.atlassian.net/browse/HHH-18248 is resolved
-//  @Version
-//  long changeCount;
+    @Version
+    long changeCount;
 
     @Id
     public String name;
@@ -38,7 +38,6 @@ public class City {
     }
 
     City(String name, String state, int population, Set<Integer> areaCodes) {
-//        this.id = new CityId(name, state);
         this.name = name;
         this.stateName = state;
         this.population = population;
@@ -48,8 +47,7 @@ public class City {
     @Override
     public String toString() {
         return "City of " + name + ", " + stateName + " pop " + population + " in " + areaCodes
-//                        + " v" + changeCount
-        ;
+               + " v" + changeCount;
     }
 
     public CityId getIdClass() {

@@ -15,6 +15,11 @@ public abstract class City_ {
 
 	
 	/**
+	 * @see #changeCount
+	 **/
+	public static final String CHANGE_COUNT = "changeCount";
+	
+	/**
 	 * @see #name
 	 **/
 	public static final String NAME = "name";
@@ -39,6 +44,11 @@ public abstract class City_ {
 	 * Static metamodel type for {@link test.jakarta.data.jpa.hibernate.web.City}
 	 **/
 	public static volatile EntityType<City> class_;
+	
+	/**
+	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#changeCount}
+	 **/
+	public static volatile SingularAttribute<City, Long> changeCount;
 	
 	/**
 	 * Static metamodel for attribute {@link test.jakarta.data.jpa.hibernate.web.City#name}
