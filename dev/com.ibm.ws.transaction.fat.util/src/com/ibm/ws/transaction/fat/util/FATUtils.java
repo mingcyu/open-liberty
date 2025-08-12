@@ -17,6 +17,8 @@ import static org.junit.Assert.fail;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -40,8 +42,6 @@ public class FATUtils {
 	private static final int RETRY_INTERVAL = 10000;
 
 	private static final boolean PARALLEL_DEFAULT = false;
-
-	private static AtomicInteger stoppedCount = new AtomicInteger(0);
 
 	/**
      * @param servers
@@ -298,7 +298,6 @@ public class FATUtils {
 		public void run() {
     		try {
 				stopServer(_t, _server);
-				stoppedCount.incrementAndGet();
 			} catch (Exception e) {
 	            Log.error(FATUtils.class, "run", e);
 			}
@@ -370,29 +369,30 @@ public class FATUtils {
 	}
 
 	public static void stopServers(boolean parallel, String[] toleratedMsgs, LibertyServer... servers) throws Exception {
-		Future<?> f = null;
+		ArrayList<Future<?>> futures = new ArrayList<Future<?>>();
 		ExecutorService es;
 
         if (parallel && servers.length > 1) {
     		es = Executors.newFixedThreadPool(servers.length);
-    		stoppedCount.set(0);
-    		
+
     		for (LibertyServer server : servers) {
-    			f = es.submit(new ServerStopper(toleratedMsgs, server));
+    			futures.add(es.submit(new ServerStopper(toleratedMsgs, server)));
     		}
-    		
-    		// wait for the last one
-    		f.get();
-    		// wait till they're all stopped
-    		while (stoppedCount.get() < servers.length) {
-    			try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
-    		}
+
+    		futures.parallelStream().forEach(future -> {
+                    try {
+						future.get();
+					} catch (Exception e) {
+						// Already logged
+					}
+            });
 		} else {
 			for (LibertyServer server : servers) {
-				stopServer(toleratedMsgs, server);
+				try {
+					stopServer(toleratedMsgs, server);
+				} catch (Exception e) {
+					// Already logged
+				}
 			}
 		}
     }
