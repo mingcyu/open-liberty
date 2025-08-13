@@ -17,12 +17,8 @@ import static org.junit.Assert.fail;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import com.ibm.tx.jta.ut.util.XAResourceImpl;
 import com.ibm.websphere.simplicity.ProgramOutput;
@@ -284,27 +280,7 @@ public class FATUtils {
         }
     }
 
-    private static class ServerStopper implements Runnable {
-
-    	private String[] _t;
-		private LibertyServer _server;
-
-		public ServerStopper(String[] toleratedMsgs, LibertyServer server) {
-    		_t = toleratedMsgs;
-    		_server = server;
-    	}
-
-    	@Override
-		public void run() {
-    		try {
-				stopServer(_t, _server);
-			} catch (Exception e) {
-	            Log.error(FATUtils.class, "run", e);
-			}
-		}
-    }
-
-	private static void stopServer(String[] toleratedMsgs, LibertyServer server) throws Exception {
+	private static void stopServer(String[] toleratedMsgs, LibertyServer server) {
         final String method = "stopServer";
 
         assertNotNull("Attempted to stop a null server", server);
@@ -363,39 +339,20 @@ public class FATUtils {
         } while (attempt < maxAttempts);
 
         if (server.isStarted()) {
-            server.postStopServerArchive();
-            throw new Exception("Failed to stop " + server.getServerName() + " after " + attempt + " attempts");
+            try {
+				server.postStopServerArchive();
+			} catch (Exception e) {
+	            Log.error(c, method, e);
+			}
+            Log.error(c, method, new Exception("Failed to stop " + server.getServerName() + " after " + attempt + " attempts"));
         }
 	}
 
-	public static void stopServers(boolean parallel, String[] toleratedMsgs, LibertyServer... servers) throws Exception {
-		ArrayList<Future<?>> futures = new ArrayList<Future<?>>();
-		ExecutorService es;
-
-        if (parallel && servers.length > 1) {
-    		es = Executors.newFixedThreadPool(servers.length);
-
-    		for (LibertyServer server : servers) {
-    			futures.add(es.submit(new ServerStopper(toleratedMsgs, server)));
-    		}
-
-    		futures.parallelStream().forEach(future -> {
-                    try {
-						future.get();
-					} catch (Exception e) {
-						// Already logged
-					}
-            });
-		} else {
-			for (LibertyServer server : servers) {
-				try {
-					stopServer(toleratedMsgs, server);
-				} catch (Exception e) {
-					// Already logged
-				}
-			}
-		}
-    }
+	public static void stopServers(boolean parallel, String[] toleratedMsgs, LibertyServer... servers) {
+	    Stream<LibertyServer> serverStream = Arrays.stream(servers);
+	    if (parallel) serverStream = serverStream.parallel();
+	    serverStream.forEach(s -> stopServer(toleratedMsgs, s));
+	}
 
 	public static void stopServers(boolean parallel, LibertyServer... servers) throws Exception {
 		stopServers(parallel, (String[])null, servers);
