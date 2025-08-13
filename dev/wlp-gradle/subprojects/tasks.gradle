@@ -410,8 +410,6 @@ task verifyBundleNLS {
     }
 }
 
-
-
 /**
  * Utility task that will autoformat your bnd files including:
  * - (1) tabs to spaces
@@ -419,7 +417,7 @@ task verifyBundleNLS {
  * - (3) alphabetize lists
  * 
  * This is experimental and might have bugs, useful when making 
- * changes to an existing bnd file and you want it prettify it.
+ * changes to an existing bnd file and you want to prettify it.
  * 
  * Needs to be manually run like: 
  * ./gradlew [your-project]:formatBndFiles
@@ -436,7 +434,7 @@ task formatBndFiles() {
       }
     }
     
-	//Iterate over bnd files
+    //Iterate over bnd files
     bndFiles.each { String p ->
       // Evaluate path
       java.nio.file.Path path = java.nio.file.Paths.get(p)
@@ -451,10 +449,10 @@ task formatBndFiles() {
       String listKey;
       List<String> listItems = new ArrayList<>()
       
-	  // Parse bnd file
+      // Parse bnd file
       for (String line : original) {
-        // Space between - trim extra blank space
-		// TODO consider removing multiple empty lines
+        // Space between content - trim extra blank space
+        // TODO consider removing multiple empty lines
         if (line.trim().isEmpty() && !inList) {
           updated.add("")
           continue
@@ -468,14 +466,14 @@ task formatBndFiles() {
         
         // Start of list
         if(line.indexOf(':') != -1 && !inList) {
-		  // find list key
+          // find list key
           listKey = line.split(':')[0]
           
-		  // find list items on same line as list key
+          // find list items on same line as list key
           String lineWithoutKey = line.substring(line.indexOf(':') + 1);
           listItems.addAll(lineWithoutKey.split(","))
           
-		  // does list continue onto next line?
+          // does list continue onto next line?
           if(line.trim().endsWith("\\")) {
             inList = true
             continue
@@ -484,10 +482,12 @@ task formatBndFiles() {
         
         // In list
         if(inList) {
-		  // split list items by ,
+          // split list items by [,]
+          // note: some lines might end with ,\
+          //       deal with that when adding items back
           listItems.addAll(line.split(","))
           
-		  // does list continue onto next line?
+          // does list continue onto next line?
           if(line.trim().endsWith("\\")) {
             continue
           } else {
@@ -505,13 +505,13 @@ task formatBndFiles() {
             continue;
           }
           
-          // output list in alphebetical order
+          // output list items in alphebetical order
           updated.add(listKey.trim() + ":\\")
           updated.add(listItems.stream()
-            .map(i -> i.trim()) //
-            .filter(i -> !i.equals("\\"))
-            .filter(i -> !i.isEmpty())
-            .sorted()
+            .map(i -> i.trim())           // remove flanking white space
+            .filter(i -> !i.equals("\\")) // filter trailing \
+            .filter(i -> !i.isEmpty())    // filter trailing white space
+            .sorted()                     // sort list
             .collect(Collectors.joining(",\\\n    ", "    ", "")))
 
           listKey = null
