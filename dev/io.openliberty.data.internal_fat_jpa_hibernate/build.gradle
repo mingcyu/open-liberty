@@ -60,6 +60,11 @@ task addHibernateJPA32(type: Copy) {
  * Add Hibernate and transitive dependencies into the permissions section of server.xml(s) 
  */
 task addHibernatePermissions() {
+  // Do not execute this task during our builds
+  onlyIf {
+    !isAutomatedBuild
+  }
+
   // Find server.xml files
   def serverConfigs = []
   fileTree(project.file('publish/servers')).visit { FileVisitDetails d ->
@@ -161,7 +166,6 @@ task addGeneratedSources() {
       }
       println "Copied generated sources to source folder for version control"
     }
-
 }
 
 /*

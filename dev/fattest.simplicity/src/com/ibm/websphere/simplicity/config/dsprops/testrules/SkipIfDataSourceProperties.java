@@ -17,6 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import componenttest.annotation.SkipIfSysProp;
+
 /**
  * This annotation can be used to indicate that a test should not be executed
  * if one of the <code>DataSourceProperties</code> in the array
@@ -27,7 +29,7 @@ import java.lang.annotation.Target;
  *
  * @see                {@link DataSourcePropertiesSkipRule} for an example of how to use this annotation.
  *
- * @deprecated         Use {@link}
+ * @deprecated         Use {@link SkipIfSysProp} and choose an appropriate database property
  *
  */
 @Deprecated
