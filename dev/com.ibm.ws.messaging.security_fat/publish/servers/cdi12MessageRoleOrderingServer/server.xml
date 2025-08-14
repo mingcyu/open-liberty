@@ -2,10 +2,17 @@
   <include location="../fatTestPorts.xml" />
   
   <featureManager>
-    <feature>jakartaee-10.0</feature>
+    <feature>messagingServer-3.0</feature>
+    <feature>messagingSecurity-3.0</feature>
     <feature>timedexit-1.0</feature>
     <feature>localConnector-1.0</feature>
     <feature>componentTest-1.0</feature>
+    <feature>wasJmsServer-1.0</feature>
+    <feature>wasJmsSecurity-1.0</feature>
+    <feature>wasJmsClient-2.0</feature>
+    <feature>xmlBinding-3.0</feature>
+    <feature>servlet-3.0</feature>
+    <feature>jndi-1.0</feature>
   </featureManager>
   
   <basicRegistry id="basic" realm="customRealm">
