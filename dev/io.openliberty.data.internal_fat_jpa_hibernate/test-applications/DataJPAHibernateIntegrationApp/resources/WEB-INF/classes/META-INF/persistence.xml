@@ -21,6 +21,10 @@
     <persistence-unit name="HibernateProvider">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>jdbc/HibernateDataSource</jta-data-source>
+        <!-- TODO remove once  https://hibernate.atlassian.net/browse/HHH-19492 is fixed -->
+        <class>test.jakarta.data.jpa.hibernate.integration.web.County</class>
+        <!-- Need Segment to verify Segment does NOT get persisted via Hibernate provider -->
+        <class>test.jakarta.data.jpa.hibernate.integration.web.Segment</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
             <property name="hibernate.show_sql" value="true"/>
