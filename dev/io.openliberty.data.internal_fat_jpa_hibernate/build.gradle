@@ -36,6 +36,7 @@ dependencies {
   }
   
   hibernateJPA32 "org.hibernate.orm:hibernate-community-dialects:${hibernateVersion}", withoutJakartaAPI
+  hibernateJPA32 "org.hibernate.orm:hibernate-scan-jandex:${hibernateVersion}", withoutJakartaAPI
   
   derby16 "org.apache.derby:derby:10.16.1.1",
           "org.apache.derby:derbytools:10.16.1.1"

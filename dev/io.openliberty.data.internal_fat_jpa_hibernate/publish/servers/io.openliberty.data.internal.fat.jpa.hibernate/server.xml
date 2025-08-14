@@ -53,6 +53,8 @@
   <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-community-dialects-7.0.9.Final.jar"/>
   <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-core-7.0.9.Final.jar"/>
   <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-models-1.0.1.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/hibernate-scan-jandex-7.0.9.Final.jar"/>
+  <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/jandex-3.3.0.jar"/>
   <javaPermission className="java.security.AllPermission" codebase="${shared.resource.dir}/jpa32_hibernate/jboss-logging-3.6.1.Final.jar"/>
   <!-- END: Hibernate permissions -->	
 	
