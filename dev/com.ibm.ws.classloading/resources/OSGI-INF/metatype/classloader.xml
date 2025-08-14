@@ -36,7 +36,7 @@
     />
 
     <AD name="internal" description="internal use only"
-        id="patchLibraryRef"
+        id="overrideLibraryRef"
         ibm:beta="true"
         required="false"
         type="String"

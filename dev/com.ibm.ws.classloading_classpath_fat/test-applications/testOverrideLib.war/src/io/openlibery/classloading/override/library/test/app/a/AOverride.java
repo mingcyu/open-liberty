@@ -7,16 +7,11 @@
  * 
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
-package com.ibm.ws.classloading.internal;
-
-import java.util.List;
-
-import com.ibm.wsspi.classloading.ClassLoaderConfiguration;
+package io.openlibery.classloading.override.library.test.app.a;
 
 /**
- * This is an internal until we can agree on the attribute name for override libraries
+ *
  */
-public interface ClassLoaderConfigurationExtended {
-    ClassLoaderConfiguration setOverrideLibraries(List<String> libs);
-    List<String> getOverrideLibraries();
+public class AOverride {
+
 }
