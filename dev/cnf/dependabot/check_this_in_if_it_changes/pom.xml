@@ -2732,6 +2732,11 @@
       <version>4.17</version>
     </dependency>
     <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>1.9.24</version>
+    </dependency>
+    <dependency>
       <groupId>org.asynchttpclient</groupId>
       <artifactId>async-http-client</artifactId>
       <version>2.12.3</version>
