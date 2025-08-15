@@ -44,9 +44,10 @@ public class HealthFileUtils {
                 String wlpOutputDirEnv = System.getenv("WLP_OUTPUT_DIR").trim();
 
                 if (wlpOutputDirEnv == null || wlpOutputDirEnv.isEmpty()) {
+                    Tr.warning(tc, "file.healthcheck.health.directory.resolution.fail.CWMMH0102W");
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                         Tr.debug(tc,
-                                 "The /health directory can not be created. The server was unable to resolve server.output.dir property nor the WLP_OUTPUT_DIR environment variable.");
+                                 "The server was unable to resolve server.output.dir property nor the WLP_OUTPUT_DIR environment variable.");
                     }
                     return null;
                 }
@@ -56,9 +57,10 @@ public class HealthFileUtils {
                 if (serverName == null || serverName.isEmpty()) {
                     serverName = System.getenv("SERVER_NAME").trim();
                     if (serverName == null || serverName.isEmpty()) {
+                        Tr.warning(tc, "file.healthcheck.health.directory.resolution.fail.CWMMH0102W");
                         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                             Tr.debug(tc,
-                                     "The /health directory can not be created. The server was unable to resolve wlp.server.name property nor the SERVER_NAME environment variable.");
+                                     "The server was unable to resolve wlp.server.name property nor the SERVER_NAME environment variable.");
                         }
                         return null;
                     }
