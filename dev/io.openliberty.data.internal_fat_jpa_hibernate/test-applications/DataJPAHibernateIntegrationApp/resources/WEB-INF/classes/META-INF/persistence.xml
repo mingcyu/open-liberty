@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -21,10 +21,6 @@
     <persistence-unit name="HibernateProvider">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>jdbc/HibernateDataSource</jta-data-source>
-        <!-- TODO remove once  https://hibernate.atlassian.net/browse/HHH-19492 is fixed -->
-        <class>test.jakarta.data.jpa.hibernate.integration.web.County</class>
-        <!-- Need Segment to verify Segment does NOT get persisted via Hibernate provider -->
-        <class>test.jakarta.data.jpa.hibernate.integration.web.Segment</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
             <property name="hibernate.show_sql" value="true"/>

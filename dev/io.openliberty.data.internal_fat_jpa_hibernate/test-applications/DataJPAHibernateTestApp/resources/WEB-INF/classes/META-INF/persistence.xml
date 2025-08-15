@@ -21,8 +21,6 @@
     <persistence-unit name="MyPersistenceUnit">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:comp/DefaultDataSource</jta-data-source>
-        <!-- TODO remove once  https://hibernate.atlassian.net/browse/HHH-19492 is fixed -->
-        <class>test.jakarta.data.jpa.hibernate.web.City</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
             <property name="hibernate.show_sql" value="true"/>

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@
  *******************************************************************************/
 package test.jakarta.data.jpa.hibernate.web;
 
+import static componenttest.annotation.SkipIfSysProp.DB_SQLServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +37,7 @@ import jakarta.transaction.UserTransaction;
 
 import org.junit.Test;
 
+import componenttest.annotation.SkipIfSysProp;
 import componenttest.app.FATServlet;
 
 @SuppressWarnings("serial")
@@ -160,6 +162,7 @@ public class DataJPAHibernateTestServlet extends FATServlet {
     }
 
     @Test
+    @SkipIfSysProp(DB_SQLServer) //TODO remove once https://hibernate.atlassian.net/browse/HHH-19713 is fixed
     public void testBasicRepositoryFindAllWithPages() {
         Queue<Integer> expectedPopulationOrder = new LinkedList<>();
         expectedPopulationOrder.offer(508090);
