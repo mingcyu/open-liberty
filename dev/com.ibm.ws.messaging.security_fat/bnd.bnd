@@ -21,7 +21,7 @@ src: \
 
 fat.project: true
 
-tested.features: xmlbinding-4.0, servlet-6.0, messagingclient-3.0, servlet-6.1
+tested.features: xmlbinding-4.0, servlet-6.0, messagingclient-3.0, servlet-6.1, servlet-5.0, jaxb-2.2, servlet-4.0, jaxb-2.2, servlet-3.1
 
 -buildpath: \
 	com.ibm.websphere.javaee.servlet.3.1;version=latest,\
@@ -31,4 +31,4 @@ tested.features: xmlbinding-4.0, servlet-6.0, messagingclient-3.0, servlet-6.1
 	com.ibm.websphere.javaee.interceptor.1.2;version=latest,\
 	com.ibm.ws.cdi.interfaces;version=latest,\
 	io.openliberty.org.apache.commons.codec,\
-	jakarta.jms-api
+	javax.jms-api
