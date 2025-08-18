@@ -89,7 +89,7 @@ public abstract class Permission {
         }
 
         if (user != null && role != null) {
-            roleToGroupMap.computeIfAbsent(role, Permission::createSynchronizedSet).add(user);
+            roleToUserMap.computeIfAbsent(role, Permission::createSynchronizedSet).add(user);
         }
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
