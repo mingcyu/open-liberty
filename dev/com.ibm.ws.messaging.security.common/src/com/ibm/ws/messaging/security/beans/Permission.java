@@ -78,46 +78,6 @@ public abstract class Permission {
     }
 
     /**
-     * Add a User to the particular role
-     * 
-     * @param user
-     * @param role
-     */
-    protected void addUserToRole(String user, String role) {
-        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
-            SibTr.entry(tc, CLASS_NAME + "addUserToRole", new Object[] { user, role });
-        }
-
-        if (user != null && role != null) {
-            roleToUserMap.computeIfAbsent(role, Permission::createSynchronizedSet).add(user);
-        }
-
-        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
-            SibTr.exit(tc, CLASS_NAME + "addUserToRole");
-        }
-    }
-
-    /**
-     * Add a Group to the particular role
-     * 
-     * @param group
-     * @param role
-     */
-    protected void addGroupToRole(String group, String role) {
-        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
-            SibTr.entry(tc, CLASS_NAME + "addGroupToRole", new Object[] { group, role });
-        }
-
-        if (group != null && role != null) {
-            roleToGroupMap.computeIfAbsent(role, Permission::createSynchronizedSet).add(group);
-        }
-
-        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
-            SibTr.exit(tc, CLASS_NAME + "addGroupToRole");
-        }
-    }
-
-    /**
      * Add all the users to a particular role
      * 
      * @param users
