@@ -22,7 +22,10 @@
   <include location="../fatTestPorts.xml"/>
 
   <application location="ConcurrentNoVTWeb.war"/>
-  
+
+  <managedThreadFactory jndiName="concurrent/ServerXMLThreadFactoryToOverride"
+                        virtual="true"/>
+
   <!-- allows application to shut down a pool of unmanaged threads -->
   <javaPermission codebase="${server.config.dir}/apps/ConcurrentNoVTWeb.war"
                   className="java.lang.RuntimePermission"

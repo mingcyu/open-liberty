@@ -13,11 +13,16 @@
 package test.concurrent.no.vt.web;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.annotation.Resource;
+import jakarta.enterprise.concurrent.ManagedThreadFactory;
+import jakarta.enterprise.concurrent.ManagedThreadFactoryDefinition;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -26,9 +31,20 @@ import org.junit.Test;
 
 import componenttest.app.FATServlet;
 
-@SuppressWarnings("serial")
+@ManagedThreadFactoryDefinition(name = "java:module/concurrent/AnnoThreadFactoryToOverride",
+                                virtual = true)
 @WebServlet("/*")
+@SuppressWarnings("serial")
 public class ConcurrentVTDisabledServlet extends FATServlet {
+
+    @Resource(lookup = "java:module/concurrent/AnnoThreadFactoryToOverride")
+    ManagedThreadFactory overriddenThreadFactoryFromAnno;
+
+    @Resource(lookup = "concurrent/ServerXMLThreadFactoryToOverride")
+    ManagedThreadFactory overriddenThreadFactoryFromServerXML;
+
+    @Resource(lookup = "java:comp/concurrent/WebXMLThreadFactoryToOverride")
+    ManagedThreadFactory overriddenThreadFactoryFromWebXML;
 
     // Maximum number of nanoseconds to wait for a task to finish.
     private static final long TIMEOUT_NS = TimeUnit.MINUTES.toNanos(2);
@@ -46,10 +62,103 @@ public class ConcurrentVTDisabledServlet extends FATServlet {
     }
 
     /**
+     * Determines if the supplied thread is a virtual thread.
+     *
+     * @param thread a thread that might be a virtual thread.
+     * @return true if the supplied thread is a virtual thread, otherwise false.
+     */
+    private static boolean isVirtual(Thread thread) {
+        if (Runtime.version().feature() == 17)
+            return false;
+        else
+            try {
+                return (Boolean) Thread.class.getMethod("isVirtual").invoke(thread);
+            } catch (Exception x) {
+                throw new RuntimeException(x);
+            }
+    }
+
+    /**
+     * A ManagedThreadFactoryDefinition with virtual=true creates a
+     * ManagedThreadFactory that creates platform threads instead of virtual threads
+     * when the ThreadTypeOverride SPI instructs Liberty to avoid creating virtual
+     * threads. The thread runs successfully.
      */
     @Test
-    public void testPass() throws Exception {
+    public void testOverrideVirtualThreadFactoryFromAnno() throws Exception {
+        CompletableFuture<Thread> threadIsRunning = new CompletableFuture<>();
 
-        assertEquals(true, true);
+        Thread thread = overriddenThreadFactoryFromAnno.newThread(() -> {
+            System.out.println("Thread from testOverrideVirtualThreadFactoryFromAnno");
+            threadIsRunning.complete(Thread.currentThread());
+        });
+
+        thread.start();
+
+        assertEquals(false, isVirtual(thread));
+
+        assertEquals(thread, threadIsRunning.get(TIMEOUT_NS, TimeUnit.NANOSECONDS));
+    }
+
+    /**
+     * A managedThreadFactory defined in server.xml with virtual=true creates a
+     * ManagedThreadFactory that creates platform threads instead of virtual threads
+     * when the ThreadTypeOverride SPI instructs Liberty to avoid creating virtual
+     * threads. The thread runs successfully.
+     */
+    @Test
+    public void testOverrideVirtualThreadFactoryFromServerXML() throws Exception {
+        CompletableFuture<Thread> threadIsRunning = new CompletableFuture<>();
+
+        Runnable action = () -> {
+            System.out.println("Thread from testOverrideVirtualThreadFactoryFromServerXML");
+            threadIsRunning.complete(Thread.currentThread());
+        };
+
+        if (Runtime.version().feature() == 17) {
+            try {
+                Thread thread = overriddenThreadFactoryFromServerXML.newThread(action);
+                fail("Server configuration should not allow virtual=true on Java 17," +
+                     " which has no support for virtual threads.");
+            } catch (UnsupportedOperationException x) {
+                if (x.getMessage() != null &&
+                    x.getMessage().startsWith("CWWKC1121E"))
+                    return; // expected
+                else
+                    throw x;
+            }
+        } else {
+            // Java 21+
+
+            Thread thread = overriddenThreadFactoryFromServerXML.newThread(action);
+
+            thread.start();
+
+            assertEquals(false, isVirtual(thread));
+
+            assertEquals(thread, threadIsRunning.get(TIMEOUT_NS, TimeUnit.NANOSECONDS));
+        }
+    }
+
+    /**
+     * A managed-thread-factory defined in web.xml with virtual=true creates a
+     * ManagedThreadFactory that creates platform threads instead of virtual threads
+     * when the ThreadTypeOverride SPI instructs Liberty to avoid creating virtual
+     * threads. The thread runs successfully.
+     */
+    @Test
+    public void testOverrideVirtualThreadFactoryFromWebXML() throws Exception {
+        CompletableFuture<Thread> threadIsRunning = new CompletableFuture<>();
+
+        Thread thread = overriddenThreadFactoryFromWebXML.newThread(() -> {
+            System.out.println("Thread from testOverrideVirtualThreadFactoryFromWebXML");
+            threadIsRunning.complete(Thread.currentThread());
+        });
+
+        thread.start();
+
+        assertEquals(false, isVirtual(thread));
+
+        assertEquals(thread, threadIsRunning.get(TIMEOUT_NS, TimeUnit.NANOSECONDS));
     }
 }
