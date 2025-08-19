@@ -13,7 +13,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 /**
- *
+ * JPA entity representing a student.  
+ * Contains a roll number, name, and an array of marks.
  */
 @Entity
 public class Student {
