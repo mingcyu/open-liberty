@@ -2434,6 +2434,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
     }
     
     @Test
+    // Reference issue: https://github.com/OpenLiberty/open-liberty/issues/32246
     public void testOLGH32246() throws Exception {
         deleteAllEntities(Student.class);
 
@@ -2449,7 +2450,7 @@ public class JakartaDataRecreateServlet extends FATServlet {
 
         List<?> resultStudents;
         try {
-            resultStudents = em.createQuery("SELECT s.marks FROM Student s WHERE s.rollNo = ?1", Student.class) 
+            resultStudents = em.createQuery("SELECT s.marks FROM Student s WHERE s.rollNo = ?1", Student.class) // Forcing ConversionException by giving wrong entity class
                             .setParameter(1, 3L)
                             .getResultList();
         } catch (Exception e) {
