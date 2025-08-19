@@ -2455,6 +2455,13 @@ public class JakartaDataRecreateServlet extends FATServlet {
         } catch (Exception e) {
             throw e;
         }
+
+        assertEquals(
+                     List.of(Arrays.toString(new int[] { 70, 90, 75 })),
+                     resultStudents.stream()
+                                     .map(o -> Arrays.toString((int[]) o))
+                                     .collect(Collectors.toList()));
+
     }
 
     /**
