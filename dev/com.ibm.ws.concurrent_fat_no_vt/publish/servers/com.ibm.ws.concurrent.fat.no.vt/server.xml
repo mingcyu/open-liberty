@@ -23,6 +23,9 @@
 
   <application location="ConcurrentNoVTWeb.war"/>
 
+  <managedExecutorService jndiName="concurrent/ServerXMLExecutorToOverride"
+                          virtual="true"/>
+
   <managedThreadFactory jndiName="concurrent/ServerXMLThreadFactoryToOverride"
                         virtual="true"/>
 

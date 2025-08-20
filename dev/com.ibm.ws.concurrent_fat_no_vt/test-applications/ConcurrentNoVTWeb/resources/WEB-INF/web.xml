@@ -23,6 +23,16 @@
     <env-entry-value>value1</env-entry-value>
   </env-entry>
 
+  <managed-executor>
+    <name>java:global/concurrent/WebXMLExecutorToOverride</name>
+    <virtual>true</virtual>
+  </managed-executor>
+
+  <managed-scheduled-executor>
+    <name>java:module/concurrent/WebXMLScheduledExecutorToOverride</name>
+    <virtual>true</virtual>
+  </managed-scheduled-executor>
+
   <managed-thread-factory>
     <name>java:comp/concurrent/WebXMLThreadFactoryToOverride</name>
     <virtual>true</virtual>

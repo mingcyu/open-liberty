@@ -27,9 +27,11 @@ public class VirtualThreadDisabler implements ThreadTypeOverride {
     }
 
     public boolean allowVirtualThreadCreation() {
+        System.out.println("VirtualThreadDisabler.allowVirtualThreadCreation: false");
         return false;
     }
 
     protected void deactivate() {
+        System.out.println("VirtualThreadDisabler dectivated");
     }
 }
